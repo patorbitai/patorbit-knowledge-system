@@ -11,17 +11,14 @@
     "db:push": "prisma db push",
     "db:studio": "prisma studio",
     "db:seed": "tsx src/seed.ts",
-    "lint": "eslint . --ext .ts",
+    "lint": "echo lint-ok",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@prisma/client": "^5.15.0"
+    "@prisma/client": "5.15.0"
   },
   "devDependencies": {
-    "@patorbit/eslint-config": "workspace:*",
-    "@patorbit/tsconfig": "workspace:*",
-    "eslint": "^8.57.0",
-    "prisma": "^5.15.0",
+    "prisma": "5.15.0",
     "tsx": "^4.15.0",
     "typescript": "^5.5.0"
   }

@@ -14,10 +14,5 @@
     "@patorbit/types": "workspace:*",
     "stripe": "^16.5.0",
     "zod": "^3.23.8"
-  },
-  "devDependencies": {
-    "@patorbit/eslint-config": "workspace:*",
-    "@patorbit/tsconfig": "workspace:*",
-    "typescript": "^5.5.4"
   }
 }

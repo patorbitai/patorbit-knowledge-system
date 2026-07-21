@@ -7,24 +7,492 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ── Core ──────────────────────────────────────────────
+// ══════════════════════════════════════════════════════
+// IDENTITY & AUTHENTICATION
+// ══════════════════════════════════════════════════════
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  image     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  emailVerified DateTime?
+  passwordHash  String?
+  isLocked      Boolean   @default(false)
+  lockExpiresAt DateTime?
+  loginAttempts Int       @default(0)
+  lastLoginAt   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  deletedAt     DateTime?
+
+  // Relations
+  profile     Profile?
+  accounts    Account[]
+  sessions    Session[]
+  auditEvents AuditEvent[]
+  userRoles   UserRole[]
+  tokens      VerificationToken[]
+
+  @@index([deletedAt])
+}
+
+model Account {
+  id                String    @id @default(cuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  refreshToken      String?   @db.Text
+  accessToken       String?   @db.Text
+  tokenType         String?
+  scope             String?
+  idToken           String?   @db.Text
+  sessionState      String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  deletedAt         DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+  @@index([deletedAt])
 }
 
 model Session {
-  id        String   @id @default(cuid())
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  id               String    @id @default(cuid())
+  userId           String
+  refreshToken     String    @unique
+  deviceType       String?
+  deviceName       String?
+  deviceOs         String?
+  browser          String?
+  ipAddress        String?
+  location         String?
+  isTrusted        Boolean   @default(false)
+  rememberMe       Boolean   @default(false)
+  lastUsedAt       DateTime  @default(now())
+  expiresAt        DateTime
+  refreshExpiresAt DateTime
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
+  @@index([refreshToken])
 }
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique
+  type      String
+  expiresAt DateTime
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId, type])
+}
+
+// ══════════════════════════════════════════════════════
+// AUTHORIZATION
+// ══════════════════════════════════════════════════════
+
+model Role {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  userRoles   UserRole[]
+  permissions Permission[]
+
+  @@index([deletedAt])
+}
+
+model Permission {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  resource    String
+  action      String
+  description String?
+  createdAt   DateTime @default(now())
+
+  roles Role[]
+}
+
+model UserRole {
+  userId     String
+  roleId     String
+  assignedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+// ══════════════════════════════════════════════════════
+// CORE DOMAIN
+// ══════════════════════════════════════════════════════
+
+model Profile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  name      String?
+  avatarUrl String?
+  headline  String?
+  summary   String?
+  locale    String   @default("en")
+  timezone  String?
+  version   Int      @default(1)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  deletedAt DateTime?
+
+  user                User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claims              Claim[]
+  careerPassports     CareerPassportVersion[]
+  knowledgeNodes      KnowledgeNode[]
+  organizationMembers OrganizationMember[]
+
+  @@index([deletedAt])
+}
+
+model Organization {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  website     String?
+  logoUrl     String?
+  isVerified  Boolean  @default(false)
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  members      OrganizationMember[]
+  workspaces   Workspace[]
+  subscriptions Subscription[]
+
+  @@index([name])
+  @@index([deletedAt])
+}
+
+model OrganizationMember {
+  id             String           @id @default(cuid())
+  organizationId String
+  profileId      String
+  role           OrganizationRole @default(MEMBER)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  profile      Profile      @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([organizationId, profileId])
+  @@index([profileId])
+}
+
+enum OrganizationRole {
+  OWNER
+  ADMIN
+  MEMBER
+  BILLING
+}
+
+model Workspace {
+  id             String   @id @default(cuid())
+  name           String
+  organizationId String
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  deletedAt      DateTime?
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+  @@index([deletedAt])
+}
+
+model Claim {
+  id              String   @id @default(cuid())
+  profileId       String
+  title           String
+  summary         String?
+  date            DateTime
+  version         Int      @default(1)
+  confidenceScore Float    @default(0)
+  isPublic        Boolean  @default(false)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  deletedAt       DateTime?
+
+  profile   Profile     @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  evidences Evidence[]
+  tags      Tag[]
+
+  @@index([profileId])
+  @@index([deletedAt])
+}
+
+model Evidence {
+  id              String         @id @default(cuid())
+  claimId         String
+  title           String
+  description     String?
+  type            EvidenceType
+  version         Int            @default(1)
+  confidenceScore Float          @default(0)
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+  deletedAt       DateTime?
+
+  claim           Claim            @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  files           EvidenceFile[]
+  verifications   Verification[]
+  credential      Credential?
+
+  @@index([claimId])
+  @@index([deletedAt])
+}
+
+enum EvidenceType {
+  DOCUMENT
+  IMAGE
+  VIDEO
+  URL
+  CONTACT
+  CREDENTIAL
+}
+
+model EvidenceFile {
+  id         String   @id @default(cuid())
+  evidenceId String
+  storageKey String
+  fileName   String
+  fileType   String
+  fileSize   Int
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@index([evidenceId])
+  @@index([deletedAt])
+}
+
+model Credential {
+  id           String   @id @default(cuid())
+  evidenceId   String   @unique
+  issuer       String
+  title        String
+  issuedAt     DateTime
+  expiresAt    DateTime?
+  credentialId String?
+  url          String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+}
+
+model Verification {
+  id          String             @id @default(cuid())
+  evidenceId  String
+  verifierId  String // Can be a User ID or a System ID
+  status      VerificationStatus
+  method      String // e.g., "email", "phone", "system", "human"
+  notes       String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  evidence Evidence @relation(fields: [evidenceId], references: [id], onDelete: Cascade)
+
+  @@index([evidenceId])
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+// ══════════════════════════════════════════════════════
+// KNOWLEDGE, TRUST & CONFIDENCE
+// ══════════════════════════════════════════════════════
+
+model KnowledgeNode {
+  id         String          @id @default(cuid())
+  type       String // e.g., 'Skill', 'Company', 'University'
+  name       String
+  profileId  String? // Null if it's a global node
+  metadata   Json?
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  profile    Profile?        @relation(fields: [profileId], references: [id])
+  fromEdges  KnowledgeEdge[] @relation("fromNode")
+  toEdges    KnowledgeEdge[] @relation("toNode")
+
+  @@unique([type, name, profileId])
+}
+
+model KnowledgeEdge {
+  id          String   @id @default(cuid())
+  fromNodeId  String
+  toNodeId    String
+  type        String // e.g., 'HAS_SKILL', 'WORKED_AT', 'ATTENDED'
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  fromNode KnowledgeNode @relation("fromNode", fields: [fromNodeId], references: [id], onDelete: Cascade)
+  toNode   KnowledgeNode @relation("toNode", fields: [toNodeId], references: [id], onDelete: Cascade)
+
+  @@index([fromNodeId])
+  @@index([toNodeId])
+}
+
+model TrustScore {
+  id         String   @id @default(cuid())
+  entityType String // 'Claim', 'Evidence', 'Profile'
+  entityId   String
+  score      Float
+  reason     String?
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([entityType, entityId])
+}
+
+model ConfidenceScore {
+  id         String   @id @default(cuid())
+  entityType String // 'Claim', 'Evidence'
+  entityId   String
+  score      Float
+  reason     String?
+  version    Int      @default(1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([entityType, entityId])
+}
+
+
+// ══════════════════════════════════════════════════════
+// VERSIONING & PUBLICATION
+// ══════════════════════════════════════════════════════
+
+model TimelineEvent {
+  id        String   @id @default(cuid())
+  profileId String
+  entityType String
+  entityId  String
+  type      String
+  data      Json?
+  createdAt DateTime @default(now())
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  profileId String
+  version   Int
+  snapshot  Json
+  isPublic  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@unique([profileId, version])
+}
+
+model CareerPassportVersion {
+  id          String   @id @default(cuid())
+  profileId   String
+  version     Int
+  snapshot    Json
+  isPublic    Boolean  @default(false)
+  publishedAt DateTime?
+  createdAt   DateTime @default(now())
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@unique([profileId, version])
+}
+
+// ══════════════════════════════════════════════════════
+// METADATA & MISC
+// ══════════════════════════════════════════════════════
+
+model Tag {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
+
+  claims Claim[]
+}
+
+model Category {
+  id   String @id @default(cuid())
+  name String @unique
+}
+
+model Metadata {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  key        String
+  value      Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([entityType, entityId, key])
+}
+
+model Subscription {
+  id             String   @id @default(cuid())
+  organizationId String
+  plan           String // e.g., 'free', 'pro', 'enterprise'
+  status         String // e.g., 'active', 'canceled', 'past_due'
+  currentPeriodEnd DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+  @@index([organizationId])
+}
+
+
+// ══════════════════════════════════════════════════════
+// AUDIT
+// ══════════════════════════════════════════════════════
+
+model AuditEvent {
+  id         String    @id @default(cuid())
+  userId     String?
+  action     String
+  resource   String
+  resourceId String?
+  metadata   Json?
+  ipAddress  String?
+  userAgent  String?
+  outcome    String
+  createdAt  DateTime  @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@index([action, createdAt])
+  @@index([createdAt])
+}
+
+// Remove ApplicationUser as Profile is now the primary domain entity
+// model ApplicationUser { ... }

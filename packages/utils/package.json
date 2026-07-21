@@ -8,11 +8,5 @@
     "clean": "rm -rf .turbo node_modules",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit"
-  },
-  "devDependencies": {
-    "@patorbit/eslint-config": "workspace:*",
-    "@patorbit/tsconfig": "workspace:*",
-    "eslint": "^8.57.0",
-    "typescript": "^5.5.0"
   }
 }
