@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { DatabaseModule } from "../../../packages/database/database.module";
+import { DatabaseModule } from "@patorbit/database";
 import { ProfileService } from "./profile.service";
 import { ProfileController } from "./profile.controller";
 

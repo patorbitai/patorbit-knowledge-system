@@ -6,6 +6,7 @@
   "types": "./src/index.ts",
   "scripts": {
     "clean": "rm -rf .turbo node_modules",
+    "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
@@ -13,6 +14,7 @@
     "zod": "^3.23.0"
   },
   "devDependencies": {
+    "@patorbit/tsconfig": "workspace:*",
     "@types/bcrypt": "^5.0.2",
     "typescript": "^5.5.0"
   }

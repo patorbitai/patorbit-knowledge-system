@@ -1,12 +1,16 @@
-// apps/api/src/main.ts
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import cookieParser from "cookie-parser";
 import helmet from "helmet";
+import { Logger } from "nestjs-pino";
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
+  const app = await NestFactory.create(AppModule, {
+    bufferLogs: true,
+  });
+  const logger = app.get(Logger);
+  app.useLogger(logger);
 
   // Security headers with strict CSP
   app.use(
@@ -42,7 +46,7 @@ async function bootstrap() {
 
   const port = process.env.API_PORT ?? 4000;
   await app.listen(port);
-  console.log(`API running on port ${port}`);
+  logger.log(`API running on port ${port}`);
 }
 
 bootstrap().catch((err) => {

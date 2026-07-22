@@ -5,6 +5,10 @@ import { EvidenceType } from '@prisma/client';
 export class CreateEvidenceDto {
   @IsString()
   @IsNotEmpty()
+  claimId: string;
+
+  @IsString()
+  @IsNotEmpty()
   title: string;
 
   @IsString()

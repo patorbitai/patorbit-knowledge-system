@@ -2,7 +2,7 @@
 // Notification abstraction layer
 // Provides interfaces for sending notifications across channels
 
-export type NotificationChannel = "email" | "in_app" | "push";
+export type NotificationChannel = "email" | "sms" | "in_app" | "push";
 
 export interface Notification {
   id: string;

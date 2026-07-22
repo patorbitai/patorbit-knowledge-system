@@ -12,11 +12,8 @@ export class EvidenceController {
   constructor(private readonly evidenceService: EvidenceService) {}
 
   @Post()
-  create(
-    @Body('claimId') claimId: string,
-    @Body() createEvidenceDto: CreateEvidenceDto,
-  ) {
-    return this.evidenceService.create(claimId, createEvidenceDto);
+  create(@Body() createEvidenceDto: CreateEvidenceDto) {
+    return this.evidenceService.create(createEvidenceDto.claimId, createEvidenceDto);
   }
 
   @Get('claim/:claimId')

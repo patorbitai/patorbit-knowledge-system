@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { KnowledgeService } from './knowledge.service';
 import { KnowledgeController } from './knowledge.controller';
-import { DatabaseModule } from '../../../packages/database/database.module';
+import { DatabaseModule } from "@patorbit/database";
 
 @Module({
   imports: [DatabaseModule],

@@ -1,7 +1,6 @@
 import { Module, NestModule, MiddlewareConsumer } from "@nestjs/common";
-import { ConfigModule } from "@nestjs/config";
 import { ThrottlerModule } from "@nestjs/throttler";
-import { APP_GUARD } from "@nestjs/core";
+import { APP_GUARD, APP_FILTER, HttpAdapterHost } from "@nestjs/core";
 import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
 import { AuthModule } from "./auth/auth.module";
 import { IdentityModule } from "./identity/identity.module";
@@ -24,13 +23,15 @@ import { CareerPassportModule } from "./career-passport/career-passport.module";
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { CsrfController } from "./common/csrf.controller";
-import { DatabaseModule } from "../../packages/database/database.module";
+import { DatabaseModule } from "@patorbit/database";
+import { PlatformModule, LoggingService } from "./platform";
+import { AllExceptionsFilter } from "./platform/errors/all-exceptions.filter";
 
 @Module({
   imports: [
-    ConfigModule.forRoot({ isGlobal: true }),
     ThrottlerModule.forRoot({ throttlers: [{ ttl: 60000, limit: 10 }] }),
     DatabaseModule,
+    PlatformModule.forRoot(),
     AuthModule,
     IdentityModule,
     UserModule,
@@ -54,6 +55,12 @@ import { DatabaseModule } from "../../packages/database/database.module";
   providers: [
     AppService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    {
+      provide: APP_FILTER,
+      useFactory: (adapterHost: HttpAdapterHost, logger: LoggingService) =>
+        new AllExceptionsFilter(adapterHost, logger),
+      inject: [HttpAdapterHost, LoggingService],
+    },
   ],
 })
 export class AppModule implements NestModule {

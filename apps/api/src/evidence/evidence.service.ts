@@ -91,8 +91,8 @@ export class EvidenceService {
     return this.prisma.evidenceFile.findMany({
         where: {
             evidenceId: evidenceId,
-            deletedAt: null
-        }
+            deletedAt: null,
+        },
     });
   }
 }

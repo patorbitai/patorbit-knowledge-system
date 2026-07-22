@@ -1,10 +1,10 @@
 // apps/web/src/app/(auth)/verify-email/page.tsx
 "use client";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { api } from "../../../lib/api";
 
-export default function VerifyEmailPage() {
+function VerifyEmailContent() {
   const searchParams = useSearchParams();
   const [status, setStatus] = useState<"verifying" | "verified" | "error">("verifying");
 
@@ -28,5 +28,13 @@ export default function VerifyEmailPage() {
       <h1 className="text-2xl font-bold text-destructive">Verification Failed</h1>
       <p className="mt-4">The link is invalid or expired.</p>
     </div>
+  );
+}
+
+export default function VerifyEmailPage() {
+  return (
+    <Suspense fallback={<p className="p-8 text-center">Loading…</p>}>
+      <VerifyEmailContent />
+    </Suspense>
   );
 }

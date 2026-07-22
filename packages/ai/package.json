@@ -11,5 +11,8 @@
   },
   "dependencies": {
     "@patorbit/config": "workspace:*"
+  },
+  "devDependencies": {
+    "@patorbit/tsconfig": "workspace:*"
   }
 }

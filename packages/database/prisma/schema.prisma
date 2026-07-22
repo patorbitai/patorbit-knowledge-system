@@ -161,6 +161,8 @@ model Profile {
   careerPassports     CareerPassportVersion[]
   knowledgeNodes      KnowledgeNode[]
   organizationMembers OrganizationMember[]
+  resumes             Resume[]
+  importJobs          ImportJob[]
 
   @@index([deletedAt])
 }
@@ -402,16 +404,6 @@ model TimelineEvent {
   createdAt DateTime @default(now())
 }
 
-model ResumeVersion {
-  id        String   @id @default(cuid())
-  profileId String
-  version   Int
-  snapshot  Json
-  isPublic  Boolean  @default(false)
-  createdAt DateTime @default(now())
-
-  @@unique([profileId, version])
-}
 
 model CareerPassportVersion {
   id          String   @id @default(cuid())
@@ -425,6 +417,167 @@ model CareerPassportVersion {
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
 
   @@unique([profileId, version])
+}
+
+// ══════════════════════════════════════════════════════
+// RESUME BUILDER
+// ══════════════════════════════════════════════════════
+
+enum ResumeStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+enum SectionType {
+  PERSONAL_INFORMATION
+  PROFESSIONAL_SUMMARY
+  WORK_EXPERIENCE
+  EDUCATION
+  PROJECTS
+  SKILLS
+  CERTIFICATIONS
+  ACHIEVEMENTS
+  LANGUAGES
+  VOLUNTEER_EXPERIENCE
+  PUBLICATIONS
+  AWARDS
+  INTERESTS
+  CUSTOM
+}
+
+model Resume {
+  id            String       @id @default(cuid())
+  profileId     String
+  title         String       @default("Untitled Resume")
+  status        ResumeStatus @default(DRAFT)
+  templateId    String?
+  theme         Json?        // template theme settings (font, colors, spacing, etc.)
+  metadata      Json?        // page size, margins, etc.
+  version       Int          @default(1)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+  deletedAt     DateTime?
+
+  profile    Profile         @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  sections   ResumeSection[]
+  versions   ResumeVersion[]
+  assets     ResumeAsset[]
+  template   ResumeTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  exportJobs ExportJob[]
+
+  @@index([profileId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+model ResumeSection {
+  id            String      @id @default(cuid())
+  resumeId      String
+  type          SectionType
+  title         String?     // display title (for CUSTOM sections)
+  sortOrder     Int         @default(0)
+  isVisible     Boolean     @default(true)
+  isCollapsible Boolean     @default(true)
+  isCollapsed   Boolean     @default(false)
+  content       Json?       // section-specific structured data
+  metadata      Json?       // styling, notes, etc.
+  version       Int         @default(1)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  deletedAt     DateTime?
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, type, sortOrder])
+  @@index([resumeId])
+  @@index([deletedAt])
+}
+
+model ResumeTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  thumbnail   String?  // URL to template thumbnail
+  category    String   @default("professional") // professional, modern, creative, simple
+  isSystem    Boolean  @default(true)            // system-provided vs user-created
+  config      Json     // template configuration (fonts, colors, layout, etc.)
+  version     Int      @default(1)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  deletedAt   DateTime?
+
+  resumes Resume[]
+
+  @@index([category])
+  @@index([deletedAt])
+}
+
+model ResumeVersion {
+  id        String   @id @default(cuid())
+  resumeId  String
+  version   Int
+  snapshot  Json     // full resume snapshot (sections + config) at this version
+  note      String?  // user note about this version
+  createdAt DateTime @default(now())
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@unique([resumeId, version])
+  @@index([resumeId])
+}
+
+model ResumeAsset {
+  id         String   @id @default(cuid())
+  resumeId   String
+  type       String   // "avatar", "logo", "background", "attachment"
+  storageKey String   // key in storage service
+  fileName   String
+  fileSize   Int?
+  mimeType   String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  deletedAt  DateTime?
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@index([deletedAt])
+}
+
+model ImportJob {
+  id         String   @id @default(cuid())
+  profileId  String
+  sourceType String   // "pdf", "docx", "json", "linkedin"
+  status     String   // "pending", "processing", "completed", "failed"
+  sourceData Json?    // raw import data / file reference
+  result     Json?    // parsed resume data (ready to create resume sections)
+  error      String?  // error message if failed
+  metadata   Json?    // importer version, options used, etc.
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@index([profileId])
+  @@index([status])
+}
+
+model ExportJob {
+  id         String   @id @default(cuid())
+  resumeId   String
+  format     String   // "pdf", "docx", "json"
+  status     String   // "pending", "processing", "completed", "failed"
+  storageKey String?  // key in storage service where the exported file lives
+  options    Json?    // export options (page size, margins, etc.)
+  error      String?  // error message if failed
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  resume Resume @relation(fields: [resumeId], references: [id], onDelete: Cascade)
+
+  @@index([resumeId])
+  @@index([status])
 }
 
 // ══════════════════════════════════════════════════════

@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TimelineService } from './timeline.service';
 import { TimelineController } from './timeline.controller';
-import { DatabaseModule } from '../../../packages/database/database.module';
+import { DatabaseModule } from "@patorbit/database";
 
 @Module({
   imports: [DatabaseModule],

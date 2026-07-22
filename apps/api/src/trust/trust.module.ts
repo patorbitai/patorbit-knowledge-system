@@ -2,7 +2,7 @@
 import { Module } from '@nestjs/common';
 import { TrustService } from './trust.service';
 import { TrustController } from './trust.controller';
-import { DatabaseModule } from '../../../packages/database/database.module';
+import { DatabaseModule } from "@patorbit/database";
 
 @Module({
   imports: [DatabaseModule],
