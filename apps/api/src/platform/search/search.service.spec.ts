@@ -1,7 +1,8 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { SEARCH_PROVIDER } from "./search.constants";
-import type { SearchDocument, SearchIndexDefinition, SearchProvider, SearchQuery } from "./search.provider";
+import  { type SearchDocument, type SearchIndexDefinition, type SearchProvider, type SearchQuery } from "./search.provider";
 import { SearchService } from "./search.service";
 
 describe("SearchService", () => {

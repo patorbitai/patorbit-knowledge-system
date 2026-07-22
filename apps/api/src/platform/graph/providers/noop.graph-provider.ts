@@ -1,11 +1,12 @@
 import { Injectable, Logger } from "@nestjs/common";
-import type {
-  GraphEdge,
-  GraphNode,
-  GraphPath,
-  GraphProvider,
-  GraphQueryResult,
-  GraphRepositoryStats,
+
+import  {
+  type GraphEdge,
+  type GraphNode,
+  type GraphPath,
+  type GraphProvider,
+  type GraphQueryResult,
+  type GraphRepositoryStats,
 } from "../graph.provider";
 
 @Injectable()

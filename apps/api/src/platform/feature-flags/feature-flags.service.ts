@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
+
 import { FEATURE_FLAG_PROVIDER } from "./feature-flags.constants";
-import type { FeatureFlag, FeatureFlagProvider } from "./feature-flags.provider";
+import  { type FeatureFlag, type FeatureFlagProvider } from "./feature-flags.provider";
 
 @Injectable()
 export class FeatureFlagsService {
@@ -15,7 +16,7 @@ export class FeatureFlagsService {
     return this.provider.name;
   }
 
-  isEnabled(name: string): boolean {
+  async isEnabled(name: string): Promise<boolean> {
     return this.provider.isEnabled(name);
   }
 

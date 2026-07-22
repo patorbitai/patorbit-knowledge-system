@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import type { AnyEvent } from "../event-bus.provider";
+
+import  { type AnyEvent } from "../event-bus.provider";
 
 export type OutboxStatus = "pending" | "published" | "failed";
 

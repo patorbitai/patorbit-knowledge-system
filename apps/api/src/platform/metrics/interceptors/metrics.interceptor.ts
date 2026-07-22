@@ -1,21 +1,22 @@
 import {
-  CallHandler,
-  ExecutionContext,
+  type CallHandler,
+  type ExecutionContext,
   Injectable,
-  NestInterceptor,
+  type NestInterceptor,
 } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import type { Request, Response } from "express";
-import type { Observable } from "rxjs";
+import { type Reflector } from "@nestjs/core";
+import  { type Request, type Response } from "express";
+import  { type Observable } from "rxjs";
 import { finalize } from "rxjs/operators";
+
 import {
   HTTP_REQUEST_DURATION_MS,
   HTTP_REQUESTS_TOTAL,
   METHOD_DURATION_MS,
   TRACK_TIME_METADATA,
 } from "../metrics.constants";
-import type { MetricLabels, TimerStop } from "../metrics.provider";
-import { MetricsService } from "../metrics.service";
+import  { type MetricLabels, type TimerStop } from "../metrics.provider";
+import { type MetricsService } from "../metrics.service";
 
 @Injectable()
 export class MetricsInterceptor implements NestInterceptor {

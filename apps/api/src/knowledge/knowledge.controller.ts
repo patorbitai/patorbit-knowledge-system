@@ -1,10 +1,11 @@
 // apps/api/src/knowledge/knowledge.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, Query, UseGuards } from '@nestjs/common';
-import { KnowledgeService } from './knowledge.service';
-import { CreateKnowledgeNodeDto } from './dto/create-knowledge-node.dto';
-import { CreateKnowledgeEdgeDto } from './dto/create-knowledge-edge.dto';
-import { ApiTags, ApiBearerAuth, ApiQuery } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery,ApiTags } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { type CreateKnowledgeEdgeDto } from './dto/create-knowledge-edge.dto';
+import { type CreateKnowledgeNodeDto } from './dto/create-knowledge-node.dto';
+import { type KnowledgeService } from './knowledge.service';
 
 @ApiTags('knowledge')
 @ApiBearerAuth()

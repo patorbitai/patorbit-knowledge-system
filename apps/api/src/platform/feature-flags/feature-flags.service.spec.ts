@@ -1,5 +1,6 @@
-import { Test, TestingModule } from '@nestjs/testing';
+import { Test, type TestingModule } from '@nestjs/testing';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+
 import { FeatureFlagsService } from './feature-flags.service';
 
 describe('FeatureFlagsService', () => {

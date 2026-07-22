@@ -1,8 +1,9 @@
 
 import { Module } from '@nestjs/common';
-import { ImportService } from './import.service';
-import { ImportController } from './import.controller';
 import { DatabaseModule } from '@patorbit/database';
+
+import { ImportController } from './import.controller';
+import { ImportService } from './import.service';
 
 @Module({
   imports: [DatabaseModule],

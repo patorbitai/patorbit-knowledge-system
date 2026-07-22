@@ -1,6 +1,7 @@
 import { NestFactory } from "@nestjs/core";
 import { TerminusModule } from "@nestjs/terminus";
-import { beforeAll, afterAll, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, describe, expect, it } from "vitest";
+
 import { HealthController } from "./health.controller";
 import { PrismaHealthIndicator } from "./indicators/prisma.health";
 
@@ -13,7 +14,7 @@ describe("HealthController (e2e)", () => {
       {
         module: class E2ETestApp {},
         imports: [
-          TerminusModule.forRoot({ logger: false, errorLogStyle: "none" }),
+          TerminusModule.forRoot({ logger: false, errorLogStyle: "json" }),
           {
             module: class HealthSubModule {},
             controllers: [HealthController],

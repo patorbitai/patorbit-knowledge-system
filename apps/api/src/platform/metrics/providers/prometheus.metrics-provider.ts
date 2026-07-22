@@ -1,14 +1,15 @@
 import { Injectable } from "@nestjs/common";
-import type {
-  Counter,
-  Histogram,
-  MetricOptions,
-  MetricsProvider,
-  Timer,
+
+import  {
+  type Counter,
+  type Histogram,
+  type MetricOptions,
+  type MetricsProvider,
+  type Timer,
 } from "../metrics.provider";
 import {
-  InMemoryMetricsProvider,
   type InMemoryMetric,
+  InMemoryMetricsProvider,
 } from "./in-memory.metrics-provider";
 
 /**

@@ -1,6 +1,7 @@
-﻿import { Inject, Injectable, OnModuleDestroy } from "@nestjs/common";
+﻿import { Inject, Injectable, type OnModuleDestroy } from "@nestjs/common";
+
 import { SCHEDULER_PROVIDER } from "./scheduler.constants";
-import type { SchedulerProvider, SchedulerJob } from "./scheduler.provider";
+import  { type SchedulerJob,type SchedulerProvider } from "./scheduler.provider";
 
 @Injectable()
 export class SchedulerService implements OnModuleDestroy {

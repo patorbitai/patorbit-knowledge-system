@@ -1,18 +1,19 @@
 
-import { describe, it, expect } from "vitest";
 import { Test, TestingModule } from "@nestjs/testing";
-import { EventBusModule } from "./event-bus.module";
-import { EventBusService } from "./event-bus.service";
+import { describe, expect,it } from "vitest";
+
 import {
+  DEAD_LETTER_SERVICE,
   EVENT_BUS,
   OUTBOX_SERVICE,
-  DEAD_LETTER_SERVICE,
   RETRY_SERVICE,
 } from "./event-bus.constants";
-import { OutboxService } from "./services/outbox.service";
+import { EventBusModule } from "./event-bus.module";
+import  { type IEventBus } from "./event-bus.provider";
+import { EventBusService } from "./event-bus.service";
 import { DeadLetterService } from "./services/dead-letter.service";
+import { OutboxService } from "./services/outbox.service";
 import { RetryService } from "./services/retry.service";
-import type { IEventBus } from "./event-bus.provider";
 
 describe("EventBusModule", () => {
   it("should compile the module with forRoot", async () => {

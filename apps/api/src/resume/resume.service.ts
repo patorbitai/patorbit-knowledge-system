@@ -1,17 +1,18 @@
 
 import {
-  Injectable,
-  NotFoundException,
   ConflictException,
+  Injectable,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '@patorbit/database';
-import { ProfileService } from '../profile/profile.service';
-import { CreateResumeDto } from './dto/create-resume.dto';
-import { UpdateResumeDto } from './dto/update-resume.dto';
-import { DuplicateResumeDto } from './dto/duplicate-resume.dto';
-import { QueryResumeDto } from './dto/query-resume.dto';
-import { Prisma } from '@prisma/client';
+import { type PrismaService } from '@patorbit/database';
+import { Prisma } from '@patorbit/database';
+
+import { type ProfileService } from '../profile/profile.service';
+import { type CreateResumeDto } from './dto/create-resume.dto';
+import { type DuplicateResumeDto } from './dto/duplicate-resume.dto';
+import { type QueryResumeDto } from './dto/query-resume.dto';
+import { type UpdateResumeDto } from './dto/update-resume.dto';
 
 @Injectable()
 export class ResumeService {

@@ -1,9 +1,10 @@
-import { DynamicModule, Module, Provider } from "@nestjs/common";
+import { type DynamicModule, Module, type Provider } from "@nestjs/common";
+
 import { GRAPH_PROVIDER } from "./graph.constants";
 import { GraphService } from "./graph.service";
-import { NoopGraphProvider } from "./providers/noop.graph-provider";
-import { Neo4jGraphProvider, type Neo4jProviderOptions } from "./providers/neo4j.graph-provider";
 import { MemgraphGraphProvider } from "./providers/memgraph.graph-provider";
+import { Neo4jGraphProvider, type Neo4jProviderOptions } from "./providers/neo4j.graph-provider";
+import { NoopGraphProvider } from "./providers/noop.graph-provider";
 
 export type GraphProviderType = "noop" | "neo4j" | "memgraph";
 

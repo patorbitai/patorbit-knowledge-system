@@ -1,7 +1,8 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { CACHE_PROVIDER } from "./cache.constants";
-import type { CacheEntry, CacheProvider } from "./cache.provider";
+import  { type CacheEntry, type CacheProvider } from "./cache.provider";
 import { CacheService } from "./cache.service";
 
 describe("CacheService", () => {

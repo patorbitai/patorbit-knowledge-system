@@ -1,6 +1,7 @@
-import { DynamicModule, Module } from "@nestjs/common";
+import { type DynamicModule, Module } from "@nestjs/common";
 import { APP_INTERCEPTOR } from "@nestjs/core";
 import { LoggerModule as PinoLoggerModule } from "nestjs-pino";
+
 import { ConfigurationModule, TypedConfigService } from "../config";
 import { resolveCorrelationId } from "./correlation-id";
 import { LoggingInterceptor } from "./logging.interceptor";

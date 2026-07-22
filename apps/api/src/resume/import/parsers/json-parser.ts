@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ImportResultDto } from '../dto/import-result.dto';
+
+import { type ImportResultDto } from '../dto/import-result.dto';
 
 export interface ParserResult {
   success: boolean;
@@ -26,7 +27,7 @@ export class JsonParser {
 
       return { success: true, data: result };
     } catch (error) {
-      return { success: false, error: `Failed to parse JSON: ${error.message}` };
+      return { success: false, error: `Failed to parse JSON: ${(error as Error).message}` };
     }
   }
 }

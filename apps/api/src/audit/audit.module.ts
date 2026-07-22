@@ -1,9 +1,10 @@
 // apps/api/src/audit/audit.module.ts
-import { Module, Global } from "@nestjs/common";
+import { Global,Module } from "@nestjs/common";
 import { APP_INTERCEPTOR } from "@nestjs/core";
 import { DatabaseModule } from "@patorbit/database";
-import { AuditService } from "./audit.service";
+
 import { AuditInterceptor } from "./audit.interceptor";
+import { AuditService } from "./audit.service";
 
 @Global()
 @Module({

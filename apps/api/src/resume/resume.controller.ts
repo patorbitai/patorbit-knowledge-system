@@ -1,24 +1,25 @@
 import {
-  Controller,
-  Get,
-  Post,
   Body,
-  Patch,
-  Param,
+  Controller,
   Delete,
-  UseGuards,
-  Query,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Patch,
+  Post,
+  Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ResumeService } from './resume.service';
-import { CreateResumeDto } from './dto/create-resume.dto';
-import { UpdateResumeDto } from './dto/update-resume.dto';
-import { QueryResumeDto } from './dto/query-resume.dto';
-import { DuplicateResumeDto } from './dto/duplicate-resume.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { type JwtPayload } from '@patorbit/auth';
+
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import { JwtPayload } from '@patorbit/auth';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { type CreateResumeDto } from './dto/create-resume.dto';
+import { type DuplicateResumeDto } from './dto/duplicate-resume.dto';
+import { type QueryResumeDto } from './dto/query-resume.dto';
+import { type UpdateResumeDto } from './dto/update-resume.dto';
+import { type ResumeService } from './resume.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('resumes')

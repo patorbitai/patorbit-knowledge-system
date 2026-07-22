@@ -2,9 +2,10 @@ import {
   Injectable,
   NotFoundException,
 } from "@nestjs/common";
-import { PrismaService } from "../../../packages/database/prisma.service";
-import { CreateWorkspaceDto } from "./dto/create-workspace.dto";
-import { UpdateWorkspaceDto } from "./dto/update-workspace.dto";
+import { type PrismaService } from '@patorbit/database';
+
+import { type CreateWorkspaceDto } from "./dto/create-workspace.dto";
+import { type UpdateWorkspaceDto } from "./dto/update-workspace.dto";
 
 @Injectable()
 export class WorkspaceService {

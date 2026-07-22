@@ -1,13 +1,14 @@
 
-import { vi, describe, it, expect, beforeEach, afterEach } from "vitest";
 import { Logger } from "@nestjs/common";
-import { EventBusService, EventBusModuleOptions } from "./event-bus.service";
-import { OutboxService } from "./services/outbox.service";
-import { DeadLetterService } from "./services/dead-letter.service";
-import { RetryService } from "./services/retry.service";
+import { type ModuleRef } from "@nestjs/core";
+import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
+
 import { EVENT_HANDLER_METADATA } from "./event-bus.constants";
-import type { IEventHandler, AnyEvent } from "./event-bus.provider";
-import { ModuleRef } from "@nestjs/core";
+import  { type AnyEvent,type IEventHandler } from "./event-bus.provider";
+import { type EventBusModuleOptions,EventBusService } from "./event-bus.service";
+import { DeadLetterService } from "./services/dead-letter.service";
+import { OutboxService } from "./services/outbox.service";
+import { RetryService } from "./services/retry.service";
 
 const createModuleRefMock = (instances: Map<any, IEventHandler<any> | null> = new Map()) =>
   ({

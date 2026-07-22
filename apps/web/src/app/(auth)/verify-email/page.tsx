@@ -1,7 +1,8 @@
 // apps/web/src/app/(auth)/verify-email/page.tsx
 "use client";
-import { Suspense, useEffect, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+
 import { api } from "../../../lib/api";
 
 function VerifyEmailContent() {

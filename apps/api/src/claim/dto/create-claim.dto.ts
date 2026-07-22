@@ -1,5 +1,5 @@
 
-import { IsString, IsNotEmpty, IsOptional, IsDateString } from 'class-validator';
+import { IsDateString,IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateClaimDto {
   @IsString()

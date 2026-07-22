@@ -1,5 +1,6 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import type { FeatureFlag, FeatureFlagProvider } from "../feature-flags.provider";
+import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
+
+import  { type FeatureFlag, type FeatureFlagProvider } from "../feature-flags.provider";
 
 @Injectable()
 export class LocalFeatureFlagProvider implements FeatureFlagProvider, OnModuleInit {

@@ -1,6 +1,7 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
+import { type PrismaService } from '@patorbit/database';
+import { type Prisma } from '@patorbit/database';
 
 @Injectable()
 export class CareerPassportService {
@@ -18,7 +19,7 @@ export class CareerPassportService {
       data: {
         profileId,
         version: nextVersion,
-        snapshot,
+        snapshot: snapshot as Prisma.InputJsonValue,
       },
     });
   }

@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { NoopSearchProvider } from "./noop.search-provider";
 
 describe("NoopSearchProvider", () => {

@@ -1,6 +1,6 @@
 
-import { IsString, IsOptional, IsEnum } from 'class-validator';
-import { EvidenceType } from '@prisma/client';
+import { EvidenceType } from '@patorbit/database';
+import { IsEnum,IsOptional, IsString } from 'class-validator';
 
 export class UpdateEvidenceDto {
   @IsString()

@@ -1,8 +1,9 @@
-import { HealthCheckResult, HealthCheckService } from "@nestjs/terminus";
+import { type HealthCheckResult, type HealthCheckService } from "@nestjs/terminus";
 import { Test } from "@nestjs/testing";
 import { describe, expect, it, vi } from "vitest";
+
 import { HealthController } from "./health.controller";
-import { PrismaHealthIndicator } from "./indicators/prisma.health";
+import { type PrismaHealthIndicator } from "./indicators/prisma.health";
 
 function mockPrismaHealth(): PrismaHealthIndicator {
   return {

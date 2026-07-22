@@ -1,7 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { JOB_QUEUES } from "./jobs.constants";
+import  { type JobQueue } from "./jobs.provider";
 import { JobsService } from "./jobs.service";
-import type { JobQueue } from "./jobs.provider";
 
 describe("JobsService", () => {
   let queues: Map<string, JobQueue>;

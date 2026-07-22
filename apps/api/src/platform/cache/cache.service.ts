@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import type { CacheEntry, CacheProvider } from "./cache.provider";
+
 import { CACHE_PROVIDER } from "./cache.constants";
+import  { type CacheEntry, type CacheProvider } from "./cache.provider";
 
 @Injectable()
 export class CacheService {

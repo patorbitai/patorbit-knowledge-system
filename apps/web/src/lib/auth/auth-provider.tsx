@@ -1,5 +1,6 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import {
   createContext,
   useCallback,
@@ -9,8 +10,8 @@ import {
   useRef,
   useState,
 } from "react";
+
 import { api, ApiError, setAccessToken } from "../api";
-import { useRouter } from "next/navigation";
 
 type User = {
   id: string;

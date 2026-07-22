@@ -1,6 +1,6 @@
 
-import { IsArray, IsOptional, IsString, IsObject, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsArray, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 
 class ImportSectionDto {
   @IsString()

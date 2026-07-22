@@ -1,9 +1,10 @@
-import { Module, DynamicModule, Provider } from "@nestjs/common";
+import { type DynamicModule, Module, type Provider } from "@nestjs/common";
+
+import { EMAIL_PROVIDER, EMAIL_QUEUE } from "./email.constants";
 import { EmailService } from "./email.service";
 import { EmailQueueService } from "./email-queue.service";
 import { InMemoryQueue } from "./in-memory-queue.service";
 import { ConsoleEmailProvider } from "./providers/console.email-provider";
-import { EMAIL_PROVIDER, EMAIL_QUEUE } from "./email.constants";
 
 export type EmailProviderType = "console"; // | "sendgrid" | "smtp";
 export type EmailQueueType = "memory"; // | "redis";

@@ -1,10 +1,11 @@
 // apps/web/src/app/(auth)/sign-in/page.tsx
 "use client";
 
-import { useAuth } from "../../../lib/auth/auth-provider";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { FormEvent, useState } from "react";
+import { useRouter } from "next/navigation";
+import { type FormEvent, useState } from "react";
+
+import { useAuth } from "../../../lib/auth/auth-provider";
 
 export default function SignInPage() {
   const { login } = useAuth();

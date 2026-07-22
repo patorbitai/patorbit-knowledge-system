@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from "@nestjs/common";
-import type { Email } from "./email.provider";
+
 import { EMAIL_QUEUE } from "./email.constants";
+import  { type Email } from "./email.provider";
 
 export interface Queue<T> {
   add(job: T): Promise<void>;

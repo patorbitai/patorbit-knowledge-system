@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+
 import { AiHooksService } from './ai-hooks.service';
 
 @Module({

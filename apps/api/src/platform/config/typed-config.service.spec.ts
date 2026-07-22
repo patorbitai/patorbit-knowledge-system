@@ -1,6 +1,7 @@
 import { ConfigService } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
+
 import { TypedConfigService } from "./typed-config.service";
 
 describe("TypedConfigService", () => {

@@ -1,5 +1,6 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { afterEach, describe, expect, it } from "vitest";
+
 import { SearchModule } from "./search.module";
 import { SearchService } from "./search.service";
 

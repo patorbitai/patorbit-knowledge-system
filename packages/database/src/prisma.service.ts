@@ -1,5 +1,5 @@
 // packages/database/prisma.service.ts
-import type { OnModuleInit } from "@nestjs/common";
+import  { type OnModuleInit } from "@nestjs/common";
 import { Injectable } from "@nestjs/common";
 import { PrismaClient } from "@prisma/client";
 

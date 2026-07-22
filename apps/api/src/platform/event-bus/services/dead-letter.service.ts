@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import type { AnyEvent } from "../event-bus.provider";
+
+import  { type AnyEvent } from "../event-bus.provider";
 
 export interface DeadLetterEntry {
   id: string;

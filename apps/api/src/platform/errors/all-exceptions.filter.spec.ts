@@ -1,5 +1,6 @@
-import { HttpException, HttpStatus, type ArgumentsHost } from "@nestjs/common";
+import { type ArgumentsHost,HttpException, HttpStatus } from "@nestjs/common";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { AllExceptionsFilter } from "./all-exceptions.filter";
 
 describe("AllExceptionsFilter", () => {

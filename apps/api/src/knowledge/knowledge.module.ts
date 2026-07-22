@@ -1,8 +1,9 @@
 // apps/api/src/knowledge/knowledge.module.ts
 import { Module } from '@nestjs/common';
-import { KnowledgeService } from './knowledge.service';
-import { KnowledgeController } from './knowledge.controller';
 import { DatabaseModule } from "@patorbit/database";
+
+import { KnowledgeController } from './knowledge.controller';
+import { KnowledgeService } from './knowledge.service';
 
 @Module({
   imports: [DatabaseModule],

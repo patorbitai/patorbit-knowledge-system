@@ -1,5 +1,5 @@
 
-import { IsNotEmpty, IsOptional, IsString, IsObject } from 'class-validator';
+import { IsNotEmpty, IsObject,IsOptional, IsString } from 'class-validator';
 
 export class CreateTemplateDto {
   @IsString()

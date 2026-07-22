@@ -1,9 +1,10 @@
 // apps/web/src/app/(auth)/reset-password/page.tsx
 "use client";
-import { FormEvent, useState, Suspense } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { api } from "../../../lib/api";
 import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { type FormEvent, Suspense,useState } from "react";
+
+import { api } from "../../../lib/api";
 
 function ResetPasswordForm() {
   const searchParams = useSearchParams();

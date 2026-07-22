@@ -1,5 +1,6 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { afterEach, describe, expect, it } from "vitest";
+
 import { GraphModule } from "./graph.module";
 import { GraphService } from "./graph.service";
 

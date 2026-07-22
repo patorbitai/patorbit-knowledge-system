@@ -1,7 +1,8 @@
 
-import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
-import { CareerPassportService } from './career-passport.service';
-import { CreateCareerPassportVersionDto } from './dto/create-career-passport-version.dto';
+import { Body,Controller, Get, Param, Patch, Post } from '@nestjs/common';
+
+import { type CareerPassportService } from './career-passport.service';
+import { type CreateCareerPassportVersionDto } from './dto/create-career-passport-version.dto';
 
 @Controller('career-passport')
 export class CareerPassportController {

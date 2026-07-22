@@ -1,7 +1,7 @@
 
 import { Injectable } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { EnvConfig } from "@patorbit/config";
+import { type EnvConfig } from "@patorbit/config";
 
 interface AppConfig {
   nodeEnv: "development" | "production" | "test";

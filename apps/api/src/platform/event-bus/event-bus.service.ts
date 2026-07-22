@@ -2,28 +2,29 @@ import {
   Inject,
   Injectable,
   Logger,
-  OnApplicationBootstrap,
-  OnApplicationShutdown,
-  Type,
+  type OnApplicationBootstrap,
+  type OnApplicationShutdown,
+  type Type,
 } from "@nestjs/common";
-import { DiscoveryService } from "@nestjs/core";
-import { EventEmitter2, OnEvent } from "@nestjs/event-emitter";
-import type { EventHandlerMetadata } from "./decorators/event-handler.decorator";
+import { type DiscoveryService } from "@nestjs/core";
+import { type EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+
+import  { type EventHandlerMetadata } from "./decorators/event-handler.decorator";
 import {
   EVENT_BUS_DISPATCH_TOPIC,
   EVENT_BUS_MODULE_OPTIONS,
   EVENT_HANDLER_METADATA,
 } from "./event-bus.constants";
-import type {
-  AnyEvent,
-  EventBus as IEventBus,
-  EventHandler as IEventHandler,
-  Unsubscribe,
+import  {
+  type AnyEvent,
+  type EventBus as IEventBus,
+  type EventHandler as IEventHandler,
+  type Unsubscribe,
 } from "./event-bus.provider";
-import type { Event } from "./event-bus.provider";
-import { OutboxService } from "./services/outbox.service";
-import { DeadLetterService } from "./services/dead-letter.service";
-import { RetryService } from "./services/retry.service";
+import  { type Event } from "./event-bus.provider";
+import { type DeadLetterService } from "./services/dead-letter.service";
+import { type OutboxService } from "./services/outbox.service";
+import { type RetryService } from "./services/retry.service";
 
 export interface EventBusModuleOptions {
   useOutbox: boolean;
@@ -68,7 +69,7 @@ export class EventBusService
   async publish<TEvent extends Event>(event: TEvent): Promise<void> {
     if (this.isShuttingDown) return;
     if (this.options.useOutbox) {
-      await this.outboxService.add(event as AnyEvent);
+      await this.outboxService.add(event as unknown as AnyEvent);
     }
     await this.emitter.emitAsync(EVENT_BUS_DISPATCH_TOPIC, event);
   }
@@ -125,10 +126,7 @@ export class EventBusService
 
     const handler = this.createHandlerContext(provider as Type<IEventHandler>);
     for (const eventName of metadata.events) {
-      this.emitter.on(eventName, handler.handle, {
-        name: handler.name,
-        objectify: true,
-      });
+      this.emitter.on(eventName, handler.handle);
       this.logger.log(`Subscribed ${handler.name} to event "${eventName}"`);
     }
   }
@@ -161,7 +159,7 @@ export class EventBusService
         } catch (error) {
           if (this.options.useDeadLetterQueue) {
             await this.deadLetterService.sendToDeadLetter(
-              event as AnyEvent,
+              event as unknown as AnyEvent,
               error as Error,
               metadata.options.retry?.maxRetries ??
                 this.options.defaultRetryPolicy?.maxRetries ??

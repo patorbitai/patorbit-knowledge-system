@@ -1,8 +1,9 @@
 
 import { Module } from '@nestjs/common';
-import { CareerPassportService } from './career-passport.service';
-import { CareerPassportController } from './career-passport.controller';
 import { DatabaseModule } from "@patorbit/database";
+
+import { CareerPassportController } from './career-passport.controller';
+import { CareerPassportService } from './career-passport.service';
 
 @Module({
   imports: [DatabaseModule],

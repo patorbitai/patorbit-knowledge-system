@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+
 import { getJobQueueToken, JOB_QUEUES } from "./jobs.constants";
 import { JobsModule } from "./jobs.module";
 import { JobsService } from "./jobs.service";

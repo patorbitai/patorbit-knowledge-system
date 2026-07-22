@@ -1,12 +1,13 @@
-import { DynamicModule, Module, Provider } from "@nestjs/common";
-import { SEARCH_PROVIDER } from "./search.constants";
-import { SearchService } from "./search.service";
+import { type DynamicModule, Module, type Provider } from "@nestjs/common";
+
 import { NoopSearchProvider } from "./providers/noop.search-provider";
 import {
-  OpenSearchSearchProvider,
   type OpenSearchProviderOptions,
+  OpenSearchSearchProvider,
 } from "./providers/opensearch.search-provider";
 import { TypesenseSearchProvider } from "./providers/typesense.search-provider";
+import { SEARCH_PROVIDER } from "./search.constants";
+import { SearchService } from "./search.service";
 
 export type SearchProviderType = "noop" | "opensearch" | "typesense";
 

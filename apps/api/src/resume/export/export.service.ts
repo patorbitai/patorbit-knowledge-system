@@ -1,10 +1,10 @@
 import {
   Injectable,
-  NotFoundException,
   Logger,
+  NotFoundException,
 } from '@nestjs/common';
-import { PrismaService } from '@patorbit/database';
-import { StorageService } from '@platform/storage';
+import { type PrismaService } from '@patorbit/database';
+import { type StorageService } from '@platform/storage';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface CreateExportJobDto {

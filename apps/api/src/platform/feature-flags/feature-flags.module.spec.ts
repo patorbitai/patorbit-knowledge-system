@@ -1,5 +1,6 @@
 import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
+
 import { FeatureFlagsModule } from "./feature-flags.module";
 import { FeatureFlagsService } from "./feature-flags.service";
 

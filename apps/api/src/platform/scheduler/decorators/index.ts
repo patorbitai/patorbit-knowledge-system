@@ -1,1 +1,1 @@
-export { Cron, Interval, Timeout, SCHEDULE_CRON, SCHEDULE_INTERVAL, SCHEDULE_TIMEOUT } from "./schedule.decorator";
+export { Cron, Interval, SCHEDULE_CRON, SCHEDULE_INTERVAL, SCHEDULE_TIMEOUT,Timeout } from "./schedule.decorator";

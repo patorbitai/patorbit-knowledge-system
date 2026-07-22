@@ -1,11 +1,17 @@
 export {
+  Process,
+  PROCESS_METADATA,
+  type ProcessMetadata,
+  Queue,
+  QUEUE_METADATA,
+} from "./decorators";
+export { getJobQueueToken,JOB_QUEUES } from "./jobs.constants";
+export {
+  type JobQueueRegistration,
   JobsModule,
   type JobsModuleOptions,
-  type JobQueueRegistration,
   type JobsProviderType,
 } from "./jobs.module";
-export { JobsService } from "./jobs.service";
-export { JOB_QUEUES, getJobQueueToken } from "./jobs.constants";
 export type {
   Job,
   JobOptions,
@@ -16,10 +22,4 @@ export type {
   RateLimitOptions,
   RecurringJobOptions,
 } from "./jobs.provider";
-export {
-  Queue,
-  Process,
-  QUEUE_METADATA,
-  PROCESS_METADATA,
-  type ProcessMetadata,
-} from "./decorators";
+export { JobsService } from "./jobs.service";

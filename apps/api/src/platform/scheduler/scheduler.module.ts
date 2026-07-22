@@ -1,8 +1,9 @@
-import { Module, DynamicModule, Global, Provider } from "@nestjs/common";
-import { SchedulerService } from "./scheduler.service";
-import { SCHEDULER_PROVIDER } from "./scheduler.constants";
-import { InMemorySchedulerProvider } from "./providers/in-memory.scheduler-provider";
+import { type DynamicModule, Global, Module, type Provider } from "@nestjs/common";
+
 import { BullSchedulerProvider } from "./providers/bull.scheduler-provider";
+import { InMemorySchedulerProvider } from "./providers/in-memory.scheduler-provider";
+import { SCHEDULER_PROVIDER } from "./scheduler.constants";
+import { SchedulerService } from "./scheduler.service";
 
 export type SchedulerProviderType = "in-memory" | "bull";
 

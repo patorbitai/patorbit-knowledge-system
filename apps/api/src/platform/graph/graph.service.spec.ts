@@ -1,7 +1,8 @@
 import { Test, type TestingModule } from "@nestjs/testing";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+
 import { GRAPH_PROVIDER } from "./graph.constants";
-import type { GraphEdge, GraphNode, GraphProvider } from "./graph.provider";
+import  { type GraphEdge, type GraphNode, type GraphProvider } from "./graph.provider";
 import { GraphService } from "./graph.service";
 
 describe("GraphService", () => {

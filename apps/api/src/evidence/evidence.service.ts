@@ -1,15 +1,16 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
-import { CreateEvidenceDto } from './dto/create-evidence.dto';
-import { UpdateEvidenceDto } from './dto/update-evidence.dto';
-import { AttachFileDto } from './dto/attach-file.dto';
+import { type Evidence,type PrismaService } from '@patorbit/database';
+
+import { type AttachFileDto } from './dto/attach-file.dto';
+import { type CreateEvidenceDto } from './dto/create-evidence.dto';
+import { type UpdateEvidenceDto } from './dto/update-evidence.dto';
 
 @Injectable()
 export class EvidenceService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(claimId: string, dto: CreateEvidenceDto) {
+  create(claimId: string, dto: CreateEvidenceDto): Promise<Evidence> {
     return this.prisma.evidence.create({
       data: {
         claimId,
@@ -18,7 +19,7 @@ export class EvidenceService {
     });
   }
 
-  findByClaim(claimId: string) {
+  findByClaim(claimId: string): Promise<Evidence[]> {
     return this.prisma.evidence.findMany({
       where: {
         claimId,
@@ -30,7 +31,7 @@ export class EvidenceService {
     });
   }
 
-  findById(id: string) {
+  findById(id: string): Promise<Evidence | null> {
     return this.prisma.evidence.findFirst({
       where: { id, deletedAt: null },
       include: {
@@ -40,7 +41,7 @@ export class EvidenceService {
     });
   }
 
-  async update(id: string, dto: UpdateEvidenceDto) {
+  async update(id: string, dto: UpdateEvidenceDto): Promise<Evidence> {
     const existing = await this.findById(id);
     if (!existing) {
         throw new NotFoundException(`Evidence with ID ${id} not found`);
@@ -56,7 +57,7 @@ export class EvidenceService {
     });
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string): Promise<Evidence> {
     const existing = await this.findById(id);
     if (!existing) {
         throw new NotFoundException(`Evidence with ID ${id} not found`);
@@ -69,7 +70,7 @@ export class EvidenceService {
     });
   }
 
-  async attachFile(evidenceId: string, fileData: AttachFileDto) {
+  async attachFile(evidenceId: string, fileData: AttachFileDto): Promise<any> {
     return this.prisma.evidenceFile.create({
       data: {
         evidenceId,
@@ -78,7 +79,7 @@ export class EvidenceService {
     });
   }
 
-  async removeFile(fileId: string) {
+  async removeFile(fileId: string): Promise<any> {
     return this.prisma.evidenceFile.update({
       where: { id: fileId },
       data: {
@@ -87,7 +88,7 @@ export class EvidenceService {
     });
   }
 
-  getFiles(evidenceId: string) {
+  getFiles(evidenceId: string): Promise<any> {
     return this.prisma.evidenceFile.findMany({
         where: {
             evidenceId: evidenceId,

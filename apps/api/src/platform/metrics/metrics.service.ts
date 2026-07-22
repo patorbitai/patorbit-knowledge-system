@@ -1,15 +1,16 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { METRICS_PROVIDER } from "./metrics.constants";
-import type {
-  BusinessMetric,
-  BusinessMetricHook,
-  Counter,
-  Histogram,
-  MetricLabels,
-  MetricOptions,
-  MetricsProvider,
-  Timer,
-  TimerStop,
+import  {
+  type BusinessMetric,
+  type BusinessMetricHook,
+  type Counter,
+  type Histogram,
+  type MetricLabels,
+  type MetricOptions,
+  type MetricsProvider,
+  type Timer,
+  type TimerStop,
 } from "./metrics.provider";
 
 @Injectable()

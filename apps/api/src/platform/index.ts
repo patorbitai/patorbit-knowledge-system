@@ -1,97 +1,88 @@
-export { PlatformModule, type PlatformConfig } from "./platform.module";
-
 export {
-  StorageModule,
-  StorageService,
-  type StorageModuleOptions,
-  type StorageProviderType,
-} from "./storage";
-
+  type CacheModuleOptions,
+  CacheService,
+  PlatformCacheModule,
+} from "./cache";
 export {
-  NotificationsModule,
-  NotificationsService,
-  type NotificationsModuleOptions,
-  type NotificationProviderType,
-} from "./notifications";
-
-export {
-  EmailModule,
-  EmailService,
-  EmailQueueService,
-  type EmailModuleOptions,
-  type EmailProviderType,
-  type EmailQueueType,
   type Email,
   type EmailAddress,
+  EmailModule,
+  type EmailModuleOptions,
   type EmailProvider,
+  type EmailProviderType,
+  EmailQueueService,
+  type EmailQueueType,
+  EmailService,
 } from "./email";
-
 export {
-  PlatformCacheModule,
-  CacheService,
-  type CacheModuleOptions,
-} from "./cache";
-
+  type AnyEvent,
+  type ApplicationEvent,
+  DeadLetterService,
+  type DomainEvent,
+  EventBusModule,
+  type EventBusModuleOptions,
+  EventBusService,
+  EventHandler,
+  type IEventBus,
+  type IEventHandler,
+  OutboxService,
+  RetryService,
+} from "./event-bus";
 export {
-  SearchModule,
-  SearchService,
-  type SearchModuleOptions,
-  type SearchProviderType,
-  type SearchProvider,
+  type GraphEdge,
+  GraphModule,
+  type GraphModuleOptions,
+  type GraphNode,
+  type GraphProvider,
+  type GraphProviderType,
+  type GraphQueryResult,
+  GraphService,
+} from "./graph";
+export * from "./jobs";
+export * from "./logging";
+export {
+  type BusinessMetric,
+  type BusinessMetricHook,
+  type Counter,
+  type Histogram,
+  HTTP_REQUEST_DURATION_MS,
+  HTTP_REQUESTS_TOTAL,
+  METHOD_DURATION_MS,
+  type MetricLabels,
+  type MetricLabelValue,
+  type MetricOptions,
+  METRICS_PROVIDER,
+  MetricsModule,
+  type MetricsModuleOptions,
+  type MetricsProvider,
+  type MetricsProviderType,
+  MetricsService,
+  type Timer,
+  type TimerStop,
+  TRACK_TIME_METADATA,
+  TrackTime,
+} from "./metrics";
+export {
+  type NotificationProviderType,
+  NotificationsModule,
+  type NotificationsModuleOptions,
+  NotificationsService,
+} from "./notifications";
+export { type PlatformConfig,PlatformModule } from "./platform.module";
+export {
   type SearchDocument,
+  SearchModule,
+  type SearchModuleOptions,
+  type SearchProvider,
+  type SearchProviderType,
   type SearchQuery,
   type SearchResponse,
   type SearchResult,
+  SearchService,
 } from "./search";
-
 export {
-  GraphModule,
-  GraphService,
-  type GraphModuleOptions,
-  type GraphProviderType,
-  type GraphProvider,
-  type GraphNode,
-  type GraphEdge,
-  type GraphQueryResult,
-} from "./graph";
-
-export {
-  MetricsModule,
-  MetricsService,
-  TrackTime,
-  type MetricsModuleOptions,
-  type MetricsProviderType,
-  type MetricsProvider,
-  type Counter,
-  type Timer,
-  type TimerStop,
-  type Histogram,
-  type MetricOptions,
-  type MetricLabels,
-  type MetricLabelValue,
-  type BusinessMetric,
-  type BusinessMetricHook,
-  METRICS_PROVIDER,
-  TRACK_TIME_METADATA,
-  HTTP_REQUESTS_TOTAL,
-  HTTP_REQUEST_DURATION_MS,
-  METHOD_DURATION_MS,
-} from "./metrics";
-
-export {
-  EventBusModule,
-  EventBusService,
-  EventHandler,
-  type EventBusModuleOptions,
-  type IEventBus,
-  type IEventHandler,
-  type AnyEvent,
-  type DomainEvent,
-  type ApplicationEvent,
-  OutboxService,
-  DeadLetterService,
-  RetryService,
-} from "./event-bus";
-
-export * from "./jobs";
-export * from "./logging";
+  StorageModule,
+  type StorageModuleOptions,
+  type StorageProviderType,
+  StorageService,
+} from "./storage";

@@ -1,6 +1,6 @@
 // apps/api/src/session/session.service.ts
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { PrismaService } from "../../../packages/database/prisma.service";
+import { type PrismaService } from '@patorbit/database';
 import { v4 as uuidv4 } from "uuid";
 
 // Session duration constants
@@ -52,7 +52,7 @@ export class SessionService {
   async validateAndRotate(oldRefreshToken: string) {
     const session = await this.prisma.session.findUnique({
       where: { refreshToken: oldRefreshToken },
-      include: { user: { include: { role: true } } },
+      include: { user: { include: { userRoles: { include: { role: true } } } } },
     });
 
     if (
@@ -136,7 +136,7 @@ export class SessionService {
   async findByRefreshToken(refreshToken: string) {
     return this.prisma.session.findUnique({
       where: { refreshToken },
-      include: { user: { include: { role: true } } },
+      include: { user: { include: { userRoles: { include: { role: true } } } } },
     });
   }
 }

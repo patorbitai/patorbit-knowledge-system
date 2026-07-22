@@ -1,5 +1,5 @@
 import { randomUUID } from "crypto";
-import type { IncomingMessage, ServerResponse } from "http";
+import  { type IncomingMessage, type ServerResponse } from "http";
 
 export const CORRELATION_ID_HEADER = "x-correlation-id";
 

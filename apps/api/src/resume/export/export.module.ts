@@ -1,7 +1,8 @@
 import { Module } from '@nestjs/common';
 import { DatabaseModule } from '@patorbit/database';
-import { ExportService } from './export.service';
+
 import { ExportController } from './export.controller';
+import { ExportService } from './export.service';
 
 @Module({
   imports: [DatabaseModule],

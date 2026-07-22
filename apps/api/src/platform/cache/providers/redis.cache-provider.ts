@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
-import type { Cache } from "cache-manager";
-import type { CacheEntry, CacheProvider } from "../cache.provider";
+import  { type Cache } from "cache-manager";
+
+import  { type CacheEntry, type CacheProvider } from "../cache.provider";
 
 @Injectable()
 export class RedisCacheProvider implements CacheProvider {
@@ -150,8 +151,8 @@ export class RedisCacheProvider implements CacheProvider {
 
     try {
       // Try to acquire lock
-      const lockSet = await this.cache.set(lockKey, "locked", lockTtl);
-      if (lockSet === "OK") {
+      await this.cache.set(lockKey, "locked", lockTtl);
+      {
         // We acquired the lock
         const value = await factory();
         await this.set(key, value, ttl);

@@ -2,24 +2,25 @@
 import {
   Body,
   Controller,
-  Post,
-  Res,
-  Req,
-  UseGuards,
+  Delete,
   Get,
   HttpCode,
   HttpStatus,
-  Delete,
   Param,
+  Post,
+  Req,
+  Res,
+  UseGuards,
 } from "@nestjs/common";
-import { Response, Request } from "express";
-import { AuthService } from "./auth.service";
-import { RegisterDto, LoginDto, ForgotPasswordDto, ResetPasswordDto } from "@patorbit/auth";
-import { Public } from "./decorators/public.decorator";
+import { type ConfigService } from "@nestjs/config";
+import { type ForgotPasswordDto, type LoginDto, type RegisterDto, type ResetPasswordDto } from "@patorbit/auth";
+import { type JwtPayload } from "@patorbit/auth";
+import { type Request,type Response } from "express";
+
+import { type AuthService } from "./auth.service";
 import { CurrentUser } from "./decorators/current-user.decorator";
-import { JwtPayload } from "@patorbit/auth";
+import { Public } from "./decorators/public.decorator";
 import { JwtAuthGuard } from "./guards/jwt-auth.guard";
-import { ConfigService } from "@nestjs/config";
 
 @Controller("auth")
 export class AuthController {

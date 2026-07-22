@@ -1,14 +1,15 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
-import { CreateClaimDto } from './dto/create-claim.dto';
-import { UpdateClaimDto } from './dto/update-claim.dto';
+import { type Claim,type PrismaService } from '@patorbit/database';
+
+import { type CreateClaimDto } from './dto/create-claim.dto';
+import { type UpdateClaimDto } from './dto/update-claim.dto';
 
 @Injectable()
 export class ClaimService {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(profileId: string, dto: CreateClaimDto) {
+  create(profileId: string, dto: CreateClaimDto): Promise<Claim> {
     return this.prisma.claim.create({
       data: {
         profileId,
@@ -17,7 +18,7 @@ export class ClaimService {
     });
   }
 
-  findAll(profileId: string) {
+  findAll(profileId: string): Promise<Claim[]> {
     return this.prisma.claim.findMany({
       where: {
         profileId,
@@ -29,7 +30,7 @@ export class ClaimService {
     });
   }
 
-  findById(id: string) {
+  findById(id: string): Promise<Claim | null> {
     return this.prisma.claim.findFirst({
       where: { id, deletedAt: null },
       include: {
@@ -39,7 +40,7 @@ export class ClaimService {
     });
   }
 
-  async update(id: string, dto: UpdateClaimDto) {
+  async update(id: string, dto: UpdateClaimDto): Promise<Claim> {
     const existingClaim = await this.findById(id);
     if (!existingClaim) {
         throw new NotFoundException(`Claim with ID ${id} not found`);
@@ -56,7 +57,7 @@ export class ClaimService {
     });
   }
 
-  async softDelete(id: string) {
+  async softDelete(id: string): Promise<Claim> {
     const existingClaim = await this.findById(id);
     if (!existingClaim) {
         throw new NotFoundException(`Claim with ID ${id} not found`);
@@ -69,7 +70,7 @@ export class ClaimService {
     });
   }
 
-  async addTag(claimId: string, tagName: string) {
+  async addTag(claimId: string, tagName: string): Promise<Claim> {
     const tag = await this.prisma.tag.upsert({
         where: { name: tagName },
         update: {},
@@ -86,7 +87,7 @@ export class ClaimService {
     });
   }
 
-  async removeTag(claimId: string, tagName: string) {
+  async removeTag(claimId: string, tagName: string): Promise<Claim> {
     const tag = await this.prisma.tag.findUnique({
         where: { name: tagName },
     });

@@ -1,13 +1,14 @@
 
-import { Module, Global } from "@nestjs/common";
+import { Global,Module } from "@nestjs/common";
 import { ConfigModule as NestConfigModule } from "@nestjs/config";
 import { envSchema } from "@patorbit/config";
-import { TypedConfigService } from "./typed-config.service";
+
 import {
   appConfigProvider,
   databaseConfigProvider,
   redisConfigProvider,
 } from "./config.providers";
+import { TypedConfigService } from "./typed-config.service";
 
 @Global()
 @Module({

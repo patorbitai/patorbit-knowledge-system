@@ -1,6 +1,7 @@
-import { Module, Global } from "@nestjs/common";
+import { Global,Module } from "@nestjs/common";
 import { APP_GUARD } from "@nestjs/core";
-import { ThrottlerModule, ThrottlerGuard } from "@nestjs/throttler";
+import { ThrottlerGuard,ThrottlerModule } from "@nestjs/throttler";
+
 import { RateLimitGuard } from "./rate-limit.guard";
 
 export interface RateLimitingModuleOptions {

@@ -1,7 +1,8 @@
 
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import { DeadLetterService, DeadLetterEntry } from "./dead-letter.service";
-import type { ApplicationEvent, DomainEvent } from "../event-bus.provider";
+import { beforeEach,describe, expect, it, vi } from "vitest";
+
+import  { type ApplicationEvent, type DomainEvent } from "../event-bus.provider";
+import { DeadLetterEntry,DeadLetterService } from "./dead-letter.service";
 
 const createTestEvent = (
   id: string,

@@ -1,6 +1,6 @@
 
-import { IsOptional, IsString, IsEnum, IsObject, IsInt, Min } from 'class-validator';
-import { ResumeStatus } from '@prisma/client';
+import { ResumeStatus } from '@patorbit/database';
+import { IsEnum, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateResumeDto {
   @IsString()

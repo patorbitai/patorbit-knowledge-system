@@ -1,8 +1,9 @@
 // apps/api/src/session/session.module.ts
 import { Module } from "@nestjs/common";
-import { SessionService } from "./session.service";
 import { DatabaseModule } from "@patorbit/database";
+
 import { IdentityModule } from "../identity/identity.module";
+import { SessionService } from "./session.service";
 
 @Module({
   imports: [DatabaseModule, IdentityModule],

@@ -1,8 +1,9 @@
 
-import { describe, it, expect, vi } from "vitest";
-import { EventHandler } from "./event-handler.decorator";
+import { describe, expect, it, vi } from "vitest";
+
 import { EVENT_HANDLER_METADATA } from "../event-bus.constants";
-import type { EventHandlerMetadata } from "./event-handler.decorator";
+import  { type EventHandlerMetadata } from "./event-handler.decorator";
+import { EventHandler } from "./event-handler.decorator";
 
 describe("EventHandler decorator", () => {
   it("should set metadata with a single event class", () => {

@@ -1,5 +1,6 @@
 // apps/web/src/app/layout.tsx
 import { type Metadata } from "next";
+
 import { AuthProvider } from "../lib/auth/auth-provider";
 
 export const metadata: Metadata = {

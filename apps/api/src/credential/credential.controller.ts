@@ -1,10 +1,11 @@
 // apps/api/src/credential/credential.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
-import { CredentialService } from './credential.service';
-import { CreateCredentialDto } from './dto/create-credential.dto';
-import { UpdateCredentialDto } from './dto/update-credential.dto';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth,ApiTags } from '@nestjs/swagger';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { type CredentialService } from './credential.service';
+import { type CreateCredentialDto } from './dto/create-credential.dto';
+import { type UpdateCredentialDto } from './dto/update-credential.dto';
 
 @ApiTags('credentials')
 @ApiBearerAuth()

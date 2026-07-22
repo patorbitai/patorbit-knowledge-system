@@ -1,7 +1,7 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
+import { type ConfigService } from "@nestjs/config";
+import  { type FileMetadata, type StorageProvider, type UploadOptions } from "@patorbit/storage";
 import * as Minio from "minio";
-import type { StorageProvider, FileMetadata, UploadOptions } from "@patorbit/storage";
 
 @Injectable()
 export class LocalMinioStorageProvider implements StorageProvider, OnModuleInit {

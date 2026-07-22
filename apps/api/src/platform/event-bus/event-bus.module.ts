@@ -1,13 +1,14 @@
-import { DynamicModule, Global, Module, Provider, Type } from "@nestjs/common";
+import { type DynamicModule, Global, Module, type Provider, type Type } from "@nestjs/common";
 import { DiscoveryModule } from "@nestjs/core";
 import { EventEmitterModule } from "@nestjs/event-emitter";
-import { EventBusService } from "./event-bus.service";
+
 import { EVENT_BUS, EVENT_BUS_MODULE_OPTIONS } from "./event-bus.constants";
+import  { type Event, type EventHandler } from "./event-bus.provider";
+import { EventBusService } from "./event-bus.service";
 import { DeadLetterService } from "./services/dead-letter.service";
 import { OutboxService } from "./services/outbox.service";
+import  { type RetryOptions } from "./services/retry.service";
 import { RetryService } from "./services/retry.service";
-import type { Event, EventHandler } from "./event-bus.provider";
-import type { RetryOptions } from "./services/retry.service";
 
 export interface EventBusModuleOptions {
   /**

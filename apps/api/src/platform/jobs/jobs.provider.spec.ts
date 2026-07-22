@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import type { Job, JobQueue, JobWorker } from "./jobs.provider";
+
+import  { type Job, type JobQueue, type JobWorker } from "./jobs.provider";
 
 describe("jobs.provider types", () => {
   it("Job interface matches the shape returned by both queue implementations", () => {

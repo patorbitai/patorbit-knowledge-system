@@ -1,13 +1,14 @@
 import { Logger } from "@nestjs/common";
-import { Queue as BullQueue, Worker, Job as BullJob } from "bullmq";
+import { type Job as BullJob,type Queue as BullQueue, Worker } from "bullmq";
+
+import  { type JobOptions } from "../jobs.provider";
 import {
-  Job,
-  JobQueue,
-  JobStatus,
-  JobWorker,
-  JobWorkerOptions,
+  type Job,
+  type JobQueue,
+  type JobStatus,
+  type JobWorker,
+  type JobWorkerOptions,
 } from "../jobs.provider";
-import type { JobOptions } from "../jobs.provider";
 
 export class BullMQQueue implements JobQueue {
   private readonly logger = new Logger(BullMQQueue.name);

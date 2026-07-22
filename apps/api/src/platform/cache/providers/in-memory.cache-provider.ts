@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import type { CacheEntry, CacheProvider } from "../cache.provider";
+
+import  { type CacheEntry, type CacheProvider } from "../cache.provider";
 
 interface MemoryCacheEntry {
   value: unknown;

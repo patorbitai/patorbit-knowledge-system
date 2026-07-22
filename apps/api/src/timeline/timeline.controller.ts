@@ -1,14 +1,15 @@
 
 import {
-  Controller,
-  Get,
-  Post,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Post,
 } from '@nestjs/common';
-import { TimelineService } from './timeline.service';
-import { CreateTimelineEventDto } from './dto/create-timeline-event.dto';
+
+import { type CreateTimelineEventDto } from './dto/create-timeline-event.dto';
+import { type TimelineService } from './timeline.service';
 
 @Controller('timeline')
 export class TimelineController {

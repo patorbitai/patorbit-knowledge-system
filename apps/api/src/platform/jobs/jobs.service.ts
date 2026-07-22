@@ -1,12 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { JOB_QUEUES } from "./jobs.constants";
 import {
-  Job,
-  JobOptions,
-  JobQueue,
-  JobStatus,
-  JobWorker,
-  JobWorkerOptions,
+  type Job,
+  type JobOptions,
+  type JobQueue,
+  type JobStatus,
+  type JobWorker,
+  type JobWorkerOptions,
 } from "./jobs.provider";
 
 @Injectable()

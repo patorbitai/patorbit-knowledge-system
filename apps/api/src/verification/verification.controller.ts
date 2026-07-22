@@ -1,11 +1,12 @@
 // apps/api/src/verification/verification.controller.ts
-import { Controller, Get, Post, Body, Patch, Param, UseGuards } from '@nestjs/common';
-import { VerificationService } from './verification.service';
-import { CreateVerificationDto } from './dto/create-verification.dto';
-import { UpdateVerificationDto } from './dto/update-verification.dto';
-import { VerificationStatus } from '@prisma/client';
-import { ApiTags, ApiBearerAuth } from '@nestjs/swagger';
+import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth,ApiTags } from '@nestjs/swagger';
+import { type VerificationStatus } from '@patorbit/database';
+
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { type CreateVerificationDto } from './dto/create-verification.dto';
+import { type UpdateVerificationDto } from './dto/update-verification.dto';
+import { type VerificationService } from './verification.service';
 
 @ApiTags('verifications')
 @ApiBearerAuth()

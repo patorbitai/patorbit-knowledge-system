@@ -1,12 +1,13 @@
 import {
+  ConflictException,
   Injectable,
   NotFoundException,
-  ConflictException,
 } from "@nestjs/common";
-import { PrismaService } from "../../../packages/database/prisma.service";
-import { OrganizationRole } from "@prisma/client";
-import { CreateOrganizationDto } from "./dto/create-organization.dto";
-import { UpdateOrganizationDto } from "./dto/update-organization.dto";
+import { type PrismaService } from '@patorbit/database';
+import { OrganizationRole } from '@patorbit/database';
+
+import { type CreateOrganizationDto } from "./dto/create-organization.dto";
+import { type UpdateOrganizationDto } from "./dto/update-organization.dto";
 
 @Injectable()
 export class OrganizationService {

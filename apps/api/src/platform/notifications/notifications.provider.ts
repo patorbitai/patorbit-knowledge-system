@@ -1,4 +1,4 @@
-import type { Notification, NotificationChannel } from "@patorbit/notifications";
+import  { type Notification, type NotificationChannel } from "@patorbit/notifications";
 
 export interface NotificationProvider {
   readonly name: string;

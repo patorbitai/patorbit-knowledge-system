@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import type { FeatureFlag, FeatureFlagProvider } from "../feature-flags.provider";
+
+import  { type FeatureFlag, type FeatureFlagProvider } from "../feature-flags.provider";
 
 @Injectable()
 export class RemoteFeatureFlagProvider implements FeatureFlagProvider {

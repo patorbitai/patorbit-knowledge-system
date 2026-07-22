@@ -1,17 +1,18 @@
-import { Module, DynamicModule } from "@nestjs/common";
-import { StorageModule, type StorageModuleOptions, type StorageProviderType } from "./storage";
-import { NotificationsModule } from "./notifications";
-import { EmailModule, type EmailModuleOptions } from "./email";
-import { PlatformCacheModule, type CacheModuleOptions } from "./cache";
-import { SearchModule } from "./search";
-import { GraphModule } from "./graph";
+import { type DynamicModule,Module } from "@nestjs/common";
+
+import { type CacheModuleOptions,PlatformCacheModule } from "./cache";
 import { ConfigurationModule } from "./config";
-import { LoggingModule } from "./logging";
-import { JobsModule, type JobsModuleOptions } from "./jobs";
+import { EmailModule, type EmailModuleOptions } from "./email";
 import { EventBusModule, type EventBusModuleOptions } from "./event-bus";
-import { SchedulerModule, type SchedulerModuleOptions, type SchedulerProviderType } from "./scheduler";
 import { FeatureFlagsModule, type FeatureFlagsModuleOptions } from "./feature-flags";
+import { GraphModule } from "./graph";
+import { JobsModule, type JobsModuleOptions } from "./jobs";
+import { LoggingModule } from "./logging";
 import { MetricsModule, type MetricsModuleOptions } from "./metrics";
+import { NotificationsModule } from "./notifications";
+import { SchedulerModule, type SchedulerModuleOptions, type SchedulerProviderType } from "./scheduler";
+import { SearchModule } from "./search";
+import { StorageModule, type StorageModuleOptions, type StorageProviderType } from "./storage";
 
 export interface PlatformConfig {
   storage?: StorageModuleOptions & { provider: StorageProviderType };

@@ -10,10 +10,11 @@ import {
   Post,
   UseGuards,
 } from "@nestjs/common";
-import { WorkspaceService } from "./workspace.service";
-import { CreateWorkspaceDto } from "./dto/create-workspace.dto";
-import { UpdateWorkspaceDto } from "./dto/update-workspace.dto";
+
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { type CreateWorkspaceDto } from "./dto/create-workspace.dto";
+import { type UpdateWorkspaceDto } from "./dto/update-workspace.dto";
+import { type WorkspaceService } from "./workspace.service";
 
 @Controller("workspaces")
 @UseGuards(JwtAuthGuard)

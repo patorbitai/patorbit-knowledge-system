@@ -1,6 +1,6 @@
 // apps/api/src/permission/permission.service.ts
-import { Injectable, ConflictException, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../../../packages/database/prisma.service";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { type PrismaService } from '@patorbit/database';
 
 @Injectable()
 export class PermissionService {
@@ -24,14 +24,14 @@ export class PermissionService {
   async listRoles() {
     return this.prisma.role.findMany({
       orderBy: { createdAt: "asc" },
-      include: { _count: { select: { users: true } } },
+      include: { _count: { select: { userRoles: true } } },
     });
   }
 
   async getRoleById(id: string) {
     const role = await this.prisma.role.findUnique({
       where: { id },
-      include: { permissions: true, users: { include: { user: true } } },
+      include: { permissions: true, userRoles: { include: { user: true } } },
     });
     if (!role) throw new NotFoundException("Role not found");
     return role;
@@ -60,16 +60,16 @@ export class PermissionService {
   // ── Role-Permission Assignment ───────────────────────
 
   async assignPermissionToRole(roleId: string, permissionId: string) {
-    return this.prisma.permission.update({
-      where: { id: permissionId },
-      data: { roleId },
+    return this.prisma.role.update({
+      where: { id: roleId },
+      data: { permissions: { connect: { id: permissionId } } },
     });
   }
 
-  async removePermissionFromRole(permissionId: string) {
-    return this.prisma.permission.update({
-      where: { id: permissionId },
-      data: { roleId: null },
+  async removePermissionFromRole(roleId: string, permissionId: string) {
+    return this.prisma.role.update({
+      where: { id: roleId },
+      data: { permissions: { disconnect: { id: permissionId } } },
     });
   }
 
@@ -144,24 +144,20 @@ export class PermissionService {
     ];
 
     for (const perm of permissions) {
-      const created = await this.prisma.permission.upsert({
+      await this.prisma.permission.upsert({
         where: { name: perm.name },
         update: {},
-        create: perm,
+        create: {
+          ...perm,
+          roles: {
+            connect: {
+              id: (perm.resource === 'admin' || perm.resource === 'role' || perm.resource === 'permission')
+                ? adminRole.id
+                : userRole.id
+            }
+          }
+        },
       });
-
-      // Assign permissions to roles
-      if (perm.resource === "admin" || perm.resource === "role" || perm.resource === "permission") {
-        await this.prisma.permission.update({
-          where: { id: created.id },
-          data: { roleId: adminRole.id },
-        });
-      } else {
-        await this.prisma.permission.update({
-          where: { id: created.id },
-          data: { roleId: userRole.id },
-        });
-      }
     }
 
     return { adminRole, userRole };

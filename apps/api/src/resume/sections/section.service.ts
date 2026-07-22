@@ -1,9 +1,10 @@
 
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '@patorbit/database';
-import { CreateSectionDto } from './dto/create-section.dto';
-import { UpdateSectionDto } from './dto/update-section.dto';
-import { Prisma } from '@prisma/client';
+import { ConflictException,Injectable, NotFoundException } from '@nestjs/common';
+import { type PrismaService } from '@patorbit/database';
+import { Prisma } from '@patorbit/database';
+
+import { type CreateSectionDto } from './dto/create-section.dto';
+import { type UpdateSectionDto } from './dto/update-section.dto';
 
 @Injectable()
 export class SectionService {

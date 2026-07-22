@@ -1,15 +1,16 @@
 import {
-  Controller,
-  Post,
-  Get,
-  Param,
   Body,
-  UseGuards,
+  Controller,
+  Get,
   HttpCode,
   HttpStatus,
+  Param,
+  Post,
+  UseGuards,
 } from '@nestjs/common';
-import { ExportService } from './export.service';
+
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { type ExportService } from './export.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller()

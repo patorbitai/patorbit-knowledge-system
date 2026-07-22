@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { getJobQueueToken, JOB_QUEUES } from "./jobs.constants";
 
 describe("JobsConstants", () => {

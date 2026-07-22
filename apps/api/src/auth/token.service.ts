@@ -1,8 +1,8 @@
 // apps/api/src/auth/token.service.ts
 import { Injectable, UnauthorizedException } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
-import { ConfigService } from "@nestjs/config";
-import { JwtPayload } from "@patorbit/auth";
+import { type ConfigService } from "@nestjs/config";
+import { type JwtService } from "@nestjs/jwt";
+import { type JwtPayload } from "@patorbit/auth";
 
 @Injectable()
 export class TokenService {

@@ -1,6 +1,6 @@
 
-import { IsOptional, IsString, IsEnum, IsInt, IsBoolean, IsObject } from 'class-validator';
-import { SectionType } from '@prisma/client';
+import { SectionType } from '@patorbit/database';
+import { IsBoolean, IsEnum, IsInt, IsObject,IsOptional, IsString } from 'class-validator';
 
 export class UpdateSectionDto {
   @IsString()

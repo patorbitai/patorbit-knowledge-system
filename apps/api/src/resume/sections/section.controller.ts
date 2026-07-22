@@ -1,19 +1,20 @@
 
 import {
-  Controller,
-  Post,
-  Get,
-  Patch,
-  Delete,
-  Param,
   Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
   UseGuards,
 } from '@nestjs/common';
-import { SectionService } from './section.service';
-import { CreateSectionDto } from './dto/create-section.dto';
-import { UpdateSectionDto } from './dto/update-section.dto';
-import { ReorderSectionsDto } from './dto/reorder-sections.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { type CreateSectionDto } from './dto/create-section.dto';
+import { type ReorderSectionsDto } from './dto/reorder-sections.dto';
+import { type UpdateSectionDto } from './dto/update-section.dto';
+import { type SectionService } from './section.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('resumes/:resumeId/sections')

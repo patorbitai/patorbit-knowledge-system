@@ -1,6 +1,7 @@
 
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
+import { type PrismaService } from '@patorbit/database';
+import { type Prisma } from '@patorbit/database';
 
 @Injectable()
 export class TimelineService {
@@ -16,7 +17,7 @@ export class TimelineService {
         entityType: event.entityType,
         entityId: event.entityId,
         type: event.type,
-        data: event.data ?? undefined,
+        data: (event.data ?? undefined) as Prisma.InputJsonValue | undefined,
       },
     });
   }

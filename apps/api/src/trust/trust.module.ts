@@ -1,8 +1,9 @@
 
 import { Module } from '@nestjs/common';
-import { TrustService } from './trust.service';
-import { TrustController } from './trust.controller';
 import { DatabaseModule } from "@patorbit/database";
+
+import { TrustController } from './trust.controller';
+import { TrustService } from './trust.service';
 
 @Module({
   imports: [DatabaseModule],

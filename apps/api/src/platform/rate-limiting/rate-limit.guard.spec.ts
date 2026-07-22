@@ -1,6 +1,7 @@
-import type { ExecutionContext } from "@nestjs/common";
+import  { type ExecutionContext } from "@nestjs/common";
 import { ThrottlerGuard } from "@nestjs/throttler";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
 import { RateLimitGuard } from "./rate-limit.guard";
 
 describe("RateLimitGuard", () => {

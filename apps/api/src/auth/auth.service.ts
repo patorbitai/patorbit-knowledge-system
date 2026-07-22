@@ -1,25 +1,26 @@
 // apps/api/src/auth/auth.service.ts
 import {
+  BadRequestException,
   Injectable,
   UnauthorizedException,
-  BadRequestException,
 } from "@nestjs/common";
-import { IdentityService } from "../identity/identity.service";
-import { SessionService } from "../session/session.service";
-import { TokenService } from "./token.service";
+import { type ConfigService } from "@nestjs/config";
 import {
-  LoginDto,
+  type ForgotPasswordDto,
+  type JwtPayload,
+  type LoginDto,
   passwordService,
-  RegisterDto,
-  ForgotPasswordDto,
-  ResetPasswordDto,
-  JwtPayload,
+  type RegisterDto,
+  type ResetPasswordDto,
 } from "@patorbit/auth";
-import { AuditService } from "../audit/audit.service";
 import { AUDIT_OUTCOME } from "@patorbit/auth";
-import { PrismaService } from "../../../packages/database/prisma.service";
+import { type PrismaService } from '@patorbit/database';
 import { v4 as uuidv4 } from "uuid";
-import { ConfigService } from "@nestjs/config";
+
+import { type AuditService } from "../audit/audit.service";
+import { type IdentityService } from "../identity/identity.service";
+import { type SessionService } from "../session/session.service";
+import { type TokenService } from "./token.service";
 
 @Injectable()
 export class AuthService {
@@ -59,7 +60,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      role: user.role?.name,
+      role: user.userRoles[0]?.role?.name,
       type: "access",
     };
     const { accessToken, refreshToken } = await this.tokenService.generateTokens(
@@ -91,7 +92,7 @@ export class AuthService {
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
-      role: user.role?.name,
+      role: user.userRoles[0]?.role?.name,
       type: "access",
     };
     const { accessToken, refreshToken: newRefreshToken } =

@@ -1,9 +1,9 @@
 // apps/api/src/auth/strategies/jwt.strategy.ts
 import { Injectable } from "@nestjs/common";
+import { type ConfigService } from "@nestjs/config";
 import { PassportStrategy } from "@nestjs/passport";
+import { type JwtPayload } from "@patorbit/auth";
 import { ExtractJwt, Strategy } from "passport-jwt";
-import { ConfigService } from "@nestjs/config";
-import { JwtPayload } from "@patorbit/auth";
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {

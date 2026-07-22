@@ -1,7 +1,7 @@
 // apps/api/src/audit/audit.service.ts
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../../../packages/database/prisma.service";
-import { AuditEvent } from "@prisma/client";
+import { type PrismaService } from '@patorbit/database';
+import { type AuditEvent,type Prisma } from '@patorbit/database';
 
 // ── Parameter types ────────────────────────────────────────────
 
@@ -74,7 +74,7 @@ export class AuditService {
         resource: params.resource ?? "unknown",
         resourceId: params.resourceId ?? null,
         // Prisma 5.x serialises plain objects to the native JSON column type.
-        metadata: Object.keys(metadata).length > 0 ? metadata : undefined,
+        metadata: Object.keys(metadata).length > 0 ? (metadata as Prisma.InputJsonValue) : undefined,
         ipAddress: params.ipAddress ?? null,
         userAgent: params.userAgent ?? null,
         outcome: params.outcome ?? "success",
@@ -99,7 +99,7 @@ export class AuditService {
    */
   async findByCorrelationId(correlationId: string): Promise<AuditEvent[]> {
     return this.prisma.auditEvent.findMany({
-      where: { metadata: { string_contains: correlationId } },
+      where: { metadata: { path: ['correlationId'], equals: correlationId } },
       orderBy: { createdAt: "desc" },
     });
   }
@@ -144,7 +144,7 @@ export class AuditService {
     const filters = params?.filters ?? {};
     const skip = (page - 1) * limit;
 
-    const where: Record<string, unknown> = {};
+    const where: Prisma.AuditEventWhereInput = {};
 
     if (filters.userId) where.userId = filters.userId;
     if (filters.action) where.action = filters.action;

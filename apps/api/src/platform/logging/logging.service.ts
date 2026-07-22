@@ -1,6 +1,6 @@
 import { Inject, Injectable, Optional, Scope } from "@nestjs/common";
 import { INQUIRER } from "@nestjs/core";
-import { PinoLogger } from "nestjs-pino";
+import { type PinoLogger } from "nestjs-pino";
 
 export type LogMetadata = Record<string, unknown>;
 

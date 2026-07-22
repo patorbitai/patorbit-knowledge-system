@@ -1,7 +1,7 @@
 // apps/api/src/verification/dto/create-verification.dto.ts
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
-import { VerificationStatus } from '@prisma/client';
+import { VerificationStatus } from '@patorbit/database';
+import { IsNotEmpty, IsOptional,IsString } from 'class-validator';
 
 export class CreateVerificationDto {
   @ApiProperty()

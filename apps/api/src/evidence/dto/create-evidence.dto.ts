@@ -1,6 +1,6 @@
 
-import { IsString, IsNotEmpty, IsOptional, IsEnum } from 'class-validator';
-import { EvidenceType } from '@prisma/client';
+import { EvidenceType } from '@patorbit/database';
+import { IsEnum,IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateEvidenceDto {
   @IsString()

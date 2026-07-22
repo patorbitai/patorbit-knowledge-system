@@ -1,4 +1,4 @@
-import { IsOptional, IsString, IsObject } from 'class-validator';
+import { IsObject,IsOptional, IsString } from 'class-validator';
 
 export class CreateTimelineEventDto {
   @IsString()

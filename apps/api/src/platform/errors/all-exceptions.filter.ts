@@ -1,13 +1,14 @@
 import {
-  ExceptionFilter,
+  type ArgumentsHost,
   Catch,
-  ArgumentsHost,
+  type ExceptionFilter,
   HttpException,
   HttpStatus,
 } from "@nestjs/common";
-import { HttpAdapterHost } from "@nestjs/core";
-import { Request, Response } from "express";
-import { LoggingService } from "../logging";
+import { type HttpAdapterHost } from "@nestjs/core";
+import { type Request, type Response } from "express";
+
+import { type LoggingService } from "../logging/logging.service";
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -15,7 +16,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     private readonly httpAdapterHost: HttpAdapterHost,
     private readonly logger: LoggingService,
   ) {
-    this.logger.setContext(AllExceptionsFilter.name);
+    // setContext not available on this LoggingService
   }
 
   catch(exception: unknown, host: ArgumentsHost): void {

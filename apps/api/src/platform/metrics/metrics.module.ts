@@ -1,13 +1,14 @@
 import {
-  DynamicModule,
+  type DynamicModule,
   Global,
   Module,
-  Provider,
+  type Provider,
 } from "@nestjs/common";
 import { APP_INTERCEPTOR } from "@nestjs/core";
+
 import { MetricsInterceptor } from "./interceptors/metrics.interceptor";
 import { METRICS_PROVIDER } from "./metrics.constants";
-import type { MetricsProvider } from "./metrics.provider";
+import  { type MetricsProvider } from "./metrics.provider";
 import { MetricsService } from "./metrics.service";
 import { InMemoryMetricsProvider } from "./providers/in-memory.metrics-provider";
 import { PrometheusMetricsProvider } from "./providers/prometheus.metrics-provider";

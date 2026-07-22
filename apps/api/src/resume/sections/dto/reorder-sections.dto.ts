@@ -1,6 +1,6 @@
 
-import { IsArray, ValidateNested, IsString, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
+import { IsArray, IsInt,IsString, ValidateNested } from 'class-validator';
 
 export class SectionOrderItem {
   @IsString()

@@ -1,9 +1,10 @@
 
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
-import { PrismaService } from '@patorbit/database';
-import { CreateTemplateDto } from './dto/create-template.dto';
-import { UpdateTemplateDto } from './dto/update-template.dto';
-import { QueryTemplateDto } from './dto/query-template.dto';
+import { ForbiddenException,Injectable, NotFoundException } from '@nestjs/common';
+import { type PrismaService } from '@patorbit/database';
+
+import { type CreateTemplateDto } from './dto/create-template.dto';
+import { type QueryTemplateDto } from './dto/query-template.dto';
+import { type UpdateTemplateDto } from './dto/update-template.dto';
 
 @Injectable()
 export class TemplateService {

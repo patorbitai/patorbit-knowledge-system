@@ -1,5 +1,5 @@
 
-import { IsNumber, IsOptional, IsString, Min, Max } from 'class-validator';
+import { IsNumber, IsOptional, IsString, Max,Min } from 'class-validator';
 
 export class UpdateTrustScoreDto {
   @IsNumber()

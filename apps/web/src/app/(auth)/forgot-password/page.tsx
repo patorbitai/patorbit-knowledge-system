@@ -1,8 +1,9 @@
 // apps/web/src/app/(auth)/forgot-password/page.tsx
 "use client";
 
-import { FormEvent, useState } from "react";
 import Link from "next/link";
+import { type FormEvent, useState } from "react";
+
 import { api } from "../../../lib/api";
 
 export default function ForgotPasswordPage() {

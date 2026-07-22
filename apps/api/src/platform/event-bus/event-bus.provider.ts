@@ -1,7 +1,8 @@
-import type { Type } from "@nestjs/common";
-import type {
-  EventHandlerOptions,
-  EventIdentifier,
+import  { type Type } from "@nestjs/common";
+
+import  {
+  type EventHandlerOptions,
+  type EventIdentifier,
 } from "./decorators/event-handler.decorator";
 
 export type EventMetadata = Readonly<Record<string, unknown>>;

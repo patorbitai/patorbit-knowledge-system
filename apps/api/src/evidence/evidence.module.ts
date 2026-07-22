@@ -1,8 +1,9 @@
 
 import { Module } from '@nestjs/common';
-import { EvidenceService } from './evidence.service';
-import { EvidenceController } from './evidence.controller';
 import { DatabaseModule } from "@patorbit/database";
+
+import { EvidenceController } from './evidence.controller';
+import { EvidenceService } from './evidence.service';
 
 @Module({
   imports: [DatabaseModule],

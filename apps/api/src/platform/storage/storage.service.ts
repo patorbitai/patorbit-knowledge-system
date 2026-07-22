@@ -1,19 +1,17 @@
+// apps/api/src/platform/storage/storage.service.ts
 import { Inject, Injectable } from "@nestjs/common";
-import type {
-  StorageProvider,
-  FileMetadata,
-  UploadOptions,
-} from "@patorbit/storage";
+import { type FileMetadata, type StorageProvider, type UploadOptions } from "@patorbit/storage";
+
 import { STORAGE_PROVIDER } from "./storage.constants";
 
 @Injectable()
-export class StorageService {
+export class StorageService implements StorageProvider {
   constructor(
     @Inject(STORAGE_PROVIDER)
     private readonly provider: StorageProvider
   ) {}
 
-  get providerName(): string {
+  get name(): string {
     return this.provider.name;
   }
 

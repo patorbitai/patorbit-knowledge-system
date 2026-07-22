@@ -1,5 +1,5 @@
 
-import { Prisma } from '@prisma/client';
+import { type Prisma } from '@patorbit/database';
 
 export const starterTemplates: Prisma.ResumeTemplateCreateInput[] = [
   {

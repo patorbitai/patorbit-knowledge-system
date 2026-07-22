@@ -1,5 +1,5 @@
-import { IsString, IsEnum } from "class-validator";
-import { OrganizationRole } from "@prisma/client";
+import { OrganizationRole } from '@patorbit/database';
+import { IsEnum,IsString } from "class-validator";
 
 export class AddMemberDto {
   @IsString()

@@ -1,6 +1,7 @@
-import { Injectable, OnModuleInit, Logger } from "@nestjs/common";
-import type { Email, EmailProvider } from "./email.provider";
-import type { Queue } from "./email-queue.service";
+import { Injectable, Logger,type OnModuleInit } from "@nestjs/common";
+
+import  { type Email, type EmailProvider } from "./email.provider";
+import  { type Queue } from "./email-queue.service";
 
 @Injectable()
 export class InMemoryQueue implements Queue<Email>, OnModuleInit {

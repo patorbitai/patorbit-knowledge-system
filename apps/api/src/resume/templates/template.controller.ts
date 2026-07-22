@@ -1,10 +1,11 @@
 
-import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
-import { TemplateService } from './template.service';
-import { CreateTemplateDto } from './dto/create-template.dto';
-import { UpdateTemplateDto } from './dto/update-template.dto';
-import { QueryTemplateDto } from './dto/query-template.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Body, Controller, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { type CreateTemplateDto } from './dto/create-template.dto';
+import { type QueryTemplateDto } from './dto/query-template.dto';
+import { type UpdateTemplateDto } from './dto/update-template.dto';
+import { type TemplateService } from './template.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('templates')

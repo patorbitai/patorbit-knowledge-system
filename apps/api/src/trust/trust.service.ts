@@ -1,7 +1,7 @@
 
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
-import { VerificationStatus } from '@prisma/client';
+import { type PrismaService } from '@patorbit/database';
+import { VerificationStatus } from '@patorbit/database';
 
 @Injectable()
 export class TrustService {
@@ -97,7 +97,7 @@ export class TrustService {
       return 30; // Has evidence but no verifications yet
     }
 
-    const totalScore = verificationScores.reduce((acc, score) => acc + score, 0);
+    const totalScore = verificationScores.reduce<number>((acc, score) => acc + score, 0);
     return totalScore / verificationScores.length;
   }
 }

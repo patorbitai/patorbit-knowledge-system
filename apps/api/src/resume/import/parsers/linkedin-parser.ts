@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { ParserResult } from './json-parser';
+
+import { type ParserResult } from './json-parser';
 
 /**
  * LinkedIn data adapter placeholder.

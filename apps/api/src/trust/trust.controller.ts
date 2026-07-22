@@ -1,14 +1,15 @@
 
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Patch,
   Param,
-  Body,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { TrustService } from './trust.service';
-import { UpdateTrustScoreDto } from './dto/update-trust-score.dto';
+
+import { type UpdateTrustScoreDto } from './dto/update-trust-score.dto';
+import { type TrustService } from './trust.service';
 
 @Controller('trust')
 export class TrustController {

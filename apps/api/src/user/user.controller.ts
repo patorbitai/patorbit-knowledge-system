@@ -1,9 +1,10 @@
 // apps/api/src/user/user.controller.ts
 import { Controller, Get, UseGuards } from "@nestjs/common";
+import { type JwtPayload } from "@patorbit/auth";
+
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
-import { JwtPayload } from "@patorbit/auth";
-import { IdentityService } from "../identity/identity.service";
+import { type IdentityService } from "../identity/identity.service";
 
 @Controller("users")
 @UseGuards(JwtAuthGuard)

@@ -1,7 +1,8 @@
 import { SetMetadata, type Type } from "@nestjs/common";
+
 import { EVENT_HANDLER_METADATA } from "../event-bus.constants";
-import type { Event } from "../event-bus.provider";
-import type { RetryOptions } from "../services/retry.service";
+import  { type Event } from "../event-bus.provider";
+import  { type RetryOptions } from "../services/retry.service";
 
 export type EventIdentifier<TEvent extends Event = Event> =
   | string

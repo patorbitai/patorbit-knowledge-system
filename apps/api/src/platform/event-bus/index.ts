@@ -1,37 +1,35 @@
-export {
-  EventBusModule,
-  type EventBusModuleOptions,
-} from "./event-bus.module";
-export { EventBusService } from "./event-bus.service";
-export {
-  EVENT_BUS,
-  EVENT_HANDLER_METADATA,
-  EVENT_BUS_MODULE_OPTIONS,
-} from "./event-bus.constants";
-export { EventHandler } from "./decorators";
 export type {
   EventHandlerMetadata,
   EventHandlerOptions,
   EventIdentifier,
   HandlerPriority,
 } from "./decorators";
-
+export { EventHandler } from "./decorators";
+export {
+  EVENT_BUS,
+  EVENT_BUS_MODULE_OPTIONS,
+  EVENT_HANDLER_METADATA,
+} from "./event-bus.constants";
+export {
+  EventBusModule,
+  type EventBusModuleOptions,
+} from "./event-bus.module";
 export type {
+  AnyEvent,
+  ApplicationEvent,
+  DomainEvent,
+  Event,
+  EventMetadata,
   EventBus as IEventBus,
   EventHandler as IEventHandler,
-  Event,
-  DomainEvent,
-  ApplicationEvent,
-  AnyEvent,
-  EventMetadata,
   Unsubscribe,
 } from "./event-bus.provider";
-
+export { EventBusService } from "./event-bus.service";
 export {
-  OutboxService,
-  type OutboxEntry,
-  DeadLetterService,
   type DeadLetterEntry,
-  RetryService,
+  DeadLetterService,
+  type OutboxEntry,
+  OutboxService,
   type RetryOptions,
+  RetryService,
 } from "./services";

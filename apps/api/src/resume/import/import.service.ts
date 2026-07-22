@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PrismaService } from '@patorbit/database';
-import { CreateImportJobDto } from './dto/create-import-job.dto';
-import { StorageService } from '../../platform/storage/storage.service';
-import { JsonParser } from './parsers/json-parser';
-import { PdfParser } from './parsers/pdf-parser';
-import { DocxParser } from './parsers/docx-parser';
-import { LinkedinParser } from './parsers/linkedin-parser';
+import { type PrismaService } from '@patorbit/database';
+
+import { type StorageService } from '../../platform/storage/storage.service';
+import { type CreateImportJobDto } from './dto/create-import-job.dto';
+import { type DocxParser } from './parsers/docx-parser';
+import { type JsonParser } from './parsers/json-parser';
+import { type LinkedinParser } from './parsers/linkedin-parser';
+import { type PdfParser } from './parsers/pdf-parser';
 
 @Injectable()
 export class ImportService {
@@ -64,8 +65,8 @@ export class ImportService {
         throw new Error(`No parser available for source type: ${job.sourceType}`);
       }
 
-      const rawData = await this.storageService.get(job.sourceData?.['storageKey'] as string);
-      const result = await parser.parse(rawData);
+      const rawData = await this.storageService.download(job.sourceData?.['storageKey'] as string);
+      const result = await parser.parse(rawData.toString());
 
       if (!result.success) {
         throw new Error(result.error || 'Parsing failed');
@@ -83,7 +84,7 @@ export class ImportService {
         where: { id: jobId },
         data: {
           status: 'failed',
-          error: error.message,
+          error: (error as Error).message,
         },
       });
     }
@@ -100,7 +101,7 @@ export class ImportService {
   async confirmImport(jobId: string) {
     const job = await this.prisma.importJob.findUnique({ where: { id: jobId } });
     if (!job) {
-      throw new NotFoundException(`Import job ${id} not found`);
+      throw new NotFoundException(`Import job ${jobId} not found`);
     }
     if (job.status !== 'completed') {
       throw new Error('Import job is not completed yet');

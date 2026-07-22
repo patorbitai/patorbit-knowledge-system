@@ -1,7 +1,8 @@
 import { Module } from "@nestjs/common";
 import { DatabaseModule } from "@patorbit/database";
-import { WorkspaceService } from "./workspace.service";
+
 import { WorkspaceController } from "./workspace.controller";
+import { WorkspaceService } from "./workspace.service";
 
 @Module({
   imports: [DatabaseModule],

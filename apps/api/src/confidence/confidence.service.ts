@@ -1,6 +1,6 @@
 
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
+import { type PrismaService } from '@patorbit/database';
 
 @Injectable()
 export class ConfidenceService {

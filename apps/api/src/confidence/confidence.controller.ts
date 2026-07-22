@@ -1,14 +1,15 @@
 
 import {
+  Body,
   Controller,
   Get,
-  Post,
-  Patch,
   Param,
-  Body,
+  Patch,
+  Post,
 } from '@nestjs/common';
-import { ConfidenceService } from './confidence.service';
-import { UpdateConfidenceScoreDto } from './dto/update-confidence-score.dto';
+
+import { type ConfidenceService } from './confidence.service';
+import { type UpdateConfidenceScoreDto } from './dto/update-confidence-score.dto';
 
 @Controller('confidence')
 export class ConfidenceController {

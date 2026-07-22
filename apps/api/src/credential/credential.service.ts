@@ -1,8 +1,9 @@
 // apps/api/src/credential/credential.service.ts
-import { Injectable, NotFoundException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
-import { CreateCredentialDto } from './dto/create-credential.dto';
-import { UpdateCredentialDto } from './dto/update-credential.dto';
+import { ConflictException,Injectable, NotFoundException } from '@nestjs/common';
+import { type PrismaService } from '@patorbit/database';
+
+import { type CreateCredentialDto } from './dto/create-credential.dto';
+import { type UpdateCredentialDto } from './dto/update-credential.dto';
 
 @Injectable()
 export class CredentialService {

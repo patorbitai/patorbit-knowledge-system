@@ -1,8 +1,9 @@
-import { Module, DynamicModule, Provider } from "@nestjs/common";
-import { StorageService } from "./storage.service";
-import { LocalMinioStorageProvider } from "./providers/local-minio.storage-provider";
+import { type DynamicModule, Module, type Provider } from "@nestjs/common";
+
 import { DiskStorageProvider } from "./providers/disk.storage-provider";
+import { LocalMinioStorageProvider } from "./providers/local-minio.storage-provider";
 import { STORAGE_PROVIDER } from "./storage.constants";
+import { StorageService } from "./storage.service";
 
 export type StorageProviderType = "minio" | "disk";
 

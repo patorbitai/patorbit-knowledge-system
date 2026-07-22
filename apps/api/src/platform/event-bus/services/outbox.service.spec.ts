@@ -1,7 +1,8 @@
 
-import { vi, describe, it, expect, beforeEach } from "vitest";
-import { OutboxService, OutboxEntry } from "./outbox.service";
-import type { ApplicationEvent } from "../event-bus.provider";
+import { beforeEach,describe, expect, it, vi } from "vitest";
+
+import  { type ApplicationEvent } from "../event-bus.provider";
+import { OutboxEntry,OutboxService } from "./outbox.service";
 
 const createTestEvent = (id: string, type: string): ApplicationEvent => ({
   eventId: id,

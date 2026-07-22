@@ -1,7 +1,7 @@
 // apps/api/src/identity/identity.service.ts
-import { Injectable, ConflictException, UnauthorizedException } from "@nestjs/common";
-import { PrismaService } from "../../../packages/database/prisma.service";
-import { RegisterDto, passwordService, LOCKOUT_THRESHOLD, LOCKOUT_DURATION_MINUTES } from "@patorbit/auth";
+import { ConflictException, Injectable, UnauthorizedException } from "@nestjs/common";
+import { LOCKOUT_DURATION_MINUTES,LOCKOUT_THRESHOLD, passwordService, type RegisterDto } from "@patorbit/auth";
+import { type PrismaService } from '@patorbit/database';
 
 @Injectable()
 export class IdentityService {
@@ -30,7 +30,7 @@ export class IdentityService {
   async validateUser(email: string, pass: string) {
     const user = await this.prisma.user.findUnique({
       where: { email },
-      include: { role: true, profile: true },
+      include: { userRoles: { include: { role: true } }, profile: true },
     });
 
     if (!user || !user.passwordHash) {
@@ -85,7 +85,7 @@ export class IdentityService {
   async findUserById(id: string) {
     return this.prisma.user.findUnique({
       where: { id },
-      include: { profile: true, role: true },
+      include: { profile: true, userRoles: { include: { role: true } } },
     });
   }
 }

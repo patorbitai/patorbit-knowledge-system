@@ -142,6 +142,6 @@ export class StripeProvider implements BillingProvider {
       throw new Error('Stripe webhook secret is not configured.');
     }
     const event = this.stripe.webhooks.constructEvent(payload, signature, webhookSecret);
-    return { event: event.type, data: event.data.object as Record<string, unknown> };
+    return { event: event.type, data: event.data.object as unknown as Record<string, unknown> };
   }
 }

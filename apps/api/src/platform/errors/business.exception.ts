@@ -1,4 +1,5 @@
 import { HttpException, HttpStatus } from "@nestjs/common";
+
 import { ERROR_CODES } from "./errors.constants";
 
 export class BusinessException extends HttpException {

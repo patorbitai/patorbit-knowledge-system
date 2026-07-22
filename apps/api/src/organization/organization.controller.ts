@@ -11,13 +11,14 @@ import {
   UseGuards,
 } from "@nestjs/common";
 import { ParseUUIDPipe } from "@nestjs/common";
-import { OrganizationService } from "./organization.service";
-import { CreateOrganizationDto } from "./dto/create-organization.dto";
-import { UpdateOrganizationDto } from "./dto/update-organization.dto";
-import { AddMemberDto } from "./dto/add-member.dto";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { type JwtPayload } from "@patorbit/auth";
+
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
-import { JwtPayload } from "@patorbit/auth";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { type AddMemberDto } from "./dto/add-member.dto";
+import { type CreateOrganizationDto } from "./dto/create-organization.dto";
+import { type UpdateOrganizationDto } from "./dto/update-organization.dto";
+import { type OrganizationService } from "./organization.service";
 
 @Controller("organizations")
 @UseGuards(JwtAuthGuard)

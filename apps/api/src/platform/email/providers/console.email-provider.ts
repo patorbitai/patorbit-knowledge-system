@@ -1,5 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import { Email, EmailProvider } from "../email.provider";
+
+import { type Email, type EmailAddress,type EmailProvider } from "../email.provider";
 
 @Injectable()
 export class ConsoleEmailProvider implements EmailProvider {

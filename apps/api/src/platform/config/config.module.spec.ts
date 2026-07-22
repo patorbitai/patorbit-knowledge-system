@@ -2,9 +2,10 @@ import { ConfigModule } from "@nestjs/config";
 import { Test } from "@nestjs/testing";
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
+
+import { APP_CONFIG, DATABASE_CONFIG, REDIS_CONFIG } from "./config.constants";
 import { ConfigurationModule } from "./config.module";
 import { TypedConfigService } from "./typed-config.service";
-import { APP_CONFIG, DATABASE_CONFIG, REDIS_CONFIG } from "./config.constants";
 
 describe("ConfigurationModule", () => {
   it("provides and exports TypedConfigService and config tokens", async () => {

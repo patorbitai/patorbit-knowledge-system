@@ -1,7 +1,8 @@
-import { Module, DynamicModule, Provider } from "@nestjs/common";
+import { type DynamicModule, Module, type Provider } from "@nestjs/common";
+
+import { NOTIFICATION_PROVIDER } from "./notifications.constants";
 import { NotificationsService } from "./notifications.service";
 import { ConsoleNotificationProvider } from "./providers/console.notification-provider";
-import { NOTIFICATION_PROVIDER } from "./notifications.constants";
 
 export type NotificationProviderType = "console";
 

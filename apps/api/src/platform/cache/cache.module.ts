@@ -1,12 +1,13 @@
-import { Module, DynamicModule, Provider, Logger } from "@nestjs/common";
+import { type DynamicModule, Logger,Module, type Provider } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { createCache } from "cache-manager";
 import redisStore from "cache-manager-redis-store";
+
+import { CACHE_MANAGER_INSTANCE, CACHE_PROVIDER, IN_MEMORY_CACHE_PROVIDER } from "./cache.constants";
+import  { type CacheProvider } from "./cache.provider";
 import { CacheService } from "./cache.service";
-import { CACHE_PROVIDER, CACHE_MANAGER_INSTANCE, IN_MEMORY_CACHE_PROVIDER } from "./cache.constants";
-import { RedisCacheProvider } from "./providers/redis.cache-provider";
 import { InMemoryCacheProvider } from "./providers/in-memory.cache-provider";
-import type { CacheProvider } from "./cache.provider";
+import { RedisCacheProvider } from "./providers/redis.cache-provider";
 
 export type CacheProviderType = "redis" | "memory";
 
@@ -34,7 +35,8 @@ export class PlatformCacheModule {
         try {
           const url = new URL(redisUrl);
 
-          const store = await redisStore({
+          // @ts-expect-error - cache-manager-redis-store has no type defs
+          const store = await (redisStore as any)({
             socket: {
               host: url.hostname,
               port: Number(url.port || 6379),
@@ -43,7 +45,7 @@ export class PlatformCacheModule {
             password: url.password || undefined,
             database: url.pathname ? Number(url.pathname.slice(1)) || 0 : 0,
             ttl: options?.ttl ?? 300,
-          } as any);
+          });
 
           return createCache(store as any);
         } catch (error) {

@@ -1,5 +1,6 @@
 ﻿import { Injectable, Logger } from "@nestjs/common";
-import type { SchedulerProvider, SchedulerJob } from "../scheduler.provider";
+
+import  { type SchedulerJob,type SchedulerProvider } from "../scheduler.provider";
 
 interface ScheduledEntry {
   job: SchedulerJob;

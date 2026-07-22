@@ -1,9 +1,10 @@
 // apps/api/src/verification/verification.service.ts
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
-import { CreateVerificationDto } from './dto/create-verification.dto';
-import { UpdateVerificationDto } from './dto/update-verification.dto';
-import { VerificationStatus } from '@prisma/client';
+import { BadRequestException,Injectable, NotFoundException } from '@nestjs/common';
+import { type PrismaService } from '@patorbit/database';
+import { VerificationStatus } from '@patorbit/database';
+
+import { type CreateVerificationDto } from './dto/create-verification.dto';
+import { type UpdateVerificationDto } from './dto/update-verification.dto';
 
 @Injectable()
 export class VerificationService {

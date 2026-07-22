@@ -1,7 +1,8 @@
 
-import { Provider } from "@nestjs/common";
-import { TypedConfigService } from "./typed-config.service";
+import { type Provider } from "@nestjs/common";
+
 import { APP_CONFIG, DATABASE_CONFIG, REDIS_CONFIG } from "./config.constants";
+import { TypedConfigService } from "./typed-config.service";
 
 export const appConfigProvider: Provider = {
   provide: APP_CONFIG,

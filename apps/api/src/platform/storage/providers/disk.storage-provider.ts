@@ -1,7 +1,8 @@
-import { Injectable, Logger } from "@nestjs/common";
 import * as fs from "node:fs/promises";
 import * as path from "node:path";
-import type { StorageProvider, FileMetadata, UploadOptions } from "@patorbit/storage";
+
+import { Injectable, Logger } from "@nestjs/common";
+import  { type FileMetadata, type StorageProvider, type UploadOptions } from "@patorbit/storage";
 
 @Injectable()
 export class DiskStorageProvider implements StorageProvider {

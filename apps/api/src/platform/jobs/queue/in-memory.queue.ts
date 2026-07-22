@@ -1,12 +1,14 @@
-import { Injectable, Logger, OnModuleInit } from "@nestjs/common";
 import { randomUUID } from "node:crypto";
+
+import { Injectable, Logger, type OnModuleInit } from "@nestjs/common";
+
 import {
-  Job,
-  JobOptions,
-  JobQueue,
-  JobStatus,
-  JobWorker,
-  JobWorkerOptions,
+  type Job,
+  type JobOptions,
+  type JobQueue,
+  type JobStatus,
+  type JobWorker,
+  type JobWorkerOptions,
 } from "../jobs.provider";
 
 interface InternalJob<T> {

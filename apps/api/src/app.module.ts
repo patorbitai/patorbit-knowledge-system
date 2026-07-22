@@ -1,31 +1,32 @@
-import { Module, NestModule, MiddlewareConsumer } from "@nestjs/common";
+import { type MiddlewareConsumer,Module, type NestModule } from "@nestjs/common";
+import { APP_FILTER, APP_GUARD, HttpAdapterHost } from "@nestjs/core";
 import { ThrottlerModule } from "@nestjs/throttler";
-import { APP_GUARD, APP_FILTER, HttpAdapterHost } from "@nestjs/core";
-import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
-import { AuthModule } from "./auth/auth.module";
-import { IdentityModule } from "./identity/identity.module";
-import { UserModule } from "./user/user.module";
-import { ProfileModule } from "./profile/profile.module";
-import { PermissionModule } from "./permission/permission.module";
-import { SessionModule } from "./session/session.module";
-import { AuditModule } from "./audit/audit.module";
-import { OrganizationModule } from "./organization/organization.module";
-import { WorkspaceModule } from "./workspace/workspace.module";
-import { ClaimModule } from "./claim/claim.module";
-import { EvidenceModule } from "./evidence/evidence.module";
-import { CredentialModule } from "./credential/credential.module";
-import { VerificationModule } from "./verification/verification.module";
-import { KnowledgeModule } from "./knowledge/knowledge.module";
-import { TrustModule } from "./trust/trust.module";
-import { ConfidenceModule } from "./confidence/confidence.module";
-import { TimelineModule } from "./timeline/timeline.module";
-import { CareerPassportModule } from "./career-passport/career-passport.module";
+import { DatabaseModule } from "@patorbit/database";
+
 import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
+import { AuditModule } from "./audit/audit.module";
+import { AuthModule } from "./auth/auth.module";
+import { JwtAuthGuard } from "./auth/guards/jwt-auth.guard";
+import { CareerPassportModule } from "./career-passport/career-passport.module";
+import { ClaimModule } from "./claim/claim.module";
 import { CsrfController } from "./common/csrf.controller";
-import { DatabaseModule } from "@patorbit/database";
-import { PlatformModule, LoggingService } from "./platform";
+import { ConfidenceModule } from "./confidence/confidence.module";
+import { CredentialModule } from "./credential/credential.module";
+import { EvidenceModule } from "./evidence/evidence.module";
+import { IdentityModule } from "./identity/identity.module";
+import { KnowledgeModule } from "./knowledge/knowledge.module";
+import { OrganizationModule } from "./organization/organization.module";
+import { PermissionModule } from "./permission/permission.module";
+import { LoggingService,PlatformModule } from "./platform";
 import { AllExceptionsFilter } from "./platform/errors/all-exceptions.filter";
+import { ProfileModule } from "./profile/profile.module";
+import { SessionModule } from "./session/session.module";
+import { TimelineModule } from "./timeline/timeline.module";
+import { TrustModule } from "./trust/trust.module";
+import { UserModule } from "./user/user.module";
+import { VerificationModule } from "./verification/verification.module";
+import { WorkspaceModule } from "./workspace/workspace.module";
 
 @Module({
   imports: [

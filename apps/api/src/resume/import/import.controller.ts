@@ -1,7 +1,8 @@
-import { Controller, Post, Get, Param, Body, UseGuards } from '@nestjs/common';
-import { ImportService } from './import.service';
-import { CreateImportJobDto } from './dto/create-import-job.dto';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
+
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
+import { type CreateImportJobDto } from './dto/create-import-job.dto';
+import { type ImportService } from './import.service';
 
 @UseGuards(JwtAuthGuard)
 @Controller('import')

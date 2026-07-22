@@ -1,6 +1,7 @@
-import { Module, DynamicModule, Global, Provider } from "@nestjs/common";
-import { FeatureFlagsService } from "./feature-flags.service";
+import { type DynamicModule, Global, Module, type Provider } from "@nestjs/common";
+
 import { FEATURE_FLAG_PROVIDER } from "./feature-flags.constants";
+import { FeatureFlagsService } from "./feature-flags.service";
 import { LocalFeatureFlagProvider } from "./providers/local.feature-flag-provider";
 import { RemoteFeatureFlagProvider } from "./providers/remote.feature-flag-provider";
 

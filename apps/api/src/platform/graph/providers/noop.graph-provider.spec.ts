@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { NoopGraphProvider } from "./noop.graph-provider";
 
 describe("NoopGraphProvider", () => {

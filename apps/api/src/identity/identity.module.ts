@@ -1,7 +1,8 @@
 // apps/api/src/identity/identity.module.ts
 import { Module } from "@nestjs/common";
-import { IdentityService } from "./identity.service";
 import { DatabaseModule } from "@patorbit/database";
+
+import { IdentityService } from "./identity.service";
 
 @Module({
   imports: [DatabaseModule],

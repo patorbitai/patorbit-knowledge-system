@@ -1,18 +1,19 @@
 import {
-  DynamicModule,
-  Global,
-  Module,
-  Provider,
-} from "@nestjs/common";
-import {
   BullModule,
   getQueueToken as getBullQueueToken,
 } from "@nestjs/bullmq";
+import {
+  type DynamicModule,
+  Global,
+  Module,
+  type Provider,
+} from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { Queue as BullQueue } from "bullmq";
+import { type Queue as BullQueue } from "bullmq";
+
+import { getJobQueueToken,JOB_QUEUES } from "./jobs.constants";
+import { type JobQueue } from "./jobs.provider";
 import { JobsService } from "./jobs.service";
-import { JOB_QUEUES, getJobQueueToken } from "./jobs.constants";
-import { JobQueue } from "./jobs.provider";
 import { BullMQQueue } from "./queue/bull.queue";
 import { InMemoryQueue } from "./queue/in-memory.queue";
 

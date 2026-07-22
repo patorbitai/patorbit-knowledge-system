@@ -1,8 +1,10 @@
 // apps/api/src/knowledge/knowledge.service.ts
-import { Injectable, NotFoundException, BadRequestException, ConflictException } from '@nestjs/common';
-import { PrismaService } from '../../../packages/database/prisma.service';
-import { CreateKnowledgeNodeDto } from './dto/create-knowledge-node.dto';
-import { CreateKnowledgeEdgeDto } from './dto/create-knowledge-edge.dto';
+import { BadRequestException, ConflictException,Injectable, NotFoundException } from '@nestjs/common';
+import { type PrismaService } from '@patorbit/database';
+import { type Prisma } from '@patorbit/database';
+
+import { type CreateKnowledgeEdgeDto } from './dto/create-knowledge-edge.dto';
+import { type CreateKnowledgeNodeDto } from './dto/create-knowledge-node.dto';
 
 @Injectable()
 export class KnowledgeService {
@@ -25,7 +27,7 @@ export class KnowledgeService {
         type,
         name,
         profileId: profileId || null,
-        metadata: metadata || {},
+        metadata: (metadata || {}) as Prisma.InputJsonValue,
       },
     });
   }

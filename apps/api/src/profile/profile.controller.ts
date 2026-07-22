@@ -1,9 +1,10 @@
-import { Controller, Get, Patch, Delete, Body, Param, UseGuards, HttpCode, HttpStatus } from "@nestjs/common";
-import { ProfileService } from "./profile.service";
+import { Body, Controller, Delete, Get, HttpCode, HttpStatus,Param, Patch, UseGuards } from "@nestjs/common";
+import { type JwtPayload } from "@patorbit/auth";
+
 import { CurrentUser } from "../auth/decorators/current-user.decorator";
-import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
 import { Public } from "../auth/decorators/public.decorator";
-import { JwtPayload } from "@patorbit/auth";
+import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { type ProfileService } from "./profile.service";
 
 @Controller("profiles")
 export class ProfileController {

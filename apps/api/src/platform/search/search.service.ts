@@ -1,12 +1,13 @@
 import { Inject, Injectable } from "@nestjs/common";
+
 import { SEARCH_PROVIDER } from "./search.constants";
-import type {
-  SearchDocument,
-  SearchHealth,
-  SearchIndexDefinition,
-  SearchProvider,
-  SearchQuery,
-  SearchResponse,
+import  {
+  type SearchDocument,
+  type SearchHealth,
+  type SearchIndexDefinition,
+  type SearchProvider,
+  type SearchQuery,
+  type SearchResponse,
 } from "./search.provider";
 
 @Injectable()
