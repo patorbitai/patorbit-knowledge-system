@@ -13,5 +13,8 @@
     "./nextjs.json": "./nextjs.json",
     "./nestjs.json": "./nestjs.json",
     "./react.json": "./react.json"
+  },
+  "scripts": {
+    "clean": "rm -rf .turbo node_modules"
   }
 }

@@ -2,10 +2,18 @@
   "name": "@patorbit/notifications",
   "version": "0.1.0",
   "private": true,
-  "main": "./src/index.ts",
-  "types": "./src/index.ts",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
   "scripts": {
-    "clean": "rm -rf .turbo node_modules",
+    "build": "tsup src/index.ts --format esm,cjs --dts --clean",
+    "clean": "rm -rf .turbo node_modules dist",
     "lint": "eslint . --ext .ts",
     "typecheck": "tsc --noEmit"
   },
