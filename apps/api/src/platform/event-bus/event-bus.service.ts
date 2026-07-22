@@ -5,31 +5,31 @@ import {
   type OnApplicationBootstrap,
   type OnApplicationShutdown,
   type Type,
-} from "@nestjs/common";
-import { type DiscoveryService } from "@nestjs/core";
-import { type EventEmitter2, OnEvent } from "@nestjs/event-emitter";
+} from '@nestjs/common';
+import { type DiscoveryService } from '@nestjs/core';
+import { type EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
-import  { type EventHandlerMetadata } from "./decorators/event-handler.decorator";
+import { type EventHandlerMetadata } from './decorators/event-handler.decorator';
 import {
   EVENT_BUS_DISPATCH_TOPIC,
   EVENT_BUS_MODULE_OPTIONS,
   EVENT_HANDLER_METADATA,
-} from "./event-bus.constants";
-import  {
+} from './event-bus.constants';
+import {
   type AnyEvent,
   type EventBus as IEventBus,
   type EventHandler as IEventHandler,
   type Unsubscribe,
-} from "./event-bus.provider";
-import  { type Event } from "./event-bus.provider";
-import { type DeadLetterService } from "./services/dead-letter.service";
-import { type OutboxService } from "./services/outbox.service";
-import { type RetryService } from "./services/retry.service";
+} from './event-bus.provider';
+import { type Event } from './event-bus.provider';
+import { type DeadLetterService } from './services/dead-letter.service';
+import { type OutboxService } from './services/outbox.service';
+import { type RetryOptions } from './services/retry.service';
 
 export interface EventBusModuleOptions {
   useOutbox: boolean;
   useDeadLetterQueue: boolean;
-  defaultRetryPolicy?: Partial<import("./services/retry.service").RetryOptions>;
+  defaultRetryPolicy?: Partial<RetryOptions>;
   defaultHandlerTimeoutMs: number;
 }
 
@@ -40,9 +40,7 @@ interface HandlerContext<TEvent extends Event> {
 }
 
 @Injectable()
-export class EventBusService
-  implements IEventBus, OnApplicationBootstrap, OnApplicationShutdown
-{
+export class EventBusService implements IEventBus, OnApplicationBootstrap, OnApplicationShutdown {
   private readonly logger = new Logger(EventBusService.name);
   private isShuttingDown = false;
 
@@ -63,7 +61,7 @@ export class EventBusService
   onApplicationShutdown(): void {
     this.isShuttingDown = true;
     this.emitter.removeAllListeners();
-    this.logger.log("Event bus shut down.");
+    this.logger.log('Event bus shut down.');
   }
 
   async publish<TEvent extends Event>(event: TEvent): Promise<void> {
@@ -79,9 +77,7 @@ export class EventBusService
   }
 
   subscribe<TEvent extends Event>(): Unsubscribe {
-    throw new Error(
-      "Dynamic subscription is not supported; use @EventHandler() instead.",
-    );
+    throw new Error('Dynamic subscription is not supported; use @EventHandler() instead.');
   }
 
   register(handlerTypes: readonly Type<IEventHandler>[]): void {
@@ -91,7 +87,7 @@ export class EventBusService
   @OnEvent(EVENT_BUS_DISPATCH_TOPIC, { async: true })
   protected async onDispatch(event: AnyEvent): Promise<void> {
     const handlers = this.emitter.listeners(event.eventType);
-    const hasWildcard = this.emitter.listeners("*").length > 0;
+    const hasWildcard = this.emitter.listeners('*').length > 0;
     if (handlers.length === 0 && !hasWildcard) return;
 
     const outboxId = event.eventId;
@@ -117,11 +113,11 @@ export class EventBusService
       .forEach((wrapper) => this.subscribeProvider(wrapper.metatype!));
   }
 
-  private subscribeProvider(provider: Function | Type<any>): void {
-    const metadata = Reflect.getMetadata(
-      EVENT_HANDLER_METADATA,
-      provider,
-    ) as EventHandlerMetadata | undefined;
+  private subscribeProvider(
+    provider: (abstract new (...args: never[]) => unknown) | Type<any>,
+  ): void {
+    const metadata = Reflect.getMetadata(EVENT_HANDLER_METADATA, provider) as
+      EventHandlerMetadata | undefined;
     if (!metadata) return;
 
     const handler = this.createHandlerContext(provider as Type<IEventHandler>);
@@ -134,10 +130,7 @@ export class EventBusService
   private createHandlerContext<TEvent extends Event>(
     metatype: Type<IEventHandler<TEvent>>,
   ): HandlerContext<TEvent> {
-    const metadata = Reflect.getMetadata(
-      EVENT_HANDLER_METADATA,
-      metatype,
-    ) as EventHandlerMetadata;
+    const metadata = Reflect.getMetadata(EVENT_HANDLER_METADATA, metatype) as EventHandlerMetadata;
 
     return {
       name: metatype.name,
@@ -178,8 +171,7 @@ export class EventBusService
     fn: () => Promise<T>,
     metadata: EventHandlerMetadata,
   ): Promise<T> {
-    const timeoutMs =
-      metadata.options.timeoutMs ?? this.options.defaultHandlerTimeoutMs;
+    const timeoutMs = metadata.options.timeoutMs ?? this.options.defaultHandlerTimeoutMs;
     if (timeoutMs <= 0) return fn();
 
     return new Promise((resolve, reject) => {

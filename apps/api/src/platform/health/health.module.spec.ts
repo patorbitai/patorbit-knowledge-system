@@ -1,13 +1,13 @@
-import { TerminusModule } from "@nestjs/terminus";
-import { Test } from "@nestjs/testing";
-import { describe, expect, it } from "vitest";
-import { DatabaseModule } from "@patorbit/database";
-import { HealthController } from "./health.controller";
-import { HealthModule } from "./health.module";
-import { PrismaHealthIndicator } from "./indicators/prisma.health";
+import { Test } from '@nestjs/testing';
+import { DatabaseModule } from '@patorbit/database';
+import { describe, expect, it } from 'vitest';
 
-describe("HealthModule", () => {
-  it("compiles and provides the expected controller and indicator", async () => {
+import { HealthController } from './health.controller';
+import { HealthModule } from './health.module';
+import { PrismaHealthIndicator } from './indicators/prisma.health';
+
+describe('HealthModule', () => {
+  it('compiles and provides the expected controller and indicator', async () => {
     const moduleRef = await Test.createTestingModule({
       imports: [HealthModule],
     })
@@ -16,11 +16,11 @@ describe("HealthModule", () => {
         module: DatabaseModule,
         providers: [
           {
-            provide: "PrismaService",
-            useValue: { $queryRaw: () => Promise.resolve([{ 1n: 1 }]) },
+            provide: 'PrismaService',
+            useValue: { $queryRaw: () => Promise.resolve([{ '1': 1 }]) },
           },
         ],
-        exports: ["PrismaService"],
+        exports: ['PrismaService'],
       })
       .compile();
 

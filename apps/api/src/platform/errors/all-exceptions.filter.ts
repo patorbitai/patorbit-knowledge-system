@@ -2,13 +2,13 @@ import {
   type ArgumentsHost,
   Catch,
   type ExceptionFilter,
+  type HttpAdapterHost,
   HttpException,
   HttpStatus,
-} from "@nestjs/common";
-import { type HttpAdapterHost } from "@nestjs/core";
-import { type Request, type Response } from "express";
+} from '@nestjs/common';
+import { type Request, type Response } from 'express';
 
-import { type LoggingService } from "../logging/logging.service";
+import { type LoggingService } from '../logging/logging.service';
 
 @Catch()
 export class AllExceptionsFilter implements ExceptionFilter {
@@ -26,9 +26,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
     const response = ctx.getResponse<Response>();
 
     const status =
-      exception instanceof HttpException
-        ? exception.getStatus()
-        : HttpStatus.INTERNAL_SERVER_ERROR;
+      exception instanceof HttpException ? exception.getStatus() : HttpStatus.INTERNAL_SERVER_ERROR;
 
     const responseBody = {
       statusCode: status,
@@ -36,10 +34,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       path: httpAdapter.getRequestUrl(request),
       method: httpAdapter.getRequestMethod(request),
       correlationId: request.id,
-      message: (exception as any).message ?? "Internal server error",
+      message: (exception as any).message ?? 'Internal server error',
     };
 
-    this.logger.error("Unhandled exception", (exception as Error).stack, {
+    this.logger.error('Unhandled exception', (exception as Error).stack, {
       exception,
       ...responseBody,
     });
