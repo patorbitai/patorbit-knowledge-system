@@ -21,6 +21,8 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Claims', href: '/claims', icon: '◎' },
   { label: 'Profile', href: '/profile', icon: '👤' },
   { label: 'Career Passport', href: '/career-passport', icon: '🛂' },
+  { label: 'Organizations', href: '/organizations', icon: '🏢' },
+  { label: 'Workspaces', href: '/workspaces', icon: '📋' },
 ];
 
 // ── NavLink ─────────────────────────────────────────────────────────────────
