@@ -15,9 +15,11 @@
     "build": "tsup src/index.ts --format esm,cjs --dts --clean",
     "clean": "rm -rf .turbo node_modules dist",
     "lint": "eslint . --ext .ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "devDependencies": {
-    "@patorbit/tsconfig": "workspace:*"
+    "@patorbit/tsconfig": "workspace:*",
+    "vitest": "^1.6.0"
   }
 }
