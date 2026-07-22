@@ -1,12 +1,13 @@
 import Stripe from 'stripe';
-import type {
-  BillingProvider,
-  CreateCheckoutSessionParams,
-  CreateCustomerPortalParams,
-  CreateSubscriptionParams,
-  UpdateSubscriptionParams,
+
+import  {
+  type BillingProvider,
+  type CreateCheckoutSessionParams,
+  type CreateCustomerPortalParams,
+  type CreateSubscriptionParams,
+  type UpdateSubscriptionParams,
 } from '../interfaces';
-import type { InvoiceStatus, SubscriptionStatus } from '../types';
+import  { type InvoiceStatus, type SubscriptionStatus } from '../types';
 
 export class StripeProvider implements BillingProvider {
   private stripe: Stripe;

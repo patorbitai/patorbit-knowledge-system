@@ -1,4 +1,4 @@
-import type { PlanInterval, SubscriptionStatus, InvoiceStatus } from '../types';
+import  { type InvoiceStatus,type PlanInterval, type SubscriptionStatus } from '../types';
 
 export interface CreateCheckoutSessionParams {
   customerId: string;

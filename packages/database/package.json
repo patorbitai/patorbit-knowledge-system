@@ -23,10 +23,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@nestjs/common": "^10.3.0",
     "@prisma/client": "5.15.0"
   },
   "devDependencies": {
     "@patorbit/tsconfig": "workspace:*",
+    "@types/node": "^20.14.0",
     "prisma": "5.15.0",
     "tsx": "^4.15.0",
     "typescript": "^5.5.0"

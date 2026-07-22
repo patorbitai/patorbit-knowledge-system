@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from "@storybook/react";
 
-const Button = ({ label }: { label: string }) => {
+const Button = ({ label }: { label: string }): React.ReactElement => {
   return <button className="rounded-md bg-primary px-4 py-2 text-primary-foreground">{label}</button>;
 };
 
