@@ -7,6 +7,9 @@ import { useEffect, useState } from 'react';
 import { statusColor, timeAgo } from '@/lib/resume-utils';
 import { useResumeStore } from '@/lib/stores/use-resume-store';
 
+import { ResumeAutosaveIndicator } from './resume-autosave-indicator';
+import { ResumeAutosaveIndicator } from './resume-autosave-indicator';
+
 export function ResumeHeader() {
   const resume = useResumeStore((s) => s.resume);
   const versions = useResumeStore((s) => s.versions);
@@ -68,27 +71,30 @@ export function ResumeHeader() {
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowVersions(!showVersions)}
-            className="px-3 py-1.5 text-sm border rounded hover:bg-accent"
-          >
-            {showVersions ? 'Hide' : 'Versions'}
-          </button>
-          <button
-            onClick={duplicateResume}
-            className="px-3 py-1.5 text-sm border rounded hover:bg-accent"
-          >
-            Duplicate
-          </button>
-          {resume.status !== 'ARCHIVED' && (
+        <div className="flex items-center gap-4">
+          <ResumeAutosaveIndicator />
+          <div className="flex items-center gap-2">
             <button
-              onClick={archiveResume}
-              className="px-3 py-1.5 text-sm border rounded hover:bg-accent text-red-500"
+              onClick={() => setShowVersions(!showVersions)}
+              className="px-3 py-1.5 text-sm border rounded hover:bg-accent"
             >
-              Archive
+              {showVersions ? 'Hide' : 'Versions'}
             </button>
-          )}
+            <button
+              onClick={duplicateResume}
+              className="px-3 py-1.5 text-sm border rounded hover:bg-accent"
+            >
+              Duplicate
+            </button>
+            {resume.status !== 'ARCHIVED' && (
+              <button
+                onClick={archiveResume}
+                className="px-3 py-1.5 text-sm border rounded hover:bg-accent text-red-500"
+              >
+                Archive
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

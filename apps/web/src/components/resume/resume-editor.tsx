@@ -1,6 +1,23 @@
-// apps/web/src/components/resume/resume-editor.tsx
 'use client';
 
+import {
+  closestCenter,
+  DndContext,
+  type DragEndEvent,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+} from '@dnd-kit/core';
+import { restrictToVerticalAxis } from '@dnd-kit/modifiers';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import { useState } from 'react';
 
 import { useResumeStore } from '@/lib/stores/use-resume-store';
@@ -540,9 +557,9 @@ function SectionEditor({
   }
 }
 
-// ── Section Card ─────────────────────────────────────────────────────────────
+// ── Sortable Section Card ─────────────────────────────────────────────────────
 
-function SectionCard({
+function SortableSectionCard({
   section,
   onUpdate,
   onToggle,
@@ -558,17 +575,42 @@ function SectionCard({
   const [open, setOpen] = useState(!section.isCollapsed);
   const isSaving = savingSectionId === section.id;
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: section.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    position: (isDragging ? 'relative' : undefined) as React.CSSProperties['position'],
+    zIndex: isDragging ? 50 : undefined,
+  };
+
   return (
     <div
-      className={`border rounded-lg bg-card transition-opacity ${
+      ref={setNodeRef}
+      style={style}
+      className={`border rounded-lg bg-card transition-all ${
         !section.isVisible ? 'opacity-50' : ''
-      }`}
+      } ${isDragging ? 'shadow-lg ring-2 ring-primary' : ''}`}
     >
       <div
         className="flex items-center justify-between p-4 cursor-pointer select-none"
         onClick={() => section.isCollapsible && setOpen(!open)}
       >
         <div className="flex items-center gap-3">
+          {/* Drag handle */}
+          <button
+            className="cursor-grab active:cursor-grabbing touch-none text-muted-foreground hover:text-foreground px-1 -ml-1"
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            title="Drag to reorder"
+            type="button"
+          >
+            ⠿
+          </button>
           <span className="text-lg">{SECTION_ICONS[section.type] ?? '📄'}</span>
           <div>
             <h3 className="font-medium text-sm">
@@ -580,6 +622,9 @@ function SectionCard({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {isSaving && (
+            <span className="text-xs text-muted-foreground animate-pulse">Saving...</span>
+          )}
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -587,6 +632,7 @@ function SectionCard({
             }}
             className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-accent"
             title={section.isVisible ? 'Hide section' : 'Show section'}
+            type="button"
           >
             {section.isVisible ? '👁️' : '🚫'}
           </button>
@@ -597,6 +643,7 @@ function SectionCard({
             }}
             className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1 rounded hover:bg-accent"
             title="Delete section"
+            type="button"
           >
             🗑️
           </button>
@@ -608,7 +655,6 @@ function SectionCard({
       {open && section.isVisible && (
         <div className="px-4 pb-4 border-t pt-3">
           <SectionEditor section={section} onUpdate={onUpdate} />
-          {isSaving && <p className="text-xs text-muted-foreground mt-2">Saving...</p>}
         </div>
       )}
     </div>
@@ -702,8 +748,32 @@ export function ResumeEditor({ resumeId, onAddSection }: ResumeEditorProps) {
   const updateSectionContent = useResumeStore((s) => s.updateSectionContent);
   const toggleSection = useResumeStore((s) => s.toggleSection);
   const deleteSection = useResumeStore((s) => s.deleteSection);
+  const reorderSections = useResumeStore((s) => s.reorderSections);
 
   const [showAddModal, setShowAddModal] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    }),
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const sections = resume?.sections ?? [];
+    const oldIndex = sections.findIndex((s) => s.id === active.id);
+    const newIndex = sections.findIndex((s) => s.id === over.id);
+
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const reordered = arrayMove(sections, oldIndex, newIndex);
+      reorderSections(reordered.map((s) => s.id));
+    }
+  };
 
   if (!resume) return null;
 
@@ -714,6 +784,7 @@ export function ResumeEditor({ resumeId, onAddSection }: ResumeEditorProps) {
         <button
           onClick={() => setShowAddModal(true)}
           className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:opacity-90"
+          type="button"
         >
           + Add Section
         </button>
@@ -724,18 +795,30 @@ export function ResumeEditor({ resumeId, onAddSection }: ResumeEditorProps) {
           No sections yet. Click &quot;Add Section&quot; to get started.
         </div>
       ) : (
-        <div className="space-y-3">
-          {resume.sections.map((section) => (
-            <SectionCard
-              key={section.id}
-              section={section}
-              onUpdate={updateSectionContent}
-              onToggle={toggleSection}
-              onDelete={deleteSection}
-              savingSectionId={savingSectionId}
-            />
-          ))}
-        </div>
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+          modifiers={[restrictToVerticalAxis]}
+        >
+          <SortableContext
+            items={resume.sections.map((s) => s.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-3">
+              {resume.sections.map((section) => (
+                <SortableSectionCard
+                  key={section.id}
+                  section={section}
+                  onUpdate={updateSectionContent}
+                  onToggle={toggleSection}
+                  onDelete={deleteSection}
+                  savingSectionId={savingSectionId}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
       )}
 
       <AddSectionModal

@@ -3,7 +3,12 @@
 import { useParams } from 'next/navigation';
 import { useEffect } from 'react';
 
-import { ResumeEditorLayout, ResumeHeader, ResumeLoadingSkeleton } from '@/components/resume';
+import {
+  ResumeEditorLayout,
+  ResumeHeader,
+  ResumeLoadingSkeleton,
+  ResumeProvider,
+} from '@/components/resume';
 import { useResumeStore } from '@/lib/stores/use-resume-store';
 
 export default function ResumeDetailPage() {
@@ -31,26 +36,28 @@ export default function ResumeDetailPage() {
   }
 
   return (
-    <div className="flex flex-col h-full">
-      {/* Flash messages */}
-      {message && (
-        <div
-          className={`p-3 text-sm border-b cursor-pointer ${
-            message.type === 'success'
-              ? 'bg-green-50 text-green-700 border-green-200'
-              : 'bg-red-50 text-red-700 border-red-200'
-          }`}
-          onClick={() => setMessage(null)}
-        >
-          {message.text}
-        </div>
-      )}
+    <ResumeProvider resumeId={id}>
+      <div className="flex flex-col h-full">
+        {/* Flash messages */}
+        {message && (
+          <div
+            className={`p-3 text-sm border-b cursor-pointer ${
+              message.type === 'success'
+                ? 'bg-green-50 text-green-700 border-green-200'
+                : 'bg-red-50 text-red-700 border-red-200'
+            }`}
+            onClick={() => setMessage(null)}
+          >
+            {message.text}
+          </div>
+        )}
 
-      {/* Header */}
-      <ResumeHeader />
+        {/* Header */}
+        <ResumeHeader />
 
-      {/* Main content: side-by-side editor and preview */}
-      <ResumeEditorLayout resumeId={id} />
-    </div>
+        {/* Main content: side-by-side editor and preview */}
+        <ResumeEditorLayout resumeId={id} />
+      </div>
+    </ResumeProvider>
   );
 }

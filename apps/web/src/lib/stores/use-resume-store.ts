@@ -13,9 +13,12 @@ export type ResumeStore = {
   versions: ResumeVersion[];
   isLoading: boolean;
   isSaving: boolean;
+  lastSaved: Date | null;
+  saveError: string | null;
   savingSectionId: string | null;
   message: ResumeMessage;
 
+  setResume: (resume: Resume) => void;
   loadResume: (id: string) => Promise<void>;
   loadVersions: (id: string) => Promise<void>;
   updateSectionContent: (sectionId: string, content: Record<string, unknown>) => void;
@@ -25,6 +28,7 @@ export type ResumeStore = {
   addSection: (resumeId: string, type: string, title?: string) => Promise<void>;
   setTitle: (title: string) => void;
   flushTitle: () => Promise<void>;
+  reorderSections: (sectionIds: string[]) => Promise<void>;
   duplicateResume: () => Promise<void>;
   archiveResume: () => Promise<void>;
   createVersion: (note?: string) => Promise<void>;
@@ -36,23 +40,33 @@ export type ResumeStore = {
 
 const pendingSaves = new Map<string, Record<string, unknown>>();
 const saveTimers = new Map<string, ReturnType<typeof setTimeout>>();
+let titleSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function scheduleFlush(
-  sectionId: string,
-  content: Record<string, unknown>,
-  flush: (id: string) => void,
+  id: string,
+  data: Record<string, unknown>,
+  flushFn: (id: string) => void,
+  isTitle = false,
 ) {
-  pendingSaves.set(sectionId, content);
-  const existing = saveTimers.get(sectionId);
+  const map = isTitle ? new Map([['title', data]]) : pendingSaves;
+  const timerMap = isTitle ? new Map([['title', titleSaveTimer]]) : saveTimers;
+
+  map.set(id, data);
+  const existing = timerMap.get(id);
   if (existing) clearTimeout(existing);
-  saveTimers.set(
-    sectionId,
-    setTimeout(() => {
-      pendingSaves.delete(sectionId);
-      saveTimers.delete(sectionId);
-      flush(sectionId);
-    }, 800),
-  );
+
+  const newTimer = setTimeout(() => {
+    map.delete(id);
+    timerMap.delete(id);
+    if (isTitle) titleSaveTimer = null;
+    flushFn(id);
+  }, 1200); // Increased debounce time
+
+  if (isTitle) {
+    titleSaveTimer = newTimer;
+  } else {
+    timerMap.set(id, newTimer);
+  }
 }
 
 // ── Store ────────────────────────────────────────────────────────────────────
@@ -62,18 +76,30 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
   versions: [],
   isLoading: false,
   isSaving: false,
+  lastSaved: null,
+  saveError: null,
   savingSectionId: null,
   message: null,
+
+  // ── Setters ────────────────────────────────────────────────────────────────
+
+  setResume: (resume) => {
+    set({ resume });
+  },
 
   // ── Loaders ──────────────────────────────────────────────────────────────
 
   loadResume: async (id: string) => {
-    set({ isLoading: true, message: null });
+    set({ isLoading: true, message: null, saveError: null });
     try {
       const data = await api.get<Resume>(`/resumes/${id}`);
-      set({ resume: data, isLoading: false });
+      set({ resume: data, isLoading: false, lastSaved: new Date() });
     } catch {
-      set({ isLoading: false, message: { type: 'error', text: 'Failed to load resume' } });
+      set({
+        isLoading: false,
+        message: { type: 'error', text: 'Failed to load resume' },
+        saveError: 'Failed to load resume',
+      });
     }
   },
 
@@ -108,16 +134,21 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     const { resume } = get();
     if (!resume) return;
 
-    const content = pendingSaves.get(sectionId);
-    if (!content) return;
+    const section = resume.sections.find((s) => s.id === sectionId);
+    if (!section?.content) return;
 
-    set({ savingSectionId: sectionId });
+    set({ savingSectionId: sectionId, isSaving: true, saveError: null });
     try {
-      await api.patch(`/resumes/${resume.id}/sections/${sectionId}`, { content });
-    } catch {
-      set({ message: { type: 'error', text: 'Failed to save section' } });
+      await api.patch(`/resumes/${resume.id}/sections/${sectionId}`, { content: section.content });
+      set({ lastSaved: new Date() });
+    } catch (e) {
+      const error = e as Error;
+      set({
+        saveError: `Failed to save section: ${error.message}`,
+        message: { type: 'error', text: 'Failed to save section' },
+      });
     } finally {
-      set({ savingSectionId: null });
+      set({ savingSectionId: null, isSaving: false });
     }
   },
 
@@ -125,31 +156,19 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     const { resume } = get();
     if (!resume) return;
 
-    set({
-      resume: {
-        ...resume,
-        sections: resume.sections.map((s) =>
-          s.id === sectionId ? { ...s, isVisible: !s.isVisible } : s,
-        ),
-      },
-    });
+    const originalSections = resume.sections;
+    const newSections = originalSections.map((s) =>
+      s.id === sectionId ? { ...s, isVisible: !s.isVisible } : s,
+    );
+    set({ resume: { ...resume, sections: newSections } });
 
     try {
       await api.patch(`/resumes/${resume.id}/sections/${sectionId}/toggle`, {});
     } catch {
-      set({ message: { type: 'error', text: 'Failed to update section' } });
-      // Revert
-      const current = get().resume;
-      if (current) {
-        set({
-          resume: {
-            ...current,
-            sections: current.sections.map((s) =>
-              s.id === sectionId ? { ...s, isVisible: !s.isVisible } : s,
-            ),
-          },
-        });
-      }
+      set({
+        resume: { ...resume, sections: originalSections },
+        message: { type: 'error', text: 'Failed to update section' },
+      });
     }
   },
 
@@ -162,6 +181,7 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
 
     try {
       await api.del(`/resumes/${resume.id}/sections/${sectionId}`);
+      set({ message: { type: 'success', text: 'Section deleted' } });
     } catch {
       set({
         resume: { ...resume, sections: originalSections },
@@ -171,6 +191,7 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
   },
 
   addSection: async (resumeId: string, type: string, title?: string) => {
+    set({ isSaving: true });
     try {
       const created = await api.post<ResumeSection>(`/resumes/${resumeId}/sections`, {
         type,
@@ -184,6 +205,8 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
       }));
     } catch {
       set({ message: { type: 'error', text: 'Failed to add section' } });
+    } finally {
+      set({ isSaving: false });
     }
   },
 
@@ -193,17 +216,51 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     const { resume } = get();
     if (!resume) return;
     set({ resume: { ...resume, title } });
+    // Schedule auto-save for title
+    scheduleFlush('title', { title }, get().flushTitle, true);
   },
 
   flushTitle: async () => {
     const { resume } = get();
     if (!resume?.title.trim()) return;
-    set({ isSaving: true });
+    set({ isSaving: true, saveError: null });
     try {
       await api.patch(`/resumes/${resume.id}`, { title: resume.title });
-      set({ isSaving: false, message: { type: 'success', text: 'Title saved' } });
+      set({ lastSaved: new Date() });
+    } catch (e) {
+      const error = e as Error;
+      set({
+        saveError: `Failed to save title: ${error.message}`,
+        message: { type: 'error', text: 'Failed to save title' },
+      });
+    } finally {
+      set({ isSaving: false });
+    }
+  },
+
+  // ── Section order ────────────────────────────────────────────────────────
+
+  reorderSections: async (sectionIds: string[]) => {
+    const { resume } = get();
+    if (!resume) return;
+
+    const originalSections = resume.sections;
+    const reorderedSections = sectionIds
+      .map((id) => originalSections.find((s) => s.id === id))
+      .filter((s): s is ResumeSection => !!s)
+      .map((s, i) => ({ ...s, sortOrder: i }));
+
+    set({ resume: { ...resume, sections: reorderedSections } });
+
+    try {
+      await api.patch(`/resumes/${resume.id}/sections/reorder`, {
+        sectionIds,
+      });
     } catch {
-      set({ isSaving: false, message: { type: 'error', text: 'Failed to save title' } });
+      set({
+        resume: { ...resume, sections: originalSections },
+        message: { type: 'error', text: 'Failed to reorder sections' },
+      });
     }
   },
 
@@ -252,11 +309,15 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     pendingSaves.clear();
     saveTimers.forEach(clearTimeout);
     saveTimers.clear();
+    if (titleSaveTimer) clearTimeout(titleSaveTimer);
+    titleSaveTimer = null;
     set({
       resume: null,
       versions: [],
       isLoading: false,
       isSaving: false,
+      lastSaved: null,
+      saveError: null,
       savingSectionId: null,
       message: null,
     });

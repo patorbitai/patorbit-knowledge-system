@@ -30,8 +30,8 @@ export function ResumeEditorLayout({ resumeId }: ResumeEditorLayoutProps) {
       </div>
 
       {/* Preview Panel */}
-      <div className="hidden lg:block lg:w-1/2 xl:w-2/5 bg-gray-50">
-        <ResumePreview className="h-full" />
+      <div className="hidden lg:block lg:w-1/2 xl:w-2/5 border-l bg-gray-50">
+        <ResumePreview />
       </div>
     </div>
   );
