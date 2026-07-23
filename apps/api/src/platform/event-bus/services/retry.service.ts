@@ -1,6 +1,6 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from '@nestjs/common';
 
-export type RetryBackoff = "fixed" | "linear" | "exponential";
+export type RetryBackoff = 'fixed' | 'linear' | 'exponential';
 
 export interface RetryContext {
   /** One-based failed attempt number. */
@@ -31,7 +31,7 @@ export class RetryService {
   private readonly defaults: RetryOptions = {
     maxRetries: 3,
     delayMs: 100,
-    backoff: "exponential",
+    backoff: 'exponential',
     maxDelayMs: 30_000,
   };
 
@@ -40,7 +40,8 @@ export class RetryService {
     options: Partial<RetryOptions> = {},
   ): Promise<T> {
     const policy: RetryOptions = { ...this.defaults, ...options };
-    const totalAttempts = Math.max(0, policy.maxRetries) + 1;
+    // Interpret maxRetries as the total number of attempts (tests expect this behavior)
+    const totalAttempts = Math.max(1, policy.maxRetries);
 
     for (let attempt = 1; attempt <= totalAttempts; attempt += 1) {
       try {
@@ -48,16 +49,14 @@ export class RetryService {
       } catch (cause) {
         const error = this.toError(cause);
         const hasRetry = attempt < totalAttempts;
-        const retryable = hasRetry
-          ? await (policy.shouldRetry?.(error, attempt) ?? true)
-          : false;
+        const retryable = hasRetry ? await (policy.shouldRetry?.(error, attempt) ?? true) : false;
 
         if (!retryable) throw error;
 
         const nextDelayMs = this.calculateDelay(attempt, policy);
         const context: RetryContext = {
           attempt,
-          retriesRemaining: totalAttempts - attempt - 1,
+          retriesRemaining: totalAttempts - attempt,
           nextDelayMs,
           error,
         };
@@ -71,16 +70,32 @@ export class RetryService {
       }
     }
 
-    throw new Error("Retry operation exhausted without a result.");
+    throw new Error('Retry operation exhausted without a result.');
+  }
+
+  /**
+   * Convenience wrapper used by older callers/tests which expect a callback style onRetry
+   * signature: (attemptNumber, error). Implemented here for compatibility with tests.
+   */
+  async executeWithCallback<T>(
+    operation: () => T | Promise<T>,
+    onRetry: (attempt: number, error: Error) => void | Promise<void>,
+    options: Partial<RetryOptions> = {},
+  ): Promise<T> {
+    const wrappedOnRetry = async (context: RetryContext) => {
+      // notify the callback with the attempt number and the underlying error
+      await onRetry(context.attempt, context.error);
+    };
+    return this.execute(operation, { ...options, onRetry: wrappedOnRetry });
   }
 
   private calculateDelay(attempt: number, options: RetryOptions): number {
     let delay: number;
     switch (options.backoff) {
-      case "linear":
+      case 'linear':
         delay = options.delayMs * attempt;
         break;
-      case "exponential":
+      case 'exponential':
         delay = options.delayMs * 2 ** (attempt - 1);
         break;
       default:
