@@ -1,8 +1,7 @@
 import { Inject, Injectable } from "@nestjs/common";
-import  { type Notification, type NotificationChannel } from "@patorbit/notifications";
 
 import { NOTIFICATION_PROVIDER } from "./notifications.constants";
-import  { type NotificationProvider } from "./notifications.provider";
+import { type Notification, type NotificationProvider, type NotificationChannel } from "./notifications.provider";
 
 @Injectable()
 export class NotificationsService {

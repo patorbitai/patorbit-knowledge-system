@@ -15,7 +15,16 @@ import { TypedConfigService } from "./typed-config.service";
   imports: [
     NestConfigModule.forRoot({
       isGlobal: true,
-      validate: (env) => envSchema.parse(env),
+      validate: (env) => {
+        const result = envSchema.safeParse(env);
+        if (!result.success) {
+          const errors = result.error.flatten().fieldErrors;
+          throw new Error(
+            `Environment validation failed: ${JSON.stringify(errors, null, 2)}`
+          );
+        }
+        return result.data;
+      },
     }),
   ],
   providers: [

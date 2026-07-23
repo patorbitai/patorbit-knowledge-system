@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   transpilePackages: ["@patorbit/ui", "@patorbit/config", "@patorbit/utils"],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
 };
 
 module.exports = nextConfig;

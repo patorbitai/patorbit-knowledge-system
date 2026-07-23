@@ -1,13 +1,9 @@
-import { ExecutionContext,Injectable } from "@nestjs/common";
-import { Reflector } from "@nestjs/core";
-import { ThrottlerGuard, type ThrottlerRequest } from "@nestjs/throttler";
+import { Injectable } from "@nestjs/common";
+import { ThrottlerGuard } from "@nestjs/throttler";
 
 @Injectable()
 export class RateLimitGuard extends ThrottlerGuard {
-  protected async handleRequest(requestProps: ThrottlerRequest): Promise<boolean> {
-    // Use the parent ThrottlerGuard logic
-    const { context, limit, ttl } = requestProps;
-    const { req } = this.getRequestResponse(context);
-    return super.handleRequest({ ...requestProps, req });
+  protected getTracker(req: Record<string, any>): Promise<string> {
+    return req.ips.length ? req.ips[0] : req.ip;
   }
 }

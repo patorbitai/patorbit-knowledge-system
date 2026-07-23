@@ -1,8 +1,0 @@
-{
-  "name": "@patorbit/docs",
-  "version": "0.1.0",
-  "private": true,
-  "scripts": {
-    "clean": "rm -rf .turbo node_modules"
-  }
-}

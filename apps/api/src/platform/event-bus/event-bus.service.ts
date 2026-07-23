@@ -25,6 +25,7 @@ import { type Event } from './event-bus.provider';
 import { type DeadLetterService } from './services/dead-letter.service';
 import { type OutboxService } from './services/outbox.service';
 import { type RetryOptions } from './services/retry.service';
+import { type RetryService } from './services/retry.service';
 
 export interface EventBusModuleOptions {
   useOutbox: boolean;
@@ -110,7 +111,7 @@ export class EventBusService implements IEventBus, OnApplicationBootstrap, OnApp
     this.discovery
       .getProviders()
       .filter((wrapper) => wrapper.metatype)
-      .forEach((wrapper) => this.subscribeProvider(wrapper.metatype!));
+      .forEach((wrapper) => this.subscribeProvider(wrapper.metatype as Type<any>));
   }
 
   private subscribeProvider(

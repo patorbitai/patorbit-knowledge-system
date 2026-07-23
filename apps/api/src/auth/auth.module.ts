@@ -15,7 +15,16 @@ import { TokenService } from "./token.service";
 @Module({
   imports: [
     PassportModule,
-    JwtModule.register({}),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.getOrThrow<string>('JWT_ACCESS_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_ACCESS_TOKEN_EXPIRATION', '15m'),
+        },
+      }),
+      inject: [ConfigService],
+    }),
     IdentityModule,
     SessionModule,
     AuditModule,

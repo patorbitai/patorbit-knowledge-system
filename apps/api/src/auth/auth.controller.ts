@@ -30,16 +30,16 @@ export class AuthController {
   ) {}
 
   private setRefreshTokenCookie(res: Response, token: string, rememberMe: boolean) {
-    const isProd = this.configService.get<string>("NODE_ENV") === "production";
     const maxAge = rememberMe
       ? 1000 * 60 * 60 * 24 * 90 // 90 days
       : 1000 * 60 * 60 * 24 * 7; // 7 days
 
     res.cookie("refresh_token", token, {
       httpOnly: true,
-      secure: isProd,
-      sameSite: isProd ? "strict" : "lax",
+      secure: true,
+      sameSite: "strict",
       maxAge,
+      path: "/api/auth",
     });
   }
 

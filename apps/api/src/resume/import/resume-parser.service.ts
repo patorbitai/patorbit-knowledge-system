@@ -1,9 +1,12 @@
-
 import { Injectable } from '@nestjs/common';
 
 import { DocxParser } from './parsers/docx-parser';
-import { JsonParser } from './parsers/json-parser';
+import { JsonParser, type ParserResult } from './parsers/json-parser';
 import { PdfParser } from './parsers/pdf-parser';
+
+interface ResumeParser {
+  parse(data: Buffer): Promise<ParserResult>;
+}
 
 @Injectable()
 export class ResumeParserService {
@@ -19,14 +22,13 @@ export class ResumeParserService {
     this.parsers.set(type, parser);
   }
 
-  async parse(type: string, data: Buffer): Promise<{ success: boolean; data?: any; error?: string }> {
+  async parse(type: string, data: Buffer): Promise<ParserResult> {
     const parser = this.parsers.get(type);
     if (!parser) {
       return { success: false, error: `No parser found for type: ${type}` };
     }
     try {
-      const parsedData = await parser.parse(data);
-      return { success: true, data: parsedData };
+      return await parser.parse(data);
     } catch (error) {
       return { success: false, error: `Failed to parse ${type}: ${(error as Error).message}` };
     }

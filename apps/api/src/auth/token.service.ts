@@ -15,14 +15,9 @@ export class TokenService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService
   ) {
-    this.accessSecret = this.configService.get<string>(
-      "JWT_ACCESS_SECRET",
-      "default_access_secret"
-    );
-    this.refreshSecret = this.configService.get<string>(
-      "JWT_REFRESH_SECRET",
-      "default_refresh_secret"
-    );
+    // Note: These will throw at startup if env vars are missing — no fallback defaults
+    this.accessSecret = this.configService.getOrThrow<string>("JWT_ACCESS_SECRET");
+    this.refreshSecret = this.configService.getOrThrow<string>("JWT_REFRESH_SECRET");
     this.accessExpires = this.configService.get<string>(
       "JWT_ACCESS_TOKEN_EXPIRATION",
       "15m"

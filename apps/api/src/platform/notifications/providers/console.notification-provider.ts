@@ -1,7 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
-import  { type Notification, type NotificationChannel } from "@patorbit/notifications";
 
-import  { type NotificationProvider } from "../notifications.provider";
+import { type Notification, type NotificationChannel, type NotificationProvider } from "../notifications.provider";
 
 @Injectable()
 export class ConsoleNotificationProvider implements NotificationProvider {

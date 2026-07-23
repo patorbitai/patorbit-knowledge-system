@@ -1,11 +1,10 @@
-import {
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { type PrismaService } from '@patorbit/database';
 import { type StorageService } from '@platform/storage';
 import { v4 as uuidv4 } from 'uuid';
+
+import { generateDocx } from './generators/docx-generator';
+import { generatePdf } from './generators/pdf-generator';
 
 export interface CreateExportJobDto {
   resumeId: string;
@@ -60,11 +59,7 @@ export class ExportService {
     return this.storage.getSignedUrl(job.storageKey!, 3600);
   }
 
-  private async processExport(
-    jobId: string,
-    resume: any,
-    format: string,
-  ) {
+  private async processExport(jobId: string, resume: any, format: string) {
     try {
       await this.prisma.exportJob.update({
         where: { id: jobId },
@@ -72,30 +67,30 @@ export class ExportService {
       });
 
       let storageKey: string;
+      let buffer: Buffer;
+      let mimeType: string;
 
-      if (format === 'json') {
-        const content = JSON.stringify(this.buildResumeJson(resume), null, 2);
-        storageKey = `resume-exports/${resume.id}/${uuidv4()}.json`;
-        await this.storage.upload(storageKey, Buffer.from(content), {
-          mimeType: 'application/json',
-        });
-      } else if (format === 'pdf') {
-        // PDF generation placeholder
-        storageKey = `resume-exports/${resume.id}/${uuidv4()}.pdf`;
-        const placeholder = Buffer.from(`PDF export for resume: ${resume.id}`);
-        await this.storage.upload(storageKey, placeholder, {
-          mimeType: 'application/pdf',
-        });
-      } else if (format === 'docx') {
-        // DOCX generation placeholder
-        storageKey = `resume-exports/${resume.id}/${uuidv4()}.docx`;
-        const placeholder = Buffer.from(`DOCX export for resume: ${resume.id}`);
-        await this.storage.upload(storageKey, placeholder, {
-          mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-        });
-      } else {
-        throw new Error(`Unsupported export format: ${format}`);
+      switch (format) {
+        case 'json':
+          buffer = Buffer.from(JSON.stringify(this.buildResumeJson(resume), null, 2));
+          storageKey = `resume-exports/${resume.id}/${uuidv4()}.json`;
+          mimeType = 'application/json';
+          break;
+        case 'pdf':
+          buffer = await generatePdf(resume);
+          storageKey = `resume-exports/${resume.id}/${uuidv4()}.pdf`;
+          mimeType = 'application/pdf';
+          break;
+        case 'docx':
+          buffer = await generateDocx(resume);
+          storageKey = `resume-exports/${resume.id}/${uuidv4()}.docx`;
+          mimeType = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+          break;
+        default:
+          throw new Error(`Unsupported export format: ${format}`);
       }
+
+      await this.storage.upload(storageKey, buffer, { mimeType });
 
       await this.prisma.exportJob.update({
         where: { id: jobId },

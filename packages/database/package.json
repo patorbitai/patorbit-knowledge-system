@@ -13,7 +13,7 @@
   },
   "scripts": {
     "build": "prisma generate && tsc",
-    "clean": "rm -rf .turbo node_modules dist *.js prisma.service.js database.module.js",
+    "clean": "rimraf .turbo node_modules dist",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:push": "prisma db push",

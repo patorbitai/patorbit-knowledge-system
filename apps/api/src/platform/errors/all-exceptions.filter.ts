@@ -2,10 +2,10 @@ import {
   type ArgumentsHost,
   Catch,
   type ExceptionFilter,
-  type HttpAdapterHost,
   HttpException,
   HttpStatus,
 } from '@nestjs/common';
+import { HttpAdapterHost } from '@nestjs/core';
 import { type Request, type Response } from 'express';
 
 import { type LoggingService } from '../logging/logging.service';

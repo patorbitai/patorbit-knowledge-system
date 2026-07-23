@@ -1,4 +1,16 @@
-import  { type Notification, type NotificationChannel } from "@patorbit/notifications";
+export type NotificationChannel = "email" | "sms" | "in_app" | "push";
+
+export interface Notification {
+  id: string;
+  type: string;
+  recipientId: string;
+  channel: NotificationChannel;
+  title: string;
+  body: string;
+  data?: Record<string, unknown>;
+  readAt?: Date;
+  createdAt: Date;
+}
 
 export interface NotificationProvider {
   readonly name: string;

@@ -35,7 +35,7 @@ export class PlatformCacheModule {
         try {
           const url = new URL(redisUrl);
 
-          // @ts-expect-error - cache-manager-redis-store has no type defs
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const store = await (redisStore as any)({
             socket: {
               host: url.hostname,

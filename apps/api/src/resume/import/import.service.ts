@@ -4,13 +4,13 @@ import { type PrismaService } from '@patorbit/database';
 import { type StorageService } from '../../platform/storage/storage.service';
 import { type CreateImportJobDto } from './dto/create-import-job.dto';
 import { type DocxParser } from './parsers/docx-parser';
-import { type JsonParser } from './parsers/json-parser';
+import { type JsonParser, type ParserResult } from './parsers/json-parser';
 import { type LinkedinParser } from './parsers/linkedin-parser';
 import { type PdfParser } from './parsers/pdf-parser';
 
 @Injectable()
 export class ImportService {
-  private parsers: Record<string, { parse: (data: string) => any }>;
+  private parsers: Record<string, { parse: (data: Buffer) => Promise<ParserResult> }>;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -66,7 +66,7 @@ export class ImportService {
       }
 
       const rawData = await this.storageService.download(job.sourceData?.['storageKey'] as string);
-      const result = await parser.parse(rawData.toString());
+      const result = await parser.parse(rawData);
 
       if (!result.success) {
         throw new Error(result.error || 'Parsing failed');

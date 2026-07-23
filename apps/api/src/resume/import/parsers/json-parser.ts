@@ -10,8 +10,9 @@ export interface ParserResult {
 
 @Injectable()
 export class JsonParser {
-  parse(rawJson: string): ParserResult {
+  async parse(data: Buffer): Promise<ParserResult> {
     try {
+      const rawJson = data.toString('utf-8');
       const parsed = JSON.parse(rawJson);
 
       const result: ImportResultDto = {
