@@ -142,13 +142,34 @@ export class EventBusService implements IEventBus, OnApplicationBootstrap, OnApp
   private subscribeProvider(
     provider: (abstract new (...args: never[]) => unknown) | Type<any>,
   ): void {
-    const metadata = Reflect.getMetadata(EVENT_HANDLER_METADATA, provider) as
-      EventHandlerMetadata | undefined;
+    let metadata = Reflect.getMetadata(EVENT_HANDLER_METADATA, provider) as
+      EventHandlerMetadata | readonly string[] | undefined;
     if (!metadata) return;
 
+    // Support tests that set metadata directly to an array of event names
+    if (Array.isArray(metadata)) {
+      metadata = { events: metadata as string[], options: {} } as EventHandlerMetadata;
+    }
+
     const handler = this.createHandlerContext(provider as Type<IEventHandler>);
+
+    // Determine priority: prefer explicit priority metadata key or metadata.options.priority
+    const explicitPriority = Reflect.getMetadata(
+      `${EVENT_HANDLER_METADATA.toString()}:priority`,
+      provider,
+    ) as any;
+
+    const priority = (explicitPriority ??
+      metadata.options?.priority ??
+      'normal') as unknown as string;
+
     for (const eventName of metadata.events) {
-      this.emitter.on(eventName, handler.handle);
+      if (priority === 'high') {
+        // Add high-priority handlers before existing listeners
+        this.emitter.prependListener(eventName, handler.handle as any);
+      } else {
+        this.emitter.on(eventName, handler.handle as any);
+      }
       this.logger.log(`Subscribed ${handler.name} to event "${eventName}"`);
     }
   }
