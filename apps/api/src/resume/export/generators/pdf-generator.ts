@@ -1,5 +1,7 @@
 import { Logger } from '@nestjs/common';
 
+import { serializeResumeToText } from '../shared/resume-text-serializer';
+
 const logger = new Logger('PdfGenerator');
 
 export async function generatePdf(resume: any): Promise<Buffer> {
@@ -62,36 +64,7 @@ export async function generatePdf(resume: any): Promise<Buffer> {
     });
   } catch (error) {
     logger.warn(`PDFKit unavailable, using text fallback: ${(error as Error).message}`);
-
-    // Fallback: generate a basic text-based PDF representation
-    const lines: string[] = [];
-    lines.push(resume.title || 'Resume');
-    lines.push('='.repeat(50));
-    lines.push('');
-
-    const sections = resume.sections || [];
-    for (const section of sections) {
-      const label = (section.title || section.type || 'Section').replace(/_/g, ' ');
-      lines.push(label);
-      lines.push('-'.repeat(label.length));
-      if (section.content) {
-        if (Array.isArray(section.content)) {
-          for (const item of section.content) {
-            if (typeof item === 'object' && item !== null) {
-              lines.push(
-                `  • ${[item.title, item.company, item.description].filter(Boolean).join(' — ')}`,
-              );
-            } else {
-              lines.push(`  • ${item}`);
-            }
-          }
-        } else if (typeof section.content === 'string') {
-          lines.push(`  ${section.content}`);
-        }
-      }
-      lines.push('');
-    }
-
-    return Buffer.from(lines.join('\n'), 'utf-8');
+    const serializedText = serializeResumeToText(resume);
+    return Buffer.from(serializedText, 'utf-8');
   }
 }

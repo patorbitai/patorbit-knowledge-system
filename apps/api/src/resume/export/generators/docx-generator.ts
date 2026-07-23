@@ -1,5 +1,7 @@
 import { Logger } from '@nestjs/common';
 
+import { serializeResumeToText } from '../shared/resume-text-serializer';
+
 const logger = new Logger('DocxGenerator');
 
 export async function generateDocx(resume: any): Promise<Buffer> {
@@ -60,26 +62,7 @@ export async function generateDocx(resume: any): Promise<Buffer> {
     return await Packer.toBuffer(doc);
   } catch (error) {
     logger.warn(`docx library unavailable, using text fallback: ${(error as Error).message}`);
-    const lines: string[] = [];
-    lines.push(resume.title || 'Resume');
-    const sections = resume.sections || [];
-    for (const section of sections) {
-      const label = (section.title || section.type || 'Section').replace(/_/g, ' ');
-      lines.push(label);
-      if (section.content) {
-        if (Array.isArray(section.content)) {
-          for (const item of section.content) {
-            const parts =
-              typeof item === 'object'
-                ? [item.title, item.company, item.description].filter(Boolean).join(' — ')
-                : String(item);
-            lines.push(`  • ${parts}`);
-          }
-        } else if (typeof section.content === 'string') {
-          lines.push(`  ${section.content}`);
-        }
-      }
-    }
-    return Buffer.from(lines.join('\n'), 'utf-8');
+    const serializedText = serializeResumeToText(resume);
+    return Buffer.from(serializedText, 'utf-8');
   }
 }
