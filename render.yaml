@@ -1,0 +1,17 @@
+services:
+  - type: web_service
+    name: patorbit-api
+    env: docker
+    branch: main
+    dockerfilePath: apps/api/Dockerfile
+    plan: free
+    buildCommand: pnpm --filter @patorbit/api build
+    startCommand: node apps/api/dist/main
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: API_PORT
+        value: '4000'
+      - key: DATABASE_URL
+        # mark as placeholder; set this in Render dashboard or secrets
+        value: ''
