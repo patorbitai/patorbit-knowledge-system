@@ -1,14 +1,16 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, Logger } from '@nestjs/common';
 
-import  { type AnyEvent } from "../event-bus.provider";
+import { type AnyEvent } from '../event-bus.provider';
 
-export type OutboxStatus = "pending" | "published" | "failed";
+export type OutboxStatus = 'pending' | 'published' | 'failed';
 
 export interface OutboxEntry {
   id: string;
   eventType: string;
-  eventKind: AnyEvent["kind"];
+  eventKind: AnyEvent['kind'];
   payload: AnyEvent;
+  // Backwards compatibility: tests sometimes expect `event` property name
+  event?: AnyEvent;
   status: OutboxStatus;
   createdAt: Date;
   publishedAt?: Date;
@@ -40,14 +42,14 @@ export class OutboxService implements OutboxRepository {
       eventType: event.eventType,
       eventKind: event.kind,
       payload: event,
-      status: "pending",
+      status: 'pending',
       createdAt: new Date(),
     };
     return this.create(entry);
   }
 
   async create(entry: OutboxEntry): Promise<OutboxEntry> {
-    const stored = { ...entry };
+    const stored: OutboxEntry = { ...entry, event: entry.payload };
     this.entries.set(stored.id, stored);
     this.logger.debug(`Stored ${stored.eventType} (${stored.id}) in the outbox.`);
     return { ...stored };
@@ -60,7 +62,7 @@ export class OutboxService implements OutboxRepository {
 
   async markPublished(id: string): Promise<void> {
     await this.update(id, {
-      status: "published",
+      status: 'published',
       publishedAt: new Date(),
       failedAt: undefined,
       error: undefined,
@@ -69,7 +71,7 @@ export class OutboxService implements OutboxRepository {
 
   async markFailed(id: string, error: Error): Promise<void> {
     await this.update(id, {
-      status: "failed",
+      status: 'failed',
       failedAt: new Date(),
       error: error.message,
     });
@@ -82,7 +84,7 @@ export class OutboxService implements OutboxRepository {
 
   async findPending(limit = Number.POSITIVE_INFINITY): Promise<OutboxEntry[]> {
     return Array.from(this.entries.values())
-      .filter((entry) => entry.status === "pending")
+      .filter((entry) => entry.status === 'pending')
       .slice(0, limit)
       .map((entry) => ({ ...entry }));
   }
@@ -113,8 +115,6 @@ export class OutboxService implements OutboxRepository {
   }
 
   get pendingCount(): number {
-    return Array.from(this.entries.values()).filter(
-      (entry) => entry.status === "pending",
-    ).length;
+    return Array.from(this.entries.values()).filter((entry) => entry.status === 'pending').length;
   }
 }
