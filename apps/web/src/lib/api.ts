@@ -70,4 +70,16 @@ export const api = {
     request<T>('PATCH', path, body, headers)) as RequestFn,
   del: (<T>(path: string, headers?: Record<string, string>) =>
     request<T>('DELETE', path, undefined, headers)) as RequestFn,
+
+  ai: {
+    improveSummary: (text: string): Promise<string> => api.post('/ai/improve-summary', { text }),
+    improveBullet: (text: string): Promise<string> => api.post('/ai/improve-bullet', { text }),
+    suggestSkills: (text: string): Promise<string[]> => api.post('/ai/suggest-skills', { text }),
+    grammarReview: (
+      text: string,
+    ): Promise<Array<{ start: number; end: number; suggestion: string }>> =>
+      api.post('/ai/grammar-review', { text }),
+    optimizeAts: (content: Record<string, unknown>): Promise<Record<string, unknown>> =>
+      api.post('/ai/optimize-ats', { content }),
+  },
 };

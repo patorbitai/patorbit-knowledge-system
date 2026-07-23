@@ -1,4 +1,4 @@
-import type { BillingProvider } from './interfaces';
+import { type BillingProvider } from './interfaces';
 
 export interface SubscriptionUpdater {
   updatePlan(organizationId: string, plan: string, status: string): Promise<void>;
@@ -6,7 +6,12 @@ export interface SubscriptionUpdater {
 }
 
 export interface PaymentLogger {
-  recordPayment(subscriptionId: string, amount: number, currency: string, invoiceId: string): Promise<void>;
+  recordPayment(
+    subscriptionId: string,
+    amount: number,
+    currency: string,
+    invoiceId: string,
+  ): Promise<void>;
   recordFailedPayment(subscriptionId: string, invoiceId: string, reason: string): Promise<void>;
 }
 
@@ -30,7 +35,10 @@ export class WebhookHandler {
     private readonly idempotencyStore: IdempotencyStore,
   ) {}
 
-  async handleEvent(payload: Buffer, signature: string): Promise<{ handled: boolean; event: string }> {
+  async handleEvent(
+    payload: Buffer,
+    signature: string,
+  ): Promise<{ handled: boolean; event: string }> {
     const { event, data } = await this.provider.handleWebhook(payload, signature);
 
     // Extract event ID for idempotency
@@ -73,10 +81,15 @@ export class WebhookHandler {
       case 'invoice.paid': {
         const invoiceData = data as Record<string, any>;
         const subscriptionId = invoiceData.subscription as string;
-        const amount = invoiceData.amount_paid as number ?? 0;
-        const currency = invoiceData.currency as string ?? 'usd';
+        const amount = (invoiceData.amount_paid as number) ?? 0;
+        const currency = (invoiceData.currency as string) ?? 'usd';
         const invoiceId = invoiceData.id as string;
-        await this.paymentLogger.recordPayment(subscriptionId ?? 'unknown', amount, currency, invoiceId);
+        await this.paymentLogger.recordPayment(
+          subscriptionId ?? 'unknown',
+          amount,
+          currency,
+          invoiceId,
+        );
         break;
       }
 

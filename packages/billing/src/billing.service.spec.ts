@@ -1,7 +1,13 @@
-import { vi, describe, it, expect, beforeEach } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { type BillingProvider } from './interfaces';
+import {
+  type CreateCheckoutSessionParams,
+  type CreateCustomerPortalParams,
+  type CreateSubscriptionParams,
+  type UpdateSubscriptionParams,
+} from './interfaces';
 import { BillingService } from './services/billing.service';
-import type { BillingProvider } from './interfaces';
-import type { CreateCheckoutSessionParams, CreateCustomerPortalParams, CreateSubscriptionParams, UpdateSubscriptionParams } from './interfaces';
 
 const mockProvider: BillingProvider = {
   createCustomer: vi.fn(),
@@ -29,7 +35,9 @@ describe('BillingService', () => {
 
   describe('createCustomer', () => {
     it('should create a customer and return the id', async () => {
-      (mockProvider.createCustomer as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'cus_123' });
+      (mockProvider.createCustomer as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'cus_123',
+      });
 
       const result = await service.createCustomer('test@example.com', 'Test User');
 
@@ -38,7 +46,9 @@ describe('BillingService', () => {
     });
 
     it('should create a customer without a name', async () => {
-      (mockProvider.createCustomer as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'cus_456' });
+      (mockProvider.createCustomer as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'cus_456',
+      });
 
       const result = await service.createCustomer('anon@example.com');
 
@@ -47,7 +57,9 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      (mockProvider.createCustomer as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Stripe API error'));
+      (mockProvider.createCustomer as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Stripe API error'),
+      );
 
       await expect(service.createCustomer('fail@example.com')).rejects.toThrow('Stripe API error');
     });
@@ -71,7 +83,10 @@ describe('BillingService', () => {
       const result = await service.createCheckoutSession(baseParams);
 
       expect(mockProvider.createCheckoutSession).toHaveBeenCalledWith(baseParams);
-      expect(result).toEqual({ url: 'https://checkout.stripe.com/session_123', sessionId: 'cs_123' });
+      expect(result).toEqual({
+        url: 'https://checkout.stripe.com/session_123',
+        sessionId: 'cs_123',
+      });
     });
 
     it('should pass optional trial days and metadata', async () => {
@@ -91,7 +106,9 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      (mockProvider.createCheckoutSession as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Provider error'));
+      (mockProvider.createCheckoutSession as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Provider error'),
+      );
 
       await expect(service.createCheckoutSession(baseParams)).rejects.toThrow('Provider error');
     });
@@ -99,7 +116,10 @@ describe('BillingService', () => {
 
   describe('createCustomerPortal', () => {
     it('should create a customer portal session', async () => {
-      const params: CreateCustomerPortalParams = { customerId: 'cus_123', returnUrl: 'https://example.com/settings' };
+      const params: CreateCustomerPortalParams = {
+        customerId: 'cus_123',
+        returnUrl: 'https://example.com/settings',
+      };
       (mockProvider.createCustomerPortal as ReturnType<typeof vi.fn>).mockResolvedValue({
         url: 'https://billing.stripe.com/portal_123',
       });
@@ -111,8 +131,13 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      const params: CreateCustomerPortalParams = { customerId: 'cus_999', returnUrl: 'https://example.com' };
-      (mockProvider.createCustomerPortal as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Customer not found'));
+      const params: CreateCustomerPortalParams = {
+        customerId: 'cus_999',
+        returnUrl: 'https://example.com',
+      };
+      (mockProvider.createCustomerPortal as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Customer not found'),
+      );
 
       await expect(service.createCustomerPortal(params)).rejects.toThrow('Customer not found');
     });
@@ -120,8 +145,15 @@ describe('BillingService', () => {
 
   describe('createSubscription', () => {
     it('should create a subscription', async () => {
-      const params: CreateSubscriptionParams = { customerId: 'cus_123', planId: 'pro', interval: 'month' };
-      (mockProvider.createSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'sub_123', status: 'active' });
+      const params: CreateSubscriptionParams = {
+        customerId: 'cus_123',
+        planId: 'pro',
+        interval: 'month',
+      };
+      (mockProvider.createSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'sub_123',
+        status: 'active',
+      });
 
       const result = await service.createSubscription(params);
 
@@ -137,7 +169,10 @@ describe('BillingService', () => {
         trialDays: 30,
         metadata: { promo_code: 'YEARLY30' },
       };
-      (mockProvider.createSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'sub_456', status: 'trialing' });
+      (mockProvider.createSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'sub_456',
+        status: 'trialing',
+      });
 
       const result = await service.createSubscription(params);
 
@@ -146,8 +181,14 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      const params: CreateSubscriptionParams = { customerId: 'cus_bad', planId: 'pro', interval: 'month' };
-      (mockProvider.createSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Invalid customer'));
+      const params: CreateSubscriptionParams = {
+        customerId: 'cus_bad',
+        planId: 'pro',
+        interval: 'month',
+      };
+      (mockProvider.createSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Invalid customer'),
+      );
 
       await expect(service.createSubscription(params)).rejects.toThrow('Invalid customer');
     });
@@ -155,8 +196,15 @@ describe('BillingService', () => {
 
   describe('updateSubscription', () => {
     it('should update a subscription plan and interval', async () => {
-      const params: UpdateSubscriptionParams = { subscriptionId: 'sub_123', planId: 'premium', interval: 'year' };
-      (mockProvider.updateSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'sub_123', status: 'active' });
+      const params: UpdateSubscriptionParams = {
+        subscriptionId: 'sub_123',
+        planId: 'premium',
+        interval: 'year',
+      };
+      (mockProvider.updateSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'sub_123',
+        status: 'active',
+      });
 
       const result = await service.updateSubscription(params);
 
@@ -165,8 +213,14 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      const params: UpdateSubscriptionParams = { subscriptionId: 'sub_missing', planId: 'pro', interval: 'month' };
-      (mockProvider.updateSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Subscription not found'));
+      const params: UpdateSubscriptionParams = {
+        subscriptionId: 'sub_missing',
+        planId: 'pro',
+        interval: 'month',
+      };
+      (mockProvider.updateSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Subscription not found'),
+      );
 
       await expect(service.updateSubscription(params)).rejects.toThrow('Subscription not found');
     });
@@ -174,7 +228,10 @@ describe('BillingService', () => {
 
   describe('cancelSubscription', () => {
     it('should cancel a subscription', async () => {
-      (mockProvider.cancelSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'sub_123', status: 'canceled' });
+      (mockProvider.cancelSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'sub_123',
+        status: 'canceled',
+      });
 
       const result = await service.cancelSubscription('sub_123');
 
@@ -183,15 +240,22 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      (mockProvider.cancelSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Subscription already canceled'));
+      (mockProvider.cancelSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Subscription already canceled'),
+      );
 
-      await expect(service.cancelSubscription('sub_already_canceled')).rejects.toThrow('Subscription already canceled');
+      await expect(service.cancelSubscription('sub_already_canceled')).rejects.toThrow(
+        'Subscription already canceled',
+      );
     });
   });
 
   describe('resumeSubscription', () => {
     it('should resume a canceled subscription', async () => {
-      (mockProvider.resumeSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({ id: 'sub_123', status: 'active' });
+      (mockProvider.resumeSubscription as ReturnType<typeof vi.fn>).mockResolvedValue({
+        id: 'sub_123',
+        status: 'active',
+      });
 
       const result = await service.resumeSubscription('sub_123');
 
@@ -200,9 +264,13 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      (mockProvider.resumeSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Cannot resume subscription'));
+      (mockProvider.resumeSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Cannot resume subscription'),
+      );
 
-      await expect(service.resumeSubscription('sub_canceled')).rejects.toThrow('Cannot resume subscription');
+      await expect(service.resumeSubscription('sub_canceled')).rejects.toThrow(
+        'Cannot resume subscription',
+      );
     });
   });
 
@@ -221,9 +289,13 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      (mockProvider.getSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Subscription not found'));
+      (mockProvider.getSubscription as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Subscription not found'),
+      );
 
-      await expect(service.getSubscription('sub_missing')).rejects.toThrow('Subscription not found');
+      await expect(service.getSubscription('sub_missing')).rejects.toThrow(
+        'Subscription not found',
+      );
     });
   });
 
@@ -251,7 +323,9 @@ describe('BillingService', () => {
     });
 
     it('should propagate provider errors', async () => {
-      (mockProvider.listInvoices as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Customer not found'));
+      (mockProvider.listInvoices as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Customer not found'),
+      );
 
       await expect(service.listInvoices('cus_missing')).rejects.toThrow('Customer not found');
     });
@@ -273,7 +347,9 @@ describe('BillingService', () => {
     it('should propagate provider errors (e.g., invalid signature)', async () => {
       const payload = Buffer.from('{}');
       const signature = 'bad_sig';
-      (mockProvider.handleWebhook as ReturnType<typeof vi.fn>).mockRejectedValue(new Error('Invalid signature'));
+      (mockProvider.handleWebhook as ReturnType<typeof vi.fn>).mockRejectedValue(
+        new Error('Invalid signature'),
+      );
 
       await expect(service.handleWebhook(payload, signature)).rejects.toThrow('Invalid signature');
     });

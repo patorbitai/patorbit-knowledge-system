@@ -1,13 +1,17 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable } from '@nestjs/common';
 
-import { NOTIFICATION_PROVIDER } from "./notifications.constants";
-import { type Notification, type NotificationProvider, type NotificationChannel } from "./notifications.provider";
+import { NOTIFICATION_PROVIDER } from './notifications.constants';
+import {
+  type Notification,
+  type NotificationChannel,
+  type NotificationProvider,
+} from './notifications.provider';
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @Inject(NOTIFICATION_PROVIDER)
-    private readonly provider: NotificationProvider
+    private readonly provider: NotificationProvider,
   ) {}
 
   get providerName(): string {
@@ -18,9 +22,7 @@ export class NotificationsService {
     return this.provider.channels;
   }
 
-  async send(
-    notification: Omit<Notification, "id" | "createdAt">
-  ): Promise<string> {
+  async send(notification: Omit<Notification, 'id' | 'createdAt'>): Promise<string> {
     return this.provider.send(notification);
   }
 }

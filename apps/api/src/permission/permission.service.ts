@@ -1,5 +1,5 @@
 // apps/api/src/permission/permission.service.ts
-import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { type PrismaService } from '@patorbit/database';
 
 @Injectable()
@@ -10,7 +10,7 @@ export class PermissionService {
 
   async createRole(data: { name: string; description?: string; isSystem?: boolean }) {
     const existing = await this.prisma.role.findUnique({ where: { name: data.name } });
-    if (existing) throw new ConflictException("Role already exists");
+    if (existing) throw new ConflictException('Role already exists');
 
     return this.prisma.role.create({
       data: {
@@ -23,7 +23,7 @@ export class PermissionService {
 
   async listRoles() {
     return this.prisma.role.findMany({
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
       include: { _count: { select: { userRoles: true } } },
     });
   }
@@ -33,28 +33,33 @@ export class PermissionService {
       where: { id },
       include: { permissions: true, userRoles: { include: { user: true } } },
     });
-    if (!role) throw new NotFoundException("Role not found");
+    if (!role) throw new NotFoundException('Role not found');
     return role;
   }
 
   async deleteRole(id: string) {
     const role = await this.prisma.role.findUnique({ where: { id } });
-    if (!role) throw new NotFoundException("Role not found");
-    if (role.isSystem) throw new ConflictException("Cannot delete system role");
+    if (!role) throw new NotFoundException('Role not found');
+    if (role.isSystem) throw new ConflictException('Cannot delete system role');
     return this.prisma.role.delete({ where: { id } });
   }
 
   // ── Permission Management ────────────────────────────
 
-  async createPermission(data: { name: string; resource: string; action: string; description?: string }) {
+  async createPermission(data: {
+    name: string;
+    resource: string;
+    action: string;
+    description?: string;
+  }) {
     const existing = await this.prisma.permission.findUnique({ where: { name: data.name } });
-    if (existing) throw new ConflictException("Permission already exists");
+    if (existing) throw new ConflictException('Permission already exists');
 
     return this.prisma.permission.create({ data });
   }
 
   async listPermissions() {
-    return this.prisma.permission.findMany({ orderBy: [{ resource: "asc" }, { action: "asc" }] });
+    return this.prisma.permission.findMany({ orderBy: [{ resource: 'asc' }, { action: 'asc' }] });
   }
 
   // ── Role-Permission Assignment ───────────────────────
@@ -103,8 +108,25 @@ export class PermissionService {
     });
 
     return userRoles.some((ur) =>
-      ur.role.permissions.some((p) => p.resource === resource && p.action === action)
+      ur.role.permissions.some((p) => p.resource === resource && p.action === action),
     );
+  }
+
+  /**
+   * Check if a user has ALL of the named permissions.
+   * Permissions are matched by the `name` field (e.g. "user:read").
+   */
+  async userHasPermissions(userId: string, permissionNames: string[]): Promise<boolean> {
+    const userRoles = await this.prisma.userRole.findMany({
+      where: { userId },
+      include: { role: { include: { permissions: true } } },
+    });
+
+    const userPermissions = new Set(
+      userRoles.flatMap((ur) => ur.role.permissions.map((p) => p.name)),
+    );
+
+    return permissionNames.every((name) => userPermissions.has(name));
   }
 
   async userHasRole(userId: string, roleName: string): Promise<boolean> {
@@ -120,27 +142,58 @@ export class PermissionService {
   async seedDefaults() {
     // Create default roles if they don't exist
     const adminRole = await this.prisma.role.upsert({
-      where: { name: "admin" },
+      where: { name: 'admin' },
       update: {},
-      create: { name: "admin", description: "System administrator", isSystem: true },
+      create: { name: 'admin', description: 'System administrator', isSystem: true },
     });
 
     const userRole = await this.prisma.role.upsert({
-      where: { name: "user" },
+      where: { name: 'user' },
       update: {},
-      create: { name: "user", description: "Registered user", isSystem: true },
+      create: { name: 'user', description: 'Registered user', isSystem: true },
     });
 
     // Create base permissions
     const permissions = [
-      { name: "user:read", resource: "user", action: "read", description: "Read own user data" },
-      { name: "user:update", resource: "user", action: "update", description: "Update own user data" },
-      { name: "session:read", resource: "session", action: "read", description: "List own sessions" },
-      { name: "session:delete", resource: "session", action: "delete", description: "Revoke own sessions" },
-      { name: "audit:read", resource: "audit", action: "read", description: "Read audit logs" },
-      { name: "admin:manage", resource: "admin", action: "manage", description: "Full admin access" },
-      { name: "role:manage", resource: "role", action: "manage", description: "Manage roles" },
-      { name: "permission:manage", resource: "permission", action: "manage", description: "Manage permissions" },
+      { name: 'user:read', resource: 'user', action: 'read', description: 'Read own user data' },
+      {
+        name: 'user:update',
+        resource: 'user',
+        action: 'update',
+        description: 'Update own user data',
+      },
+      {
+        name: 'session:read',
+        resource: 'session',
+        action: 'read',
+        description: 'List own sessions',
+      },
+      {
+        name: 'session:delete',
+        resource: 'session',
+        action: 'delete',
+        description: 'Revoke own sessions',
+      },
+      { name: 'audit:read', resource: 'audit', action: 'read', description: 'Read audit logs' },
+      {
+        name: 'admin:manage',
+        resource: 'admin',
+        action: 'manage',
+        description: 'Full admin access',
+      },
+      { name: 'role:manage', resource: 'role', action: 'manage', description: 'Manage roles' },
+      {
+        name: 'permission:manage',
+        resource: 'permission',
+        action: 'manage',
+        description: 'Manage permissions',
+      },
+      {
+        name: 'resume.ai:use',
+        resource: 'resume.ai',
+        action: 'use',
+        description: 'Use AI features for resumes',
+      },
     ];
 
     for (const perm of permissions) {
@@ -151,11 +204,14 @@ export class PermissionService {
           ...perm,
           roles: {
             connect: {
-              id: (perm.resource === 'admin' || perm.resource === 'role' || perm.resource === 'permission')
-                ? adminRole.id
-                : userRole.id
-            }
-          }
+              id:
+                perm.resource === 'admin' ||
+                perm.resource === 'role' ||
+                perm.resource === 'permission'
+                  ? adminRole.id
+                  : userRole.id,
+            },
+          },
         },
       });
     }

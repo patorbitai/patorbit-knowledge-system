@@ -1,15 +1,26 @@
 import {
-  Body, Controller, Delete, Get, HttpCode, HttpStatus,
-  Inject, Param, Patch, Post, UploadedFile, UseGuards, UseInterceptors
+  Body,
+  Controller,
+  Delete,
+  Get,
+  HttpCode,
+  HttpStatus,
+  Inject,
+  Param,
+  Patch,
+  Post,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { type JwtPayload } from '@patorbit/auth';
-import { type StorageProvider, STORAGE_PROVIDER } from '@patorbit/storage';
+import { STORAGE_PROVIDER, type StorageProvider } from '@patorbit/storage';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { UploadService } from '../common/upload.service';
+import { type UploadService } from '../common/upload.service';
 import { type UpdateProfileDto } from './dto/update-profile.dto';
 import { type ProfileService } from './profile.service';
 
@@ -42,13 +53,10 @@ export class ProfileController {
   @Post('me/avatar')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
-  async uploadAvatar(
-    @CurrentUser() user: JwtPayload,
-    @UploadedFile() file: Express.Multer.File,
-  ) {
+  async uploadAvatar(@CurrentUser() user: JwtPayload, @UploadedFile() file: Express.Multer.File) {
     await this.uploadService.validateFile(file, ['image']);
 
-    if (!await this.uploadService.detectVirus(file.buffer)) {
+    if (!(await this.uploadService.detectVirus(file.buffer))) {
       throw new Error('Virus detected in file');
     }
 
