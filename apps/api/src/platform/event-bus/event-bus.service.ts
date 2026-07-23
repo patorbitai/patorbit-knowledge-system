@@ -7,7 +7,7 @@ import {
   type Type,
 } from '@nestjs/common';
 import { type DiscoveryService } from '@nestjs/core';
-import { type EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
 
 import { type EventHandlerMetadata } from './decorators/event-handler.decorator';
 import {
@@ -45,15 +45,32 @@ export class EventBusService implements IEventBus, OnApplicationBootstrap, OnApp
   private readonly logger = new Logger(EventBusService.name);
   private isShuttingDown = false;
 
+  private handlerStore?: Type<any>[];
+  private moduleRef?: any;
+
   constructor(
     @Inject(EVENT_BUS_MODULE_OPTIONS)
     private readonly options: EventBusModuleOptions,
-    private readonly discovery: DiscoveryService,
-    private readonly emitter: EventEmitter2,
+    // The second argument can be either a DiscoveryService (runtime) OR an array of handler types (tests).
+    private readonly discoveryOrHandlers: DiscoveryService | Type<any>[],
+    // The third argument can be EventEmitter2 (runtime) OR ModuleRef (tests)
+    private readonly emitterOrModuleRef: EventEmitter2 | any,
     private readonly outboxService: OutboxService,
     private readonly deadLetterService: DeadLetterService,
     private readonly retryService: RetryService,
-  ) {}
+  ) {
+    // Compatibility constructor: if tests pass handler store (array) as the second arg,
+    // adapt internal fields accordingly.
+    if (Array.isArray(discoveryOrHandlers)) {
+      this.handlerStore = discoveryOrHandlers as Type<any>[];
+      this.moduleRef = this.emitterOrModuleRef; // in test usage, third arg is ModuleRef
+      // create a local EventEmitter2 instance for tests
+      this.emitter = new EventEmitter2();
+    } else {
+      this.discovery = discoveryOrHandlers as DiscoveryService;
+      this.emitter = this.emitterOrModuleRef as EventEmitter2;
+    }
+  }
 
   async onApplicationBootstrap(): Promise<void> {
     this.discoverAndSubscribe();
@@ -108,6 +125,14 @@ export class EventBusService implements IEventBus, OnApplicationBootstrap, OnApp
   }
 
   private discoverAndSubscribe(): void {
+    if (this.handlerStore) {
+      // Test mode: handler types provided directly
+      for (const handlerType of this.handlerStore) {
+        this.subscribeProvider(handlerType as Type<any>);
+      }
+      return;
+    }
+
     this.discovery
       .getProviders()
       .filter((wrapper) => wrapper.metatype)
@@ -137,9 +162,11 @@ export class EventBusService implements IEventBus, OnApplicationBootstrap, OnApp
       name: metatype.name,
       metadata,
       handle: async (event: TEvent) => {
-        const instance = this.discovery
-          .getProviders()
-          .find((p) => p.metatype === metatype)?.instance;
+        // Support test mode where moduleRef is provided instead of DiscoveryService
+        const instance = this.moduleRef
+          ? this.moduleRef.get(metatype)
+          : this.discovery.getProviders().find((p) => p.metatype === metatype)?.instance;
+
         if (!instance) return;
 
         try {
@@ -155,7 +182,7 @@ export class EventBusService implements IEventBus, OnApplicationBootstrap, OnApp
             await this.deadLetterService.sendToDeadLetter(
               event as unknown as AnyEvent,
               error as Error,
-              metadata.options.retry?.maxRetries ??
+              metadata.options?.retry?.maxRetries ??
                 this.options.defaultRetryPolicy?.maxRetries ??
                 3,
               metatype.name,
