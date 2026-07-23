@@ -28,11 +28,17 @@ export class DocxParser {
         .filter(Boolean);
       const sections = this.extractSections(lines);
 
+      const mappedSections = Object.entries(sections).map(([section, linesArr]) => ({
+        type: section.toUpperCase(),
+        title: undefined,
+        content: { lines: linesArr },
+      }));
+
       return {
         success: true,
         data: {
           rawText: text,
-          sections,
+          sections: mappedSections,
           metadata: { format: 'docx', warnings: result.messages },
         },
       };

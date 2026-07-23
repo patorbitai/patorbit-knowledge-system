@@ -10,7 +10,7 @@ export async function generateDocx(resume: any): Promise<Buffer> {
   try {
     const { Document, Packer, Paragraph, TextRun, HeadingLevel } = await import('docx');
 
-    const children: Paragraph[] = [];
+    const children: any[] = [];
 
     // Title
     children.push(

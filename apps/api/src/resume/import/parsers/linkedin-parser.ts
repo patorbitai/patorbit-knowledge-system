@@ -52,11 +52,17 @@ export class LinkedinParser {
     );
     sections.skills = profile.skills || [];
 
+    const mappedSections = Object.entries(sections).map(([section, linesArr]) => ({
+      type: section.toUpperCase(),
+      title: undefined,
+      content: { lines: linesArr },
+    }));
+
     return {
       success: true,
       data: {
         rawText: raw,
-        sections,
+        sections: mappedSections,
         metadata: { source: 'linkedin-json' },
       },
     };
@@ -88,11 +94,17 @@ export class LinkedinParser {
       sections[currentSection].push(line);
     }
 
+    const mappedSections = Object.entries(sections).map(([section, linesArr]) => ({
+      type: section.toUpperCase(),
+      title: undefined,
+      content: { lines: linesArr },
+    }));
+
     return {
       success: true,
       data: {
         rawText: text,
-        sections,
+        sections: mappedSections,
         metadata: { source: 'linkedin-html' },
       },
     };
