@@ -4,14 +4,13 @@ import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from '@patorbit/database';
 
 import { AnalyticsModule } from './analytics/analytics.module';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { CareerPassportModule } from './career-passport/career-passport.module';
 import { ClaimModule } from './claim/claim.module';
 import { CsrfController } from './common/csrf.controller';
+import { CsrfMiddleware } from './common/csrf.middleware';
 import { ConfidenceModule } from './confidence/confidence.module';
 import { CredentialModule } from './credential/credential.module';
 import { EvidenceModule } from './evidence/evidence.module';
@@ -21,6 +20,8 @@ import { OrganizationModule } from './organization/organization.module';
 import { PermissionModule } from './permission/permission.module';
 import { LoggingService, PlatformModule } from './platform';
 import { AllExceptionsFilter } from './platform/errors/all-exceptions.filter';
+import { HealthModule } from './platform/health/health.module';
+import { RateLimitGuard } from './platform/rate-limiting/rate-limit.guard';
 import { ProfileModule } from './profile/profile.module';
 import { SessionModule } from './session/session.module';
 import { TimelineModule } from './timeline/timeline.module';
@@ -53,11 +54,12 @@ import { WorkspaceModule } from './workspace/workspace.module';
     TimelineModule,
     CareerPassportModule,
     AnalyticsModule,
+    HealthModule,
   ],
-  controllers: [AppController, CsrfController],
+  controllers: [CsrfController],
   providers: [
-    AppService,
     { provide: APP_GUARD, useClass: JwtAuthGuard },
+    { provide: APP_GUARD, useClass: RateLimitGuard },
     {
       provide: APP_FILTER,
       useFactory: (adapterHost: HttpAdapterHost, logger: LoggingService) =>
@@ -68,6 +70,6 @@ import { WorkspaceModule } from './workspace/workspace.module';
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    // CSRF middleware disabled — stateless JWT auth uses SameSite cookies
+    consumer.apply(CsrfMiddleware).forRoutes('*');
   }
 }

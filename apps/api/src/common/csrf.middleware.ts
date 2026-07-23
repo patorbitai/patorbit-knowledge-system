@@ -6,13 +6,19 @@ import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class CsrfMiddleware implements NestMiddleware {
-  constructor(private readonly configService: ConfigService) {}
+  private readonly isProduction: boolean;
+
+  constructor(private readonly configService: ConfigService) {
+    this.isProduction = this.configService.get('NODE_ENV') === 'production';
+  }
 
   use(req: Request, res: Response, next: NextFunction) {
     const isStateChangingMethod = ['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method);
 
+    const cookieName = this.isProduction ? '__Host-csrf-token' : 'csrf-token';
+
     // Get token from cookie (signed at server)
-    const cookieToken = req.cookies['__Host-csrf-token'];
+    const cookieToken = req.cookies[cookieName];
 
     if (isStateChangingMethod) {
       // Get token from header (sent by client)
@@ -26,13 +32,13 @@ export class CsrfMiddleware implements NestMiddleware {
     // Set new token on every GET request for fresh pages
     if (req.method === 'GET') {
       const token = uuidv4();
-      res.cookie('__Host-csrf-token', token, {
+      res.cookie(cookieName, token, {
         httpOnly: true,
-        secure: this.configService.get('NODE_ENV') === 'production',
+        secure: true,
         sameSite: 'strict',
         path: '/',
       });
-      // Expose a way for the frontend to get the token, but not via cookie read
+      // Expose a way for the frontend to get the token
       req.csrfToken = () => token;
     }
 
