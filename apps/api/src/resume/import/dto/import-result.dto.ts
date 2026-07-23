@@ -1,4 +1,3 @@
-
 import { Type } from 'class-transformer';
 import { IsArray, IsObject, IsOptional, IsString, ValidateNested } from 'class-validator';
 
@@ -23,6 +22,16 @@ export class ImportResultDto {
   @IsOptional()
   @IsString()
   description?: string;
+
+  // Raw extracted text (optional)
+  @IsOptional()
+  @IsString()
+  rawText?: string;
+
+  // Metadata about the import (optional)
+  @IsOptional()
+  @IsObject()
+  metadata?: Record<string, any>;
 
   @IsArray()
   @ValidateNested({ each: true })
