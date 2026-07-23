@@ -15,12 +15,12 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { type JwtPayload } from '@patorbit/auth';
-import { STORAGE_PROVIDER, type StorageProvider } from '@patorbit/storage';
 
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { Public } from '../auth/decorators/public.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { type UploadService } from '../common/upload.service';
+import { STORAGE_PROVIDER, type StorageProvider } from '../platform/storage';
 import { type UpdateProfileDto } from './dto/update-profile.dto';
 import { type ProfileService } from './profile.service';
 

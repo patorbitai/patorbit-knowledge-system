@@ -46,7 +46,13 @@
     "pino-http": "^11.0.0",
     "reflect-metadata": "^0.2.0",
     "rxjs": "^7.8.0",
-    "uuid": "^10.0.0"
+    "uuid": "^10.0.0",
+    "clamscan": "^1.2.0",
+    "sharp": "^0.32.3",
+    "docx": "^8.3.0",
+    "pdfkit": "^0.13.0",
+    "mammoth": "^1.4.15",
+    "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.3.0",

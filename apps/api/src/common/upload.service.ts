@@ -19,17 +19,21 @@ export interface ImageOptimizationOptions {
 
 const ALLOWED_MIME_TYPES: Record<string, string[]> = {
   image: ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml'],
-  document: ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'],
+  document: [
+    'application/pdf',
+    'application/msword',
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  ],
   video: ['video/mp4', 'video/webm', 'video/ogg'],
   archive: ['application/zip', 'application/x-tar', 'application/gzip'],
 };
 
 const MAX_FILE_SIZES: Record<string, number> = {
-  image: 10 * 1024 * 1024,     // 10 MB
-  document: 25 * 1024 * 1024,  // 25 MB
-  video: 100 * 1024 * 1024,    // 100 MB
-  archive: 50 * 1024 * 1024,   // 50 MB
-  default: 5 * 1024 * 1024,    // 5 MB
+  image: 10 * 1024 * 1024, // 10 MB
+  document: 25 * 1024 * 1024, // 25 MB
+  video: 100 * 1024 * 1024, // 100 MB
+  archive: 50 * 1024 * 1024, // 50 MB
+  default: 5 * 1024 * 1024, // 5 MB
 };
 
 @Injectable()
@@ -60,7 +64,7 @@ export class UploadService {
     }
   }
 
-  async sanitizeFilename(originalName: string): string {
+  async sanitizeFilename(originalName: string): Promise<string> {
     const ext = extname(originalName).toLowerCase();
     const safeName = uuid();
     return `${safeName}${ext}`;
@@ -85,10 +89,7 @@ export class UploadService {
     }
   }
 
-  async optimizeImage(
-    buffer: Buffer,
-    options?: ImageOptimizationOptions,
-  ): Promise<Buffer> {
+  async optimizeImage(buffer: Buffer, options?: ImageOptimizationOptions): Promise<Buffer> {
     try {
       const sharp = (await import('sharp')).default;
       let pipeline = sharp(buffer);
@@ -107,7 +108,9 @@ export class UploadService {
 
       return await pipeline.toBuffer();
     } catch (error) {
-      this.logger.warn(`Image optimization unavailable, returning original: ${(error as Error).message}`);
+      this.logger.warn(
+        `Image optimization unavailable, returning original: ${(error as Error).message}`,
+      );
       return buffer;
     }
   }
