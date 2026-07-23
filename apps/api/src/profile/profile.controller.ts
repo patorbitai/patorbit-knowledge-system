@@ -70,9 +70,8 @@ export class ProfileController {
     const sanitizedFilename = await this.uploadService.sanitizeFilename(file.originalname);
     const key = `avatars/${user.sub}/${sanitizedFilename}`;
 
-    const { url } = await this.storage.upload(optimizedBuffer, key, {
-      contentType: 'image/webp',
-    });
+    await this.storage.upload(key, optimizedBuffer, { mimeType: 'image/webp' });
+    const url = await this.storage.getSignedUrl(key);
 
     return this.profileService.update(user.sub, { avatarUrl: url });
   }
