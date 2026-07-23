@@ -45,12 +45,23 @@ export interface EventBusModuleOptions {
     DiscoveryModule,
   ],
   providers: [
-    { provide: EVENT_BUS, useClass: EventBusService },
-    { provide: OUTBOX_SERVICE, useClass: OutboxService },
-    { provide: DEAD_LETTER_SERVICE, useClass: DeadLetterService },
-    { provide: RETRY_SERVICE, useClass: RetryService },
+    EventBusService,
+    { provide: EVENT_BUS, useExisting: EventBusService },
+    OutboxService,
+    { provide: OUTBOX_SERVICE, useExisting: OutboxService },
+    DeadLetterService,
+    { provide: DEAD_LETTER_SERVICE, useExisting: DeadLetterService },
+    RetryService,
+    { provide: RETRY_SERVICE, useExisting: RetryService },
   ],
-  exports: [EVENT_BUS, OUTBOX_SERVICE, DEAD_LETTER_SERVICE, RETRY_SERVICE],
+  exports: [
+    EVENT_BUS,
+    EventBusService,
+    OUTBOX_SERVICE,
+    OUTBOX_SERVICE,
+    DEAD_LETTER_SERVICE,
+    RETRY_SERVICE,
+  ],
 })
 export class EventBusModule {
   static forRoot(options: EventBusModuleOptions = {}): DynamicModule {
@@ -79,7 +90,15 @@ export class EventBusModule {
         },
         ...(options.providers ?? []),
       ],
-      exports: [EVENT_BUS, ...(options.exports ?? [])],
+      // Export the core tokens so Test.createTestingModule can retrieve them
+      exports: [
+        EVENT_BUS,
+        EventBusService,
+        OUTBOX_SERVICE,
+        DEAD_LETTER_SERVICE,
+        RETRY_SERVICE,
+        ...(options.exports ?? []),
+      ],
     };
   }
 
