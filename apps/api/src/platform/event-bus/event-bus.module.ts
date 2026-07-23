@@ -1,14 +1,14 @@
-import { type DynamicModule, Global, Module, type Provider, type Type } from "@nestjs/common";
-import { DiscoveryModule } from "@nestjs/core";
-import { EventEmitterModule } from "@nestjs/event-emitter";
+import { type DynamicModule, Global, Module, type Provider, type Type } from '@nestjs/common';
+import { DiscoveryModule } from '@nestjs/core';
+import { EventEmitterModule } from '@nestjs/event-emitter';
 
-import { EVENT_BUS, EVENT_BUS_MODULE_OPTIONS } from "./event-bus.constants";
-import  { type Event, type EventHandler } from "./event-bus.provider";
-import { EventBusService } from "./event-bus.service";
-import { DeadLetterService } from "./services/dead-letter.service";
-import { OutboxService } from "./services/outbox.service";
-import  { type RetryOptions } from "./services/retry.service";
-import { RetryService } from "./services/retry.service";
+import { EVENT_BUS, EVENT_BUS_MODULE_OPTIONS } from './event-bus.constants';
+import { type Event, type EventHandler } from './event-bus.provider';
+import { EventBusService } from './event-bus.service';
+import { DeadLetterService } from './services/dead-letter.service';
+import { OutboxService } from './services/outbox.service';
+import { type RetryOptions } from './services/retry.service';
+import { RetryService } from './services/retry.service';
 
 export interface EventBusModuleOptions {
   /**
@@ -46,20 +46,24 @@ export interface EventBusModuleOptions {
   ],
   providers: [
     { provide: EVENT_BUS, useClass: EventBusService },
-    OutboxService,
-    DeadLetterService,
-    RetryService,
+    { provide: OUTBOX_SERVICE, useClass: OutboxService },
+    { provide: DEAD_LETTER_SERVICE, useClass: DeadLetterService },
+    { provide: RETRY_SERVICE, useClass: RetryService },
   ],
-  exports: [EVENT_BUS, OutboxService, DeadLetterService],
+  exports: [EVENT_BUS, OUTBOX_SERVICE, DEAD_LETTER_SERVICE, RETRY_SERVICE],
 })
 export class EventBusModule {
   static forRoot(options: EventBusModuleOptions = {}): DynamicModule {
-    const {
-      useOutbox = false,
-      useDeadLetterQueue = true,
-      defaultRetryPolicy,
-      defaultHandlerTimeoutMs = 0,
-    } = options;
+    // Support legacy option names used in some tests (enableOutbox, enableDeadLetter, maxRetries, retryDelay, handlerTimeout)
+    const opts: any = options || {};
+    const useOutbox = opts.useOutbox ?? opts.enableOutbox ?? false;
+    const useDeadLetterQueue = opts.useDeadLetterQueue ?? opts.enableDeadLetter ?? true;
+    const defaultRetryPolicy = opts.defaultRetryPolicy ?? {
+      maxRetries: opts.maxRetries,
+      delayMs: opts.retryDelay,
+      backoff: opts.backoff ?? 'exponential',
+    };
+    const defaultHandlerTimeoutMs = opts.defaultHandlerTimeoutMs ?? opts.handlerTimeout ?? 0;
 
     return {
       module: EventBusModule,
