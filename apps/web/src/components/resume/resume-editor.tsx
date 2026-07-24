@@ -18,57 +18,38 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { useState } from 'react';
+import { memo, useCallback, useState } from 'react';
 
 import { useResumeStore } from '@/lib/stores/use-resume-store';
 import { type ResumeSection } from '@/lib/types';
 
-// ── Constants ────────────────────────────────────────────────────────────────
+import { AVAILABLE_SECTION_TYPES, SECTION_ICONS, SECTION_LABELS } from './section-constants';
 
-const SECTION_ICONS: Record<string, string> = {
-  PERSONAL_INFORMATION: '👤',
-  PROFESSIONAL_SUMMARY: '📝',
-  WORK_EXPERIENCE: '💼',
-  EDUCATION: '🎓',
-  PROJECTS: '🚀',
-  SKILLS: '⚡',
-  CERTIFICATIONS: '🏅',
-  ACHIEVEMENTS: '🏆',
-  LANGUAGES: '🌐',
-  VOLUNTEER_EXPERIENCE: '🤝',
-  PUBLICATIONS: '📚',
-  AWARDS: '🎖️',
-  INTERESTS: '🎯',
-  CUSTOM: '📌',
-};
+// ── Helpers ──────────────────────────────────────────────────────────────────
 
-const SECTION_LABELS: Record<string, string> = {
-  PERSONAL_INFORMATION: 'Personal Information',
-  PROFESSIONAL_SUMMARY: 'Professional Summary',
-  WORK_EXPERIENCE: 'Work Experience',
-  EDUCATION: 'Education',
-  PROJECTS: 'Projects',
-  SKILLS: 'Skills',
-  CERTIFICATIONS: 'Certifications',
-  ACHIEVEMENTS: 'Achievements',
-  LANGUAGES: 'Languages',
-  VOLUNTEER_EXPERIENCE: 'Volunteer Experience',
-  PUBLICATIONS: 'Publications',
-  AWARDS: 'Awards',
-  INTERESTS: 'Interests',
-  CUSTOM: 'Custom',
-};
+function FieldError({ errors }: { errors?: string[] }) {
+  if (!errors || errors.length === 0) return null;
+  return <p className="text-xs text-red-500 mt-0.5">{errors[0]}</p>;
+}
 
-const AVAILABLE_SECTION_TYPES = Object.keys(SECTION_LABELS);
+function inputCls(hasError?: boolean, custom?: string) {
+  const base = 'w-full border rounded px-2 py-1.5 text-sm';
+  const error = hasError
+    ? 'border-red-400 focus:border-red-500 focus:ring-red-500'
+    : 'bg-background';
+  return `${base} ${custom ?? ''} ${error}`;
+}
 
-// ── Section content editor ───────────────────────────────────────────────────
+// ── Section content editors ──────────────────────────────────────────────────
 
-function PersonalInfoEditor({
+const PersonalInfoEditor = memo(function PersonalInfoEditor({
   content,
   onUpdate,
+  errors,
 }: {
   content: Record<string, unknown>;
   onUpdate: (content: Record<string, unknown>) => void;
+  errors?: Record<string, string[]>;
 }) {
   const setField = (key: string, value: unknown) => onUpdate({ ...content, [key]: value });
 
@@ -80,8 +61,9 @@ function PersonalInfoEditor({
           type="text"
           value={(content.fullName as string) ?? ''}
           onChange={(e) => setField('fullName', e.target.value)}
-          className="w-full border rounded px-2 py-1.5 text-sm bg-background"
+          className={inputCls(!!errors?.fullName)}
         />
+        <FieldError errors={errors?.fullName} />
       </div>
       <div>
         <label className="block text-xs font-medium mb-1">Email</label>
@@ -89,8 +71,9 @@ function PersonalInfoEditor({
           type="email"
           value={(content.email as string) ?? ''}
           onChange={(e) => setField('email', e.target.value)}
-          className="w-full border rounded px-2 py-1.5 text-sm bg-background"
+          className={inputCls(!!errors?.email)}
         />
+        <FieldError errors={errors?.email} />
       </div>
       <div>
         <label className="block text-xs font-medium mb-1">Phone</label>
@@ -98,7 +81,7 @@ function PersonalInfoEditor({
           type="text"
           value={(content.phone as string) ?? ''}
           onChange={(e) => setField('phone', e.target.value)}
-          className="w-full border rounded px-2 py-1.5 text-sm bg-background"
+          className={inputCls()}
         />
       </div>
       <div>
@@ -107,7 +90,7 @@ function PersonalInfoEditor({
           type="text"
           value={(content.location as string) ?? ''}
           onChange={(e) => setField('location', e.target.value)}
-          className="w-full border rounded px-2 py-1.5 text-sm bg-background"
+          className={inputCls()}
         />
       </div>
       <div className="col-span-2">
@@ -116,8 +99,9 @@ function PersonalInfoEditor({
           type="url"
           value={(content.linkedinUrl as string) ?? ''}
           onChange={(e) => setField('linkedinUrl', e.target.value)}
-          className="w-full border rounded px-2 py-1.5 text-sm bg-background"
+          className={inputCls(!!errors?.linkedinUrl)}
         />
+        <FieldError errors={errors?.linkedinUrl} />
       </div>
       <div className="col-span-2">
         <label className="block text-xs font-medium mb-1">Website / Portfolio</label>
@@ -125,19 +109,22 @@ function PersonalInfoEditor({
           type="url"
           value={(content.website as string) ?? ''}
           onChange={(e) => setField('website', e.target.value)}
-          className="w-full border rounded px-2 py-1.5 text-sm bg-background"
+          className={inputCls(!!errors?.website)}
         />
+        <FieldError errors={errors?.website} />
       </div>
     </div>
   );
-}
+});
 
-function SummaryEditor({
+const SummaryEditor = memo(function SummaryEditor({
   content,
   onUpdate,
+  errors,
 }: {
   content: Record<string, unknown>;
   onUpdate: (content: Record<string, unknown>) => void;
+  errors?: Record<string, string[]>;
 }) {
   return (
     <div>
@@ -146,12 +133,13 @@ function SummaryEditor({
         rows={4}
         value={(content.summary as string) ?? ''}
         onChange={(e) => onUpdate({ ...content, summary: e.target.value })}
-        className="w-full border rounded px-2 py-1.5 text-sm bg-background resize-y"
+        className={inputCls(!!errors?.summary, 'bg-background resize-y')}
         placeholder="Write a brief professional summary..."
       />
+      <FieldError errors={errors?.summary} />
     </div>
   );
-}
+});
 
 interface EntryEditorProps {
   entries: Array<Record<string, unknown>>;
@@ -161,9 +149,10 @@ interface EntryEditorProps {
   defaultEntry: Record<string, unknown>;
   onUpdate: (content: Record<string, unknown>) => void;
   content: Record<string, unknown>;
+  errors?: Record<string, string[]>;
 }
 
-function EntryListEditor({
+const EntryListEditor = memo(function EntryListEditor({
   entries,
   fields,
   textareaKey,
@@ -171,6 +160,7 @@ function EntryListEditor({
   defaultEntry,
   onUpdate,
   content,
+  errors,
 }: EntryEditorProps) {
   const updateEntry = (index: number, updates: Record<string, unknown>) => {
     const updated = [...entries];
@@ -188,45 +178,56 @@ function EntryListEditor({
 
   return (
     <div className="space-y-4">
-      {entries.map((entry, i) => (
-        <div key={i} className="p-3 border rounded bg-gray-50 space-y-2">
-          <div className="grid grid-cols-2 gap-2">
-            {fields.map((field) => (
-              <input
-                key={field.key}
-                type="text"
-                value={(entry[field.key] as string) ?? ''}
-                onChange={(e) => updateEntry(i, { [field.key]: e.target.value })}
-                placeholder={field.placeholder}
-                className={`w-full border rounded px-2 py-1.5 text-sm bg-white ${field.colSpan ? 'col-span-2' : ''}`}
-              />
-            ))}
+      {entries.map((entry, i) => {
+        const getFieldError = (fieldKey: string) => errors?.[`entries.${i}.${fieldKey}`];
+        return (
+          <div key={i} className="p-3 border rounded bg-gray-50 space-y-2">
+            <div className="grid grid-cols-2 gap-2">
+              {fields.map((field) => (
+                <div key={field.key}>
+                  <input
+                    type="text"
+                    value={(entry[field.key] as string) ?? ''}
+                    onChange={(e) => updateEntry(i, { [field.key]: e.target.value })}
+                    placeholder={field.placeholder}
+                    className={inputCls(
+                      !!getFieldError(field.key),
+                      `bg-white ${field.colSpan ? 'col-span-2' : ''}`,
+                    )}
+                  />
+                  <FieldError errors={getFieldError(field.key)} />
+                </div>
+              ))}
+            </div>
+            {textareaKey && (
+              <div>
+                <textarea
+                  rows={2}
+                  value={(entry[textareaKey] as string) ?? ''}
+                  onChange={(e) => updateEntry(i, { [textareaKey]: e.target.value })}
+                  placeholder={textareaPlaceholder}
+                  className="w-full border rounded px-2 py-1.5 text-sm bg-white resize-y"
+                />
+                <FieldError errors={errors?.[`entries.${i}.${textareaKey}`]} />
+              </div>
+            )}
+            <button
+              onClick={() => removeEntry(i)}
+              className="text-xs text-red-500 hover:text-red-700"
+            >
+              Remove
+            </button>
           </div>
-          {textareaKey && (
-            <textarea
-              rows={2}
-              value={(entry[textareaKey] as string) ?? ''}
-              onChange={(e) => updateEntry(i, { [textareaKey]: e.target.value })}
-              placeholder={textareaPlaceholder}
-              className="w-full border rounded px-2 py-1.5 text-sm bg-white resize-y"
-            />
-          )}
-          <button
-            onClick={() => removeEntry(i)}
-            className="text-xs text-red-500 hover:text-red-700"
-          >
-            Remove
-          </button>
-        </div>
-      ))}
+        );
+      })}
       <button onClick={addEntry} className="text-sm text-primary hover:underline">
         + Add Entry
       </button>
     </div>
   );
-}
+});
 
-function SkillsEditor({
+const SkillsEditor = memo(function SkillsEditor({
   content,
   onUpdate,
 }: {
@@ -252,9 +253,10 @@ function SkillsEditor({
             {item}
             <button
               onClick={() => onUpdate({ ...content, items: items.filter((_, j) => j !== i) })}
+              aria-label={`Remove ${item}`}
               className="text-xs hover:text-red-500"
             >
-              ×
+              <span aria-hidden="true">×</span>
             </button>
           </span>
         ))}
@@ -290,9 +292,9 @@ function SkillsEditor({
       </div>
     </div>
   );
-}
+});
 
-function LanguagesEditor({
+const LanguagesEditor = memo(function LanguagesEditor({
   content,
   onUpdate,
 }: {
@@ -345,9 +347,9 @@ function LanguagesEditor({
       </button>
     </div>
   );
-}
+});
 
-function TagsEditor({
+const TagsEditor = memo(function TagsEditor({
   content,
   onUpdate,
   placeholder,
@@ -375,9 +377,10 @@ function TagsEditor({
             {item}
             <button
               onClick={() => onUpdate({ ...content, items: items.filter((_, j) => j !== i) })}
+              aria-label={`Remove ${item}`}
               className="text-xs hover:text-red-500"
             >
-              ×
+              <span aria-hidden="true">×</span>
             </button>
           </span>
         ))}
@@ -411,9 +414,9 @@ function TagsEditor({
       </div>
     </div>
   );
-}
+});
 
-function CustomEditor({
+const CustomEditor = memo(function CustomEditor({
   content,
   onUpdate,
 }: {
@@ -438,29 +441,33 @@ function CustomEditor({
       className="w-full border rounded px-2 py-1.5 text-sm font-mono bg-background resize-y"
     />
   );
-}
+});
 
 // ── Section Editor Router ────────────────────────────────────────────────────
 
-function SectionEditor({
+const SectionEditor = memo(function SectionEditor({
   section,
   onUpdate,
 }: {
   section: ResumeSection;
   onUpdate: (id: string, content: Record<string, unknown>) => void;
 }) {
+  const errors = useResumeStore((s) => s.validationErrors[section.id]);
   const content = section.content ?? {};
   const type = section.type;
 
-  const handleUpdate = (newContent: Record<string, unknown>) => {
-    onUpdate(section.id, newContent);
-  };
+  const handleUpdate = useCallback(
+    (newContent: Record<string, unknown>) => {
+      onUpdate(section.id, newContent);
+    },
+    [section.id, onUpdate],
+  );
 
   switch (type) {
     case 'PERSONAL_INFORMATION':
-      return <PersonalInfoEditor content={content} onUpdate={handleUpdate} />;
+      return <PersonalInfoEditor content={content} onUpdate={handleUpdate} errors={errors} />;
     case 'PROFESSIONAL_SUMMARY':
-      return <SummaryEditor content={content} onUpdate={handleUpdate} />;
+      return <SummaryEditor content={content} onUpdate={handleUpdate} errors={errors} />;
     case 'WORK_EXPERIENCE':
     case 'VOLUNTEER_EXPERIENCE':
       return (
@@ -477,6 +484,7 @@ function SectionEditor({
           textareaPlaceholder="Describe your role and achievements..."
           defaultEntry={{ company: '', title: '', startDate: '', endDate: '', description: '' }}
           onUpdate={handleUpdate}
+          errors={errors}
         />
       );
     case 'EDUCATION':
@@ -500,6 +508,7 @@ function SectionEditor({
             description: '',
           }}
           onUpdate={handleUpdate}
+          errors={errors}
         />
       );
     case 'SKILLS':
@@ -529,6 +538,7 @@ function SectionEditor({
           ]}
           defaultEntry={{ name: '', issuer: '', date: '' }}
           onUpdate={handleUpdate}
+          errors={errors}
         />
       );
     case 'PROJECTS':
@@ -544,6 +554,7 @@ function SectionEditor({
           textareaPlaceholder="Describe the project..."
           defaultEntry={{ name: '', description: '', url: '' }}
           onUpdate={handleUpdate}
+          errors={errors}
         />
       );
     case 'LANGUAGES':
@@ -555,25 +566,23 @@ function SectionEditor({
     default:
       return <CustomEditor content={content} onUpdate={handleUpdate} />;
   }
-}
+});
 
 // ── Sortable Section Card ─────────────────────────────────────────────────────
 
-function SortableSectionCard({
+const SortableSectionCard = memo(function SortableSectionCard({
   section,
   onUpdate,
   onToggle,
   onDelete,
-  savingSectionId,
 }: {
   section: ResumeSection;
   onUpdate: (id: string, content: Record<string, unknown>) => void;
   onToggle: (id: string) => void;
   onDelete: (id: string) => void;
-  savingSectionId: string | null;
 }) {
   const [open, setOpen] = useState(!section.isCollapsed);
-  const isSaving = savingSectionId === section.id;
+  const isSaving = useResumeStore((s) => s.savingSectionId === section.id);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: section.id,
@@ -606,7 +615,7 @@ function SortableSectionCard({
             {...attributes}
             {...listeners}
             onClick={(e) => e.stopPropagation()}
-            title="Drag to reorder"
+            aria-label="Drag to reorder section"
             type="button"
           >
             ⠿
@@ -630,25 +639,31 @@ function SortableSectionCard({
               e.stopPropagation();
               onToggle(section.id);
             }}
+            aria-label={
+              section.isVisible
+                ? `Hide ${section.title ?? 'section'}`
+                : `Show ${section.title ?? 'section'}`
+            }
             className="text-xs text-muted-foreground hover:text-foreground px-2 py-1 rounded hover:bg-accent"
-            title={section.isVisible ? 'Hide section' : 'Show section'}
             type="button"
           >
-            {section.isVisible ? '👁️' : '🚫'}
+            <span aria-hidden="true">{section.isVisible ? '👁️' : '🚫'}</span>
           </button>
           <button
             onClick={(e) => {
               e.stopPropagation();
               onDelete(section.id);
             }}
+            aria-label={`Delete ${section.title ?? 'section'}`}
             className="text-xs text-muted-foreground hover:text-red-500 px-2 py-1 rounded hover:bg-accent"
-            title="Delete section"
             type="button"
           >
-            🗑️
+            <span aria-hidden="true">🗑️</span>
           </button>
           {section.isCollapsible && (
-            <span className="text-xs text-muted-foreground">{open ? '▲' : '▼'}</span>
+            <span className="text-xs text-muted-foreground" aria-hidden="true">
+              {open ? '▲' : '▼'}
+            </span>
           )}
         </div>
       </div>
@@ -659,7 +674,7 @@ function SortableSectionCard({
       )}
     </div>
   );
-}
+});
 
 // ── Add Section Modal ────────────────────────────────────────────────────────
 
@@ -685,8 +700,15 @@ function AddSectionModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30">
-      <div className="bg-card rounded-lg shadow-xl p-6 w-full max-w-md mx-4">
-        <h3 className="font-semibold mb-4">Add Section</h3>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="add-section-modal-heading"
+        className="bg-card rounded-lg shadow-xl p-6 w-full max-w-md mx-4"
+      >
+        <h3 id="add-section-modal-heading" className="font-semibold mb-4">
+          Add Section
+        </h3>
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {available.map((type) => (
             <button
@@ -742,15 +764,16 @@ export interface ResumeEditorProps {
   onAddSection: (type: string, title?: string) => void;
 }
 
-export function ResumeEditor({ resumeId, onAddSection }: ResumeEditorProps) {
+export function ResumeEditor({ onAddSection }: ResumeEditorProps) {
   const resume = useResumeStore((s) => s.resume);
-  const savingSectionId = useResumeStore((s) => s.savingSectionId);
   const updateSectionContent = useResumeStore((s) => s.updateSectionContent);
   const toggleSection = useResumeStore((s) => s.toggleSection);
   const deleteSection = useResumeStore((s) => s.deleteSection);
   const reorderSections = useResumeStore((s) => s.reorderSections);
 
-  const [showAddModal, setShowAddModal] = useState(false);
+  const isAddSectionModalOpen = useResumeStore((s) => s.ui.isAddSectionModalOpen);
+  const closeAddSectionModal = useResumeStore((s) => s.closeAddSectionModal);
+  const openAddSectionModal = useResumeStore((s) => s.openAddSectionModal);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -761,19 +784,22 @@ export function ResumeEditor({ resumeId, onAddSection }: ResumeEditorProps) {
     }),
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
 
-    const sections = resume?.sections ?? [];
-    const oldIndex = sections.findIndex((s) => s.id === active.id);
-    const newIndex = sections.findIndex((s) => s.id === over.id);
+      const sections = resume?.sections ?? [];
+      const oldIndex = sections.findIndex((s) => s.id === active.id);
+      const newIndex = sections.findIndex((s) => s.id === over.id);
 
-    if (oldIndex !== -1 && newIndex !== -1) {
-      const reordered = arrayMove(sections, oldIndex, newIndex);
-      reorderSections(reordered.map((s) => s.id));
-    }
-  };
+      if (oldIndex !== -1 && newIndex !== -1) {
+        const reordered = arrayMove(sections, oldIndex, newIndex);
+        reorderSections(reordered.map((s) => s.id));
+      }
+    },
+    [resume?.sections, reorderSections],
+  );
 
   if (!resume) return null;
 
@@ -782,7 +808,7 @@ export function ResumeEditor({ resumeId, onAddSection }: ResumeEditorProps) {
       <div className="flex items-center justify-between">
         <h2 className="text-lg font-semibold">Sections ({resume.sections.length})</h2>
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={() => openAddSectionModal()}
           className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:opacity-90"
           type="button"
         >
@@ -807,14 +833,14 @@ export function ResumeEditor({ resumeId, onAddSection }: ResumeEditorProps) {
           >
             <div className="space-y-3">
               {resume.sections.map((section) => (
-                <SortableSectionCard
-                  key={section.id}
-                  section={section}
-                  onUpdate={updateSectionContent}
-                  onToggle={toggleSection}
-                  onDelete={deleteSection}
-                  savingSectionId={savingSectionId}
-                />
+                <div key={section.id} id={`section-${section.id}`}>
+                  <SortableSectionCard
+                    section={section}
+                    onUpdate={updateSectionContent}
+                    onToggle={toggleSection}
+                    onDelete={deleteSection}
+                  />
+                </div>
               ))}
             </div>
           </SortableContext>
@@ -822,8 +848,8 @@ export function ResumeEditor({ resumeId, onAddSection }: ResumeEditorProps) {
       )}
 
       <AddSectionModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
+        open={isAddSectionModalOpen}
+        onClose={() => closeAddSectionModal()}
         onAdd={onAddSection}
         existingTypes={resume.sections.map((s) => s.type)}
       />

@@ -39,6 +39,8 @@ export class RetryService {
     operation: () => T | Promise<T>,
     options: Partial<RetryOptions> = {},
   ): Promise<T> {
+    // DEBUG: log options to help tests diagnose mismatches
+    this.logger.debug(`Retry.execute options: ${JSON.stringify(options)}`);
     const policy: RetryOptions = { ...this.defaults, ...options };
     // Interpret maxRetries as the total number of attempts (tests expect this behavior)
     const totalAttempts = Math.max(1, policy.maxRetries);

@@ -2,12 +2,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 
+import { confirmIfDirty } from '@/lib/hooks/use-warn-unsaved';
 import { statusColor, timeAgo } from '@/lib/resume-utils';
 import { useResumeStore } from '@/lib/stores/use-resume-store';
 
-import { ResumeAutosaveIndicator } from './resume-autosave-indicator';
 import { ResumeAutosaveIndicator } from './resume-autosave-indicator';
 
 export function ResumeHeader() {
@@ -48,7 +48,11 @@ export function ResumeHeader() {
       <div className="flex items-start justify-between gap-4 flex-wrap">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-3">
+            <label htmlFor="resume-title" className="sr-only">
+              Resume Title
+            </label>
             <input
+              id="resume-title"
               type="text"
               value={title}
               onChange={(e) => setTitle(e.target.value)}

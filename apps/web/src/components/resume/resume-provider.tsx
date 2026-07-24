@@ -2,6 +2,7 @@
 
 import { createContext, useContext } from 'react';
 
+import { useOnlineStatus } from '@/lib/hooks/use-online-status';
 import { useResumeStore } from '@/lib/stores/use-resume-store';
 import { type Resume } from '@/lib/types';
 
@@ -28,6 +29,8 @@ export function ResumeProvider({
   const isSaving = useResumeStore((s) => s.isSaving);
   const lastSaved = useResumeStore((s) => s.lastSaved);
   const saveError = useResumeStore((s) => s.saveError);
+
+  useOnlineStatus();
 
   if (!resume) return null;
 

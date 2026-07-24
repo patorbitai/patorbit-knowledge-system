@@ -9,7 +9,7 @@ import { SectionModule } from './sections/section.module';
 import { TemplateModule } from './templates/template.module';
 
 @Module({
-  imports: [DatabaseModule, SectionModule, TemplateModule, ImportModule],
+  imports: [DatabaseModule, SectionModule, TemplateModule, ImportModule, AiModule],
   controllers: [ResumeController],
   providers: [ResumeService],
   exports: [ResumeService],

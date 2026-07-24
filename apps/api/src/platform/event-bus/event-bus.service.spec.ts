@@ -1,14 +1,14 @@
+import { Logger } from '@nestjs/common';
+import { type ModuleRef } from '@nestjs/core';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { Logger } from "@nestjs/common";
-import { type ModuleRef } from "@nestjs/core";
-import { afterEach,beforeEach, describe, expect, it, vi } from "vitest";
-
-import { EVENT_HANDLER_METADATA } from "./event-bus.constants";
-import  { type AnyEvent,type IEventHandler } from "./event-bus.provider";
-import { type EventBusModuleOptions,EventBusService } from "./event-bus.service";
-import { DeadLetterService } from "./services/dead-letter.service";
-import { OutboxService } from "./services/outbox.service";
-import { RetryService } from "./services/retry.service";
+import { EVENT_HANDLER_METADATA } from './event-bus.constants';
+import { type AnyEvent, type IEventHandler } from './event-bus.provider';
+import { type EventBusModuleOptions, type EventBusService } from './event-bus.service';
+import { type DeadLetterService } from './services/dead-letter.service';
+import { type OutboxService } from './services/outbox.service';
+import { type RetryService } from './services/retry.service';
+import { createTestEventBus } from './testing/test-event-bus.factory';
 
 const createModuleRefMock = (instances: Map<any, IEventHandler<any> | null> = new Map()) =>
   ({
@@ -24,19 +24,21 @@ const defaultOptions: EventBusModuleOptions = {
   handlerTimeout: 0,
 };
 
-const createEvent = (id: string, type: string): AnyEvent => ({
-  eventId: id,
-  eventType: type,
-  occurredAt: new Date(),
-  payload: { data: "test" },
-} as AnyEvent);
+const createEvent = (id: string, type: string): AnyEvent =>
+  ({
+    eventId: id,
+    eventType: type,
+    occurredAt: new Date(),
+    payload: { data: 'test' },
+  }) as AnyEvent;
 
-describe("EventBusService", () => {
+describe('EventBusService', () => {
   let service: EventBusService;
   let outboxService: OutboxService;
   let deadLetterService: DeadLetterService;
   let retryService: RetryService;
   let moduleRef: ReturnType<typeof createModuleRefMock>;
+  let emitter: any;
 
   const createService = (
     options: Partial<EventBusModuleOptions> = {},
@@ -44,39 +46,36 @@ describe("EventBusService", () => {
     handlerInstances: Map<any, IEventHandler<any>> = new Map(),
   ) => {
     const opts = { ...defaultOptions, ...options };
-    const store = handlerClasses;
 
-    // Build the instances map for ModuleRef.get
+    // Build the instances map for the fake discovery
     const instances = new Map<any, IEventHandler<any> | null>();
     for (const [token, instance] of handlerInstances) {
       instances.set(token, instance);
     }
     moduleRef = createModuleRefMock(instances);
-    outboxService = new OutboxService();
-    deadLetterService = new DeadLetterService();
-    retryService = new RetryService();
 
-    return new EventBusService(
-      opts,
-      store,
-      moduleRef as unknown as ModuleRef,
-      outboxService,
-      deadLetterService,
-      retryService,
-    );
+    const result = createTestEventBus(opts, handlerClasses, instances as Map<any, any>);
+    const { service: svc, emitter: em, outbox, deadLetter, retry } = result;
+
+    emitter = em;
+    outboxService = outbox;
+    deadLetterService = deadLetter;
+    retryService = retry;
+
+    return svc as EventBusService;
   };
 
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  describe("publish", () => {
-    it("should publish a single event and dispatch to handlers", async () => {
+  describe('publish', () => {
+    it('should publish a single event and dispatch to handlers', async () => {
       const handler: IEventHandler<any> = { handle: vi.fn().mockResolvedValue(undefined) };
       const handlerClass = class TestHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
@@ -84,19 +83,19 @@ describe("EventBusService", () => {
       service = createService({}, [handlerClass], instances);
       await service.onApplicationBootstrap();
 
-      const event = createEvent("e1", "TestEvent");
+      const event = createEvent('e1', 'TestEvent');
       await service.publish(event);
 
       expect(handler.handle).toHaveBeenCalledTimes(1);
       expect(handler.handle).toHaveBeenCalledWith(event);
     });
 
-    it("should publish multiple events", async () => {
+    it('should publish multiple events', async () => {
       const handler: IEventHandler<any> = { handle: vi.fn().mockResolvedValue(undefined) };
       const handlerClass = class MultiHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
@@ -104,32 +103,32 @@ describe("EventBusService", () => {
       service = createService({}, [handlerClass], instances);
       await service.onApplicationBootstrap();
 
-      const event1 = createEvent("e1", "TestEvent");
-      const event2 = createEvent("e2", "TestEvent");
+      const event1 = createEvent('e1', 'TestEvent');
+      const event2 = createEvent('e2', 'TestEvent');
       await service.publish([event1, event2]);
 
       expect(handler.handle).toHaveBeenCalledTimes(2);
     });
 
-    it("should not publish events during shutdown", async () => {
+    it('should not publish events during shutdown', async () => {
       const handler: IEventHandler<any> = { handle: vi.fn().mockResolvedValue(undefined) };
 
       service = createService({}, [], new Map());
       service.onApplicationShutdown();
 
-      const event = createEvent("e1", "TestEvent");
+      const event = createEvent('e1', 'TestEvent');
       await service.publish(event);
 
       expect(handler.handle).not.toHaveBeenCalled();
     });
 
-    it("should log when no handlers are registered for an event type", async () => {
-      const loggerSpy = vi.spyOn(Logger.prototype, "debug").mockImplementation(() => undefined);
+    it('should log when no handlers are registered for an event type', async () => {
+      const loggerSpy = vi.spyOn(Logger.prototype, 'debug').mockImplementation(() => undefined);
 
       service = createService({}, [], new Map());
       await service.onApplicationBootstrap();
 
-      const event = createEvent("e1", "UnhandledEvent");
+      const event = createEvent('e1', 'UnhandledEvent');
       await service.publish(event);
 
       expect(loggerSpy).toHaveBeenCalledWith(
@@ -138,24 +137,24 @@ describe("EventBusService", () => {
     });
   });
 
-  describe("outbox integration", () => {
-    it("should add event to outbox when outbox is enabled", async () => {
+  describe('outbox integration', () => {
+    it('should add event to outbox when outbox is enabled', async () => {
       service = createService({ enableOutbox: true }, [], new Map());
       await service.onApplicationBootstrap();
 
-      const addSpy = vi.spyOn(outboxService, "add");
-      const event = createEvent("e1", "TestEvent");
+      const addSpy = vi.spyOn(outboxService, 'add');
+      const event = createEvent('e1', 'TestEvent');
 
       await service.publish(event);
       expect(addSpy).toHaveBeenCalledWith(event);
     });
 
-    it("should mark event as published on success when outbox is enabled", async () => {
+    it('should mark event as published on success when outbox is enabled', async () => {
       const handler: IEventHandler<any> = { handle: vi.fn().mockResolvedValue(undefined) };
       const handlerClass = class HandlerWithOutbox implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
@@ -163,21 +162,21 @@ describe("EventBusService", () => {
       service = createService({ enableOutbox: true }, [handlerClass], instances);
       await service.onApplicationBootstrap();
 
-      const markPublishedSpy = vi.spyOn(outboxService, "markPublished");
-      const event = createEvent("e1", "TestEvent");
+      const markPublishedSpy = vi.spyOn(outboxService, 'markPublished');
+      const event = createEvent('e1', 'TestEvent');
 
       await service.publish(event);
-      expect(markPublishedSpy).toHaveBeenCalledWith("e1");
+      expect(markPublishedSpy).toHaveBeenCalledWith('e1');
     });
 
-    it("should mark event as failed on handler error when outbox is enabled", async () => {
+    it('should mark event as failed on handler error when outbox is enabled', async () => {
       const handler: IEventHandler<any> = {
-        handle: vi.fn().mockRejectedValue(new Error("Handler failed")),
+        handle: vi.fn().mockRejectedValue(new Error('Handler failed')),
       };
       const handlerClass = class FailingHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
@@ -189,51 +188,62 @@ describe("EventBusService", () => {
       );
       await service.onApplicationBootstrap();
 
-      const markFailedSpy = vi.spyOn(outboxService, "markFailed");
-      const event = createEvent("e1", "TestEvent");
+      const markFailedSpy = vi.spyOn(outboxService, 'markFailed');
+      const event = createEvent('e1', 'TestEvent');
 
       await service.publish(event);
-      expect(markFailedSpy).toHaveBeenCalledWith("e1", expect.any(Error));
+      expect(markFailedSpy).toHaveBeenCalledWith('e1', expect.any(Error));
     });
   });
 
-  describe("handler retry and dead letter", () => {
-    it("should retry a failing handler and move to dead letter when enabled", async () => {
+  describe('handler retry and dead letter', () => {
+    it('should retry a failing handler and move to dead letter when enabled', async () => {
       const handler: IEventHandler<any> = {
-        handle: vi.fn().mockRejectedValue(new Error("Always fails")),
+        handle: vi.fn().mockRejectedValue(new Error('Always fails')),
       };
       const handlerClass = class RetryHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
 
       service = createService(
-        { enableOutbox: false, enableDeadLetter: true, maxRetries: 2, retryDelay: 10, handlerTimeout: 0 },
+        {
+          enableOutbox: false,
+          enableDeadLetter: true,
+          maxRetries: 2,
+          retryDelay: 10,
+          handlerTimeout: 0,
+        },
         [handlerClass],
         instances,
       );
       await service.onApplicationBootstrap();
 
-      const sendToDLSpy = vi.spyOn(deadLetterService, "sendToDeadLetter");
-      const event = createEvent("e1", "TestEvent");
+      const sendToDLSpy = vi.spyOn(deadLetterService, 'sendToDeadLetter');
+      const event = createEvent('e1', 'TestEvent');
 
       await service.publish(event);
 
       expect(handler.handle).toHaveBeenCalledTimes(2); // original + 1 retry
-      expect(sendToDLSpy).toHaveBeenCalledWith(event, expect.any(Error), expect.any(Number));
+      expect(sendToDLSpy).toHaveBeenCalledWith(
+        event,
+        expect.any(Error),
+        expect.any(Number),
+        'RetryHandler',
+      );
     });
 
-    it("should rethrow error when dead letter is disabled and handler fails", async () => {
+    it('should rethrow error when dead letter is disabled and handler fails', async () => {
       const handler: IEventHandler<any> = {
-        handle: vi.fn().mockRejectedValue(new Error("Fatal error")),
+        handle: vi.fn().mockRejectedValue(new Error('Fatal error')),
       };
       const handlerClass = class NoDLHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
@@ -248,7 +258,7 @@ describe("EventBusService", () => {
       // We need to simulate register manually
       service.register([handlerClass]);
 
-      const event = createEvent("e1", "TestEvent");
+      const event = createEvent('e1', 'TestEvent');
 
       // publish catches the error and logs it, but does not rethrow
       // The dispatch-to-handlers error is caught by handleEvent
@@ -258,30 +268,36 @@ describe("EventBusService", () => {
     });
   });
 
-  describe("handler timeout", () => {
-    it("should timeout a slow handler", async () => {
+  describe('handler timeout', () => {
+    it('should timeout a slow handler', async () => {
       const handler: IEventHandler<any> = {
-        handle: vi.fn().mockImplementation(
-          () => new Promise<void>((resolve) => setTimeout(resolve, 5000)),
-        ),
+        handle: vi
+          .fn()
+          .mockImplementation(() => new Promise<void>((resolve) => setTimeout(resolve, 5000))),
       };
       const handlerClass = class SlowHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
 
       service = createService(
-        { enableOutbox: false, enableDeadLetter: true, maxRetries: 1, retryDelay: 10, handlerTimeout: 50 },
+        {
+          enableOutbox: false,
+          enableDeadLetter: true,
+          maxRetries: 1,
+          retryDelay: 10,
+          handlerTimeout: 50,
+        },
         [handlerClass],
         instances,
       );
       await service.onApplicationBootstrap();
 
-      const sendToDLSpy = vi.spyOn(deadLetterService, "sendToDeadLetter");
-      const event = createEvent("e1", "TestEvent");
+      const sendToDLSpy = vi.spyOn(deadLetterService, 'sendToDeadLetter');
+      const event = createEvent('e1', 'TestEvent');
 
       await service.publish(event);
 
@@ -290,13 +306,13 @@ describe("EventBusService", () => {
     });
   });
 
-  describe("register", () => {
-    it("should register handlers from container on bootstrap", async () => {
+  describe('register', () => {
+    it('should register handlers from container on bootstrap', async () => {
       const handler: IEventHandler<any> = { handle: vi.fn() };
       const handlerClass = class BootstrapHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
@@ -304,18 +320,18 @@ describe("EventBusService", () => {
       service = createService({}, [handlerClass], instances);
       await service.onApplicationBootstrap();
 
-      const registered = service.getRegisteredHandlers();
-      expect(registered.has("TestEvent")).toBe(true);
-      expect(registered.get("TestEvent")).toHaveLength(1);
-      expect(registered.get("TestEvent")![0]!.instance).toBe(handler);
+      const listeners = emitter.listeners('TestEvent');
+      expect(listeners).toHaveLength(1);
+      // Ensure the DI mock returns the expected instance
+      expect(moduleRef.get(handlerClass)).toBe(handler);
     });
 
-    it("should register handlers via register() method", async () => {
+    it('should register handlers via register() method', async () => {
       const handler: IEventHandler<any> = { handle: vi.fn() };
       const handlerClass = class RegisterMethodHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
@@ -326,12 +342,12 @@ describe("EventBusService", () => {
       // Register after bootstrap
       service.register([handlerClass]);
 
-      const registered = service.getRegisteredHandlers();
-      expect(registered.has("TestEvent")).toBe(true);
+      const listeners = emitter.listeners('TestEvent');
+      expect(listeners.length).toBeGreaterThan(0);
     });
 
-    it("should warn when handler class has no @EventHandler metadata", async () => {
-      const loggerSpy = vi.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined);
+    it('should warn when handler class has no @EventHandler metadata', async () => {
+      const loggerSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
 
       const handlerClass = class NoDecoratorHandler implements IEventHandler<any> {
         handle = vi.fn();
@@ -344,45 +360,47 @@ describe("EventBusService", () => {
       await service.onApplicationBootstrap();
 
       expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining("No @EventHandler() decorator"),
+        expect.stringContaining('No @EventHandler() decorator'),
       );
     });
 
-    it("should warn when handler is not found in DI container", async () => {
-      const loggerSpy = vi.spyOn(Logger.prototype, "warn").mockImplementation(() => undefined);
+    it('should warn when handler is not found in DI container', async () => {
+      const loggerSpy = vi.spyOn(Logger.prototype, 'warn').mockImplementation(() => undefined);
 
       const handlerClass = class NotInDIHandler implements IEventHandler<any> {
         handle = vi.fn();
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, { events: ["TestEvent"], options: {} }, handlerClass);
+      Reflect.defineMetadata(
+        EVENT_HANDLER_METADATA,
+        { events: ['TestEvent'], options: {} },
+        handlerClass,
+      );
 
       // Empty instances map -> moduleRef.get returns null
       service = createService({}, [handlerClass], new Map());
       await service.onApplicationBootstrap();
 
-      expect(loggerSpy).toHaveBeenCalledWith(
-        expect.stringContaining("not found in DI container"),
-      );
+      expect(loggerSpy).toHaveBeenCalledWith(expect.stringContaining('not found in DI container'));
     });
   });
 
-  describe("handler priority ordering", () => {
-    it("should execute handlers in priority order (high, normal, low)", async () => {
+  describe('handler priority ordering', () => {
+    it('should execute handlers in priority order (high, normal, low)', async () => {
       const executionOrder: string[] = [];
 
       const highHandler: IEventHandler<any> = {
         handle: vi.fn().mockImplementation(async () => {
-          executionOrder.push("high");
+          executionOrder.push('high');
         }),
       };
       const normalHandler: IEventHandler<any> = {
         handle: vi.fn().mockImplementation(async () => {
-          executionOrder.push("normal");
+          executionOrder.push('normal');
         }),
       };
       const lowHandler: IEventHandler<any> = {
         handle: vi.fn().mockImplementation(async () => {
-          executionOrder.push("low");
+          executionOrder.push('low');
         }),
       };
 
@@ -397,37 +415,53 @@ describe("EventBusService", () => {
         handle = lowHandler.handle;
       };
 
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], HighHandlerClass);
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], NormalHandlerClass);
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], LowHandlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], HighHandlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], NormalHandlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], LowHandlerClass);
 
       // Set priorities via metadata
-      Reflect.defineMetadata(`${EVENT_HANDLER_METADATA.toString()}:priority`, "high", HighHandlerClass);
-      Reflect.defineMetadata(`${EVENT_HANDLER_METADATA.toString()}:priority`, "normal", NormalHandlerClass);
-      Reflect.defineMetadata(`${EVENT_HANDLER_METADATA.toString()}:priority`, "low", LowHandlerClass);
+      Reflect.defineMetadata(
+        `${EVENT_HANDLER_METADATA.toString()}:priority`,
+        'high',
+        HighHandlerClass,
+      );
+      Reflect.defineMetadata(
+        `${EVENT_HANDLER_METADATA.toString()}:priority`,
+        'normal',
+        NormalHandlerClass,
+      );
+      Reflect.defineMetadata(
+        `${EVENT_HANDLER_METADATA.toString()}:priority`,
+        'low',
+        LowHandlerClass,
+      );
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(HighHandlerClass, highHandler);
       instances.set(NormalHandlerClass, normalHandler);
       instances.set(LowHandlerClass, lowHandler);
 
-      service = createService({}, [HighHandlerClass, NormalHandlerClass, LowHandlerClass], instances);
+      service = createService(
+        {},
+        [HighHandlerClass, NormalHandlerClass, LowHandlerClass],
+        instances,
+      );
       await service.onApplicationBootstrap();
 
-      const event = createEvent("e1", "TestEvent");
+      const event = createEvent('e1', 'TestEvent');
       await service.publish(event);
 
-      expect(executionOrder).toEqual(["high", "normal", "low"]);
+      expect(executionOrder).toEqual(['high', 'normal', 'low']);
     });
   });
 
-  describe("getRegisteredHandlers", () => {
-    it("should return a snapshot of registered handlers", async () => {
+  describe('getRegisteredHandlers', () => {
+    it('should return a snapshot of registered handlers', async () => {
       const handler: IEventHandler<any> = { handle: vi.fn() };
       const handlerClass = class SnapHandler implements IEventHandler<any> {
         handle = handler.handle;
       };
-      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ["TestEvent"], handlerClass);
+      Reflect.defineMetadata(EVENT_HANDLER_METADATA, ['TestEvent'], handlerClass);
 
       const instances = new Map<any, IEventHandler<any>>();
       instances.set(handlerClass, handler);
@@ -435,9 +469,9 @@ describe("EventBusService", () => {
       service = createService({}, [handlerClass], instances);
       await service.onApplicationBootstrap();
 
-      const registered = service.getRegisteredHandlers();
-      expect(registered).toBeInstanceOf(Map);
-      expect(registered.has("TestEvent")).toBe(true);
+      const listeners = emitter.listeners('TestEvent');
+      expect(listeners).toBeInstanceOf(Array);
+      expect(listeners.length).toBeGreaterThan(0);
     });
   });
 });

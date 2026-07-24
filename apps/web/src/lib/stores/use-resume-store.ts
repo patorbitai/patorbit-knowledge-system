@@ -2,6 +2,7 @@
 import { create } from 'zustand';
 
 import { api } from '@/lib/api';
+import * as queue from '@/lib/services/offline-queue';
 import { type Resume, type ResumeSection, type ResumeVersion } from '@/lib/types';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -34,6 +35,10 @@ export type ResumeStore = {
   createVersion: (note?: string) => Promise<void>;
   setMessage: (msg: ResumeMessage) => void;
   reset: () => void;
+  processOfflineQueue: () => Promise<void>;
+  isOffline: boolean;
+  pendingQueue: queue.SaveQueueItem[];
+  syncStatus: 'idle' | 'saving' | 'saved' | 'error' | 'pending-sync' | 'offline' | 'retrying';
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -80,6 +85,9 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
   saveError: null,
   savingSectionId: null,
   message: null,
+  isOffline: false,
+  pendingQueue: [],
+  syncStatus: 'idle' as const,
 
   // ── Setters ────────────────────────────────────────────────────────────────
 
@@ -94,6 +102,7 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     try {
       const data = await api.get<Resume>(`/resumes/${id}`);
       set({ resume: data, isLoading: false, lastSaved: new Date() });
+      await get().processOfflineQueue();
     } catch {
       set({
         isLoading: false,
@@ -137,16 +146,44 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     const section = resume.sections.find((s) => s.id === sectionId);
     if (!section?.content) return;
 
-    set({ savingSectionId: sectionId, isSaving: true, saveError: null });
+    if (get().isOffline) {
+      const item: queue.SaveQueueItem = {
+        id: `section-${sectionId}-${Date.now()}`,
+        type: 'section',
+        sectionId,
+        resumeId: resume.id,
+        payload: { content: section.content },
+        timestamp: Date.now(),
+      };
+      await queue.enqueue(item);
+      set((s) => ({
+        pendingQueue: [...s.pendingQueue, item],
+        syncStatus: 'pending-sync',
+      }));
+      return;
+    }
+
+    set({ savingSectionId: sectionId, isSaving: true, saveError: null, syncStatus: 'saving' });
     try {
       await api.patch(`/resumes/${resume.id}/sections/${sectionId}`, { content: section.content });
-      set({ lastSaved: new Date() });
+      set({ lastSaved: new Date(), syncStatus: 'saved' });
     } catch (e) {
       const error = e as Error;
-      set({
+      const item: queue.SaveQueueItem = {
+        id: `section-${sectionId}-${Date.now()}`,
+        type: 'section',
+        sectionId,
+        resumeId: resume.id,
+        payload: { content: section.content },
+        timestamp: Date.now(),
+      };
+      await queue.enqueue(item);
+      set((s) => ({
+        pendingQueue: [...s.pendingQueue, item],
+        syncStatus: 'pending-sync',
         saveError: `Failed to save section: ${error.message}`,
-        message: { type: 'error', text: 'Failed to save section' },
-      });
+        message: { type: 'error', text: 'Failed to save section. Queued for retry.' },
+      }));
     } finally {
       set({ savingSectionId: null, isSaving: false });
     }
@@ -223,16 +260,43 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
   flushTitle: async () => {
     const { resume } = get();
     if (!resume?.title.trim()) return;
-    set({ isSaving: true, saveError: null });
+
+    if (get().isOffline) {
+      const item: queue.SaveQueueItem = {
+        id: `title-${Date.now()}`,
+        type: 'title',
+        resumeId: resume.id,
+        payload: { title: resume.title },
+        timestamp: Date.now(),
+      };
+      await queue.enqueue(item);
+      set((s) => ({
+        pendingQueue: [...s.pendingQueue, item],
+        syncStatus: 'pending-sync',
+      }));
+      return;
+    }
+
+    set({ isSaving: true, saveError: null, syncStatus: 'saving' });
     try {
       await api.patch(`/resumes/${resume.id}`, { title: resume.title });
-      set({ lastSaved: new Date() });
+      set({ lastSaved: new Date(), syncStatus: 'saved' });
     } catch (e) {
       const error = e as Error;
-      set({
+      const item: queue.SaveQueueItem = {
+        id: `title-${Date.now()}`,
+        type: 'title',
+        resumeId: resume.id,
+        payload: { title: resume.title },
+        timestamp: Date.now(),
+      };
+      await queue.enqueue(item);
+      set((s) => ({
+        pendingQueue: [...s.pendingQueue, item],
+        syncStatus: 'pending-sync',
         saveError: `Failed to save title: ${error.message}`,
-        message: { type: 'error', text: 'Failed to save title' },
-      });
+        message: { type: 'error', text: 'Failed to save title. Queued for retry.' },
+      }));
     } finally {
       set({ isSaving: false });
     }
@@ -303,7 +367,34 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     }
   },
 
-  setMessage: (msg) => set({ message: msg }),
+  processOfflineQueue: async () => {
+    const s = get();
+    if (!s.isOffline) return;
+    if (s.isSaving) return;
+    set({ syncStatus: 'retrying' });
+    const items = await queue.getAll();
+    if (items.length === 0) {
+      set({ syncStatus: 'idle' });
+      return;
+    }
+    for (const item of items) {
+      try {
+        if (item.type === 'section' && item.sectionId)
+          await api.patch(`/resumes/${item.resumeId}/sections/${item.sectionId}`, item.payload);
+        else if (item.type === 'title') await api.patch(`/resumes/${item.resumeId}`, item.payload);
+        await queue.dequeue(item.id);
+        set((prev) => ({ pendingQueue: prev.pendingQueue.filter((i) => i.id !== item.id) }));
+      } catch {
+        set({ syncStatus: 'error', saveError: 'Failed to sync some changes.' });
+        return;
+      }
+    }
+    await queue.clearAll();
+    set({ syncStatus: 'saved', lastSaved: new Date() });
+    setTimeout(() => set({ syncStatus: 'idle' }), 2000);
+  },
+
+  setMessage: (msg: ResumeMessage) => set({ message: msg }),
 
   reset: () => {
     pendingSaves.clear();

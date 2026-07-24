@@ -5,3 +5,4 @@ export { ResumeHeader } from './resume-header';
 export { ResumeLoadingSkeleton } from './resume-loading-skeleton';
 export { ResumePreview } from './resume-preview';
 export { ResumeProvider } from './resume-provider';
+export { ResumeSectionNav } from './resume-section-nav';

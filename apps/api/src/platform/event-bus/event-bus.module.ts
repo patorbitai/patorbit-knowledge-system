@@ -2,7 +2,13 @@ import { type DynamicModule, Global, Module, type Provider, type Type } from '@n
 import { DiscoveryModule } from '@nestjs/core';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 
-import { EVENT_BUS, EVENT_BUS_MODULE_OPTIONS } from './event-bus.constants';
+import {
+  DEAD_LETTER_SERVICE,
+  EVENT_BUS,
+  EVENT_BUS_MODULE_OPTIONS,
+  OUTBOX_SERVICE,
+  RETRY_SERVICE,
+} from './event-bus.constants';
 import { type Event, type EventHandler } from './event-bus.provider';
 import { EventBusService } from './event-bus.service';
 import { DeadLetterService } from './services/dead-letter.service';
@@ -54,14 +60,7 @@ export interface EventBusModuleOptions {
     RetryService,
     { provide: RETRY_SERVICE, useExisting: RetryService },
   ],
-  exports: [
-    EVENT_BUS,
-    EventBusService,
-    OUTBOX_SERVICE,
-    OUTBOX_SERVICE,
-    DEAD_LETTER_SERVICE,
-    RETRY_SERVICE,
-  ],
+  exports: [EVENT_BUS, EventBusService, OUTBOX_SERVICE, DEAD_LETTER_SERVICE, RETRY_SERVICE],
 })
 export class EventBusModule {
   static forRoot(options: EventBusModuleOptions = {}): DynamicModule {

@@ -34,6 +34,7 @@ async function request<T>(
   path: string,
   body?: unknown,
   headers?: Record<string, string>,
+  options?: { signal?: AbortSignal },
 ): Promise<T> {
   const authHeaders: Record<string, string> = {};
   if (_accessToken) {
@@ -49,37 +50,47 @@ async function request<T>(
     },
     credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
+    signal: options?.signal,
   });
   return handleResponse<T>(res);
 }
 
-type RequestFn = <T>(path: string, body?: unknown, headers?: Record<string, string>) => Promise<T>;
+export type ApiOptions = { signal?: AbortSignal };
+
+type RequestFn = <T>(
+  path: string,
+  body?: unknown,
+  headers?: Record<string, string>,
+  options?: ApiOptions,
+) => Promise<T>;
 
 export const api = {
-  post: (<T>(path: string, body?: unknown, headers?: Record<string, string>) =>
-    request<T>('POST', path, body, headers)) as RequestFn,
-  get: (<T>(path: string, params?: Record<string, any>, headers?: Record<string, string>) => {
+  post: (<T>(
+    path: string,
+    body?: unknown,
+    headers?: Record<string, string>,
+    options?: ApiOptions,
+  ) => request<T>('POST', path, body, headers, options)) as RequestFn,
+  get: (<T>(
+    path: string,
+    params?: Record<string, any> | Record<string, string>,
+    headers?: Record<string, string>,
+    options?: ApiOptions,
+  ) => {
     const query = params ? `?${new URLSearchParams(params)}` : '';
-    return request<T>('GET', `${path}${query}`, undefined, headers);
+    return request<T>('GET', `${path}${query}`, undefined, headers, options);
   }) as <T>(
     path: string,
     params?: Record<string, any>,
     headers?: Record<string, string>,
+    options?: ApiOptions,
   ) => Promise<T>,
-  patch: (<T>(path: string, body?: unknown, headers?: Record<string, string>) =>
-    request<T>('PATCH', path, body, headers)) as RequestFn,
-  del: (<T>(path: string, headers?: Record<string, string>) =>
-    request<T>('DELETE', path, undefined, headers)) as RequestFn,
-
-  ai: {
-    improveSummary: (text: string): Promise<string> => api.post('/ai/improve-summary', { text }),
-    improveBullet: (text: string): Promise<string> => api.post('/ai/improve-bullet', { text }),
-    suggestSkills: (text: string): Promise<string[]> => api.post('/ai/suggest-skills', { text }),
-    grammarReview: (
-      text: string,
-    ): Promise<Array<{ start: number; end: number; suggestion: string }>> =>
-      api.post('/ai/grammar-review', { text }),
-    optimizeAts: (content: Record<string, unknown>): Promise<Record<string, unknown>> =>
-      api.post('/ai/optimize-ats', { content }),
-  },
+  patch: (<T>(
+    path: string,
+    body?: unknown,
+    headers?: Record<string, string>,
+    options?: ApiOptions,
+  ) => request<T>('PATCH', path, body, headers, options)) as RequestFn,
+  del: (<T>(path: string, headers?: Record<string, string>, options?: ApiOptions) =>
+    request<T>('DELETE', path, undefined, headers, options)) as RequestFn,
 };

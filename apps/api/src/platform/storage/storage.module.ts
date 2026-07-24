@@ -1,11 +1,12 @@
-import { type DynamicModule, Module, type Provider } from "@nestjs/common";
+import { type DynamicModule, Module, type Provider } from '@nestjs/common';
 
-import { DiskStorageProvider } from "./providers/disk.storage-provider";
-import { LocalMinioStorageProvider } from "./providers/local-minio.storage-provider";
-import { STORAGE_PROVIDER } from "./storage.constants";
-import { StorageService } from "./storage.service";
+import { DiskStorageProvider } from './providers/disk.storage-provider';
+import { LocalMinioStorageProvider } from './providers/local-minio.storage-provider';
+import { STORAGE_PROVIDER } from './storage.constants';
+import { StorageGuard } from './storage.guard';
+import { StorageService } from './storage.service';
 
-export type StorageProviderType = "minio" | "disk";
+export type StorageProviderType = 'minio' | 'disk';
 
 export interface StorageModuleOptions {
   provider: StorageProviderType;
@@ -15,10 +16,10 @@ export interface StorageModuleOptions {
 @Module({})
 export class StorageModule {
   static forRoot(options?: StorageModuleOptions): DynamicModule {
-    const providerType = options?.provider ?? "disk";
+    const providerType = options?.provider ?? 'disk';
 
     const provider: Provider =
-      providerType === "minio"
+      providerType === 'minio'
         ? {
             provide: STORAGE_PROVIDER,
             useClass: LocalMinioStorageProvider,
@@ -31,8 +32,8 @@ export class StorageModule {
     return {
       module: StorageModule,
       global: true,
-      providers: [provider, StorageService],
-      exports: [StorageService],
+      providers: [provider, StorageService, StorageGuard],
+      exports: [StorageService, StorageGuard],
     };
   }
 }

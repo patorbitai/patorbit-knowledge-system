@@ -113,6 +113,60 @@ export class AiHooksService {
     }
   }
 
+  /**
+   * Analyze a full resume and return a structured analysis.
+   */
+  async analyzeResume(resume: Record<string, unknown>): Promise<ResumeAnalysisDto> {
+    if (!this.apiKey) {
+      throw new Error('CLAUDE_API_KEY not set');
+    }
+
+    const prompt = `
+      You are an expert resume reviewer and career coach.
+      Analyze the following resume JSON and provide a structured analysis.
+
+      Resume JSON:
+      ${JSON.stringify(resume, null, 2)}
+
+      Your response MUST be a single valid JSON object matching this exact structure:
+      {
+        "overallScore": number, // 0-100
+        "scoreBreakdown": {
+          "completeness": number, // 0-100
+          "atsCompatibility": number, // 0-100
+          "readability": number, // 0-100
+          "professionalTone": number, // 0-100
+          "impact": number, // 0-100
+          "keywordOptimization": number // 0-100
+        },
+        "suggestions": [
+          {
+            "category": string, // e.g., "Summary", "Work Experience"
+            "severity": "high" | "medium" | "low",
+            "explanation": string,
+            "recommendation": string,
+            "example": string // A "before" and "after" example
+          }
+        ],
+        "atsReport": {
+          "missingKeywords": string[],
+          "formattingIssues": string[],
+          "missingSections": string[],
+          "lengthIssues": string[],
+          "risks": string[]
+        }
+      }
+    `;
+
+    try {
+      const result = await this.callClaude(prompt, '{}');
+      return JSON.parse(result) as ResumeAnalysisDto;
+    } catch (error) {
+      this.logger.error(`analyzeResume failed: ${(error as Error).message}`);
+      throw new Error('Failed to analyze resume');
+    }
+  }
+
   private async callClaude(prompt: string, fallback: string): Promise<string> {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',

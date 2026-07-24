@@ -1,0 +1,122 @@
+name: 🚀 Beta Deployment
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '9'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+  DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+  DEPLOY_PATH: /opt/patorbit
+
+jobs:
+  ########################################
+  # Build, Test, and Push Images
+  ########################################
+  build-and-push:
+    name: 🐳 Build & Push
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      tag: ${{ steps.vars.outputs.sha_short }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set short SHA
+        id: vars
+        run: echo "sha_short=$(git rev-parse --short HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push API image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/api/Dockerfile.prod
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-api:${{ steps.vars.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push Web image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: apps/web/Dockerfile.prod
+          push: true
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-web:${{ steps.vars.outputs.sha_short }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  ########################################
+  # Deploy to VPS
+  ########################################
+  deploy:
+    name: 🌐 Deploy to VPS
+    needs: [build-and-push]
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          known_hosts: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+
+      - name: Create deployment directory
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+            "mkdir -p ${{ env.DEPLOY_PATH }}/infra/nginx/conf.d \
+                     ${{ env.DEPLOY_PATH }}/infra/nginx/ssl \
+                     ${{ env.DEPLOY_PATH }}/infra/scripts"
+
+      - name: Copy deployment files
+        run: |
+          scp -o StrictHostKeyChecking=no \
+            docker-compose.production.yml \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/docker-compose.yml
+          scp -o StrictHostKeyChecking=no \
+            infra/nginx/nginx.conf \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/infra/nginx/nginx.conf
+          scp -o StrictHostKeyChecking=no \
+            infra/nginx/conf.d/patorbit.conf \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/infra/nginx/conf.d/patorbit.conf
+          scp -o StrictHostKeyChecking=no \
+            infra/scripts/deploy.sh \
+            ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }}:${{ env.DEPLOY_PATH }}/infra/scripts/deploy.sh
+
+      - name: Execute deploy script
+        run: |
+          ssh -o StrictHostKeyChecking=no ${{ env.DEPLOY_USER }}@${{ env.DEPLOY_HOST }} \
+            "RELEASE_TAG=${{ needs.build-and-push.outputs.tag }} \
+             REGISTRY=${{ env.REGISTRY }} \
+             bash ${{ env.DEPLOY_PATH }}/infra/scripts/deploy.sh"
+
+      - name: Smoke test
+        run: |
+          sleep 15
+          curl -sf https://beta.patorbit.com/api/health || exit 1
+          echo "✅ Deployment verified — health check passed"
