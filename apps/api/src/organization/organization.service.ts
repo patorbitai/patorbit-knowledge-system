@@ -1,13 +1,9 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import { type PrismaService } from '@patorbit/database';
 import { OrganizationRole } from '@patorbit/database';
 
-import { type CreateOrganizationDto } from "./dto/create-organization.dto";
-import { type UpdateOrganizationDto } from "./dto/update-organization.dto";
+import { type CreateOrganizationDto } from './dto/create-organization.dto';
+import { type UpdateOrganizationDto } from './dto/update-organization.dto';
 
 @Injectable()
 export class OrganizationService {
@@ -47,7 +43,7 @@ export class OrganizationService {
           select: { members: true, workspaces: true },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -57,14 +53,14 @@ export class OrganizationService {
       include: {
         members: {
           include: { profile: true },
-          orderBy: { createdAt: "asc" },
+          orderBy: { createdAt: 'asc' },
         },
         workspaces: {
           where: { deletedAt: null },
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: 'desc' },
         },
         subscriptions: {
-          orderBy: { createdAt: "desc" },
+          orderBy: { createdAt: 'desc' },
         },
       },
     });
@@ -76,8 +72,25 @@ export class OrganizationService {
     return organization;
   }
 
-  async update(id: string, dto: UpdateOrganizationDto) {
-    await this.findById(id);
+  async requireRole(organizationId: string, profileId: string, allowedRoles: OrganizationRole[]) {
+    const member = await this.prisma.organizationMember.findUnique({
+      where: {
+        organizationId_profileId: {
+          organizationId,
+          profileId,
+        },
+      },
+    });
+
+    if (!member || !allowedRoles.includes(member.role)) {
+      throw new NotFoundException(`Organization with ID "${organizationId}" not found`);
+    }
+
+    return member;
+  }
+
+  async update(id: string, profileId: string, dto: UpdateOrganizationDto) {
+    await this.requireRole(id, profileId, [OrganizationRole.OWNER, OrganizationRole.ADMIN]);
 
     return this.prisma.organization.update({
       where: { id },
@@ -90,8 +103,8 @@ export class OrganizationService {
     });
   }
 
-  async softDelete(id: string) {
-    await this.findById(id);
+  async softDelete(id: string, profileId: string) {
+    await this.requireRole(id, profileId, [OrganizationRole.OWNER, OrganizationRole.ADMIN]);
 
     return this.prisma.organization.update({
       where: { id },
@@ -99,50 +112,61 @@ export class OrganizationService {
     });
   }
 
-  async addMember(organizationId: string, profileId: string, role: OrganizationRole) {
-    await this.findById(organizationId);
+  async addMember(
+    organizationId: string,
+    callerProfileId: string,
+    targetProfileId: string,
+    role: OrganizationRole,
+  ) {
+    await this.requireRole(organizationId, callerProfileId, [
+      OrganizationRole.OWNER,
+      OrganizationRole.ADMIN,
+    ]);
 
     const existingMember = await this.prisma.organizationMember.findUnique({
       where: {
         organizationId_profileId: {
           organizationId,
-          profileId,
+          profileId: targetProfileId,
         },
       },
     });
 
     if (existingMember) {
-      throw new ConflictException("Profile is already a member of this organization");
+      throw new ConflictException('Profile is already a member of this organization');
     }
 
     return this.prisma.organizationMember.create({
       data: {
         organizationId,
-        profileId,
+        profileId: targetProfileId,
         role,
       },
       include: { profile: true },
     });
   }
 
-  async removeMember(organizationId: string, profileId: string) {
-    await this.findById(organizationId);
+  async removeMember(organizationId: string, callerProfileId: string, targetProfileId: string) {
+    await this.requireRole(organizationId, callerProfileId, [
+      OrganizationRole.OWNER,
+      OrganizationRole.ADMIN,
+    ]);
 
     const member = await this.prisma.organizationMember.findUnique({
       where: {
         organizationId_profileId: {
           organizationId,
-          profileId,
+          profileId: targetProfileId,
         },
       },
     });
 
     if (!member) {
-      throw new NotFoundException("Member not found in this organization");
+      throw new NotFoundException('Member not found in this organization');
     }
 
     if (member.role === OrganizationRole.OWNER) {
-      throw new ConflictException("Cannot remove the owner of the organization");
+      throw new ConflictException('Cannot remove the owner of the organization');
     }
 
     return this.prisma.organizationMember.delete({
@@ -150,24 +174,32 @@ export class OrganizationService {
     });
   }
 
-  async updateMemberRole(organizationId: string, profileId: string, role: OrganizationRole) {
-    await this.findById(organizationId);
+  async updateMemberRole(
+    organizationId: string,
+    callerProfileId: string,
+    targetProfileId: string,
+    role: OrganizationRole,
+  ) {
+    await this.requireRole(organizationId, callerProfileId, [
+      OrganizationRole.OWNER,
+      OrganizationRole.ADMIN,
+    ]);
 
     const member = await this.prisma.organizationMember.findUnique({
       where: {
         organizationId_profileId: {
           organizationId,
-          profileId,
+          profileId: targetProfileId,
         },
       },
     });
 
     if (!member) {
-      throw new NotFoundException("Member not found in this organization");
+      throw new NotFoundException('Member not found in this organization');
     }
 
     if (member.role === OrganizationRole.OWNER && role !== OrganizationRole.OWNER) {
-      throw new ConflictException("Cannot change the role of the organization owner");
+      throw new ConflictException('Cannot change the role of the organization owner');
     }
 
     return this.prisma.organizationMember.update({
@@ -183,7 +215,7 @@ export class OrganizationService {
     return this.prisma.organizationMember.findMany({
       where: { organizationId },
       include: { profile: true },
-      orderBy: { createdAt: "asc" },
+      orderBy: { createdAt: 'asc' },
     });
   }
 }
