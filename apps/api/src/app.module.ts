@@ -7,6 +7,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { BillingModule } from './billing/billing.module';
 import { CareerPassportModule } from './career-passport/career-passport.module';
 import { ClaimModule } from './claim/claim.module';
 import { CsrfController } from './common/csrf.controller';
@@ -24,6 +25,7 @@ import { AllExceptionsFilter } from './platform/errors/all-exceptions.filter';
 import { HealthModule } from './platform/health/health.module';
 import { RateLimitGuard } from './platform/rate-limiting/rate-limit.guard';
 import { ProfileModule } from './profile/profile.module';
+import { SearchModule } from './search/search.module';
 import { SessionModule } from './session/session.module';
 import { TimelineModule } from './timeline/timeline.module';
 import { TrustModule } from './trust/trust.module';
@@ -57,6 +59,8 @@ import { WorkspaceModule } from './workspace/workspace.module';
     AnalyticsModule,
     HealthModule,
     CoverLetterModule,
+    BillingModule,
+    SearchModule,
   ],
   controllers: [CsrfController],
   providers: [

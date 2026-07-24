@@ -16,6 +16,13 @@ type RecentResume = {
   sections?: { type: string }[];
 };
 
+type RecentCoverLetter = {
+  id: string;
+  title: string;
+  status: string;
+  updatedAt: string;
+};
+
 type RecentClaim = {
   id: string;
   title: string;
@@ -34,6 +41,7 @@ type ProfileData = {
 type DashboardData = {
   profile: ProfileData;
   recentResumes: RecentResume[];
+  recentCoverLetters: RecentCoverLetter[];
   recentClaims: RecentClaim[];
 };
 
@@ -150,7 +158,24 @@ function ResumeRow({ resume }: { resume: RecentResume }) {
   );
 }
 
-// ── Claim Row ───────────────────────────────────────────────────────────────
+// ── Cover Letter Row ───────────────────────────────────────────────
+
+function CoverLetterRow({ letter }: { letter: RecentCoverLetter }) {
+  return (
+    <Link
+      href={`/cover-letters/${letter.id}`}
+      className="flex items-center justify-between p-4 rounded-lg border bg-card hover:shadow-md transition-shadow"
+    >
+      <div className="min-w-0 flex-1">
+        <p className="font-medium truncate">{letter.title}</p>
+        <p className="text-xs text-muted-foreground mt-0.5">{timeAgo(letter.updatedAt)}</p>
+      </div>
+      <StatusBadge status={letter.status} />
+    </Link>
+  );
+}
+
+// ── Claim Row ──────────────────────────────────────────────────────────────
 
 function ClaimRow({ claim }: { claim: RecentClaim }) {
   const evidenceCount = claim._count?.evidences ?? 0;
@@ -211,11 +236,17 @@ function DashboardContent() {
   const fetchDashboard = useCallback(async () => {
     try {
       const profile = await api.get<ProfileData & { id: string }>('/profiles/me');
-      const [recentResumes, recentClaims] = await Promise.all([
+      const [recentResumes, recentCoverLetters, recentClaims] = await Promise.all([
         api.get<RecentResume[]>('/resumes/recent'),
+        api.get<{ data: RecentCoverLetter[] }>('/cover-letters?limit=5'),
         api.get<RecentClaim[]>(`/claims/profile/${profile.id}`),
       ]);
-      setData({ profile, recentResumes, recentClaims });
+      setData({
+        profile,
+        recentResumes,
+        recentCoverLetters: recentCoverLetters.data,
+        recentClaims,
+      });
     } catch {
       // handled by auth interceptor
     }
@@ -306,6 +337,28 @@ function DashboardContent() {
           <div className="space-y-3">
             {recentResumes.map((r) => (
               <ResumeRow key={r.id} resume={r} />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {/* ── Recent Cover Letters ────────────────────────────────── */}
+      <section>
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">Recent Cover Letters</h2>
+          <Link href="/cover-letters" className="text-sm text-primary hover:underline">
+            View all &rarr;
+          </Link>
+        </div>
+        {data.recentCoverLetters.length === 0 ? (
+          <EmptyState
+            message="No cover letters yet"
+            action={{ label: 'Create one', href: '/cover-letters' }}
+          />
+        ) : (
+          <div className="space-y-3">
+            {data.recentCoverLetters.map((c) => (
+              <CoverLetterRow key={c.id} letter={c} />
             ))}
           </div>
         )}

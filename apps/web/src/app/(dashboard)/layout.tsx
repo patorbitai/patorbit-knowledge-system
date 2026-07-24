@@ -18,9 +18,12 @@ type NavItem = {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: '◆' },
   { label: 'Resumes', href: '/resumes', icon: '📄' },
+  { label: 'Cover Letters', href: '/cover-letters', icon: '✉️' },
   { label: 'Claims', href: '/claims', icon: '◎' },
   { label: 'Profile', href: '/profile', icon: '👤' },
   { label: 'Career Passport', href: '/career-passport', icon: '🛂' },
+  { label: 'Billing', href: '/billing', icon: '💳' },
+  { label: 'Settings', href: '/settings', icon: '⚙️' },
   { label: 'Organizations', href: '/organizations', icon: '🏢' },
   { label: 'Workspaces', href: '/workspaces', icon: '📋' },
 ];
