@@ -1,10 +1,4 @@
-
-import {
-  ConflictException,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
+import { ConflictException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { type PrismaService } from '@patorbit/database';
 import { Prisma } from '@patorbit/database';
 
@@ -61,9 +55,7 @@ export class ResumeService {
       where,
       skip: (page - 1) * limit,
       take: limit,
-      orderBy: sort
-        ? { [sort.split(':')[0]]: sort.split(':')[1] }
-        : { updatedAt: 'desc' },
+      orderBy: sort ? { [sort.split(':')[0]]: sort.split(':')[1] } : { updatedAt: 'desc' },
     });
 
     return {
@@ -83,16 +75,11 @@ export class ResumeService {
       where,
       include: { sections: { orderBy: { sortOrder: 'asc' } }, template: true },
     });
-    if (!resume)
-      throw new NotFoundException(`Resume with ID ${id} not found`);
+    if (!resume) throw new NotFoundException(`Resume with ID ${id} not found`);
     return resume;
   }
 
-  async update(
-    id: string,
-    dto: UpdateResumeDto & { expectedVersion?: number },
-    userId: string,
-  ) {
+  async update(id: string, dto: UpdateResumeDto & { expectedVersion?: number }, userId: string) {
     await this.findOne(id, userId);
 
     // Optimistic locking: if expectedVersion is provided, only update if matches
@@ -107,16 +94,14 @@ export class ResumeService {
         data: {
           title: dto.title,
           status: dto.status,
+          templateId: dto.templateId,
           metadata: dto.metadata as any,
           theme: dto.theme as any,
           version: { increment: 1 },
         },
       });
     } catch (err) {
-      if (
-        err instanceof Prisma.PrismaClientKnownRequestError &&
-        err.code === 'P2025'
-      ) {
+      if (err instanceof Prisma.PrismaClientKnownRequestError && err.code === 'P2025') {
         throw new ConflictException(
           dto.expectedVersion
             ? 'Resume was modified by another session. Refresh and retry.'
@@ -143,11 +128,7 @@ export class ResumeService {
     });
   }
 
-  async duplicate(
-    id: string,
-    dto: DuplicateResumeDto,
-    userId: string,
-  ) {
+  async duplicate(id: string, dto: DuplicateResumeDto, userId: string) {
     const original = await this.findOne(id, userId);
     const newResume = await this.prisma.resume.create({
       data: {
@@ -253,9 +234,7 @@ export class ResumeService {
       where: { id: versionId },
     });
     if (!version || version.resumeId !== id) {
-      throw new NotFoundException(
-        `Version ${versionId} not found for resume ${id}`,
-      );
+      throw new NotFoundException(`Version ${versionId} not found for resume ${id}`);
     }
 
     const snap = version.snapshot as any;
@@ -290,12 +269,7 @@ export class ResumeService {
     return this.findOne(id, userId);
   }
 
-  async compareVersions(
-    id: string,
-    versionAId: string,
-    versionBId: string,
-    userId: string,
-  ) {
+  async compareVersions(id: string, versionAId: string, versionBId: string, userId: string) {
     await this.findOne(id, userId);
     const [vA, vB] = await Promise.all([
       this.prisma.resumeVersion.findUnique({ where: { id: versionAId } }),
