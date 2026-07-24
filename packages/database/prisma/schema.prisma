@@ -151,6 +151,7 @@ model Profile {
   summary   String?
   locale    String   @default("en")
   timezone  String?
+  preferences Json?
   version   Int      @default(1)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -163,6 +164,8 @@ model Profile {
   organizationMembers OrganizationMember[]
   resumes             Resume[]
   importJobs          ImportJob[]
+  folders             Folder[]
+  coverLetters        CoverLetter[]
 
   @@index([deletedAt])
 }
@@ -174,6 +177,7 @@ model Organization {
   website     String?
   logoUrl     String?
   isVerified  Boolean  @default(false)
+  preferences Json?
   version     Int      @default(1)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -420,6 +424,54 @@ model CareerPassportVersion {
 }
 
 // ══════════════════════════════════════════════════════
+// WORKSPACE ASSETS
+// ══════════════════════════════════════════════════════
+
+model Folder {
+  id             String   @id @default(cuid())
+  name           String
+  profileId      String
+  parentId       String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  profile   Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  parent    Folder?  @relation("FolderChildren", fields: [parentId], references: [id], onDelete: NoAction)
+  children  Folder[] @relation("FolderChildren")
+  resumes   Resume[]
+  coverLetters CoverLetter[]
+
+  @@index([profileId])
+  @@index([parentId])
+}
+
+model CoverLetter {
+  id        String       @id @default(cuid())
+  profileId String
+  title     String       @default("Untitled Cover Letter")
+  content   Json?
+  status    AssetStatus  @default(DRAFT)
+  version   Int          @default(1)
+  folderId  String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  deletedAt DateTime?
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  folder  Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+
+  @@index([profileId])
+  @@index([status])
+  @@index([deletedAt])
+}
+
+enum AssetStatus {
+  DRAFT
+  ACTIVE
+  ARCHIVED
+}
+
+// ══════════════════════════════════════════════════════
 // RESUME BUILDER
 // ══════════════════════════════════════════════════════
 
@@ -454,6 +506,8 @@ model Resume {
   templateId    String?
   theme         Json?        // template theme settings (font, colors, spacing, etc.)
   metadata      Json?        // page size, margins, etc.
+  favorite      Boolean      @default(false)
+  folderId      String?
   version       Int          @default(1)
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
@@ -465,6 +519,7 @@ model Resume {
   assets     ResumeAsset[]
   template   ResumeTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   exportJobs ExportJob[]
+  folder     Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
 
   @@index([profileId])
   @@index([status])
@@ -610,13 +665,17 @@ model Metadata {
 }
 
 model Subscription {
-  id             String   @id @default(cuid())
-  organizationId String
-  plan           String // e.g., 'free', 'pro', 'enterprise'
-  status         String // e.g., 'active', 'canceled', 'past_due'
-  currentPeriodEnd DateTime
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                  String          @id @default(cuid())
+  organizationId      String
+  stripeSubscriptionId String?        @unique
+  plan                String          @default("free") // 'free', 'pro', 'enterprise'
+  status              String          @default("active") // 'active', 'canceled', 'past_due', 'trialing'
+  features            Json?           // snapshot of plan features at time of subscription
+  currentPeriodEnd    DateTime
+  trialEndsAt         DateTime?
+  cancelAtPeriodEnd   Boolean         @default(false)
+  createdAt           DateTime        @default(now())
+  updatedAt           DateTime        @updatedAt
 
   organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 

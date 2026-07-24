@@ -12,6 +12,7 @@ import { ClaimModule } from './claim/claim.module';
 import { CsrfController } from './common/csrf.controller';
 import { CsrfMiddleware } from './common/csrf.middleware';
 import { ConfidenceModule } from './confidence/confidence.module';
+import { CoverLetterModule } from './cover-letter/cover-letter.module';
 import { CredentialModule } from './credential/credential.module';
 import { EvidenceModule } from './evidence/evidence.module';
 import { IdentityModule } from './identity/identity.module';
@@ -55,6 +56,7 @@ import { WorkspaceModule } from './workspace/workspace.module';
     CareerPassportModule,
     AnalyticsModule,
     HealthModule,
+    CoverLetterModule,
   ],
   controllers: [CsrfController],
   providers: [
