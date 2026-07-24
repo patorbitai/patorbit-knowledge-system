@@ -33,6 +33,8 @@ export type Resume = {
   folderId: string | null;
   version: number;
   sections: ResumeSection[];
+  createdAt: string;
+  updatedAt: string;
 };
 
 export type ResumeVersion = {
