@@ -1,9 +1,16 @@
 // apps/web/src/lib/stores/use-resume-store.ts
+import {
+  type Resume,
+  type ResumeSection,
+  type ResumeTheme,
+  type ResumeVersion,
+} from '@patorbit/types';
 import { create } from 'zustand';
 
 import { api } from '@/lib/api';
 import * as queue from '@/lib/services/offline-queue';
-import { type Resume, type ResumeSection, type ResumeVersion } from '@/lib/types';
+// import type { Resume, ResumeSection, ResumeVersion } from '@/lib/types';
+// import type { ResumeTheme } from '@/components/resume/templates/section-renderers';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -18,6 +25,16 @@ export type ResumeStore = {
   saveError: string | null;
   savingSectionId: string | null;
   message: ResumeMessage;
+  saveState: { isDirty: boolean; lastSavedAt: Date | null };
+  validationErrors: Record<string, Record<string, string[]>>;
+  ui: {
+    isAddSectionModalOpen: boolean;
+    selectedSectionId: string | null;
+  };
+
+  setSelectedSection: (id: string) => void;
+  openAddSectionModal: () => void;
+  closeAddSectionModal: () => void;
 
   setResume: (resume: Resume) => void;
   loadResume: (id: string) => Promise<void>;
@@ -39,6 +56,13 @@ export type ResumeStore = {
   isOffline: boolean;
   pendingQueue: queue.SaveQueueItem[];
   syncStatus: 'idle' | 'saving' | 'saved' | 'error' | 'pending-sync' | 'offline' | 'retrying';
+
+  // ── Theme / Template customization ──────────────────────────────────────
+  selectedTemplateId: string;
+  theme: ResumeTheme;
+  setSelectedTemplate: (id: string) => void;
+  updateTheme: (patch: Partial<ResumeTheme>) => void;
+  flushMeta: () => Promise<void>;
 };
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -46,6 +70,7 @@ export type ResumeStore = {
 const pendingSaves = new Map<string, Record<string, unknown>>();
 const saveTimers = new Map<string, ReturnType<typeof setTimeout>>();
 let titleSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let metaSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 function scheduleFlush(
   id: string,
@@ -76,6 +101,17 @@ function scheduleFlush(
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
+const DEFAULT_THEME: ResumeTheme = {
+  fontFamily: 'Inter, sans-serif',
+  fontSize: '14px',
+  primaryColor: '#1e293b',
+  accentColor: '#3b82f6',
+  sectionSpacing: '1.5rem',
+  lineHeight: '1.6',
+  pageMargins: '2rem',
+  headerStyle: 'default',
+};
+
 export const useResumeStore = create<ResumeStore>()((set, get) => ({
   resume: null,
   versions: [],
@@ -85,9 +121,26 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
   saveError: null,
   savingSectionId: null,
   message: null,
+  saveState: { isDirty: false, lastSavedAt: null },
+  validationErrors: {},
+  ui: { isAddSectionModalOpen: false, selectedSectionId: null },
   isOffline: false,
   pendingQueue: [],
   syncStatus: 'idle' as const,
+  selectedTemplateId: 'default',
+  theme: { ...DEFAULT_THEME },
+
+  // ── UI actions ────────────────────────────────────────────────────────────
+
+  setSelectedSection: (id: string) => {
+    set((s) => ({ ui: { ...s.ui, selectedSectionId: id } }));
+  },
+  openAddSectionModal: () => {
+    set((s) => ({ ui: { ...s.ui, isAddSectionModalOpen: true } }));
+  },
+  closeAddSectionModal: () => {
+    set((s) => ({ ui: { ...s.ui, isAddSectionModalOpen: false } }));
+  },
 
   // ── Setters ────────────────────────────────────────────────────────────────
 
@@ -101,7 +154,19 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     set({ isLoading: true, message: null, saveError: null });
     try {
       const data = await api.get<Resume>(`/resumes/${id}`);
-      set({ resume: data, isLoading: false, lastSaved: new Date() });
+      // Apply persisted theme and template from backend
+      const patchResume: Partial<ResumeStore> = {
+        resume: data,
+        isLoading: false,
+        lastSaved: new Date(),
+      };
+      if (data.templateId) {
+        patchResume.selectedTemplateId = data.templateId;
+      }
+      if (data.theme) {
+        patchResume.theme = data.theme;
+      }
+      set(patchResume as ResumeStore);
       await get().processOfflineQueue();
     } catch {
       set({
@@ -302,6 +367,28 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
     }
   },
 
+  flushMeta: async () => {
+    const { resume, selectedTemplateId, theme } = get();
+    if (!resume) return;
+
+    set({ isSaving: true, saveError: null, syncStatus: 'saving' });
+    try {
+      await api.patch(`/resumes/${resume.id}`, {
+        templateId: selectedTemplateId,
+        theme,
+      });
+      set({ lastSaved: new Date(), syncStatus: 'saved' });
+    } catch (e) {
+      const error = e as Error;
+      set({
+        syncStatus: 'error',
+        saveError: `Failed to save theme: ${error.message}`,
+      });
+    } finally {
+      set({ isSaving: false });
+    }
+  },
+
   // ── Section order ────────────────────────────────────────────────────────
 
   reorderSections: async (sectionIds: string[]) => {
@@ -395,6 +482,30 @@ export const useResumeStore = create<ResumeStore>()((set, get) => ({
   },
 
   setMessage: (msg: ResumeMessage) => set({ message: msg }),
+
+  setSelectedTemplate: (id: string) => {
+    set({ selectedTemplateId: id });
+    // Debounce the backend save
+    const { resume } = get();
+    if (!resume) return;
+    if (metaSaveTimer) clearTimeout(metaSaveTimer);
+    metaSaveTimer = setTimeout(() => {
+      metaSaveTimer = null;
+      get().flushMeta();
+    }, 1200);
+  },
+
+  updateTheme: (patch: Partial<ResumeTheme>) => {
+    set((s) => ({ theme: { ...s.theme, ...patch } }));
+    // Debounce the backend save
+    const { resume } = get();
+    if (!resume) return;
+    if (metaSaveTimer) clearTimeout(metaSaveTimer);
+    metaSaveTimer = setTimeout(() => {
+      metaSaveTimer = null;
+      get().flushMeta();
+    }, 1200);
+  },
 
   reset: () => {
     pendingSaves.clear();

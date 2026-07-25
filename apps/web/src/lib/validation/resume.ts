@@ -69,7 +69,7 @@ export const interestsSchema = z.object({
     .min(1, 'At least one interest is required'),
 });
 
-export const customSectionSchema = z.record(z.any());
+export const customSectionSchema = z.record(z.string(), z.any());
 
 // Types
 export type PersonalInfoForm = z.infer<typeof personalInfoSchema>;
