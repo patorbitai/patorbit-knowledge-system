@@ -1,0 +1,22 @@
+[deploy]
+  strategy = "pipeline"
+
+[project]
+  name = "patorbit"
+
+[[services]]
+  name = "api"
+  root = "apps/api"
+  buildCommand = "pnpm install && pnpm --filter @patorbit/api build"
+  startCommand = "node dist/main"
+  healthcheckPath = "/api/health"
+  port = 4000
+
+  [[services.plugins]]
+    id = "postgresql"
+
+  [[services.plugins]]
+    id = "redis"
+
+  [[services.plugins]]
+    id = "env"
