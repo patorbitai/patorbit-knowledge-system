@@ -48,6 +48,9 @@ export class ResumeService {
       if (key === 'status') {
         where.status = value as any;
       }
+      if (key === 'favorite') {
+        where.favorite = value === 'true';
+      }
     }
 
     const total = await this.prisma.resume.count({ where });

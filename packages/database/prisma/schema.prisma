@@ -166,6 +166,7 @@ model Profile {
   importJobs          ImportJob[]
   folders             Folder[]
   coverLetters        CoverLetter[]
+  jobApplications     JobApplication[]
 
   @@index([deletedAt])
 }
@@ -459,6 +460,7 @@ model CoverLetter {
 
   profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
   folder  Folder? @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  jobApplications JobApplication[]
 
   @@index([profileId])
   @@index([status])
@@ -469,6 +471,66 @@ enum AssetStatus {
   DRAFT
   ACTIVE
   ARCHIVED
+}
+
+// ── Job Application enums ───────────────────────────────────────────────
+
+enum EmploymentType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+}
+
+enum WorkMode {
+  REMOTE
+  HYBRID
+  ON_SITE
+}
+
+enum JobApplicationStatus {
+  WISHLIST
+  PREPARING
+  APPLIED
+  ASSESSMENT
+  INTERVIEW
+  OFFER
+  ACCEPTED
+  REJECTED
+  ARCHIVED
+}
+
+// ── Job Application model ──────────────────────────────────────────────
+
+model JobApplication {
+  id               String                @id @default(cuid())
+  profileId        String
+  company          String
+  jobTitle         String
+  jobDescription   String?
+  location         String?
+  salary           String?
+  employmentType   EmploymentType?
+  workMode         WorkMode?
+  resumeId         String?
+  coverLetterId    String?
+  appliedDate      DateTime?
+  applicationUrl   String?
+  recruiterContact String?
+  notes            String?
+  status           JobApplicationStatus  @default(WISHLIST)
+  sortOrder        Int                   @default(0)
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
+  deletedAt        DateTime?
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  resume       Resume?      @relation(fields: [resumeId], references: [id], onDelete: SetNull)
+  coverLetter  CoverLetter? @relation(fields: [coverLetterId], references: [id], onDelete: SetNull)
+
+  @@index([profileId])
+  @@index([status])
+  @@index([deletedAt])
 }
 
 // ══════════════════════════════════════════════════════
@@ -520,6 +582,7 @@ model Resume {
   template   ResumeTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
   exportJobs ExportJob[]
   folder     Folder?         @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  jobApplications JobApplication[]
 
   @@index([profileId])
   @@index([status])

@@ -1,11 +1,12 @@
-import { Module } from "@nestjs/common";
-import { DatabaseModule } from "@patorbit/database";
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from '@patorbit/database';
 
-import { OrganizationController } from "./organization.controller";
-import { OrganizationService } from "./organization.service";
+import { IdentityModule } from '../identity/identity.module';
+import { OrganizationController } from './organization.controller';
+import { OrganizationService } from './organization.service';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, IdentityModule],
   controllers: [OrganizationController],
   providers: [OrganizationService],
   exports: [OrganizationService],

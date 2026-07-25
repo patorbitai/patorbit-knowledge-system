@@ -1,27 +1,22 @@
 'use client';
 
-import dynamic from 'next/dynamic';
 import { useMemo } from 'react';
 
 import { useResumeStore } from '@/lib/stores/use-resume-store';
 
+import { TemplateByConfig } from './templates/all-templates';
+import { type ResumeTheme } from './templates/section-renderers';
 import { type ResumeData } from './templates/types';
 
-// Map template IDs to their components using dynamic import for code splitting
-const TEMPLATES = {
-  default: dynamic(() => import('./templates/template-default').then((mod) => mod.TemplateDefault)),
-  modern: dynamic(() => import('./templates/template-modern').then((mod) => mod.TemplateModern)),
-};
-
-export type TemplateId = keyof typeof TEMPLATES;
-
-export function TemplateRenderer({ templateId }: { templateId: TemplateId }) {
+export function TemplateRenderer({
+  templateId,
+  theme,
+}: {
+  templateId: string;
+  theme?: ResumeTheme;
+}) {
   const resume = useResumeStore((s) => s.resume);
 
-  // The renderer for the currently selected template
-  const TemplateComponent = TEMPLATES[templateId] ?? TEMPLATES.default;
-
-  // Memoize the data transformation to prevent re-calculating on every render
   const resumeData: ResumeData | null = useMemo(() => {
     if (!resume) return null;
     return {
@@ -44,5 +39,5 @@ export function TemplateRenderer({ templateId }: { templateId: TemplateId }) {
     );
   }
 
-  return <TemplateComponent resume={resumeData} />;
+  return <TemplateByConfig resume={resumeData} theme={theme} configId={templateId} />;
 }

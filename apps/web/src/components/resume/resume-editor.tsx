@@ -18,10 +18,10 @@ import {
   verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { type ResumeSection } from '@patorbit/types';
 import { memo, useCallback, useState } from 'react';
 
 import { useResumeStore } from '@/lib/stores/use-resume-store';
-import { type ResumeSection } from '@/lib/types';
 
 import { AVAILABLE_SECTION_TYPES, SECTION_ICONS, SECTION_LABELS } from './section-constants';
 

@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { type ReactNode, useEffect, useState } from 'react';
 
-import { api } from '@/lib/api';
+import { GlobalSearch } from '@/components/layout/global-search';
 import { useAuth } from '@/lib/auth/auth-provider';
 
 // ── Nav item type ───────────────────────────────────────────────────────────
@@ -17,6 +17,7 @@ type NavItem = {
 
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', icon: '◆' },
+  { label: 'Applications', href: '/applications', icon: '💼' },
   { label: 'Resumes', href: '/resumes', icon: '📄' },
   { label: 'Cover Letters', href: '/cover-letters', icon: '✉️' },
   { label: 'Claims', href: '/claims', icon: '◎' },
@@ -100,6 +101,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-3">
+            <GlobalSearch />
             <span className="text-sm text-muted-foreground hidden sm:inline">{user.email}</span>
             <button
               onClick={async () => {

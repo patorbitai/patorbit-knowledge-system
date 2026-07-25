@@ -1,5 +1,5 @@
 import { ResumeStatus } from '@patorbit/database';
-import { IsEnum, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
+import { IsBoolean, IsEnum, IsInt, IsObject, IsOptional, IsString, Min } from 'class-validator';
 
 export class UpdateResumeDto {
   @IsString()
@@ -26,4 +26,8 @@ export class UpdateResumeDto {
   @Min(1)
   @IsOptional()
   expectedVersion?: number;
+
+  @IsBoolean()
+  @IsOptional()
+  favorite?: boolean;
 }

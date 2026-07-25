@@ -28,6 +28,7 @@
     "@nestjs/throttler": "^6.0.0",
     "@patorbit/auth": "workspace:*",
     "@patorbit/config": "workspace:*",
+    "@patorbit/billing": "workspace:*",
     "@patorbit/database": "workspace:*",
     "@patorbit/storage": "workspace:*",
     "@prisma/client": "5.15.0",

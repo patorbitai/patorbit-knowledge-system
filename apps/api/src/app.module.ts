@@ -3,6 +3,7 @@ import { APP_FILTER, APP_GUARD, HttpAdapterHost } from '@nestjs/core';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { DatabaseModule } from '@patorbit/database';
 
+import { AccountModule } from './account/account.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AuditModule } from './audit/audit.module';
 import { AuthModule } from './auth/auth.module';
@@ -16,7 +17,9 @@ import { ConfidenceModule } from './confidence/confidence.module';
 import { CoverLetterModule } from './cover-letter/cover-letter.module';
 import { CredentialModule } from './credential/credential.module';
 import { EvidenceModule } from './evidence/evidence.module';
+import { FolderModule } from './folder/folder.module';
 import { IdentityModule } from './identity/identity.module';
+import { JobApplicationModule } from './job-application/job-application.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { OrganizationModule } from './organization/organization.module';
 import { PermissionModule } from './permission/permission.module';
@@ -61,6 +64,9 @@ import { WorkspaceModule } from './workspace/workspace.module';
     CoverLetterModule,
     BillingModule,
     SearchModule,
+    FolderModule,
+    AccountModule,
+    JobApplicationModule,
   ],
   controllers: [CsrfController],
   providers: [

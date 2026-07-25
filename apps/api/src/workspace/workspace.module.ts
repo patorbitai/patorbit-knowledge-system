@@ -1,11 +1,12 @@
-import { Module } from "@nestjs/common";
-import { DatabaseModule } from "@patorbit/database";
+import { Module } from '@nestjs/common';
+import { DatabaseModule } from '@patorbit/database';
 
-import { WorkspaceController } from "./workspace.controller";
-import { WorkspaceService } from "./workspace.service";
+import { IdentityModule } from '../identity/identity.module';
+import { WorkspaceController } from './workspace.controller';
+import { WorkspaceService } from './workspace.service';
 
 @Module({
-  imports: [DatabaseModule],
+  imports: [DatabaseModule, IdentityModule],
   controllers: [WorkspaceController],
   providers: [WorkspaceService],
   exports: [WorkspaceService],

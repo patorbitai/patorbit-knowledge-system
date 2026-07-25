@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  transpilePackages: ["@patorbit/ui", "@patorbit/config", "@patorbit/utils"],
+  transpilePackages: ["@patorbit/types", "@patorbit/ui", "@patorbit/config", "@patorbit/utils"],
   eslint: {
     ignoreDuringBuilds: true,
   },

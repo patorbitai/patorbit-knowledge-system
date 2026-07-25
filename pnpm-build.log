@@ -1,0 +1,388 @@
+
+> patorbit-monorepo@0.1.0 build D:\Patorbit Knowledge System (PKS)
+> turbo run build
+
+• turbo 2.10.5
+
+   • Packages in scope: @patorbit/admin, @patorbit/api, @patorbit/auth, @patorbit/billing, @patorbit/config, @patorbit/database, @patorbit/prettier-config, @patorbit/scripts, @patorbit/storage, @patorbit/tsconfig, @patorbit/types, @patorbit/ui, @patorbit/web
+   • Running build in 13 packages
+   • Remote caching disabled
+
+@patorbit/ui:build: cache hit, replaying logs 81f66cfcc35169b4
+@patorbit/ui:build: 
+@patorbit/ui:build: > @patorbit/ui@0.1.0 build D:\Patorbit Knowledge System (PKS)\packages\ui
+@patorbit/ui:build: > tsup src/index.ts --format esm,cjs --dts --clean --external react --external react-dom
+@patorbit/ui:build: 
+@patorbit/ui:build: [34mCLI[39m Building entry: src/index.ts
+@patorbit/ui:build: [34mCLI[39m Using tsconfig: tsconfig.json
+@patorbit/config:build: cache hit, replaying logs ba4c5b0c0d869d11
+@patorbit/database:build: cache hit, replaying logs 26c4a69333e974f6
+@patorbit/ui:build: [34mCLI[39m tsup v8.5.1
+@patorbit/ui:build: [34mCLI[39m Target: es2020
+@patorbit/ui:build: [34mCLI[39m Cleaning output folder
+@patorbit/ui:build: [34mESM[39m Build start
+@patorbit/ui:build: [34mCJS[39m Build start
+@patorbit/ui:build: 
+@patorbit/ui:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/ui:build: 
+@patorbit/ui:build:     package.json:12:6:
+@patorbit/ui:build: [37m      12 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/ui:build:          ╵       [32m~~~~~~~[0m
+@patorbit/ui:build: 
+@patorbit/ui:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/ui:build: 
+@patorbit/ui:build:     package.json:10:6:
+@patorbit/ui:build: [37m      10 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/ui:build:          ╵       [32m~~~~~~~~[0m
+@patorbit/ui:build: 
+@patorbit/ui:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/ui:build: 
+@patorbit/ui:build:     package.json:11:6:
+@patorbit/ui:build: [37m      11 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/ui:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/ui:build: 
+@patorbit/ui:build: 
+@patorbit/ui:build: 
+@patorbit/ui:build: 
+@patorbit/ui:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/ui:build: 
+@patorbit/ui:build:     package.json:12:6:
+@patorbit/ui:build: [37m      12 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/ui:build:          ╵       [32m~~~~~~~[0m
+@patorbit/ui:build: 
+@patorbit/ui:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/ui:build: 
+@patorbit/ui:build:     package.json:10:6:
+@patorbit/ui:build: [37m      10 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/ui:build:          ╵       [32m~~~~~~~~[0m
+@patorbit/ui:build: 
+@patorbit/ui:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/ui:build: 
+@patorbit/ui:build:     package.json:11:6:
+@patorbit/ui:build: [37m      11 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/ui:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/ui:build: 
+@patorbit/ui:build: 
+@patorbit/ui:build: 
+@patorbit/ui:build: [32mCJS[39m [1mdist\index.js [22m[32m1.21 KB[39m
+@patorbit/config:build: 
+@patorbit/ui:build: [32mCJS[39m ⚡️ Build success in 386ms
+@patorbit/config:build: > @patorbit/config@0.1.0 build D:\Patorbit Knowledge System (PKS)\packages\config
+@patorbit/ui:build: [32mESM[39m [1mdist\index.mjs [22m[32m163.00 B[39m
+@patorbit/ui:build: [32mESM[39m ⚡️ Build success in 386ms
+@patorbit/ui:build: [34mDTS[39m Build start
+@patorbit/config:build: > tsup src/index.ts --format esm,cjs --dts --clean
+@patorbit/ui:build: [32mDTS[39m ⚡️ Build success in 1455ms
+@patorbit/ui:build: [32mDTS[39m [1mdist\index.d.mts [22m[32m106.00 B[39m
+@patorbit/config:build: 
+@patorbit/config:build: [34mCLI[39m Building entry: src/index.ts
+@patorbit/config:build: [34mCLI[39m Using tsconfig: tsconfig.json
+@patorbit/config:build: [34mCLI[39m tsup v8.5.1
+@patorbit/config:build: [34mCLI[39m Target: node16
+@patorbit/ui:build: [32mDTS[39m [1mdist\index.d.ts  [22m[32m106.00 B[39m
+@patorbit/database:build: 
+@patorbit/database:build: > @patorbit/database@0.1.0 build D:\Patorbit Knowledge System (PKS)\packages\database
+@patorbit/config:build: [34mCLI[39m Cleaning output folder
+@patorbit/database:build: > prisma generate && tsc
+@patorbit/database:build: 
+@patorbit/config:build: [34mESM[39m Build start
+@patorbit/database:build: Prisma schema loaded from prisma\schema.prisma
+@patorbit/database:build: 
+@patorbit/database:build: ✔ Generated Prisma Client (v5.15.0) to .\..\..\node_modules\.pnpm\@prisma+client@5.15.0_prisma@5.15.0\node_modules\@prisma\client in 383ms
+@patorbit/config:build: [34mCJS[39m Build start
+@patorbit/auth:build: cache hit, replaying logs 29cf1312236a5a36
+@patorbit/database:build: 
+@patorbit/database:build: Start using Prisma Client in Node.js (See: https://pris.ly/d/client)
+@patorbit/config:build: 
+@patorbit/config:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/database:build: ```
+@patorbit/database:build: import { PrismaClient } from '@prisma/client'
+@patorbit/database:build: const prisma = new PrismaClient()
+@patorbit/config:build: 
+@patorbit/config:build:     package.json:11:6:
+@patorbit/database:build: ```
+@patorbit/database:build: or start using Prisma Client at the edge (See: https://pris.ly/d/accelerate)
+@patorbit/auth:build: 
+@patorbit/auth:build: > @patorbit/auth@0.1.0 build D:\Patorbit Knowledge System (PKS)\packages\auth
+@patorbit/auth:build: > tsup src/index.ts --format esm,cjs --dts --clean
+@patorbit/auth:build: 
+@patorbit/database:build: ```
+@patorbit/database:build: import { PrismaClient } from '@prisma/client/edge'
+@patorbit/database:build: const prisma = new PrismaClient()
+@patorbit/database:build: ```
+@patorbit/auth:build: [34mCLI[39m Building entry: src/index.ts
+@patorbit/auth:build: [34mCLI[39m Using tsconfig: tsconfig.json
+@patorbit/config:build: [37m      11 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/database:build: 
+@patorbit/database:build: See other ways of importing Prisma Client: http://pris.ly/d/importing-client
+@patorbit/database:build: 
+@patorbit/config:build:          ╵       [32m~~~~~~~[0m
+@patorbit/auth:build: [34mCLI[39m tsup v8.5.1
+@patorbit/auth:build: [34mCLI[39m Target: node16
+@patorbit/database:build: ┌─────────────────────────────────────────────────────────────┐
+@patorbit/database:build: │  Deploying your app to serverless or edge functions?        │
+@patorbit/database:build: │  Try Prisma Accelerate for connection pooling and caching.  │
+@patorbit/database:build: │  https://pris.ly/cli/--accelerate                           │
+@patorbit/database:build: └─────────────────────────────────────────────────────────────┘
+@patorbit/database:build: 
+@patorbit/config:build: 
+@patorbit/auth:build: [34mCLI[39m Cleaning output folder
+@patorbit/auth:build: [34mESM[39m Build start
+@patorbit/auth:build: [34mCJS[39m Build start
+@patorbit/config:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/auth:build: 
+@patorbit/auth:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/auth:build: 
+@patorbit/config:build: 
+@patorbit/auth:build:     package.json:11:6:
+@patorbit/auth:build: [37m      11 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/config:build:     package.json:9:6:
+@patorbit/auth:build:          ╵       [32m~~~~~~~[0m
+@patorbit/auth:build: 
+@patorbit/auth:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/config:build: [37m      9 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/auth:build: 
+@patorbit/auth:build:     package.json:9:6:
+@patorbit/auth:build: [37m      9 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/config:build:         ╵       [32m~~~~~~~~[0m
+@patorbit/auth:build:         ╵       [32m~~~~~~~~[0m
+@patorbit/auth:build: 
+@patorbit/auth:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/config:build: 
+@patorbit/auth:build: 
+@patorbit/auth:build:     package.json:10:6:
+@patorbit/storage:build: cache hit, replaying logs b7644979cf5aa35a
+@patorbit/auth:build: [37m      10 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/auth:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/config:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/auth:build: 
+@patorbit/auth:build: 
+@patorbit/config:build: 
+@patorbit/config:build:     package.json:10:6:
+@patorbit/config:build: [37m      10 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/config:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/config:build: 
+@patorbit/config:build: 
+@patorbit/config:build: 
+@patorbit/config:build: 
+@patorbit/config:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/config:build: 
+@patorbit/config:build:     package.json:11:6:
+@patorbit/storage:build: 
+@patorbit/storage:build: > @patorbit/storage@0.1.0 build D:\Patorbit Knowledge System (PKS)\packages\storage
+@patorbit/auth:build: 
+@patorbit/auth:build: 
+@patorbit/auth:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/config:build: [37m      11 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/config:build:          ╵       [32m~~~~~~~[0m
+@patorbit/config:build: 
+@patorbit/config:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/storage:build: > tsup src/index.ts --format esm,cjs --dts --clean
+@patorbit/storage:build: 
+@patorbit/auth:build: 
+@patorbit/auth:build:     package.json:11:6:
+@patorbit/config:build: 
+@patorbit/storage:build: [34mCLI[39m Building entry: src/index.ts
+@patorbit/storage:build: [34mCLI[39m Using tsconfig: tsconfig.json
+@patorbit/auth:build: [37m      11 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/auth:build:          ╵       [32m~~~~~~~[0m
+@patorbit/auth:build: 
+@patorbit/auth:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/auth:build: 
+@patorbit/auth:build:     package.json:9:6:
+@patorbit/config:build:     package.json:9:6:
+@patorbit/config:build: [37m      9 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/storage:build: [34mCLI[39m tsup v8.5.1
+@patorbit/storage:build: [34mCLI[39m Target: node16
+@patorbit/auth:build: [37m      9 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/auth:build:         ╵       [32m~~~~~~~~[0m
+@patorbit/config:build:         ╵       [32m~~~~~~~~[0m
+@patorbit/config:build: 
+@patorbit/config:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/config:build: 
+@patorbit/config:build:     package.json:10:6:
+@patorbit/config:build: [37m      10 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/config:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/config:build: 
+@patorbit/config:build: 
+@patorbit/config:build: 
+@patorbit/config:build: [32mESM[39m [1mdist\index.mjs [22m[32m662.00 B[39m
+@patorbit/config:build: [32mESM[39m ⚡️ Build success in 385ms
+@patorbit/config:build: [32mCJS[39m [1mdist\index.js [22m[32m1.78 KB[39m
+@patorbit/config:build: [32mCJS[39m ⚡️ Build success in 385ms
+@patorbit/config:build: [34mDTS[39m Build start
+@patorbit/billing:build: cache hit, replaying logs 5004c28d20aae002
+@patorbit/auth:build: 
+@patorbit/auth:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/config:build: [32mDTS[39m ⚡️ Build success in 2818ms
+@patorbit/storage:build: [34mCLI[39m Cleaning output folder
+@patorbit/storage:build: [34mESM[39m Build start
+@patorbit/auth:build: 
+@patorbit/auth:build:     package.json:10:6:
+@patorbit/auth:build: [37m      10 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/auth:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/storage:build: [34mCJS[39m Build start
+@patorbit/storage:build: 
+@patorbit/config:build: [32mDTS[39m [1mdist\index.d.mts [22m[32m1.24 KB[39m
+@patorbit/config:build: [32mDTS[39m [1mdist\index.d.ts  [22m[32m1.24 KB[39m
+@patorbit/billing:build: 
+@patorbit/billing:build: > @patorbit/billing@0.1.0 build D:\Patorbit Knowledge System (PKS)\packages\billing
+@patorbit/billing:build: > tsup src/index.ts --format esm,cjs --dts --clean
+@patorbit/billing:build: 
+@patorbit/billing:build: [34mCLI[39m Building entry: src/index.ts
+@patorbit/billing:build: [34mCLI[39m Using tsconfig: tsconfig.json
+@patorbit/billing:build: [34mCLI[39m tsup v8.5.1
+@patorbit/storage:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/storage:build: 
+@patorbit/auth:build: 
+@patorbit/auth:build: 
+@patorbit/auth:build: 
+@patorbit/storage:build:     package.json:11:6:
+@patorbit/storage:build: [37m      11 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/billing:build: [34mCLI[39m Target: node16
+@patorbit/billing:build: [34mCLI[39m Cleaning output folder
+@patorbit/billing:build: [34mESM[39m Build start
+@patorbit/billing:build: [34mCJS[39m Build start
+@patorbit/billing:build: 
+@patorbit/auth:build: [32mESM[39m [1mdist\index.mjs [22m[32m1.33 KB[39m
+@patorbit/auth:build: [32mESM[39m ⚡️ Build success in 406ms
+@patorbit/storage:build:          ╵       [32m~~~~~~~[0m
+@patorbit/storage:build: 
+@patorbit/storage:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/billing:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/billing:build: 
+@patorbit/billing:build:     package.json:11:6:
+@patorbit/storage:build: 
+@patorbit/storage:build:     package.json:9:6:
+@patorbit/storage:build: [37m      9 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/auth:build: [32mCJS[39m [1mdist\index.js [22m[32m3.42 KB[39m
+@patorbit/auth:build: [32mCJS[39m ⚡️ Build success in 406ms
+@patorbit/storage:build:         ╵       [32m~~~~~~~~[0m
+@patorbit/storage:build: 
+@patorbit/storage:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/billing:build: [37m      11 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/billing:build:          ╵       [32m~~~~~~~[0m
+@patorbit/auth:build: [34mDTS[39m Build start
+@patorbit/auth:build: [32mDTS[39m ⚡️ Build success in 2827ms
+@patorbit/auth:build: [32mDTS[39m [1mdist\index.d.mts [22m[32m2.65 KB[39m
+@patorbit/billing:build: 
+@patorbit/billing:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/storage:build: 
+@patorbit/storage:build:     package.json:10:6:
+@patorbit/auth:build: [32mDTS[39m [1mdist\index.d.ts  [22m[32m2.65 KB[39m
+@patorbit/billing:build: 
+@patorbit/billing:build:     package.json:9:6:
+@patorbit/storage:build: [37m      10 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/storage:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/billing:build: [37m      9 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/billing:build:         ╵       [32m~~~~~~~~[0m
+@patorbit/billing:build: 
+@patorbit/web:build: cache miss, executing f4f9322e6bd1521c
+@patorbit/storage:build: 
+@patorbit/storage:build: 
+@patorbit/storage:build: 
+@patorbit/billing:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/storage:build: 
+@patorbit/storage:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/billing:build: 
+@patorbit/storage:build: 
+@patorbit/storage:build:     package.json:11:6:
+@patorbit/billing:build:     package.json:10:6:
+@patorbit/billing:build: [37m      10 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/billing:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/storage:build: [37m      11 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/billing:build: 
+@patorbit/billing:build: 
+@patorbit/storage:build:          ╵       [32m~~~~~~~[0m
+@patorbit/billing:build: 
+@patorbit/billing:build: 
+@patorbit/storage:build: 
+@patorbit/storage:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/storage:build: 
+@patorbit/billing:build: [43m[30m WARN [39m[49m [33m▲ [43;33m[[43;30mWARNING[43;33m][0m [1mThe condition "types" here will never be used as it comes after both "import" and "require"[0m [package.json]
+@patorbit/billing:build: 
+@patorbit/storage:build:     package.json:9:6:
+@patorbit/storage:build: [37m      9 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/billing:build:     package.json:11:6:
+@patorbit/admin:build: cache miss, executing bdfc4116e94d33c5
+@patorbit/storage:build:         ╵       [32m~~~~~~~~[0m
+@patorbit/storage:build: 
+@patorbit/storage:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/storage:build: 
+@patorbit/storage:build:     package.json:10:6:
+@patorbit/billing:build: [37m      11 │       [32m"types"[37m: "./dist/index.d.ts"
+@patorbit/billing:build:          ╵       [32m~~~~~~~[0m
+@patorbit/billing:build: 
+@patorbit/storage:build: [37m      10 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/storage:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/storage:build: 
+@patorbit/billing:build:   The "import" condition comes earlier and will be used for all "import" statements:
+@patorbit/billing:build: 
+@patorbit/storage:build: 
+@patorbit/storage:build: 
+@patorbit/storage:build: [32mESM[39m [1mdist\index.mjs [22m[32m0 B[39m
+@patorbit/storage:build: [32mESM[39m ⚡️ Build success in 408ms
+@patorbit/storage:build: [32mCJS[39m [1mdist\index.js [22m[32m758.00 B[39m
+@patorbit/billing:build:     package.json:9:6:
+@patorbit/billing:build: [37m      9 │       [32m"import"[37m: "./dist/index.js",
+@patorbit/storage:build: [32mCJS[39m ⚡️ Build success in 408ms
+@patorbit/storage:build: [34mDTS[39m Build start
+@patorbit/storage:build: [32mDTS[39m ⚡️ Build success in 2390ms
+@patorbit/billing:build:         ╵       [32m~~~~~~~~[0m
+@patorbit/billing:build: 
+@patorbit/storage:build: [32mDTS[39m [1mdist\index.d.mts [22m[32m641.00 B[39m
+@patorbit/storage:build: [32mDTS[39m [1mdist\index.d.ts  [22m[32m641.00 B[39m
+@patorbit/billing:build:   The "require" condition comes earlier and will be used for all "require" calls:
+@patorbit/billing:build: 
+@patorbit/billing:build:     package.json:10:6:
+@patorbit/billing:build: [37m      10 │       [32m"require"[37m: "./dist/index.js",
+@patorbit/billing:build:          ╵       [32m~~~~~~~~~[0m
+@patorbit/billing:build: 
+@patorbit/billing:build: 
+@patorbit/billing:build: 
+@patorbit/billing:build: [32mESM[39m [1mdist\index.mjs [22m[32m21.08 KB[39m
+@patorbit/billing:build: [32mESM[39m ⚡️ Build success in 347ms
+@patorbit/billing:build: [32mCJS[39m [1mdist\index.js [22m[32m22.94 KB[39m
+@patorbit/billing:build: [32mCJS[39m ⚡️ Build success in 349ms
+@patorbit/billing:build: [34mDTS[39m Build start
+@patorbit/billing:build: [32mDTS[39m ⚡️ Build success in 3812ms
+@patorbit/billing:build: [32mDTS[39m [1mdist\index.d.mts [22m[32m27.12 KB[39m
+@patorbit/billing:build: [32mDTS[39m [1mdist\index.d.ts  [22m[32m27.12 KB[39m
+@patorbit/api:build: cache miss, executing df40d6ee87284075
+@patorbit/web:build: 
+@patorbit/web:build: > @patorbit/web@0.1.0 build D:\Patorbit Knowledge System (PKS)\apps\web
+@patorbit/web:build: > next build
+@patorbit/web:build: 
+@patorbit/admin:build: 
+@patorbit/admin:build: > @patorbit/admin@0.1.0 build D:\Patorbit Knowledge System (PKS)\apps\admin
+@patorbit/admin:build: > next build
+@patorbit/admin:build: 
+@patorbit/api:build: 
+@patorbit/api:build: > @patorbit/api@0.1.0 build D:\Patorbit Knowledge System (PKS)\apps\api
+@patorbit/api:build: > nest build
+@patorbit/api:build: 
+@patorbit/web:build:   ▲ Next.js 14.2.35
+@patorbit/web:build: 
+@patorbit/web:build:    Creating an optimized production build ...
+@patorbit/admin:build:   ▲ Next.js 14.2.35
+@patorbit/admin:build: 
+@patorbit/admin:build:    Creating an optimized production build ...
+@patorbit/web:build: Failed to compile.
+@patorbit/web:build: 
+@patorbit/web:build: ./src/app/(dashboard)/applications/page.tsx
+@patorbit/web:build: Module not found: Can't resolve '@hello-pangea/dnd'
+@patorbit/web:build: 
+@patorbit/web:build: https://nextjs.org/docs/messages/module-not-found
+@patorbit/web:build: 
+@patorbit/web:build: 
+@patorbit/web:build: > Build failed because of webpack errors
+@patorbit/web:build:  ELIFECYCLE  Command failed with exit code 1.
+@patorbit/web#build:  ERROR  command (D:\Patorbit Knowledge System (PKS)\apps\web) D:\.pnpm-store\v11\links\@\pnpm\9.15.1\2b0607fd6df0fc478991acff3051c891fadb28ebb5233e20f00e8334326e696a\bin\pnpm.CMD run build exited (1)
+
+ Tasks:    6 successful, 9 total
+Cached:    6 cached, 9 total
+  Time:    9.458s 
+Failed:    @patorbit/web#build
+
+ ERROR  run failed: command  exited (1)
+ ELIFECYCLE  Command failed with exit code 1.

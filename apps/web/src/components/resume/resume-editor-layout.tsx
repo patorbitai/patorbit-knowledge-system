@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { useWarnOnUnsavedChanges } from '@/lib/hooks/use-warn-unsaved';
 import { useResumeStore } from '@/lib/stores/use-resume-store';
@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { ResumeEditor } from './resume-editor';
 import { ResumePreview } from './resume-preview';
 import { ResumeSectionNav, type SectionNavItem } from './resume-section-nav';
+import { ResumeThemePanel } from './resume-theme-panel';
 
 export interface ResumeEditorLayoutProps {
   resumeId: string;
@@ -23,6 +24,7 @@ export function ResumeEditorLayout({ resumeId }: ResumeEditorLayoutProps) {
   const setSelectedSection = useResumeStore((s) => s.setSelectedSection);
   const openAddSectionModal = useResumeStore((s) => s.openAddSectionModal);
   const [showNav, setShowNav] = useState(false);
+  const [rightTab, setRightTab] = useState<'preview' | 'theme'>('preview');
 
   useWarnOnUnsavedChanges(true);
 
@@ -123,10 +125,24 @@ export function ResumeEditorLayout({ resumeId }: ResumeEditorLayoutProps) {
         </div>
       </div>
 
-      {/* Right: Live Preview */}
-      <aside className="hidden lg:block lg:w-96 xl:w-[420px] shrink-0 border-l bg-muted/30">
-        <div className="h-full">
-          <ResumePreview />
+      {/* Right: Live Preview / Theme Panel */}
+      <aside className="hidden lg:flex lg:w-96 xl:w-[420px] shrink-0 border-l bg-muted/30 flex-col">
+        <div className="flex border-b shrink-0">
+          <button
+            onClick={() => setRightTab('preview')}
+            className={`flex-1 px-3 py-2 text-xs font-medium text-center transition-colors ${rightTab === 'preview' ? 'bg-white text-foreground border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Preview
+          </button>
+          <button
+            onClick={() => setRightTab('theme')}
+            className={`flex-1 px-3 py-2 text-xs font-medium text-center transition-colors ${rightTab === 'theme' ? 'bg-white text-foreground border-b-2 border-primary' : 'text-muted-foreground hover:text-foreground'}`}
+          >
+            Theme
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto">
+          {rightTab === 'preview' ? <ResumePreview /> : <ResumeThemePanel />}
         </div>
       </aside>
     </div>

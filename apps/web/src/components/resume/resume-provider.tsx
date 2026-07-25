@@ -1,10 +1,10 @@
 'use client';
 
+import { type Resume } from '@patorbit/types';
 import { createContext, useContext } from 'react';
 
 import { useOnlineStatus } from '@/lib/hooks/use-online-status';
 import { useResumeStore } from '@/lib/stores/use-resume-store';
-import { type Resume } from '@/lib/types';
 
 // ── Context for sharing state across resume sub-components ───────────────────
 

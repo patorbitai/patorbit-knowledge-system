@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { type ConfigService } from '@nestjs/config';
 
+import { type ResumeAnalysisDto } from './dto';
+
 @Injectable()
 export class AiHooksService {
   private readonly logger = new Logger(AiHooksService.name);

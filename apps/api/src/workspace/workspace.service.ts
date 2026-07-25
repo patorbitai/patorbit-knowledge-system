@@ -1,11 +1,8 @@
-import {
-  Injectable,
-  NotFoundException,
-} from "@nestjs/common";
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { type PrismaService } from '@patorbit/database';
 
-import { type CreateWorkspaceDto } from "./dto/create-workspace.dto";
-import { type UpdateWorkspaceDto } from "./dto/update-workspace.dto";
+import { type CreateWorkspaceDto } from './dto/create-workspace.dto';
+import { type UpdateWorkspaceDto } from './dto/update-workspace.dto';
 
 @Injectable()
 export class WorkspaceService {
@@ -17,9 +14,7 @@ export class WorkspaceService {
     });
 
     if (!organization) {
-      throw new NotFoundException(
-        `Organization with ID "${dto.organizationId}" not found`,
-      );
+      throw new NotFoundException(`Organization with ID "${dto.organizationId}" not found`);
     }
 
     return this.prisma.workspace.create({
@@ -39,14 +34,12 @@ export class WorkspaceService {
     });
 
     if (!organization) {
-      throw new NotFoundException(
-        `Organization with ID "${organizationId}" not found`,
-      );
+      throw new NotFoundException(`Organization with ID "${organizationId}" not found`);
     }
 
     return this.prisma.workspace.findMany({
       where: { organizationId, deletedAt: null },
-      orderBy: { createdAt: "desc" },
+      orderBy: { createdAt: 'desc' },
     });
   }
 
@@ -65,8 +58,19 @@ export class WorkspaceService {
     return workspace;
   }
 
-  async update(id: string, dto: UpdateWorkspaceDto) {
-    await this.findById(id);
+  async requireOrgMembership(organizationId: string, profileId: string) {
+    const member = await this.prisma.organizationMember.findFirst({
+      where: { organizationId, profileId },
+    });
+    if (!member) {
+      throw new NotFoundException(`Workspace not found`);
+    }
+    return member;
+  }
+
+  async update(id: string, profileId: string, dto: UpdateWorkspaceDto) {
+    const workspace = await this.findById(id);
+    await this.requireOrgMembership(workspace.organizationId, profileId);
 
     const data: Record<string, unknown> = {};
     if (dto.name !== undefined) {
@@ -77,9 +81,7 @@ export class WorkspaceService {
         where: { id: dto.organizationId, deletedAt: null },
       });
       if (!organization) {
-        throw new NotFoundException(
-          `Organization with ID "${dto.organizationId}" not found`,
-        );
+        throw new NotFoundException(`Organization with ID "${dto.organizationId}" not found`);
       }
       data.organizationId = dto.organizationId;
     }
@@ -90,8 +92,9 @@ export class WorkspaceService {
     });
   }
 
-  async softDelete(id: string) {
-    await this.findById(id);
+  async softDelete(id: string, profileId: string) {
+    const workspace = await this.findById(id);
+    await this.requireOrgMembership(workspace.organizationId, profileId);
 
     return this.prisma.workspace.update({
       where: { id },
