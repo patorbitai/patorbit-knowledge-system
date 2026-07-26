@@ -1,8 +1,28 @@
+"use client";
+
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
 import Input from "@/components/ui/Input";
 
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+import {
+  registerSchema,
+  RegisterInput,
+} from "@/schemas/auth.schema";
+
+import { registerUser } from "@/actions/auth/register";
+
 export default function RegisterPage() {
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<RegisterInput>({
+    resolver: zodResolver(registerSchema),
+  });
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-950 px-6">
       <Card className="w-full max-w-md p-8">
@@ -31,7 +51,10 @@ export default function RegisterPage() {
             placeholder="Confirm Password"
           />
 
-          <Button type="submit" className="w-full">
+          <Button
+            type="submit"
+            className="w-full"
+          >
             Create Account
           </Button>
         </form>
