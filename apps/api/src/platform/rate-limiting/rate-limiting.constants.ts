@@ -1,1 +1,0 @@
-export const RATE_LIMIT_CONFIG = Symbol("RATE_LIMIT_CONFIG");

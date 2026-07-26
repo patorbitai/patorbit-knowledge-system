@@ -1,3 +1,0 @@
-# Placeholder
-
-This file is a placeholder to ensure the directory is tracked by Git.
