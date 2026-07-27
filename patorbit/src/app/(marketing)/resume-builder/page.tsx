@@ -111,7 +111,7 @@ export default function ResumeBuilderPage() {
 
   const arrayHelpers = <T extends { id: number }>(key: keyof Resume, emptyItem: Omit<T, 'id'>) => ({
     add: () => setResume(prev => ({ ...prev, [key]: [...((prev[key] ?? []) as unknown as T[]), { ...emptyItem, id: Date.now() } as T] })),
-    update: (id: number, field: keyof T, value: any) => setResume(prev => ({ ...prev, [key]: ((prev[key] ?? []) as unknown as T[]).map(item => item.id === id ? { ...item, [field]: value } : item) })),
+    update: (id: number, field: string, value: any) => setResume(prev => ({ ...prev, [key]: ((prev[key] ?? []) as unknown as T[]).map(item => item.id === id ? { ...item, [field]: value } : item) })),
     remove: (id: number) => setResume(prev => ({ ...prev, [key]: ((prev[key] ?? []) as unknown as T[]).filter(item => item.id !== id) })),
     move: (id: number, dir: -1 | 1) => setResume(prev => { const items = (prev[key] ?? []) as unknown as T[]; const idx = items.findIndex(item => item.id === id); return { ...prev, [key]: reorderItem(items, idx, idx + dir) }; }),
   });
@@ -128,31 +128,31 @@ export default function ResumeBuilderPage() {
   return (
     <main className="min-h-screen bg-[#070B14] text-white print:bg-white print:text-black" ref={mainRef}>
       {/* ── Top Bar ── */}
-      <div className="sticky top-16 z-30 bg-[#070B14] backdrop-blur-2xl border-b border-white/[0.06] shadow-[0_1px_30px_-10px_rgba(0,0,0,0.5)] print:hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-3">
-              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="hidden lg:flex p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
+      <div className="sticky top-16 z-30 bg-[#070B14] backdrop-blur-2xl border-b border-white/[0.06] shadow-[0_1px_40px_-12px_rgba(0,0,0,0.6)] print:hidden">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between h-16">
+            <div className="flex items-center gap-4">
+              <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="hidden lg:flex p-2 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.08] transition-all">
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d={sidebarCollapsed ? "M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3" : "M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"} /></svg>
               </button>
-              <div><h1 className="text-sm font-semibold text-white tracking-tight">Resume Builder</h1><p className="text-[10px] text-slate-500">Build your professional resume</p></div>
+              <div className="flex items-center gap-3"><div><h1 className="text-sm font-semibold text-white tracking-tight">Resume Builder</h1><p className="text-[10px] text-slate-500">Build your professional resume</p></div></div>
             </div>
             <div className="flex items-center gap-2">
-              <span className={clsx("text-[10px] px-2 py-0.5 rounded-full font-medium", saveStatus === "saved" && "text-emerald-400 bg-emerald-500/10", saveStatus === "saving" && "text-amber-400 bg-amber-500/10", saveStatus === "unsaved" && "text-slate-500 bg-white/[0.05]")}>
+              <span className={clsx("text-[10px] px-2 py-0.5 rounded-full font-medium", saveStatus === "saved" && "text-emerald-400 bg-emerald-500/15", saveStatus === "saving" && "text-amber-400 bg-amber-500/15", saveStatus === "unsaved" && "text-slate-500 bg-white/[0.05]")}>
                 {saveStatus === "saved" ? "Saved" : saveStatus === "saving" ? "Saving..." : "Unsaved"}
               </span>
               <div className="relative">
-                <button onClick={() => setShowTemplatePicker(!showTemplatePicker)} className="px-2.5 py-1.5 rounded-lg bg-white/[0.05] border border-white/[0.06] text-[11px] text-slate-300 hover:bg-white/[0.08] transition-colors flex items-center gap-1.5">
+                <button onClick={() => setShowTemplatePicker(!showTemplatePicker)} className="px-2.5 py-1.5 rounded-lg bg-white/[0.06] border border-white/[0.08] text-[11px] text-slate-300 hover:bg-white/[0.1] transition-colors flex items-center gap-1.5">
                   <span>{activeTemplate.preview}</span><span className="hidden sm:inline">{activeTemplate.name}</span>
                   <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                 </button>
                 {showTemplatePicker && (
                   <><div className="fixed inset-0 z-10" onClick={() => setShowTemplatePicker(false)} />
-                    <div className="absolute right-0 top-full mt-1.5 z-20 w-56 bg-[#0F1629] border border-white/[0.06] rounded-xl shadow-2xl max-h-64 overflow-y-auto p-1">
+                    <div className="absolute right-0 top-full mt-1.5 z-20 w-56 bg-[#0F1629] border border-white/[0.1] rounded-xl shadow-2xl max-h-72 overflow-y-auto p-1.5">
                       {TEMPLATES.map(t => (
                         <button key={t.id} onClick={() => setTemplate(t.id)}
-                          className={clsx("w-full text-left px-2.5 py-2 rounded-lg flex items-center gap-2.5 transition-colors text-xs",
-                            resume.templateId === t.id ? "bg-blue-500/20 text-blue-400" : "text-slate-300 hover:bg-white/[0.04]")}>
+                          className={clsx("w-full text-left px-3 py-2 rounded-lg flex items-center gap-2.5 transition-colors text-xs",
+                            resume.templateId === t.id ? "bg-blue-500/20 text-blue-400" : "text-slate-300 hover:bg-white/[0.06]")}>
                           <span className="text-base">{t.preview}</span><span className="font-medium">{t.name}</span>
                           {resume.templateId === t.id && <svg className="w-3 h-3 ml-auto text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
                         </button>
@@ -161,50 +161,50 @@ export default function ResumeBuilderPage() {
                   </>
                 )}
               </div>
-              <button onClick={downloadPDF} className="px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[11px] font-medium hover:bg-blue-500/20 transition-all flex items-center gap-1.5">
+              <button onClick={downloadPDF} className="px-2.5 py-1.5 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-400 text-[11px] font-medium hover:bg-blue-500/25 transition-all flex items-center gap-1.5">
                 <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z M12 11v5m0 0l-2-2m2 2l2-2" /></svg>
                 PDF
               </button>
-              <button onClick={() => setShowResetConfirm(true)} className="px-2 py-1.5 rounded-lg text-red-400 text-[11px] hover:bg-red-500/10 transition-colors">Reset</button>
+              <button onClick={() => setShowResetConfirm(true)} className="px-2.5 py-1.5 rounded-lg text-red-400 text-[11px] hover:bg-red-500/15 transition-colors">Reset</button>
             </div>
           </div>
         </div>
       </div>
 
       {/* ── Main Content ── */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 print:py-0 print:px-0">
-        <div className="flex gap-6 print:block">
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 print:py-0 print:px-0">
+        <div className="flex gap-5 print:block">
           {/* ── Sidebar ── */}
-          <div className={clsx("hidden lg:block shrink-0 transition-all duration-300 print:hidden", sidebarCollapsed ? "w-0 overflow-hidden" : "w-[220px]")}>
-            <div className="sticky top-[7.5rem]">
-              <div className="bg-gradient-to-b from-[#0F1629]/80 to-[#0A0F1E]/80 rounded-2xl border border-white/[0.06] p-4 backdrop-blur-xl shadow-xl">
-                <div className="flex items-center justify-between mb-4 px-1">
+          <div className={clsx("hidden lg:block shrink-0 transition-all duration-300 print:hidden", sidebarCollapsed ? "w-0 overflow-hidden" : "w-[200px]")}>
+            <div className="sticky top-32">
+              <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-4 shadow-xl">
+                <div className="flex items-center justify-between mb-3 px-1">
                   <span className="text-[11px] font-semibold text-white/80 tracking-tight">Sections</span>
                   <span className="text-[10px] text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-full font-medium">
                     {SECTIONS.findIndex(s => s.id === activeSection) + 1}/{SECTIONS.length}
                   </span>
                 </div>
-                <nav className="space-y-1">
+                <nav className="space-y-[3px]">
                   {SECTIONS.map((section, idx) => {
                     const isActive = activeSection === section.id;
                     const isCompleted = !isActive && isSectionComplete(section.id, resume);
                     return (
                       <button key={section.id} onClick={() => setActiveSection(section.id)}
-                        className={clsx("relative w-full flex items-center gap-3 px-3 py-2.5 rounded-xl transition-all duration-300 text-left group",
-                          isActive ? "bg-gradient-to-r from-blue-500/15 to-indigo-500/10 border border-blue-500/25 shadow-sm" : "hover:bg-white/[0.04] border border-transparent")}>
+                        className={clsx("relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-300 text-left group",
+                          isActive ? "bg-blue-500/15 border border-blue-500/25 shadow-sm" : "hover:bg-white/[0.04] border border-transparent")}>
                         {idx < SECTIONS.length - 1 && (
-                          <div className={clsx("absolute left-[18px] top-10 w-[1px] h-[calc(100%+4px)] transition-all duration-500",
+                          <div className={clsx("absolute left-[17px] top-9 w-px h-[calc(100%+6px)] transition-all duration-500",
                             isCompleted ? "bg-gradient-to-b from-blue-500/50 to-blue-500/20" : "bg-white/[0.06]")} />
                         )}
-                        <motion.div className={clsx("relative z-10 flex h-8 w-8 items-center justify-center rounded-full border transition-all duration-300",
-                          isActive ? "bg-blue-500 border-blue-500 shadow-lg shadow-blue-500/25 scale-110" : isCompleted ? "bg-blue-500/15 border-blue-500/40" : "bg-white/[0.04] border-white/[0.08] group-hover:border-white/[0.15]")}
+                        <motion.div className={clsx("relative z-10 flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-300 shrink-0",
+                          isActive ? "bg-blue-500 border-blue-500 shadow-lg shadow-blue-500/25 scale-110" : isCompleted ? "bg-blue-500/20 border-blue-500/40" : "bg-white/[0.04] border-white/[0.08] group-hover:border-white/[0.15]")}
                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           {isCompleted ? (
-                            <motion.svg initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3.5 h-3.5 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <motion.svg initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                             </motion.svg>
                           ) : (
-                            <span className={clsx("text-xs", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300 transition-colors")}>{section.icon}</span>
+                            <span className={clsx("text-[10px]", isActive ? "text-white" : "text-slate-500 group-hover:text-slate-300 transition-colors")}>{section.icon}</span>
                           )}
                         </motion.div>
                         <div className="flex-1 min-w-0">
@@ -216,11 +216,11 @@ export default function ResumeBuilderPage() {
                     );
                   })}
                 </nav>
-                <div className="mt-4 pt-3 border-t border-white/[0.06]">
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1.5">
+                <div className="mt-3 pt-3 border-t border-white/[0.06]">
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
                     <span>Progress</span><span>{progressPct}%</span>
                   </div>
-                  <div className="h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+                  <div className="h-[3px] rounded-full bg-white/[0.04] overflow-hidden">
                     <motion.div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
                   </div>
                 </div>
@@ -234,7 +234,7 @@ export default function ResumeBuilderPage() {
               {SECTIONS.map(s => (
                 <button key={s.id} onClick={() => setActiveSection(s.id)}
                   className={clsx("shrink-0 px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
-                    activeSection === s.id ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "bg-white/[0.04] text-slate-400 border border-white/[0.06]")}>
+                    activeSection === s.id ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" : "bg-white/[0.04] text-slate-400 border border-white/[0.06] hover:bg-white/[0.08]")}>
                   {s.icon} {s.label}
                 </button>
               ))}
@@ -243,20 +243,20 @@ export default function ResumeBuilderPage() {
 
           {/* ── Form ── */}
           <div className="flex-1 min-w-0 print:hidden">
-            <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-5 sm:p-6 shadow-xl min-h-[500px]">
+            <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-6 shadow-xl min-h-[500px]">
               <AnimatePresence mode="wait">
                 {activeSection === "personal" && (
                   <SectionForm key="personal" title="Personal Information" subtitle="Your basic contact details and professional summary">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                      <Field icon={I.user} value={resume.name} onChange={v => updateField("name", v)} placeholder="Full Name" />
-                      <Field icon={I.position} value={resume.title} onChange={v => updateField("title", v)} placeholder="Professional Title" />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <Field icon={I.user} value={resume.name} onChange={v => updateField("name", v)} placeholder="Full Name" type="name" />
+                      <Field icon={I.position} value={resume.title} onChange={v => updateField("title", v)} placeholder="Professional Title" type="name" />
                       <Field icon={I.mail} value={resume.email} onChange={v => updateField("email", v)} placeholder="Email Address" type="email" />
                       <Field icon={I.phone} value={resume.phone} onChange={v => updateField("phone", v)} placeholder="Phone Number" type="tel" />
                       <Field icon={I.location} value={resume.address} onChange={v => updateField("address", v)} placeholder="Location / Address" />
                       <Field value={resume.nationality} onChange={v => updateField("nationality", v)} placeholder="Nationality" />
                       <Field value={resume.pronouns} onChange={v => updateField("pronouns", v)} placeholder="Pronouns" />
                       <div className="col-span-full">
-                        <h3 className="text-xs font-semibold text-slate-400 mb-2.5 mt-1 uppercase tracking-wider">Online Presence</h3>
+                        <h3 className="text-xs font-semibold text-slate-400 mb-3 mt-2 uppercase tracking-wider">Online Presence</h3>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                           <SocialInput icon={<svg className="w-3.5 h-3.5 text-[#0A66C2]" viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>} value={resume.social.linkedin} onChange={v => updateSocial("linkedin", v)} placeholder="LinkedIn" />
                           <SocialInput icon={<svg className="w-3.5 h-3.5 text-sky-400" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>} value={resume.social.twitter} onChange={v => updateSocial("twitter", v)} placeholder="Twitter / X" />
@@ -269,7 +269,7 @@ export default function ResumeBuilderPage() {
                       <div className="col-span-full">
                         <label className="block text-xs font-medium mb-1.5 text-slate-400">Professional Summary</label>
                         <textarea value={resume.summary} onChange={e => updateField("summary", e.target.value)}
-                          className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:border-blue-500/50 focus:outline-none min-h-[80px] resize-y placeholder:text-slate-500 transition-colors"
+                          className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 focus:outline-none min-h-[90px] resize-y placeholder:text-slate-500 transition-all"
                           placeholder="Write a brief summary of your background and career goals..." />
                       </div>
                     </div>
@@ -284,57 +284,57 @@ export default function ResumeBuilderPage() {
                   return activeSection === sectionKey && (
                     <SectionForm key={sectionKey} title={title} subtitle={subtitle}>
                       {items.length === 0 ? (
-                        <div className="flex flex-col items-center justify-center py-14 text-center bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]">
-                          <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
-                            <svg className="w-6 h-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                        <div className="flex flex-col items-center justify-center py-16 text-center bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]">
+                          <div className="w-16 h-16 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center mb-4">
+                            <svg className="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d={isExp ? "M20.25 14.15v4.25c0 1.094-.787 2.036-1.872 2.18-2.087.277-4.216.42-6.378.42s-4.291-.143-6.378-.42c-1.085-.144-1.872-1.086-1.872-2.18v-4.25m16.5 0a2.18 2.18 0 00.75-1.661V8.706c0-1.081-.768-2.015-1.837-2.175a48.114 48.114 0 00-3.413-.387m4.5 8.006c-.194.165-.42.295-.673.38A23.978 23.978 0 0112 15.75c-2.648 0-5.195-.429-7.577-1.22a2.016 2.016 0 01-.673-.38" : isEdu ? "M4.26 10.147a60.438 60.438 0 0 0-.491 6.347A48.62 48.62 0 0 1 12 20.904a48.62 48.62 0 0 1 8.232-4.41 60.46 60.46 0 0 0-.491-6.347m-15.482 0a50.636 50.636 0 0 0-2.658-.813A59.906 59.906 0 0 1 12 3.493a59.903 59.903 0 0 1 10.399 5.84" : isSkill ? "M11.42 15.17l2.25-2.25m-3.75 3l2.25-2.25m5.5-8.5L9.53 10.86l-2.46-2.46m3.94-4.72L12 2.25l2.28 4.88" : isProj ? "M17.25 6.75L22.5 12l-5.25 5.25m-10.5 0L1.5 12l5.25-5.25m7.5-3l-4.5 16.5" : "M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"} />
                             </svg>
                           </div>
                           <p className="text-sm text-slate-400 mb-1">No {title.toLowerCase()} yet</p>
-                          <p className="text-xs text-slate-500 mb-4">Add your first entry to get started</p>
-                          <button onClick={helper.add} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-all">
+                          <p className="text-xs text-slate-500 mb-5">Add your first entry to get started</p>
+                          <button onClick={helper.add} className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 text-xs font-medium hover:bg-blue-500/25 transition-all">
                             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                             Add {title}
                           </button>
                         </div>
                       ) : (
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between mb-3">
+                        <div className="space-y-3.5">
+                          <div className="flex items-center justify-between mb-1">
                             <p className="text-xs text-slate-500">{items.length} {items.length === 1 ? "entry" : "entries"}</p>
-                            <button onClick={helper.add} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium hover:bg-blue-500/20 transition-all">
+                            <button onClick={helper.add} className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 text-xs font-medium hover:bg-blue-500/25 transition-all">
                               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                               Add
                             </button>
                           </div>
                           {(items as any[]).map((item: any, i: number) => (
                             <motion.div key={item.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-                              className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-4 hover:border-white/[0.1] transition-all">
-                              <div className="flex items-center justify-between mb-3">
+                              className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-5 hover:border-white/[0.1] transition-all">
+                              <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-2.5">
-                                  <div className="flex h-6 w-6 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400 text-[10px] font-bold">{i + 1}</div>
+                                  <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400 text-[11px] font-bold">{i + 1}</div>
                                   <span className="text-xs font-medium text-slate-200">{title} {i + 1}</span>
                                 </div>
                                 <div className="flex items-center gap-0.5">
-                                  <button onClick={() => helper.move(item.id, -1)} disabled={i === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 transition-colors rounded hover:bg-white/[0.06]">
+                                  <button onClick={() => helper.move(item.id, -1)} disabled={i === 0} className="p-1.5 text-slate-500 hover:text-white disabled:opacity-20 transition-colors rounded-lg hover:bg-white/[0.06]">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
                                   </button>
-                                  <button onClick={() => helper.move(item.id, 1)} disabled={i === items.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 transition-colors rounded hover:bg-white/[0.06]">
+                                  <button onClick={() => helper.move(item.id, 1)} disabled={i === items.length - 1} className="p-1.5 text-slate-500 hover:text-white disabled:opacity-20 transition-colors rounded-lg hover:bg-white/[0.06]">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
                                   </button>
-                                  <button onClick={() => helper.remove(item.id)} className="p-1 text-red-400 hover:text-red-300 transition-colors rounded hover:bg-red-500/10 ml-0.5">
+                                  <button onClick={() => helper.remove(item.id)} className="p-1.5 text-red-400 hover:text-red-300 transition-colors rounded-lg hover:bg-red-500/10 ml-0.5">
                                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
                                   </button>
                                 </div>
                               </div>
-                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
                                 {(isExp || isProj) && (<>
                                   <ItemField icon={I.company} value={item.company} onChange={v => helper.update(item.id, "company", v)} placeholder="Company Name" />
                                   <ItemField icon={I.position} value={item.position} onChange={v => helper.update(item.id, "position", v)} placeholder="Position" />
                                   <ItemField icon={I.location} value={item.location} onChange={v => helper.update(item.id, "location", v)} placeholder="Location" />
                                   <ItemField icon={I.time} value={item.duration} onChange={v => helper.update(item.id, "duration", v)} placeholder="Duration" />
-                                  <div className="col-span-full"><span className="text-[10px] font-medium text-slate-500 mb-1 block">Description</span>
+                                  <div className="col-span-full"><span className="text-[10px] font-medium text-slate-500 mb-1.5 block">Description</span>
                                     <textarea value={item.description} onChange={e => helper.update(item.id, "description", e.target.value)}
-                                      className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none min-h-[45px] resize-y" /></div>
+                                      className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none min-h-[50px] resize-y transition-all" /></div>
                                 </>)}
                                 {isEdu && (<>
                                   <ItemField icon={I.school} value={item.school} onChange={v => helper.update(item.id, "school", v)} placeholder="School / University" />
@@ -348,7 +348,7 @@ export default function ResumeBuilderPage() {
                                     item={item}
                                     index={i}
                                     total={items.length}
-                                    onUpdate={(field, value) => helper.update(item.id, field as keyof Skill, value)}
+                                    onUpdate={(field, value) => helper.update(item.id, field as string, value)}
                                     onRemove={() => helper.remove(item.id)}
                                     onMoveUp={() => helper.move(item.id, -1)}
                                     onMoveDown={() => helper.move(item.id, 1)}
@@ -373,34 +373,32 @@ export default function ResumeBuilderPage() {
           </div>
 
           {/* ── Preview Panel ── */}
-          <div className="hidden xl:block w-[340px] shrink-0">
-            <div className="sticky top-[7.5rem]">
-              <div className="bg-white/[0.03] rounded-2xl border border-white/[0.06] p-3">
-                {/* Preview toolbar */}
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <span className="text-[10px] text-slate-500">Preview</span>
-                  <div className="flex items-center gap-1">
+          <div className="hidden xl:block w-[600px] shrink-0">
+            <div className="sticky top-32">
+              <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-4 shadow-xl">
+                <div className="flex items-center justify-between mb-3 px-0.5">
+                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Preview</span>
+                  <div className="flex items-center gap-0.5">
                     <button onClick={() => setPreviewMode(m => m === "desktop" ? "mobile" : "desktop")}
-                      className="p-1 text-slate-500 hover:text-white rounded hover:bg-white/[0.06] transition-all" title={previewMode === "desktop" ? "Mobile view" : "Desktop view"}>
+                      className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all" title={previewMode === "desktop" ? "Mobile view" : "Desktop view"}>
                       {previewMode === "desktop" ? (
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
                       ) : (
                         <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>
                       )}
                     </button>
-                    <button onClick={() => setPreviewZoom(z => Math.max(0.4, z - 0.1))} className="p-1 text-slate-500 hover:text-white rounded hover:bg-white/[0.06] transition-all">
+                    <button onClick={() => setPreviewZoom(z => Math.max(0.4, z - 0.1))} className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" /></svg>
                     </button>
                     <span className="text-[10px] text-slate-500 w-6 text-center font-mono">{Math.round(previewZoom * 100)}%</span>
-                    <button onClick={() => setPreviewZoom(z => Math.min(1.5, z + 0.1))} className="p-1 text-slate-500 hover:text-white rounded hover:bg-white/[0.06] transition-all">
+                    <button onClick={() => setPreviewZoom(z => Math.min(1.5, z + 0.1))} className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     </button>
-                    <button onClick={() => setPreviewZoom(1)} className="p-1 text-slate-500 hover:text-white rounded hover:bg-white/[0.06] transition-all">
+                    <button onClick={() => setPreviewZoom(1)} className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" /></svg>
                     </button>
                   </div>
                 </div>
-                {/* A4 Paper Preview */}
                 <div className={clsx("flex justify-center", previewMode === "mobile" ? "mx-auto w-[180px]" : "")} style={{ transform: `scale(${previewZoom})`, transformOrigin: "top center" }}>
                   <div className={clsx(previewMode === "mobile" ? "rounded-[24px] border-[3px] border-slate-700 overflow-hidden shadow-xl" : "")}>
                     <ResumePreview resume={resume} template={activeTemplate} />
@@ -412,7 +410,7 @@ export default function ResumeBuilderPage() {
 
           {/* ── Mobile preview FAB ── */}
           <div className="xl:hidden fixed bottom-6 right-6 z-30 print:hidden">
-            <button className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-500 shadow-lg shadow-blue-500/30 text-white hover:bg-blue-400 transition-all">
+            <button className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-600 shadow-lg shadow-blue-600/30 text-white hover:bg-blue-500 transition-all hover:scale-105 active:scale-95">
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
             </button>
           </div>
@@ -421,14 +419,14 @@ export default function ResumeBuilderPage() {
 
       {/* ── Reset Confirmation ── */}
       {showResetConfirm && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 print:hidden">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 print:hidden">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-            className="bg-[#0F1629] border border-white/[0.06] rounded-xl p-5 max-w-sm mx-4 shadow-2xl">
+            className="bg-[#0F1629] border border-white/[0.08] rounded-2xl p-6 max-w-sm mx-4 shadow-2xl">
             <h3 className="text-sm font-semibold text-white mb-1.5">Reset Resume?</h3>
             <p className="text-xs text-slate-400 mb-5">This will permanently delete all your data.</p>
             <div className="flex gap-2.5 justify-end">
-              <button onClick={() => setShowResetConfirm(false)} className="px-4 py-2 rounded-lg border border-white/[0.08] text-slate-300 hover:bg-white/[0.04] text-xs font-medium">Cancel</button>
-              <button onClick={resetResume} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-500 text-xs font-semibold">Reset</button>
+              <button onClick={() => setShowResetConfirm(false)} className="px-4 py-2 rounded-xl border border-white/[0.08] text-slate-300 hover:bg-white/[0.06] text-xs font-medium transition-all">Cancel</button>
+              <button onClick={resetResume} className="px-4 py-2 rounded-xl bg-red-600 text-white hover:bg-red-500 text-xs font-semibold transition-all">Reset</button>
             </div>
           </motion.div>
         </div>
@@ -439,24 +437,36 @@ export default function ResumeBuilderPage() {
 
 /* ── Sub-components ── */
 
+function sanitize(value: string, type?: string): string {
+  switch (type) {
+    case "name": return value.replace(/[^a-zA-Z\s'-]/g, "");
+    case "tel": return value.replace(/[^0-9()+\-\s]/g, "");
+    case "email": return value.replace(/[^a-zA-Z0-9@._+\-]/g, "");
+    case "url": return value.replace(/[^a-zA-Z0-9:/._~\-?#[\]@!$&'()*+,;=%]/g, "");
+    case "number": return value.replace(/[^0-9.]/g, "");
+    case "text": return value;
+    default: return value;
+  }
+}
+
 function Field({ icon, value, onChange, placeholder, type = "text" }: { icon?: React.ReactNode; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
   return (
     <div className="relative group">
-      {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-60 group-focus-within:opacity-100 transition-opacity">{icon}</span>}
-      <input type={type} value={value || ""} onChange={e => onChange(e.target.value)}
+      {icon && <span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-60 group-focus-within:opacity-100 transition-opacity">{icon}</span>}
+      <input type={type === "name" ? "text" : type} value={value || ""} onChange={e => onChange(sanitize(e.target.value, type))}
         className={clsx("w-full bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none placeholder:text-slate-500 transition-all",
-          icon ? "pl-9 pr-3 py-2" : "px-3.5 py-2.5")} placeholder={placeholder} />
+          icon ? "pl-10 pr-3.5 py-2.5" : "px-4 py-2.5")} placeholder={placeholder} autoComplete="off" />
     </div>
   );
 }
 
-function ItemField({ icon, value, onChange, placeholder }: { icon?: React.ReactNode; value: string; onChange: (v: string) => void; placeholder?: string }) {
+function ItemField({ icon, value, onChange, placeholder, type = "text" }: { icon?: React.ReactNode; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
   return (
     <div className="relative group">
-      {icon && <span className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-50 group-focus-within:opacity-100 transition-opacity">{icon}</span>}
-      <input type="text" value={value || ""} onChange={e => onChange(e.target.value)}
-        className={clsx("w-full bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none placeholder:text-slate-500 transition-all",
-          icon ? "pl-8 pr-2.5 py-2" : "px-3 py-2")} placeholder={placeholder} />
+      {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 group-focus-within:opacity-100 transition-opacity">{icon}</span>}
+      <input type={type === "name" ? "text" : type} value={value || ""} onChange={e => onChange(sanitize(e.target.value, type))}
+        className={clsx("w-full bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none placeholder:text-slate-500 transition-all",
+          icon ? "pl-9 pr-3 py-2.5" : "px-3.5 py-2.5")} placeholder={placeholder} autoComplete="off" />
     </div>
   );
 }
@@ -464,10 +474,10 @@ function ItemField({ icon, value, onChange, placeholder }: { icon?: React.ReactN
 function SocialInput({ icon, value, onChange, placeholder }: { icon: React.ReactNode; value: string; onChange: (v: string) => void; placeholder: string }) {
   return (
     <div className="relative group">
-      <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-60 group-focus-within:opacity-100 transition-opacity">{icon}</span>
+      <span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-60 group-focus-within:opacity-100 transition-opacity">{icon}</span>
       <input type="text" value={value || ""} onChange={e => onChange(e.target.value)}
-        className="w-full pl-9 pr-3 py-2 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:border-blue-500/50 outline-none placeholder:text-slate-500 transition-all"
-        placeholder={placeholder} />
+        className="w-full pl-10 pr-3.5 py-2.5 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none placeholder:text-slate-500 transition-all"
+        placeholder={placeholder} autoComplete="off" />
     </div>
   );
 }
@@ -476,9 +486,11 @@ function SectionForm({ title, subtitle, children }: { title: string; subtitle: s
   return (
     <motion.div initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }}>
       <div className="mb-6">
-        <h2 className="text-base font-semibold text-white">{title}</h2>
-        <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
-        <div className="h-px bg-gradient-to-r from-white/[0.08] to-transparent mt-3" />
+        <div className="flex items-center gap-3 mb-1">
+          <h2 className="text-base font-semibold text-white">{title}</h2>
+          <div className="h-[1px] flex-1 bg-gradient-to-r from-white/[0.06] to-transparent" />
+        </div>
+        <p className="text-xs text-slate-500">{subtitle}</p>
       </div>
       {children}
     </motion.div>
@@ -495,163 +507,126 @@ const PROFICIENCY_LEVELS = [
 
 function ProficiencyDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
   const selected = PROFICIENCY_LEVELS.find(l => l.value === value) || PROFICIENCY_LEVELS[1];
 
+  useEffect(() => {
+    if (!open) return;
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [open]);
+
   return (
-    <div className="relative">
-      <span className="text-[10px] font-medium text-slate-500 mb-1 block">Proficiency Level</span>
+    <div className="relative" ref={ref}>
+      <label className="block text-[10px] font-medium text-slate-500 mb-1">Proficiency Level</label>
       <button type="button" onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2.5 px-3 py-2 bg-[#0B1220] border border-white/[0.08] rounded-xl text-sm text-white hover:border-blue-500/40 transition-all outline-none">
-        <span>{selected.icon}</span>
-        <span className="flex-1 text-left font-medium">{selected.label}</span>
-        <span className="text-[10px] text-slate-500">{selected.desc}</span>
-        <motion.svg animate={{ rotate: open ? 180 : 0 }} className="w-3.5 h-3.5 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+        className="w-full flex items-center gap-2 px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none transition-all">
+        <span className="text-sm shrink-0">{selected.icon}</span>
+        <span className="font-medium flex-1 text-left">{selected.label}</span>
+        <motion.svg animate={{ rotate: open ? 180 : 0 }} className="w-3 h-3 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </motion.svg>
       </button>
-      {/* Proficiency bar indicator */}
-      <div className="mt-1.5 h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
-        <motion.div className={`h-full rounded-full ${selected.barColor}`} initial={{ width: 0 }} animate={{ width: `${selected.pct}%` }} transition={{ duration: 0.5 }} />
-      </div>
-      <span className="text-[9px] text-slate-600 mt-0.5 block text-right">{selected.pct}%</span>
-
       <AnimatePresence>
         {open && (
-          <>
-            <div className="fixed inset-0 z-10" onClick={() => setOpen(false)} />
-            <motion.div initial={{ opacity: 0, y: -4, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -4, scale: 0.96 }}
-              transition={{ duration: 0.15 }} className="absolute z-20 left-0 right-0 top-full mt-1 bg-[#0F1629] border border-white/[0.08] rounded-xl shadow-2xl backdrop-blur-xl overflow-hidden">
-              {PROFICIENCY_LEVELS.map((level) => (
-                <button key={level.value} type="button" onClick={() => { onChange(level.value); setOpen(false); }}
-                  className="w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-white/[0.04] transition-colors">
-                  <span>{level.icon}</span>
-                  <div className="flex-1">
-                    <span className="text-sm font-medium text-white">{level.label}</span>
-                    <span className="text-[10px] text-slate-500 block">{level.desc}</span>
-                  </div>
-                  {value === level.value && (
-                    <svg className="w-4 h-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                    </svg>
-                  )}
-                </button>
-              ))}
-            </motion.div>
-          </>
+          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.12 }} className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#0F1629] border border-white/[0.1] rounded-lg shadow-2xl overflow-hidden">
+            {PROFICIENCY_LEVELS.map((level) => (
+              <button key={level.value} type="button" onClick={() => { onChange(level.value); setOpen(false); }}
+                className={clsx("w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors",
+                  value === level.value ? "bg-blue-500/20 text-white" : "text-slate-300 hover:bg-white/[0.04]")}>
+                <span className="text-sm shrink-0">{level.icon}</span>
+                <span className="text-sm font-medium">{level.label}</span>
+                {value === level.value && (
+                  <svg className="w-3.5 h-3.5 text-blue-400 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                  </svg>
+                )}
+              </button>
+            ))}
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
   );
 }
 
-/* ── Premium Skill Card ── */
+/* ── Skill Card ── */
 function SkillCard({ item, index, total, onUpdate, onRemove, onMoveUp, onMoveDown }: {
   item: any; index: number; total: number; onUpdate: (field: string, value: string) => void; onRemove: () => void; onMoveUp: () => void; onMoveDown: () => void;
 }) {
-  const [collapsed, setCollapsed] = useState(false);
+  const [expanded, setExpanded] = useState(true);
 
   return (
     <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      className="group relative rounded-2xl overflow-visible"
-      whileHover={{ y: -2 }}
+      className="col-span-full bg-white/[0.03] rounded-xl border border-white/[0.06] hover:border-white/[0.1] transition-all"
     >
-      {/* Glass backdrop */}
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-br from-white/[0.07] to-white/[0.02] backdrop-blur-xl shadow-2xl shadow-blue-500/[0.04]" />
-      {/* Border overlay */}
-      <div className="absolute inset-0 rounded-2xl border border-white/[0.08] group-hover:border-white/[0.14] transition-colors duration-300" />
-      {/* Subtle top highlight */}
-      <div className="absolute top-0 left-[10%] right-[10%] h-[1px] bg-gradient-to-r from-transparent via-white/[0.12] to-transparent" />
-      {/* Inner glow */}
-      <div className="absolute -inset-[1px] rounded-2xl bg-gradient-to-br from-blue-500/[0.03] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      <div className="relative z-10">
-      {/* Header */}
-      <div className="flex items-center gap-3 px-4 py-3.5 border-b border-white/[0.04]">
-        {/* Drag handle */}
-        <div className="flex flex-col gap-[2px] cursor-grab active:cursor-grabbing opacity-30 group-hover:opacity-60 transition-opacity">
-          <span className="block w-3 h-[1.5px] bg-slate-400 rounded" />
-          <span className="block w-3 h-[1.5px] bg-slate-400 rounded" />
-          <span className="block w-3 h-[1.5px] bg-slate-400 rounded" />
+      <div className="flex items-center gap-3 px-4 py-3" onClick={() => setExpanded(!expanded)}>
+        <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
+          <button onClick={onMoveUp} disabled={index === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06] transition-all" title="Move up">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+          </button>
+          <button onClick={onMoveDown} disabled={index === total - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06] transition-all" title="Move down">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          </button>
         </div>
-        {/* Number badge */}
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400 text-[11px] font-bold">{index + 1}</div>
-        {/* Title */}
-        <div className="flex-1 min-w-0">
-          <span className="text-sm font-medium text-slate-200 truncate block">
-            {item.name || "New Skill"}
-            {index === 0 && <span className="ml-2 text-[9px] text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-full font-medium align-middle">Primary</span>}
-          </span>
-          {item.category && <span className="text-[10px] text-slate-500 truncate block">{item.category}</span>}
+        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/20 text-blue-400 text-[10px] font-bold shrink-0">{index + 1}</span>
+        <div className="flex-1 min-w-0 cursor-pointer">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-slate-200 truncate">{item.name || "New Skill"}</span>
+            {index === 0 && <span className="text-[9px] text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full font-medium shrink-0">Primary</span>}
+          </div>
         </div>
-        {/* Actions */}
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button onClick={() => setCollapsed(!collapsed)} className="p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
-            <motion.svg animate={{ rotate: collapsed ? -90 : 0 }} className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-            </motion.svg>
+        <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
+          <span className="text-[10px] text-slate-500">{item.level || "Intermediate"}</span>
+          {item.years && <span className="text-[10px] text-slate-600">· {item.years}y</span>}
+          <button onClick={onRemove} className="p-1 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/15 transition-all" title="Remove">
+            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
           </button>
-          <button onClick={onMoveUp} disabled={index === 0} className="p-1.5 text-slate-500 hover:text-white disabled:opacity-20 rounded-lg hover:bg-white/[0.06] transition-all">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
-          </button>
-          <button onClick={onMoveDown} disabled={index === total - 1} className="p-1.5 text-slate-500 hover:text-white disabled:opacity-20 rounded-lg hover:bg-white/[0.06] transition-all">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
-          </button>
-          <button onClick={onRemove} className="p-1.5 text-red-400 hover:text-red-300 rounded-lg hover:bg-red-500/10 transition-all ml-0.5">
-            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-          </button>
+          <motion.svg animate={{ rotate: expanded ? 0 : -90 }} className="w-3.5 h-3.5 text-slate-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </motion.svg>
         </div>
       </div>
-
-      {/* Body */}
       <AnimatePresence>
-        {!collapsed && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }} className="overflow-hidden">
-            <div className="p-4 space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {/* Skill Name */}
-                <div className="relative group/input">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 group-focus-within/input:opacity-100 transition-opacity">
-                    <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M11.42 15.17l2.25-2.25m-3.75 3l2.25-2.25m5.5-8.5L9.53 10.86l-2.46-2.46m3.94-4.72L12 2.25l2.28 4.88" /></svg>
-                  </span>
-                  <input type="text" value={item.name || ""} onChange={e => onUpdate("name", e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-[#0B1220] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all"
-                    placeholder="Skill Name *" />
-                  {!item.name && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400/60 text-[10px]">*</span>}
-                </div>
-                {/* Category */}
-                <div className="relative group/input">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 group-focus-within/input:opacity-100 transition-opacity">
-                    <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M9.568 3H5.25A2.25 2.25 0 003 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 005.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 009.568 3z" /><path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6z" /></svg>
-                  </span>
-                  <input type="text" value={item.category || ""} onChange={e => onUpdate("category", e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-[#0B1220] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all"
-                    placeholder="Category" />
-                </div>
-                {/* Years */}
-                <div className="relative group/input">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 group-focus-within/input:opacity-100 transition-opacity">
-                    <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                  </span>
-                  <input type="text" value={item.years || ""} onChange={e => onUpdate("years", e.target.value)}
-                    className="w-full pl-9 pr-3 py-2.5 bg-[#0B1220] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all"
-                    placeholder="Years of Experience *" />
-                  {!item.years && <span className="absolute right-3 top-1/2 -translate-y-1/2 text-red-400/60 text-[10px]">*</span>}
-                </div>
-                {/* Proficiency dropdown */}
+        {expanded && (
+          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }}
+            transition={{ duration: 0.2 }} className="overflow-hidden border-t border-white/[0.04]">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4">
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Skill Name *</label>
+                <input type="text" value={item.name || ""} onChange={e => onUpdate("name", e.target.value)}
+                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none placeholder:text-slate-500 transition-all"
+                  placeholder="e.g. React" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Category</label>
+                <input type="text" value={item.category || ""} onChange={e => onUpdate("category", e.target.value)}
+                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none placeholder:text-slate-500 transition-all"
+                  placeholder="e.g. Frontend" />
+              </div>
+              <div>
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Years of Exp *</label>
+                <input type="text" value={item.years || ""} onChange={e => onUpdate("years", e.target.value)}
+                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none placeholder:text-slate-500 transition-all"
+                  placeholder="e.g. 3" />
+              </div>
+              <div>
                 <ProficiencyDropdown value={item.level} onChange={v => onUpdate("level", v)} />
               </div>
-              {/* Notes textarea */}
-              <div>
-                <span className="text-[10px] font-medium text-slate-500 mb-1.5 block">Notes (optional)</span>
+              <div className="md:col-span-2">
+                <label className="block text-[10px] font-medium text-slate-500 mb-1">Notes <span className="text-slate-600">(optional)</span></label>
                 <textarea value={item.notes || ""} onChange={e => onUpdate("notes", e.target.value)}
-                  className="w-full px-3 py-2 bg-[#0B1220] border border-white/[0.08] rounded-xl text-sm text-white placeholder:text-slate-600 focus:border-blue-500/50 focus:ring-2 focus:ring-blue-500/10 outline-none transition-all min-h-[0px] resize-y"
-                  placeholder="Additional notes about this skill..." />
+                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white placeholder:text-slate-500 focus:border-blue-500/50 outline-none transition-all resize-none min-h-[36px]"
+                  placeholder="Additional notes..." />
               </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
-      </div>
     </motion.div>
   );
 }
@@ -663,8 +638,8 @@ function ResumePreview({ resume, template }: { resume: Resume; template: ResumeT
   const empty = !resume.name && !resume.title && !resume.email && !resume.summary;
 
   return (
-    <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden" style={{ fontFamily }}>
-      <div className="p-4 w-[280px] space-y-2.5 text-[10px]">
+    <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden min-h-[735px]" style={{ fontFamily }}>
+      <div className="p-5 w-[520px] space-y-3 text-[11px]">
         {empty ? (
           <div className="flex flex-col items-center justify-center py-14 text-center">
             <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
@@ -719,6 +694,26 @@ function ResumePreview({ resume, template }: { resume: Resume; template: ResumeT
                     <span key={skill.id} className="text-[8px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${c.primary}15`, color: c.primary }}>{skill.name}</span>
                   ))}
                 </div>
+              </div>
+            )}
+            {resume.projects.length > 0 && (
+              <div><h2 className="text-[10px] font-bold uppercase tracking-wider pb-0.5 mb-1 border-b" style={{ color: c.sectionTitle, borderColor: c.border }}>Projects</h2>
+                {resume.projects.slice(0, 2).map(proj => (
+                  <div key={proj.id} className="mb-1 last:mb-0">
+                    <span className="text-[10px] font-semibold" style={{ color: c.text }}>{proj.name}</span>
+                    <p className="text-[8px] leading-relaxed" style={{ color: c.muted }}>{proj.description}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+            {resume.certifications.length > 0 && (
+              <div><h2 className="text-[10px] font-bold uppercase tracking-wider pb-0.5 mb-1 border-b" style={{ color: c.sectionTitle, borderColor: c.border }}>Certifications</h2>
+                {resume.certifications.slice(0, 2).map(cert => (
+                  <div key={cert.id} className="mb-1 last:mb-0">
+                    <span className="text-[10px] font-semibold" style={{ color: c.text }}>{cert.name}</span>
+                    <span className="text-[8px] ml-1" style={{ color: c.muted }}>— {cert.issuer}</span>
+                  </div>
+                ))}
               </div>
             )}
           </>
