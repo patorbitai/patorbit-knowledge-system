@@ -493,7 +493,7 @@ export default function ResumeBuilderPage() {
           </div>
 
           {/* ── Preview Panel ── */}
-          <div className="hidden xl:block w-full max-w-[620px] shrink-0">
+          <div className="hidden xl:block w-full max-w-[750px] shrink-0">
             <div className="sticky top-32 h-full">
               <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-5 shadow-xl h-full">
                 <div className="flex items-center justify-between mb-4 px-1">
@@ -592,39 +592,51 @@ function ExportModal({
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="bg-[#0F1629] border border-white/[0.08] rounded-2xl p-6 max-w-md mx-4 shadow-2xl"
+        className="bg-[#0F1629] border border-white/[0.08] rounded-2xl p-8 max-w-lg mx-4 shadow-2xl w-full"
         onClick={e => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Export Your Resume</h3>
-          <button onClick={onClose} className="p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.08] transition-all" aria-label="Close">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h3 className="text-xl font-bold text-white">Export Resume</h3>
+            <p className="text-sm text-slate-400 mt-1">Choose your preferred format</p>
+          </div>
+          <button onClick={onClose} className="p-2 text-slate-500 hover:text-white rounded-xl hover:bg-white/[0.08] transition-all" aria-label="Close">
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
-        <p className="text-sm text-slate-400 mb-4">Choose your desired file format.</p>
-        <div className="flex flex-col gap-3">
+        <div className="grid grid-cols-2 gap-4">
           <button
             onClick={onExportPDF}
-            className="w-full px-4 py-3 rounded-xl bg-red-500/15 border border-red-500/25 text-red-400 text-sm font-medium hover:bg-red-500/25 transition-all flex items-center gap-2"
+            className="group flex flex-col items-center gap-3 p-6 rounded-xl bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 hover:border-red-500/40 transition-all"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-            </svg>
-            Download as PDF
+            <div className="w-14 h-14 rounded-2xl bg-red-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg className="w-7 h-7 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-red-400">PDF Format</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Universal document</p>
+            </div>
           </button>
           <button
             onClick={onExportDOCX}
-            className="w-full px-4 py-3 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 text-sm font-medium hover:bg-blue-500/25 transition-all flex items-center gap-2"
+            className="group flex flex-col items-center gap-3 p-6 rounded-xl bg-blue-500/10 border border-blue-500/20 hover:bg-blue-500/20 hover:border-blue-500/40 transition-all"
           >
-            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-            </svg>
-            Download as DOCX
+            <div className="w-14 h-14 rounded-2xl bg-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+              <svg className="w-7 h-7 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+              </svg>
+            </div>
+            <div className="text-center">
+              <p className="text-sm font-semibold text-blue-400">DOCX Format</p>
+              <p className="text-[11px] text-slate-500 mt-0.5">Editable document</p>
+            </div>
           </button>
         </div>
-        <button onClick={onClose} className="w-full mt-3 px-4 py-2.5 rounded-xl border border-white/[0.08] text-slate-400 text-sm font-medium hover:bg-white/[0.06] transition-all">
+        <button onClick={onClose} className="w-full mt-4 px-4 py-3 rounded-xl border border-white/[0.08] text-slate-400 text-sm font-medium hover:bg-white/[0.06] hover:text-white transition-all">
           Cancel
         </button>
       </motion.div>
