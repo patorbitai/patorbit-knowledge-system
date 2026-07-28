@@ -14,7 +14,7 @@ import {
 } from "@/utils/validation";
 import { parseResumeJson } from "@/utils/resume-schema";
 import { exportToPdf, exportToDocx } from "@/utils/export";
-import { ExecutivePreview, ModernCleanPreview, SplitVibrantPreview, ClassicSerifPreview, TechMonoPreview } from "./template-components";
+import { ExecutivePreview, ModernCleanPreview, SplitVibrantPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview } from "./template-components";
 
 /* ── Types ── */
 interface Experience { id: number; company: string; position: string; location: string; employmentType: string; industry: string; duration: string; description: string; achievements: string; techUsed: string; }
@@ -1176,6 +1176,16 @@ function ResumePreview({ resume, template }: { resume: Resume; template: ResumeT
       return <ClassicSerifPreview resume={resume} />;
     case "tech-mono":
       return <TechMonoPreview resume={resume} />;
+    case "creative-burst":
+      return <CreativeBurstPreview resume={resume} />;
+    case "compact-pro":
+      return <CompactProPreview resume={resume} />;
+    case "corporate-blue":
+      return <CorporateBluePreview resume={resume} />;
+    case "minimal-edge":
+      return <MinimalEdgePreview resume={resume} />;
+    case "banner-bold":
+      return <BannerBoldPreview resume={resume} />;
     default:
       return <ModernCleanPreview resume={resume} />;
   }
