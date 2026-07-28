@@ -14,7 +14,7 @@ import {
 } from "@/utils/validation";
 import { parseResumeJson } from "@/utils/resume-schema";
 import { exportToPdf, exportToDocx } from "@/utils/export";
-import { ExecutivePreview, ModernCleanPreview, SplitVibrantPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview, SidebarElegancePreview, GradientFlowPreview, AcademicFormalPreview, StartupVibePreview, DarkElegancePreview, TimelineProPreview } from "./template-components";
+import { ExecutivePreview, ModernCleanPreview, SplitVibrantPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview, SidebarElegancePreview, GradientFlowPreview, AcademicFormalPreview, StartupVibePreview, DarkElegancePreview, TimelineProPreview, PremiumSlatePreview, NatureGreenPreview, LuxuryGoldPreview, SwissDesignPreview, ScientificPreview, CreativePortfolioPreview } from "./template-components";
 
 /* ── Types ── */
 interface Experience { id: number; company: string; position: string; location: string; employmentType: string; industry: string; duration: string; description: string; achievements: string; techUsed: string; }
@@ -1198,6 +1198,18 @@ function ResumePreview({ resume, template }: { resume: Resume; template: ResumeT
       return <DarkElegancePreview resume={resume} />;
     case "timeline-pro":
       return <TimelineProPreview resume={resume} />;
+    case "premium-slate":
+      return <PremiumSlatePreview resume={resume} />;
+    case "nature-green":
+      return <NatureGreenPreview resume={resume} />;
+    case "luxury-gold":
+      return <LuxuryGoldPreview resume={resume} />;
+    case "swiss-design":
+      return <SwissDesignPreview resume={resume} />;
+    case "scientific":
+      return <ScientificPreview resume={resume} />;
+    case "creative-portfolio":
+      return <CreativePortfolioPreview resume={resume} />;
     default:
       return <ModernCleanPreview resume={resume} />;
   }
