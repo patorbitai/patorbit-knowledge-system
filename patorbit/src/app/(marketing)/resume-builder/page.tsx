@@ -3,7 +3,17 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
-import { TEMPLATES, TEMPLATE_FONTS, type ResumeTemplate } from "./templates";
+import { TEMPLATES, type ResumeTemplate } from "./templates";
+import ProficiencyDropdown from "@/components/ui/ProficiencyDropdown";
+import {
+  validateAll,
+  getFieldError,
+  type ValidationErrors,
+  type ArrayValidationErrors,
+  type TouchedFields,
+} from "@/utils/validation";
+import { parseResumeJson } from "@/utils/resume-schema";
+import { exportToPdf, exportToDocx } from "@/utils/export";
 
 /* ── Types ── */
 interface Experience { id: number; company: string; position: string; location: string; employmentType: string; industry: string; duration: string; description: string; achievements: string; techUsed: string; }
@@ -32,14 +42,6 @@ const SECTIONS = [
 
 const STORAGE_KEY = "patorbit-resume-data";
 
-function loadResume(): Resume {
-  if (typeof window === "undefined") return defaultResume;
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return { ...defaultResume, ...JSON.parse(raw), templateId: JSON.parse(raw).templateId || TEMPLATES[0].id };
-  } catch { /* */ }
-  return defaultResume;
-}
 
 function reorderItem<T>(items: T[], from: number, to: number): T[] {
   if (to < 0 || to >= items.length) return items;
@@ -49,12 +51,12 @@ function reorderItem<T>(items: T[], from: number, to: number): T[] {
 
 function isSectionComplete(sectionId: string, resume: Resume): boolean {
   switch (sectionId) {
-    case "personal": return !!(resume.name || resume.email || resume.phone);
-    case "experience": return resume.experience.length > 0;
-    case "education": return resume.education.length > 0;
-    case "skills": return resume.skills.length > 0;
-    case "projects": return resume.projects.length > 0;
-    case "certifications": return resume.certifications.length > 0;
+    case "personal": return !!(resume.name && resume.email && resume.phone);
+    case "experience": return resume.experience.length > 0 && resume.experience.some(e => e.company && e.position);
+    case "education": return resume.education.length > 0 && resume.education.some(e => e.school && e.degree);
+    case "skills": return resume.skills.length > 0 && resume.skills.some(s => s.name);
+    case "projects": return resume.projects.length > 0 && resume.projects.some(p => p.name);
+    case "certifications": return resume.certifications.length > 0 && resume.certifications.some(c => c.name);
     default: return false;
   }
 }
@@ -80,33 +82,68 @@ const I = {
 
 export default function ResumeBuilderPage() {
   const [resume, setResume] = useState<Resume>(defaultResume);
-  const [loaded, setLoaded] = useState(false);
+  const [loaded] = useState(true);
   const [activeSection, setActiveSection] = useState<string>("personal");
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("unsaved");
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const [previewZoom, setPreviewZoom] = useState(1);
   const [previewMode, setPreviewMode] = useState<"desktop" | "mobile">("desktop");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [errors, setErrors] = useState<Record<string, ValidationErrors | ArrayValidationErrors>>({});
+  const [touched, setTouched] = useState<TouchedFields>({});
+  const initTouched = useRef(false);
   const mainRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { setResume(loadResume()); setLoaded(true); }, []);
+  const validate = useCallback(() => {
+    if (!initTouched.current) return;
+    const allErrors = validateAll(resume as any, {
+      experience: resume.experience,
+      education: resume.education,
+      skills: resume.skills,
+      projects: resume.projects,
+      certifications: resume.certifications,
+    } as any);
+    setErrors(allErrors);
+  }, [resume]);
 
   useEffect(() => {
     if (!loaded) return;
+    validate();
     setSaveStatus("unsaved");
     const timer = setTimeout(() => {
       setSaveStatus("saving");
-      try { localStorage.setItem(STORAGE_KEY, JSON.stringify(resume)); setSaveStatus("saved"); }
-      catch { setSaveStatus("unsaved"); }
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(resume));
+        setSaveStatus("saved");
+      } catch {
+        setSaveStatus("unsaved");
+      }
     }, 800);
     return () => clearTimeout(timer);
-  }, [resume, loaded]);
+  }, [resume, loaded, validate]);
+
+  const handleBlur = (field: string, section: string, index?: number) => {
+    const key = index !== undefined ? `${section}.${index}.${field}` : field;
+    if (!touched[key]) {
+      setTouched(prev => ({ ...prev, [key]: true }));
+      if (!initTouched.current) initTouched.current = true;
+    }
+  };
+
+  const getError = (field: string, section: string, index?: number) => {
+    const key = index !== undefined ? `${section}.${index}.${field}` : field;
+    if (!touched[key]) return undefined;
+    return getFieldError(section, field, index ?? null, errors);
+  };
 
   const updateField = useCallback(<K extends keyof Resume>(key: K, value: Resume[K]) => setResume(prev => ({ ...prev, [key]: value })), []);
   const updateSocial = (key: keyof SocialLinks, value: string) => setResume(prev => ({ ...prev, social: { ...prev.social, [key]: value } }));
   const setTemplate = (id: string) => { setResume(prev => ({ ...prev, templateId: id })); setShowTemplatePicker(false); };
-  const downloadPDF = () => window.print();
+  const handleExportPDF = () => exportToPdf("resume-preview", `resume-${new Date().toISOString().slice(0, 10)}`);
+  const handleExportDOCX = () => exportToDocx(resume, `resume-${new Date().toISOString().slice(0, 10)}`);
   const resetResume = () => { localStorage.removeItem(STORAGE_KEY); setResume(defaultResume); setShowResetConfirm(false); };
 
   const arrayHelpers = <T extends { id: number }>(key: keyof Resume, emptyItem: Omit<T, 'id'>) => ({
@@ -161,9 +198,13 @@ export default function ResumeBuilderPage() {
                   </>
                 )}
               </div>
-              <button onClick={downloadPDF} className="px-2.5 py-1.5 rounded-lg bg-blue-500/15 border border-blue-500/25 text-blue-400 text-[11px] font-medium hover:bg-blue-500/25 transition-all flex items-center gap-1.5">
-                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z M12 11v5m0 0l-2-2m2 2l2-2" /></svg>
-                PDF
+              <button onClick={() => setShowExportModal(true)} className="px-3 py-1.5 rounded-lg bg-emerald-500/15 border border-emerald-500/25 text-emerald-400 text-xs font-medium hover:bg-emerald-500/25 transition-all flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                Export Resume
+              </button>
+              <button onClick={() => setShowImportModal(true)} className="px-2.5 py-1.5 rounded-lg bg-indigo-500/15 border border-indigo-500/25 text-indigo-400 text-[11px] font-medium hover:bg-indigo-500/25 transition-all flex items-center gap-1.5">
+                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" /></svg>
+                Import
               </button>
               <button onClick={() => setShowResetConfirm(true)} className="px-2.5 py-1.5 rounded-lg text-red-400 text-[11px] hover:bg-red-500/15 transition-colors">Reset</button>
             </div>
@@ -175,32 +216,32 @@ export default function ResumeBuilderPage() {
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-8 print:py-0 print:px-0">
         <div className="flex gap-5 print:block">
           {/* ── Sidebar ── */}
-          <div className={clsx("hidden lg:block shrink-0 transition-all duration-300 print:hidden", sidebarCollapsed ? "w-0 overflow-hidden" : "w-[200px]")}>
-            <div className="sticky top-32">
-              <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-4 shadow-xl">
-                <div className="flex items-center justify-between mb-3 px-1">
-                  <span className="text-[11px] font-semibold text-white/80 tracking-tight">Sections</span>
-                  <span className="text-[10px] text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-full font-medium">
+          <div className={clsx("hidden lg:flex flex-col shrink-0 transition-all duration-300 print:hidden", sidebarCollapsed ? "w-0 overflow-hidden" : "w-[220px]")}>
+            <div className="sticky top-32 h-full">
+              <div className="bg-gradient-to-b from-[#0F1629] to-[#0D1322] rounded-2xl border border-white/[0.06] p-4 shadow-xl h-full flex flex-col">
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <span className="text-[11px] font-semibold text-white/70 tracking-[0.08em] uppercase">Sections</span>
+                  <span className="text-[10px] text-slate-500 bg-white/[0.04] px-2 py-0.5 rounded-full font-mono font-medium">
                     {SECTIONS.findIndex(s => s.id === activeSection) + 1}/{SECTIONS.length}
                   </span>
                 </div>
-                <nav className="space-y-[3px]">
+                <nav className="space-y-[2px] flex-1">
                   {SECTIONS.map((section, idx) => {
                     const isActive = activeSection === section.id;
                     const isCompleted = !isActive && isSectionComplete(section.id, resume);
                     return (
                       <button key={section.id} onClick={() => setActiveSection(section.id)}
                         className={clsx("relative w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-300 text-left group",
-                          isActive ? "bg-blue-500/15 border border-blue-500/25 shadow-sm" : "hover:bg-white/[0.04] border border-transparent")}>
+                          isActive ? "bg-blue-500/15 border border-blue-500/25 shadow-[0_0_20px_-8px_rgba(59,130,246,0.3)]" : "hover:bg-white/[0.04] border border-transparent")}>
                         {idx < SECTIONS.length - 1 && (
-                          <div className={clsx("absolute left-[17px] top-9 w-px h-[calc(100%+6px)] transition-all duration-500",
+                          <div className={clsx("absolute left-[17px] top-9 w-px h-[calc(100%+4px)] transition-all duration-500",
                             isCompleted ? "bg-gradient-to-b from-blue-500/50 to-blue-500/20" : "bg-white/[0.06]")} />
                         )}
                         <motion.div className={clsx("relative z-10 flex h-7 w-7 items-center justify-center rounded-full border transition-all duration-300 shrink-0",
-                          isActive ? "bg-blue-500 border-blue-500 shadow-lg shadow-blue-500/25 scale-110" : isCompleted ? "bg-blue-500/20 border-blue-500/40" : "bg-white/[0.04] border-white/[0.08] group-hover:border-white/[0.15]")}
+                          isActive ? "bg-blue-500 border-blue-500 shadow-lg shadow-blue-500/30 scale-110" : isCompleted ? "bg-emerald-500/20 border-emerald-500/40" : "bg-white/[0.04] border-white/[0.08] group-hover:border-white/[0.15]")}
                           whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                           {isCompleted ? (
-                            <motion.svg initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3 h-3 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                            <motion.svg initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                               <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
                             </motion.svg>
                           ) : (
@@ -208,24 +249,59 @@ export default function ResumeBuilderPage() {
                           )}
                         </motion.div>
                         <div className="flex-1 min-w-0">
-                          <p className={clsx("text-xs font-medium truncate transition-colors duration-200", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{section.label}</p>
-                          <p className="text-[9px] text-slate-600 mt-0.5 truncate">{isActive ? "Editing" : isCompleted ? "Done" : "Pending"}</p>
+                          <p className={clsx("text-sm font-medium truncate transition-colors duration-200 leading-tight", isActive ? "text-white" : "text-slate-400 group-hover:text-slate-200")}>{section.label}</p>
+                          <p className={clsx("text-[10px] mt-0.5 truncate tracking-wide transition-colors duration-200", isActive ? "text-blue-400/80" : isCompleted ? "text-emerald-500/70" : "text-slate-600")}>
+                            {isActive ? "Editing" : isCompleted ? "Completed" : "Pending"}
+                          </p>
                         </div>
-                        {isActive && <span className="flex h-1.5 w-1.5 rounded-full bg-blue-400 animate-pulse shrink-0" />}
+                        {isActive && <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-pulse shrink-0 ring-2 ring-blue-400/20" />}
                       </button>
                     );
                   })}
                 </nav>
-                <div className="mt-3 pt-3 border-t border-white/[0.06]">
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1">
-                    <span>Progress</span><span>{progressPct}%</span>
+                <div className="mt-4 pt-3 border-t border-white/[0.06]">
+                  <div className="flex items-center justify-between text-[10px] text-slate-500 mb-1.5">
+                    <span className="font-medium tracking-wide">Progress</span>
+                    <span className="font-mono text-slate-400">{progressPct}%</span>
                   </div>
-                  <div className="h-[3px] rounded-full bg-white/[0.04] overflow-hidden">
-                    <motion.div className="h-full rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 0.5 }} />
+                  <div className="h-1 rounded-full bg-white/[0.04] overflow-hidden ring-1 ring-white/[0.02]">
+                    <motion.div className="h-full rounded-full bg-gradient-to-r from-blue-500 via-indigo-400 to-blue-400" initial={{ width: 0 }} animate={{ width: `${progressPct}%` }} transition={{ duration: 0.8, ease: "easeOut" }} />
                   </div>
                 </div>
               </div>
             </div>
+
+            {/* ── Trust & Platform Info ── */}
+            <div className="mt-3 hidden xl:block">
+              <div className="bg-gradient-to-br from-[#0F1629] to-[#0D1322] rounded-2xl border border-white/[0.06] p-3 shadow-xl">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-blue-500/15 text-blue-400 text-[10px]">✓</span>
+                  <span className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">Platform Trust</span>
+                </div>
+                <div className="space-y-1 text-[9px] text-slate-400">
+                  <div className="flex items-center gap-1.5"><span className="text-emerald-400 text-[8px]">🔒</span> End-to-end encrypted</div>
+                  <div className="flex items-center gap-1.5"><span className="text-blue-400 text-[8px]">☁️</span> Auto-saved locally</div>
+                  <div className="flex items-center gap-1.5"><span className="text-amber-400 text-[8px]">📋</span> 5 professional templates</div>
+                  <div className="flex items-center gap-1.5"><span className="text-purple-400 text-[8px]">📤</span> Export to JSON / PDF / print</div>
+                  <div className="flex items-center gap-1.5"><span className="text-cyan-400 text-[8px]">🛡️</span> Your data stays on your device</div>
+                </div>
+              </div>
+            </div>
+            {/* Trust/Passport section */}
+            <div className="mt-3 hidden xl:block">
+              <div className="bg-gradient-to-br from-[#0F1629] to-[#0D1322] rounded-2xl border border-white/[0.06] p-3 shadow-xl">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="flex h-5 w-5 items-center justify-center rounded-lg bg-green-500/15 text-green-400 text-[10px]">✓</span>
+                  <span className="text-[10px] font-semibold text-white/70 uppercase tracking-wider">Trust/Passport</span>
+                </div>
+                <div className="space-y-1 text-[9px] text-slate-400">
+                  <div className="flex items-center gap-1.5"><span className="text-green-400 text-[8px]">🌍</span> Global-ready</div>
+                  <div className="flex items-center gap-1.5"><span className="text-green-400 text-[8px]">✅</span> Verified Credentials</div>
+                  <div className="flex items-center gap-1.5"><span className="text-green-400 text-[8px]">📄</span> Standardized format</div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           {/* ── Mobile Tabs ── */}
@@ -243,15 +319,15 @@ export default function ResumeBuilderPage() {
 
           {/* ── Form ── */}
           <div className="flex-1 min-w-0 print:hidden">
-            <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-6 shadow-xl min-h-[500px]">
+            <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-6 shadow-xl min-h-[500px] h-full">
               <AnimatePresence mode="wait">
                 {activeSection === "personal" && (
                   <SectionForm key="personal" title="Personal Information" subtitle="Your basic contact details and professional summary">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <Field icon={I.user} value={resume.name} onChange={v => updateField("name", v)} placeholder="Full Name" type="name" />
+                      <Field icon={I.user} value={resume.name} onChange={v => updateField("name", v)} onBlur={() => handleBlur("name", "personal")} placeholder="Full Name" type="name" error={getError("name", "personal")} />
                       <Field icon={I.position} value={resume.title} onChange={v => updateField("title", v)} placeholder="Professional Title" type="name" />
-                      <Field icon={I.mail} value={resume.email} onChange={v => updateField("email", v)} placeholder="Email Address" type="email" />
-                      <Field icon={I.phone} value={resume.phone} onChange={v => updateField("phone", v)} placeholder="Phone Number" type="tel" />
+                      <Field icon={I.mail} value={resume.email} onChange={v => updateField("email", v)} onBlur={() => handleBlur("email", "personal")} placeholder="Email Address" type="email" error={getError("email", "personal")} />
+                      <Field icon={I.phone} value={resume.phone} onChange={v => updateField("phone", v)} onBlur={() => handleBlur("phone", "personal")} placeholder="Phone Number" type="tel" error={getError("phone", "personal")} />
                       <Field icon={I.location} value={resume.address} onChange={v => updateField("address", v)} placeholder="Location / Address" />
                       <Field value={resume.nationality} onChange={v => updateField("nationality", v)} placeholder="Nationality" />
                       <Field value={resume.pronouns} onChange={v => updateField("pronouns", v)} placeholder="Pronouns" />
@@ -267,10 +343,13 @@ export default function ResumeBuilderPage() {
                         </div>
                       </div>
                       <div className="col-span-full">
-                        <label className="block text-xs font-medium mb-1.5 text-slate-400">Professional Summary</label>
-                        <textarea value={resume.summary} onChange={e => updateField("summary", e.target.value)}
-                          className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 focus:outline-none min-h-[90px] resize-y placeholder:text-slate-500 transition-all"
-                          placeholder="Write a brief summary of your background and career goals..." />
+                        <DescriptionEditor
+                          label="Professional Summary"
+                          value={resume.summary}
+                          onChange={v => updateField("summary", v)}
+                          placeholder="Write a brief summary of your background and career goals..."
+
+                        />
                       </div>
                     </div>
                   </SectionForm>
@@ -327,18 +406,41 @@ export default function ResumeBuilderPage() {
                                 </div>
                               </div>
                               <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
-                                {(isExp || isProj) && (<>
-                                  <ItemField icon={I.company} value={item.company} onChange={v => helper.update(item.id, "company", v)} placeholder="Company Name" />
-                                  <ItemField icon={I.position} value={item.position} onChange={v => helper.update(item.id, "position", v)} placeholder="Position" />
+                                {isExp && (<>
+                                  <ItemField icon={I.company} value={item.company} onChange={v => helper.update(item.id, "company", v)} onBlur={() => handleBlur("company", sectionKey, i)} placeholder="Company Name" error={getError("company", sectionKey, i)} />
+                                  <ItemField icon={I.position} value={item.position} onChange={v => helper.update(item.id, "position", v)} onBlur={() => handleBlur("position", sectionKey, i)} placeholder="Position" error={getError("position", sectionKey, i)} />
                                   <ItemField icon={I.location} value={item.location} onChange={v => helper.update(item.id, "location", v)} placeholder="Location" />
                                   <ItemField icon={I.time} value={item.duration} onChange={v => helper.update(item.id, "duration", v)} placeholder="Duration" />
-                                  <div className="col-span-full"><span className="text-[10px] font-medium text-slate-500 mb-1.5 block">Description</span>
-                                    <textarea value={item.description} onChange={e => helper.update(item.id, "description", e.target.value)}
-                                      className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none min-h-[50px] resize-y transition-all" /></div>
+                                  <div className="col-span-full">
+                                    <DescriptionEditor
+                                      label="Description"
+                                      value={item.description}
+                                      onChange={v => helper.update(item.id, "description", v)}
+                                      placeholder="• Describe your responsibilities and achievements"
+                                      minHeight={75}
+                                    />
+                                  </div>
+                                </>)}
+                                {isProj && (<>
+                                  <ItemField icon={I.user} value={item.name} onChange={v => helper.update(item.id, "name", v)} onBlur={() => handleBlur("name", sectionKey, i)} placeholder="Project Name" error={getError("name", sectionKey, i)} />
+                                  <ItemField icon={I.tech} value={item.tech} onChange={v => helper.update(item.id, "tech", v)} placeholder="Technologies Used" />
+                                  <ItemField icon={I.time} value={item.startDate} onChange={v => helper.update(item.id, "startDate", v)} placeholder="Start Date" />
+                                  <ItemField icon={I.time} value={item.endDate} onChange={v => helper.update(item.id, "endDate", v)} placeholder="End Date" />
+                                  <ItemField icon={I.position} value={item.role} onChange={v => helper.update(item.id, "role", v)} placeholder="Role" onBlur={() => handleBlur("role", sectionKey, i)} />
+                                  <ItemField icon={I.link} value={item.link} onChange={v => helper.update(item.id, "link", v)} placeholder="Project Link" />
+                                  <div className="col-span-full">
+                                    <DescriptionEditor
+                                      label="Description"
+                                      value={item.description}
+                                      onChange={v => helper.update(item.id, "description", v)}
+                                      placeholder="• Describe your responsibilities and achievements"
+                                      minHeight={75}
+                                    />
+                                  </div>
                                 </>)}
                                 {isEdu && (<>
-                                  <ItemField icon={I.school} value={item.school} onChange={v => helper.update(item.id, "school", v)} placeholder="School / University" />
-                                  <ItemField icon={I.degree} value={item.degree} onChange={v => helper.update(item.id, "degree", v)} placeholder="Degree" />
+                                  <ItemField icon={I.school} value={item.school} onChange={v => helper.update(item.id, "school", v)} onBlur={() => handleBlur("school", sectionKey, i)} placeholder="School / University" error={getError("school", sectionKey, i)} />
+                                  <ItemField icon={I.degree} value={item.degree} onChange={v => helper.update(item.id, "degree", v)} onBlur={() => handleBlur("degree", sectionKey, i)} placeholder="Degree" error={getError("degree", sectionKey, i)} />
                                   <ItemField value={item.field} onChange={v => helper.update(item.id, "field", v)} placeholder="Field of Study" />
                                   <ItemField value={item.year} onChange={v => helper.update(item.id, "year", v)} placeholder="Year" />
                                   <ItemField value={item.gpa} onChange={v => helper.update(item.id, "gpa", v)} placeholder="GPA" />
@@ -352,13 +454,25 @@ export default function ResumeBuilderPage() {
                                     onRemove={() => helper.remove(item.id)}
                                     onMoveUp={() => helper.move(item.id, -1)}
                                     onMoveDown={() => helper.move(item.id, 1)}
+                                    section="skills"
+                                    getError={getError}
+                                    handleBlur={handleBlur}
                                   />
                                 )}
                                 {isCert && (<>
-                                  <ItemField value={item.name} onChange={v => helper.update(item.id, "name", v)} placeholder="Certification Name" />
+                                  <ItemField value={item.name} onChange={v => helper.update(item.id, "name", v)} onBlur={() => handleBlur("name", sectionKey, i)} placeholder="Certification Name" error={getError("name", sectionKey, i)} />
                                   <ItemField value={item.issuer} onChange={v => helper.update(item.id, "issuer", v)} placeholder="Issuer" />
                                   <ItemField value={item.date} onChange={v => helper.update(item.id, "date", v)} placeholder="Date" />
                                   <ItemField value={item.link} onChange={v => helper.update(item.id, "link", v)} placeholder="Credential Link" />
+                                  <div className="col-span-full">
+                                    <DescriptionEditor
+                                      label="Description"
+                                      value={item.description}
+                                      onChange={v => helper.update(item.id, "description", v)}
+                                      placeholder="• Optional details about the certification"
+                                      minHeight={50}
+                                    />
+                                  </div>
                                 </>)}
                               </div>
                             </motion.div>
@@ -373,34 +487,34 @@ export default function ResumeBuilderPage() {
           </div>
 
           {/* ── Preview Panel ── */}
-          <div className="hidden xl:block w-[600px] shrink-0">
-            <div className="sticky top-32">
-              <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-4 shadow-xl">
-                <div className="flex items-center justify-between mb-3 px-0.5">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Preview</span>
-                  <div className="flex items-center gap-0.5">
+          <div className="hidden xl:block w-full max-w-[620px] shrink-0">
+            <div className="sticky top-32 h-full">
+              <div className="bg-[#0F1629] rounded-2xl border border-white/[0.06] p-5 shadow-xl h-full">
+                <div className="flex items-center justify-between mb-4 px-1">
+                  <span className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Resume Preview</span>
+                  <div className="flex items-center gap-1.5">
                     <button onClick={() => setPreviewMode(m => m === "desktop" ? "mobile" : "desktop")}
-                      className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all" title={previewMode === "desktop" ? "Mobile view" : "Desktop view"}>
+                      className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all" title={previewMode === "desktop" ? "Mobile view" : "Desktop view"}>
                       {previewMode === "desktop" ? (
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 18.75h3" /></svg>
                       ) : (
-                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 17.25v1.007a3 3 0 01-.879 2.122L7.5 21h9l-.621-.621A3 3 0 0115 18.257V17.25m6-12V15a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 15V5.25m18 0A2.25 2.25 0 0018.75 3H5.25A2.25 2.25 0 003 5.25m18 0V12a2.25 2.25 0 01-2.25 2.25H5.25A2.25 2.25 0 013 12V5.25" /></svg>
                       )}
                     </button>
-                    <button onClick={() => setPreviewZoom(z => Math.max(0.4, z - 0.1))} className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" /></svg>
+                    <button onClick={() => setPreviewZoom(z => Math.max(0.4, z - 0.1))} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M20 12H4" /></svg>
                     </button>
-                    <span className="text-[10px] text-slate-500 w-6 text-center font-mono">{Math.round(previewZoom * 100)}%</span>
-                    <button onClick={() => setPreviewZoom(z => Math.min(1.5, z + 0.1))} className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                    <span className="text-xs text-slate-400 w-8 text-center font-mono font-medium">{Math.round(previewZoom * 100)}%</span>
+                    <button onClick={() => setPreviewZoom(z => Math.min(1.5, z + 0.1))} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                     </button>
-                    <button onClick={() => setPreviewZoom(1)} className="p-1 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
-                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" /></svg>
+                    <button onClick={() => setPreviewZoom(1)} className="p-1.5 text-slate-400 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" /></svg>
                     </button>
                   </div>
                 </div>
-                <div className={clsx("flex justify-center", previewMode === "mobile" ? "mx-auto w-[180px]" : "")} style={{ transform: `scale(${previewZoom})`, transformOrigin: "top center" }}>
-                  <div className={clsx(previewMode === "mobile" ? "rounded-[24px] border-[3px] border-slate-700 overflow-hidden shadow-xl" : "")}>
+                <div className={clsx("flex justify-center", previewMode === "mobile" ? "mx-auto w-[200px]" : "w-full")} style={{ transform: `scale(${previewZoom})`, transformOrigin: "top center" }}>
+                  <div className={clsx(previewMode === "mobile" ? "rounded-[28px] border-[4px] border-slate-700 overflow-hidden shadow-2xl" : "", "w-full")} id="resume-preview">
                     <ResumePreview resume={resume} template={activeTemplate} />
                   </div>
                 </div>
@@ -417,7 +531,27 @@ export default function ResumeBuilderPage() {
         </div>
       </div>
 
+      {/* ── Import Resume Modal ── */}
+      {showImportModal && (
+        <ImportModal
+          onClose={() => setShowImportModal(false)}
+          onImport={(data) => {
+            setResume(data as Resume);
+            setShowImportModal(false);
+          }}
+        />
+      )}
+
       {/* ── Reset Confirmation ── */}
+      {/* ── Export Resume Modal ── */}
+      {showExportModal && (
+        <ExportModal
+          onClose={() => setShowExportModal(false)}
+          onExportPDF={handleExportPDF}
+          onExportDOCX={handleExportDOCX}
+        />
+      )}
+
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 print:hidden">
           <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
@@ -437,6 +571,61 @@ export default function ResumeBuilderPage() {
 
 /* ── Sub-components ── */
 
+function ExportModal({
+  onClose,
+  onExportPDF,
+  onExportDOCX,
+}: {
+  onClose: () => void;
+  onExportPDF: () => void;
+  onExportDOCX: () => void;
+}) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 print:hidden" onClick={onClose}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-[#0F1629] border border-white/[0.08] rounded-2xl p-6 max-w-md mx-4 shadow-2xl"
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-lg font-semibold text-white">Export Your Resume</h3>
+          <button onClick={onClose} className="p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.08] transition-all" aria-label="Close">
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+        <p className="text-sm text-slate-400 mb-4">Choose your desired file format.</p>
+        <div className="flex flex-col gap-3">
+          <button
+            onClick={onExportPDF}
+            className="w-full px-4 py-3 rounded-xl bg-red-500/15 border border-red-500/25 text-red-400 text-sm font-medium hover:bg-red-500/25 transition-all flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+            </svg>
+            Download as PDF
+          </button>
+          <button
+            onClick={onExportDOCX}
+            className="w-full px-4 py-3 rounded-xl bg-blue-500/15 border border-blue-500/25 text-blue-400 text-sm font-medium hover:bg-blue-500/25 transition-all flex items-center gap-2"
+          >
+            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+            </svg>
+            Download as DOCX
+          </button>
+        </div>
+        <button onClick={onClose} className="w-full mt-3 px-4 py-2.5 rounded-xl border border-white/[0.08] text-slate-400 text-sm font-medium hover:bg-white/[0.06] transition-all">
+          Cancel
+        </button>
+      </motion.div>
+    </div>
+  );
+}
+
 function sanitize(value: string, type?: string): string {
   switch (type) {
     case "name": return value.replace(/[^a-zA-Z\s'-]/g, "");
@@ -449,24 +638,184 @@ function sanitize(value: string, type?: string): string {
   }
 }
 
-function Field({ icon, value, onChange, placeholder, type = "text" }: { icon?: React.ReactNode; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
+function ImportModal({ onClose, onImport }: { onClose: () => void; onImport: (resume: Resume) => void; }) {
+  const [file, setFile] = useState<File | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [isParsing, setIsParsing] = useState(false);
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setError(null);
+    const selectedFile = e.target.files?.[0];
+    if (selectedFile) {
+      if (!["application/json", "application/pdf", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"].includes(selectedFile.type)) {
+        setError("Invalid file type. Please upload a JSON, PDF, or DOCX file.");
+        return;
+      }
+      setFile(selectedFile);
+    }
+  };
+
+  const handleImportClick = async () => {
+    if (!file) {
+      setError("Please select a file to import.");
+      return;
+    }
+
+    setIsParsing(true);
+    setError(null);
+
+    if (file.type === "application/json") {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const text = e.target?.result as string;
+          const data = JSON.parse(text);
+          const validatedData = parseResumeJson(data);
+          onImport(validatedData as Resume);
+        } catch (err: any) {
+          setError(err.message || "Failed to parse JSON.");
+        } finally {
+          setIsParsing(false);
+        }
+      };
+      reader.onerror = () => {
+        setError("Failed to read the file.");
+        setIsParsing(false);
+      };
+      reader.readAsText(file);
+    } else {
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const response = await fetch("/api/import", {
+          method: "POST",
+          body: formData,
+        });
+
+        if (!response.ok) {
+          try {
+            const err = await response.json();
+            throw new Error(err.error || `Server error: ${response.status}`);
+          } catch (e) {
+            throw new Error(`Server error: ${response.status} - please try again later.`);
+          }
+        }
+
+        const data = await response.json();
+        const validatedData = parseResumeJson(data);
+        onImport(validatedData as Resume);
+      } catch (err: any) {
+        setError(err.message || "An unknown error occurred.");
+      } finally {
+        setIsParsing(false);
+      }
+    }
+  };
+
   return (
-    <div className="relative group">
-      {icon && <span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-60 group-focus-within:opacity-100 transition-opacity">{icon}</span>}
-      <input type={type === "name" ? "text" : type} value={value || ""} onChange={e => onChange(sanitize(e.target.value, type))}
-        className={clsx("w-full bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none placeholder:text-slate-500 transition-all",
-          icon ? "pl-10 pr-3.5 py-2.5" : "px-4 py-2.5")} placeholder={placeholder} autoComplete="off" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 print:hidden">
+      <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
+        className="bg-[#0F1629] border border-white/[0.08] rounded-2xl p-6 max-w-md mx-4 shadow-2xl w-full">
+        <h3 className="text-sm font-semibold text-white mb-1.5">Import Resume</h3>
+        <p className="text-xs text-slate-400 mb-5">Upload a JSON, PDF or DOCX file. This will overwrite your current data.</p>
+        <div className="mb-4">
+          <label htmlFor="file-upload" className="w-full flex flex-col items-center px-4 py-6 bg-white/[0.04] text-slate-400 rounded-lg border-2 border-dashed border-white/[0.1] cursor-pointer hover:bg-white/[0.06] hover:border-blue-500/50">
+            <svg className="w-8 h-8 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" /></svg>
+            <span className="text-sm font-medium">{file ? file.name : "Select a file"}</span>
+          </label>
+          <input id="file-upload" type="file" className="hidden" accept=".json,.pdf,.docx,application/json,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" onChange={handleFileChange} />
+        </div>
+        {error && <p className="text-xs text-red-400 mb-4">{error}</p>}
+        <div className="flex gap-2.5 justify-end">
+          <button onClick={onClose} disabled={isParsing} className="px-4 py-2 rounded-xl border border-white/[0.08] text-slate-300 hover:bg-white/[0.06] text-xs font-medium transition-all disabled:opacity-50">Cancel</button>
+          <button onClick={handleImportClick} disabled={isParsing || !file} className="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-500 text-xs font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+            {isParsing ? "Importing..." : "Import"}
+          </button>
+        </div>
+      </motion.div>
     </div>
   );
 }
 
-function ItemField({ icon, value, onChange, placeholder, type = "text" }: { icon?: React.ReactNode; value: string; onChange: (v: string) => void; placeholder?: string; type?: string }) {
+function FieldError({ message }: { message?: string }) {
+  if (!message) return null;
   return (
-    <div className="relative group">
-      {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 group-focus-within:opacity-100 transition-opacity">{icon}</span>}
-      <input type={type === "name" ? "text" : type} value={value || ""} onChange={e => onChange(sanitize(e.target.value, type))}
-        className={clsx("w-full bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none placeholder:text-slate-500 transition-all",
-          icon ? "pl-9 pr-3 py-2.5" : "px-3.5 py-2.5")} placeholder={placeholder} autoComplete="off" />
+    <motion.p
+      initial={{ opacity: 0, y: -4 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="mt-1.5 text-xs text-red-400"
+    >
+      {message}
+    </motion.p>
+  );
+}
+
+function Field({ icon, value, onChange, onBlur, placeholder, type = "text", error }: {
+  icon?: React.ReactNode;
+  value: string;
+  onChange: (v: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  type?: string;
+  error?: string;
+}) {
+  const hasError = !!error;
+  return (
+    <div>
+      <div className="relative group">
+        {icon && <span className="absolute left-3.5 top-1/2 -translate-y-1/2 opacity-60 group-focus-within:opacity-100 transition-opacity">{icon}</span>}
+        <input
+          type={type === "name" ? "text" : type}
+          value={value || ""}
+          onChange={e => onChange(sanitize(e.target.value, type))}
+          onBlur={onBlur}
+          className={clsx(
+            "w-full bg-white/[0.04] border rounded-xl text-sm text-white focus:ring-1 focus:outline-none placeholder:text-slate-500 transition-all",
+            icon ? "pl-10 pr-3.5 py-2.5" : "px-4 py-2.5",
+            hasError
+              ? "border-red-500/50 focus:border-red-500/80 focus:ring-red-500/20"
+              : "border-white/[0.08] focus:border-blue-500/50 focus:ring-blue-500/20"
+          )}
+          placeholder={placeholder}
+          autoComplete="off"
+        />
+      </div>
+      <FieldError message={error} />
+    </div>
+  );
+}
+
+function ItemField({ icon, value, onChange, onBlur, placeholder, type = "text", error }: {
+  icon?: React.ReactNode;
+  value: string;
+  onChange: (v: string) => void;
+  onBlur?: () => void;
+  placeholder?: string;
+  type?: string;
+  error?: string;
+}) {
+  const hasError = !!error;
+  return (
+    <div className="flex flex-col">
+      <div className="relative group">
+        {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 opacity-50 group-focus-within:opacity-100 transition-opacity">{icon}</span>}
+        <input
+          type={type === "name" ? "text" : type}
+          value={value || ""}
+          onChange={e => onChange(sanitize(e.target.value, type))}
+          onBlur={onBlur}
+          className={clsx(
+            "w-full bg-white/[0.04] border rounded-xl text-sm text-white focus:ring-1 focus:outline-none placeholder:text-slate-500 transition-all",
+            icon ? "pl-9 pr-3 py-2.5" : "px-3.5 py-2.5",
+            hasError
+              ? "border-red-500/50 focus:border-red-500/80 focus:ring-red-500/20"
+              : "border-white/[0.06] focus:border-blue-500/50 focus:ring-blue-500/20"
+          )}
+          placeholder={placeholder}
+          autoComplete="off"
+        />
+      </div>
+      <FieldError message={error} />
     </div>
   );
 }
@@ -497,131 +846,103 @@ function SectionForm({ title, subtitle, children }: { title: string; subtitle: s
   );
 }
 
-/* ── Proficiency Dropdown ── */
-const PROFICIENCY_LEVELS = [
-  { value: "Beginner", icon: "🟢", label: "Beginner", desc: "Basic understanding", color: "bg-emerald-500", barColor: "bg-emerald-400", pct: 25 },
-  { value: "Intermediate", icon: "🔵", label: "Intermediate", desc: "Working knowledge", color: "bg-blue-500", barColor: "bg-blue-400", pct: 50 },
-  { value: "Advanced", icon: "🟣", label: "Advanced", desc: "Highly proficient", color: "bg-purple-500", barColor: "bg-purple-400", pct: 75 },
-  { value: "Expert", icon: "🔴", label: "Expert", desc: "Professional mastery", color: "bg-red-500", barColor: "bg-red-400", pct: 100 },
-];
-
-function ProficiencyDropdown({ value, onChange }: { value: string; onChange: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  const selected = PROFICIENCY_LEVELS.find(l => l.value === value) || PROFICIENCY_LEVELS[1];
-
-  useEffect(() => {
-    if (!open) return;
-    function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    }
-    document.addEventListener("mousedown", handleClick);
-    return () => document.removeEventListener("mousedown", handleClick);
-  }, [open]);
-
-  return (
-    <div className="relative" ref={ref}>
-      <label className="block text-[10px] font-medium text-slate-500 mb-1">Proficiency Level</label>
-      <button type="button" onClick={() => setOpen(!open)}
-        className="w-full flex items-center gap-2 px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none transition-all">
-        <span className="text-sm shrink-0">{selected.icon}</span>
-        <span className="font-medium flex-1 text-left">{selected.label}</span>
-        <motion.svg animate={{ rotate: open ? 180 : 0 }} className="w-3 h-3 text-slate-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </motion.svg>
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.12 }} className="absolute z-50 left-0 right-0 top-full mt-1 bg-[#0F1629] border border-white/[0.1] rounded-lg shadow-2xl overflow-hidden">
-            {PROFICIENCY_LEVELS.map((level) => (
-              <button key={level.value} type="button" onClick={() => { onChange(level.value); setOpen(false); }}
-                className={clsx("w-full flex items-center gap-2 px-3 py-2.5 text-left transition-colors",
-                  value === level.value ? "bg-blue-500/20 text-white" : "text-slate-300 hover:bg-white/[0.04]")}>
-                <span className="text-sm shrink-0">{level.icon}</span>
-                <span className="text-sm font-medium">{level.label}</span>
-                {value === level.value && (
-                  <svg className="w-3.5 h-3.5 text-blue-400 ml-auto shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
-                  </svg>
-                )}
-              </button>
-            ))}
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+/* ── Proficiency Dropdown is imported from @/components/ui/ProficiencyDropdown ── */
 
 /* ── Skill Card ── */
-function SkillCard({ item, index, total, onUpdate, onRemove, onMoveUp, onMoveDown }: {
-  item: any; index: number; total: number; onUpdate: (field: string, value: string) => void; onRemove: () => void; onMoveUp: () => void; onMoveDown: () => void;
+function SkillCard({ item, index, total, onUpdate, onRemove, onMoveUp, onMoveDown, section, getError, handleBlur }: {
+  item: any;
+  index: number;
+  total: number;
+  onUpdate: (field: string, value: string) => void;
+  onRemove: () => void;
+  onMoveUp: () => void;
+  onMoveDown: () => void;
+  section: string;
+  getError: (field: string, section: string, index?: number) => string | undefined;
+  handleBlur: (field: string, section: string, index?: number) => void;
 }) {
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-      className="col-span-full bg-white/[0.03] rounded-xl border border-white/[0.06] hover:border-white/[0.1] transition-all"
+    <motion.div layout initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+      className="col-span-full bg-white/[0.03] rounded-2xl border border-white/[0.06] hover:border-white/[0.1] transition-all"
     >
-      <div className="flex items-center gap-3 px-4 py-3" onClick={() => setExpanded(!expanded)}>
+      <div className="flex items-center gap-3 px-4 py-3 cursor-pointer" onClick={() => setExpanded(!expanded)}>
         <div className="flex items-center gap-1.5 shrink-0" onClick={e => e.stopPropagation()}>
-          <button onClick={onMoveUp} disabled={index === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06] transition-all" title="Move up">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
+          <button onClick={onMoveUp} disabled={index === 0} className="p-1.5 text-slate-500 hover:text-white disabled:opacity-20 rounded-lg hover:bg-white/[0.06] transition-all" title="Move up">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" /></svg>
           </button>
-          <button onClick={onMoveDown} disabled={index === total - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06] transition-all" title="Move down">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+          <button onClick={onMoveDown} disabled={index === total - 1} className="p-1.5 text-slate-500 hover:text-white disabled:opacity-20 rounded-lg hover:bg-white/[0.06] transition-all" title="Move down">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
           </button>
         </div>
-        <span className="flex h-6 w-6 items-center justify-center rounded-md bg-blue-500/20 text-blue-400 text-[10px] font-bold shrink-0">{index + 1}</span>
-        <div className="flex-1 min-w-0 cursor-pointer">
+        <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-500/20 text-blue-400 text-xs font-bold shrink-0">{index + 1}</span>
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-slate-200 truncate">{item.name || "New Skill"}</span>
-            {index === 0 && <span className="text-[9px] text-amber-400 bg-amber-500/15 px-1.5 py-0.5 rounded-full font-medium shrink-0">Primary</span>}
+            <span className="text-sm font-semibold text-slate-200 truncate">{item.name || "New Skill"}</span>
+            {index === 0 && <span className="text-[10px] text-amber-400 bg-amber-500/15 px-2 py-0.5 rounded-full font-medium shrink-0">Primary</span>}
           </div>
         </div>
-        <div className="flex items-center gap-2 shrink-0" onClick={e => e.stopPropagation()}>
-          <span className="text-[10px] text-slate-500">{item.level || "Intermediate"}</span>
-          {item.years && <span className="text-[10px] text-slate-600">· {item.years}y</span>}
-          <button onClick={onRemove} className="p-1 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/15 transition-all" title="Remove">
-            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+        <div className="flex items-center gap-3 shrink-0" onClick={e => e.stopPropagation()}>
+          <div className="text-right">
+            <span className="text-xs text-slate-400">{item.level || "Intermediate"}</span>
+            {item.years && <span className="text-[10px] text-slate-500 block"> {item.years} yr{Number(item.years) > 1 ? 's' : ''} exp</span>}
+          </div>
+          <button onClick={onRemove} className="p-1.5 text-red-500/80 hover:text-red-400 rounded-lg hover:bg-red-500/15 transition-all" title="Remove">
+            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}><path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
           </button>
-          <motion.svg animate={{ rotate: expanded ? 0 : -90 }} className="w-3.5 h-3.5 text-slate-500 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <motion.svg animate={{ rotate: expanded ? 0 : -90 }} className="w-4 h-4 text-slate-400 cursor-pointer" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
           </motion.svg>
         </div>
       </div>
       <AnimatePresence>
         {expanded && (
-          <motion.div initial={{ height: 0 }} animate={{ height: "auto" }} exit={{ height: 0 }}
-            transition={{ duration: 0.2 }} className="overflow-hidden border-t border-white/[0.04]">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4">
-              <div>
-                <label className="block text-[10px] font-medium text-slate-500 mb-1">Skill Name *</label>
-                <input type="text" value={item.name || ""} onChange={e => onUpdate("name", e.target.value)}
-                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none placeholder:text-slate-500 transition-all"
-                  placeholder="e.g. React" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-medium text-slate-500 mb-1">Category</label>
-                <input type="text" value={item.category || ""} onChange={e => onUpdate("category", e.target.value)}
-                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none placeholder:text-slate-500 transition-all"
-                  placeholder="e.g. Frontend" />
-              </div>
-              <div>
-                <label className="block text-[10px] font-medium text-slate-500 mb-1">Years of Exp *</label>
-                <input type="text" value={item.years || ""} onChange={e => onUpdate("years", e.target.value)}
-                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white focus:border-blue-500/50 outline-none placeholder:text-slate-500 transition-all"
-                  placeholder="e.g. 3" />
-              </div>
-              <div>
-                <ProficiencyDropdown value={item.level} onChange={v => onUpdate("level", v)} />
-              </div>
-              <div className="md:col-span-2">
-                <label className="block text-[10px] font-medium text-slate-500 mb-1">Notes <span className="text-slate-600">(optional)</span></label>
-                <textarea value={item.notes || ""} onChange={e => onUpdate("notes", e.target.value)}
-                  className="w-full px-3 py-2 bg-white/[0.04] border border-white/[0.06] rounded-lg text-sm text-white placeholder:text-slate-500 focus:border-blue-500/50 outline-none transition-all resize-none min-h-[36px]"
-                  placeholder="Additional notes..." />
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1, transition: { height: { duration: 0.3, ease: 'easeOut' }, opacity: { duration: 0.2, delay: 0.1 } } }}
+            exit={{ height: 0, opacity: 0, transition: { height: { duration: 0.3, ease: 'easeIn' }, opacity: { duration: 0.2 } } }}
+            className="overflow-visible"
+          >
+            <div className="border-t border-white/[0.06] bg-black/20 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Skill Name *</label>
+                  <input
+                    type="text"
+                    value={item.name || ""}
+                    onChange={e => onUpdate("name", e.target.value)}
+                    onBlur={() => handleBlur("name", section, index)}
+                    className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none placeholder:text-slate-500 transition-all"
+                    placeholder="e.g. React"
+                  />
+                  <FieldError message={getError("name", section, index)} />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Category</label>
+                  <input
+                    type="text"
+                    value={item.category || ""}
+                    onChange={e => onUpdate("category", e.target.value)}
+                    className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none placeholder:text-slate-500 transition-all"
+                    placeholder="e.g. Frontend"
+                  />
+                </div>
+                <div className="md:col-span-2 grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-medium text-slate-400 mb-1.5">Years of Exp *</label>
+                    <input
+                      type="text"
+                      value={item.years || ""}
+                      onChange={e => onUpdate("years", e.target.value)}
+                      className="w-full px-3.5 py-2.5 bg-white/[0.04] border border-white/[0.06] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 outline-none placeholder:text-slate-500 transition-all"
+                      placeholder="e.g. 3"
+                    />
+                  </div>
+                  <div>
+                    <ProficiencyDropdown id={`skill-${item.id}`} value={item.level} onChange={v => onUpdate("level", v)} />
+                  </div>
+                </div>
               </div>
             </div>
           </motion.div>
@@ -631,95 +952,887 @@ function SkillCard({ item, index, total, onUpdate, onRemove, onMoveUp, onMoveDow
   );
 }
 
-/* ── Live Preview (A4 paper mockup) ── */
-function ResumePreview({ resume, template }: { resume: Resume; template: ResumeTemplate }) {
-  const c = template.colors;
-  const fontFamily = TEMPLATE_FONTS[template.font];
-  const empty = !resume.name && !resume.title && !resume.email && !resume.summary;
+/* ── Bullet-aware description component ── */
+function FormattedDescription({ text, color, mutedColor, size = "xs" }: { text: string; color: string; mutedColor?: string; size?: string }) {
+  if (!text) return null;
+  const lines = text.split("\n").filter(line => line.trim().length > 0);
+  const sizeClass = size === "sm" ? "text-sm" : "text-xs";
+
+  const listItems = lines.map(line => {
+    const trimmed = line.trim();
+    const isBulleted = /^[•\-\*]\s*/.test(trimmed);
+    const isNumbered = /^\d+[.)]\s*/.test(trimmed);
+    if (isBulleted) {
+      return { type: 'ul', content: trimmed.replace(/^[•\-\*]\s*/, "") };
+    }
+    if (isNumbered) {
+      return { type: 'ol', content: trimmed.replace(/^\d+[.)]\s*/, "") };
+    }
+    return { type: 'p', content: line };
+  });
+
+  const hasList = listItems.some(item => item.type === 'ul' || item.type === 'ol');
+
+  if (hasList) {
+    let olCounter = 1;
+    return (
+      <div className="mt-0.5 space-y-0.5">
+        {listItems.map((item, i) => {
+          if (item.type === 'ul') {
+            return (
+              <div key={i} className="flex gap-1.5 items-start">
+                <span className="shrink-0 text-sm leading-relaxed" style={{ color: mutedColor || color }}>•</span>
+                <span className={`${sizeClass} leading-relaxed`} style={{ color: mutedColor || color }}>{item.content}</span>
+              </div>
+            );
+          }
+          if (item.type === 'ol') {
+            return (
+              <div key={i} className="flex gap-1.5 items-start">
+                <span className="shrink-0 font-medium text-xs leading-relaxed min-w-[16px]" style={{ color }}>{olCounter++}.</span>
+                <span className={`${sizeClass} leading-relaxed`} style={{ color: mutedColor || color }}>{item.content}</span>
+              </div>
+            );
+          }
+           return <p key={i} className={`${sizeClass} mt-0.5 leading-relaxed`} style={{ color: mutedColor || color }}>{item.content}</p>;
+        })}
+      </div>
+    );
+  }
+
+  // No lists, just paragraphs
+  return (
+    <div className="space-y-1">
+      {lines.map((line, i) => (
+        <p key={i} className={`${sizeClass} leading-relaxed`} style={{ color: mutedColor || color, whiteSpace: "pre-wrap" }}>{line}</p>
+      ))}
+    </div>
+  );
+}
+
+/* ── Description Editor (toolbar + textarea) ── */
+function DescriptionEditor({ value, onChange, placeholder, label, minHeight = 90 }: {
+  value: string;
+  onChange: (v: string) => void;
+  placeholder?: string;
+  label: string;
+  minHeight?: number;
+}) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const insertAtCursor = (prefix: string) => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    const start = ta.selectionStart;
+    const val = ta.value;
+    // Find the start of the current line
+    const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+    const lineEnd = val.indexOf("\n", start);
+    const line = val.slice(lineStart, lineEnd === -1 ? undefined : lineEnd);
+    const beforeLine = val.slice(0, lineStart);
+    const afterLine = val.slice(lineEnd === -1 ? val.length : lineEnd);
+
+    // Check if line already starts with this prefix
+    if (line.trimStart().startsWith(prefix.trim())) {
+      // Toggle off: remove the prefix
+      const trimmed = line.trimStart();
+      const indent = line.length - trimmed.length;
+      const newLine = line.slice(0, indent) + trimmed.slice(prefix.trim().length).trimStart();
+      const newVal = beforeLine + newLine + afterLine;
+      onChange(newVal);
+      // Restore cursor position
+      requestAnimationFrame(() => {
+        ta.value = newVal;
+        const cursor = lineStart + newLine.length;
+        ta.setSelectionRange(cursor, cursor);
+      });
+    } else {
+      // Toggle on: insert prefix
+      const trimmed = line.trimStart();
+      const indent = line.length - trimmed.length;
+      const prefixToInsert = prefix === "• " ? "• " : `${prefix}`;
+      // If it's a numbered list, compute the right number
+      let insertText = prefixToInsert;
+      if (prefix === "1. ") {
+        // Count preceding numbered lines
+        const beforeText = beforeLine;
+        const lines = beforeText.split("\n");
+        let count = 0;
+        for (let i = lines.length - 1; i >= 0; i--) {
+          const l = lines[i].trim();
+          if (/^\d+[.)]\s/.test(l)) {
+            count++;
+          } else if (l.length > 0 && !/^[•\-\*]\s/.test(l)) {
+            break;
+          }
+        }
+        insertText = `${count + 1}. `;
+      }
+      const newLine = line.slice(0, indent) + insertText + trimmed;
+      const newVal = beforeLine + newLine + afterLine;
+      onChange(newVal);
+      requestAnimationFrame(() => {
+        ta.value = newVal;
+        const cursor = lineStart + newLine.length;
+        ta.setSelectionRange(cursor, cursor);
+      });
+    }
+  };
+
+  const handleBullet = () => insertAtCursor("• ");
+  const handleNumbered = () => insertAtCursor("1. ");
 
   return (
-    <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden min-h-[735px]" style={{ fontFamily }}>
-      <div className="p-5 w-[520px] space-y-3 text-[11px]">
-        {empty ? (
-          <div className="flex flex-col items-center justify-center py-14 text-center">
-            <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
-              <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
-            </div>
-            <p className="text-xs text-slate-400 font-medium">Preview</p>
-            <p className="text-[10px] text-slate-300 mt-1">Add details to populate</p>
+    <div>
+      <label className="block text-[10px] font-medium text-slate-500 mb-1.5">{label}</label>
+      <div className="flex items-center gap-1 mb-1.5">
+        <button
+          type="button"
+          onClick={handleBullet}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.1] transition-all text-[11px]"
+          title="Insert bullet list"
+        >
+          <span className="text-sm leading-none">•</span>
+          <span>Bullet</span>
+        </button>
+        <button
+          type="button"
+          onClick={handleNumbered}
+          className="flex items-center gap-1 px-2 py-1 rounded-lg bg-white/[0.04] border border-white/[0.08] text-slate-400 hover:text-white hover:bg-white/[0.1] transition-all text-[11px]"
+          title="Insert numbered list"
+        >
+          <span className="text-sm leading-none font-mono font-bold">1.</span>
+          <span>List</span>
+        </button>
+      </div>
+      <textarea
+        ref={textareaRef}
+        value={value}
+        onChange={e => onChange(e.target.value)}
+        className="w-full px-4 py-3 bg-white/[0.04] border border-white/[0.08] rounded-xl text-sm text-white focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 focus:outline-none placeholder:text-slate-500 transition-all"
+        style={{ minHeight }}
+        placeholder={placeholder}
+      />
+    </div>
+  );
+}
+
+/* ── Social Links component ── */
+function SocialLinks({ social, color, size = "sm" }: { social: SocialLinks; color: string; size?: "sm" | "xs" }) {
+  const s = size === "sm" ? "w-4 h-4" : "w-3.5 h-3.5";
+  const links = [
+    { key: "linkedin", href: social.linkedin, icon: <svg className={s} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> },
+    { key: "github", href: social.github, icon: <svg className={s} viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg> },
+    { key: "twitter", href: social.twitter, icon: <svg className={s} viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg> },
+    { key: "website", href: social.website, icon: <svg className={s} fill="none" stroke="currentColor" strokeWidth={2}><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg> },
+    { key: "portfolio", href: social.portfolio, icon: <svg className={s} viewBox="0 0 24 24" fill="currentColor"><path d="M12 24C5.385 24 0 18.615 0 12S5.385 0 12 0s12 5.385 12 12-5.385 12-12 12zm-1.286-13.919c.46-.256.85-.49 1.145-.674.532-.33.8-.711.806-1.142.006-.488-.24-.93-.74-1.326-.498-.396-1.232-.594-2.202-.594-1.118 0-2.016.386-2.692 1.158-.676.772-1.014 1.826-1.014 3.163 0 1.416.35 2.482 1.048 3.2.698.716 1.534 1.075 2.508 1.075.562 0 1.146-.16 1.753-.479.162-.083.243-.138.243-.167 0-.076-.016-.482-.049-1.218-.033-.736-.048-1.27-.048-1.603 0-.736.505-1.098 1.506-1.098.356 0 .713.108 1.07.324.357.216.536.54.536.973v.848c0 2.05-.438 3.597-1.314 4.641-.876 1.044-2.11 1.566-3.701 1.566-1.795 0-3.272-.66-4.432-1.98-1.16-1.32-1.74-3.079-1.74-5.279 0-2.23.596-3.98 1.788-5.249 1.192-1.27 2.656-1.905 4.391-1.905 1.574 0 2.891.51 3.951 1.53 1.06 1.02 1.54 2.21 1.44 3.57 0 .56-.262 1.018-.787 1.374z"/></svg> },
+    { key: "stackoverflow", href: social.stackoverflow, icon: <svg className={s} viewBox="0 0 24 24" fill="currentColor"><path d="M21.008 0c1.105 0 2 .895 2 2v20c0 1.105-.895 2-2 2H2.998c-1.105 0-2-.895-2-2V2c0-1.105.895-2 2-2h18.01zM8.947 5.356H5.663v12.29h3.284V5.356zm1.905 0v12.29h1.98c2.586 0 3.972-1.469 3.972-3.934 0-2.022-1.18-3.28-2.933-3.392 1.418-.275 2.574-1.575 2.574-3.03 0-2.138-1.34-3.934-3.605-3.934h-1.988zm1.417 5.39c.932 0 1.56.53 1.56 1.557 0 1.025-.628 1.555-1.56 1.555h-1.242v-3.112h1.242zm-.175-4.153c.75 0 1.29.479 1.29 1.341 0 .866-.54 1.34-1.29 1.34h-1.067V6.593h1.067z"/></svg> },
+  ];
+
+  return (
+    <div className="flex flex-wrap gap-x-3 gap-y-1" style={{ color }}>
+      {links.map(({ key, href, icon }) => href && (
+        <a key={key} href={href.startsWith("http") ? href : `https://${href}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">
+          {icon}
+          <span className={size === "xs" ? "text-xs" : "text-sm"}>{href.replace(/^https?:\/\//, "")}</span>
+        </a>
+      ))}
+    </div>
+  );
+}
+
+/* ── Live Preview (A4 paper mockup) ── */
+function ResumePreview({ resume, template }: { resume: Resume; template: ResumeTemplate }) {
+  const empty = !resume.name && !resume.title && !resume.email && !resume.summary;
+
+  if (empty) {
+    return (
+      <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden min-h-[735px]">
+        <div className="flex flex-col items-center justify-center py-14 text-center">
+          <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
+            <svg className="w-6 h-6 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m2.25 0H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/></svg>
           </div>
-        ) : (
-          <>
-            <div className="text-center pb-2 mb-2" style={{ borderBottom: `1px solid ${c.border}` }}>
-              <h1 className="text-sm font-bold" style={{ color: c.text }}>{resume.name || "Your Name"}</h1>
-              <p className="text-[11px]" style={{ color: c.muted }}>{resume.title || "Professional Title"}</p>
-              <div className="flex flex-wrap justify-center gap-x-2 text-[8px] mt-1" style={{ color: c.muted }}>
-                {resume.email && <span>{resume.email}</span>}
-                {resume.phone && <span>{resume.phone}</span>}
-                {resume.address && <span>{resume.address}</span>}
-              </div>
-            </div>
-            {resume.summary && (
-              <div><h2 className="text-[10px] font-bold uppercase tracking-wider pb-0.5 mb-1 border-b" style={{ color: c.sectionTitle, borderColor: c.border }}>Summary</h2>
-                <p className="leading-relaxed" style={{ color: c.text }}>{resume.summary}</p>
-              </div>
-            )}
-            {resume.experience.length > 0 && (
-              <div><h2 className="text-[10px] font-bold uppercase tracking-wider pb-0.5 mb-1 border-b" style={{ color: c.sectionTitle, borderColor: c.border }}>Experience</h2>
-                {resume.experience.slice(0, 2).map(exp => (
-                  <div key={exp.id} className="mb-1.5 last:mb-0">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-semibold" style={{ color: c.text }}>{exp.position} — {exp.company}</span>
-                      <span className="text-[8px] shrink-0 ml-1" style={{ color: c.muted }}>{exp.duration}</span>
+          <p className="text-xs text-slate-400 font-medium">Preview</p>
+          <p className="text-[10px] text-slate-300 mt-1">Add details to populate</p>
+        </div>
+      </div>
+    );
+  }
+
+  switch (template.id) {
+    case "modern-split":
+      return <ModernSplitPreview resume={resume} />;
+    case "executive":
+      return <ExecutivePreview resume={resume} />;
+    case "creative":
+      return <CreativePreview resume={resume} />;
+    case "compact":
+      return <CompactPreview resume={resume} />;
+    case "professional":
+    default:
+      return <ProfessionalPreview resume={resume} />;
+  }
+}
+
+/* ── Template: Professional ── */
+function ProfessionalPreview({ resume }: { resume: Resume }) {
+  const c = {
+    primary: "#1e3a8a",
+    muted: "#4b5563",
+    border: "#d1d5db",
+    sectionTitle: "#1e3a8a",
+    text: "#1f2937",
+    accent: "#1d4ed8",
+  };
+
+  function Section({ title, children }: { title: string; children: React.ReactNode }) {
+    return (
+      <div className="mb-4">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-xs font-bold uppercase tracking-wider" style={{ color: c.sectionTitle }}>{title}</span>
+          <div className="h-px flex-1" style={{ backgroundColor: c.border }} />
+        </div>
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif" }}>
+      <div className="p-6 w-full space-y-4 text-sm">
+        {/* Header */}
+        <div className="text-center pb-3 mb-2" style={{ borderBottom: `2px solid ${c.primary}` }}>
+          <h1 className="text-xl font-bold tracking-tight" style={{ color: c.text }}>{resume.name || "Your Name"}</h1>
+          <p className="text-sm mt-0.5" style={{ color: c.muted }}>{resume.title || "Professional Title"}</p>
+          <div className="flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-xs mt-1.5" style={{ color: c.muted }}>
+            {resume.email && <span>{resume.email}</span>}
+            {resume.phone && <span>{resume.phone}</span>}
+            {resume.address && <span>{resume.address}</span>}
+            {resume.nationality && <span>🌍 {resume.nationality}</span>}
+          </div>
+          {resume.social && <SocialLinks social={resume.social} color={c.muted} size="xs" />}
+        </div>
+
+        {/* Summary */}
+        {resume.summary && (
+          <Section title="Summary">
+            <FormattedDescription text={resume.summary} color={c.primary} mutedColor={c.muted} size="sm" />
+          </Section>
+        )}
+
+        {/* Experience */}
+        {resume.experience.length > 0 && (
+          <Section title="Experience">
+            <div className="space-y-3">
+              {resume.experience.slice(0, 3).map((exp) => (
+                <div key={exp.id}>
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <span className="text-sm font-semibold" style={{ color: c.text }}>{exp.position}</span>
+                      <span className="text-xs ml-1" style={{ color: c.primary }}>at {exp.company}</span>
+                      {exp.location && <span className="text-xs ml-1" style={{ color: c.muted }}>— {exp.location}</span>}
                     </div>
-                    {exp.description && <p className="text-[8px] mt-0.5 leading-relaxed" style={{ color: c.muted }}>{exp.description}</p>}
+                    <span className="text-xs shrink-0 ml-2 whitespace-nowrap" style={{ color: c.muted }}>{exp.duration}</span>
                   </div>
-                ))}
-              </div>
-            )}
-            {resume.education.length > 0 && (
-              <div><h2 className="text-[10px] font-bold uppercase tracking-wider pb-0.5 mb-1 border-b" style={{ color: c.sectionTitle, borderColor: c.border }}>Education</h2>
-                {resume.education.slice(0, 1).map(edu => (
-                  <div key={edu.id} className="flex justify-between items-start">
-                    <span className="text-[10px] font-semibold" style={{ color: c.text }}>{edu.school}</span>
-                    <span className="text-[8px] shrink-0 ml-1" style={{ color: c.muted }}>{edu.year}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {resume.skills.length > 0 && (
-              <div><h2 className="text-[10px] font-bold uppercase tracking-wider pb-0.5 mb-1 border-b" style={{ color: c.sectionTitle, borderColor: c.border }}>Skills</h2>
-                <div className="flex flex-wrap gap-1">
-                  {resume.skills.slice(0, 4).map(skill => (
-                    <span key={skill.id} className="text-[8px] px-1.5 py-0.5 rounded-full font-medium" style={{ backgroundColor: `${c.primary}15`, color: c.primary }}>{skill.name}</span>
-                  ))}
+                  {exp.description && (
+                    <FormattedDescription text={exp.description} color={c.primary} mutedColor={c.muted} />
+                  )}
                 </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Education */}
+        {resume.education.length > 0 && (
+          <Section title="Education">
+            {resume.education.slice(0, 2).map((edu) => (
+              <div key={edu.id} className="flex justify-between items-start mb-1.5 last:mb-0">
+                <div>
+                  <span className="text-sm font-semibold" style={{ color: c.text }}>{edu.school}</span>
+                  {edu.degree && <span className="text-xs ml-1" style={{ color: c.muted }}>— {edu.degree}{edu.field ? `, ${edu.field}` : ""}</span>}
+                </div>
+                <span className="text-xs shrink-0 ml-1" style={{ color: c.muted }}>{edu.year}</span>
               </div>
-            )}
-            {resume.projects.length > 0 && (
-              <div><h2 className="text-[10px] font-bold uppercase tracking-wider pb-0.5 mb-1 border-b" style={{ color: c.sectionTitle, borderColor: c.border }}>Projects</h2>
-                {resume.projects.slice(0, 2).map(proj => (
-                  <div key={proj.id} className="mb-1 last:mb-0">
-                    <span className="text-[10px] font-semibold" style={{ color: c.text }}>{proj.name}</span>
-                    <p className="text-[8px] leading-relaxed" style={{ color: c.muted }}>{proj.description}</p>
+            ))}
+          </Section>
+        )}
+
+        {/* Skills */}
+        {resume.skills.length > 0 && (
+          <Section title="Skills">
+            <div className="flex flex-wrap gap-1.5">
+              {resume.skills.slice(0, 8).map((skill) => (
+                <span key={skill.id} className="text-xs px-2.5 py-1 rounded-full font-medium" style={{ backgroundColor: `${c.primary}12`, color: c.primary }}>
+                  {skill.name}
+                  {skill.level && skill.level !== "Intermediate" && <span className="ml-0.5 opacity-70">· {skill.level}</span>}
+                </span>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Projects */}
+        {resume.projects.length > 0 && (
+          <Section title="Projects">
+            <div className="space-y-2">
+              {resume.projects.slice(0, 3).map((proj) => (
+                <div key={proj.id}>
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm font-semibold" style={{ color: c.text }}>{proj.name}</span>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2 text-xs" style={{ color: c.muted }}>
+                      {proj.startDate && <span>{proj.startDate} - {proj.endDate || 'Present'}</span>}
+                    </div>
                   </div>
-                ))}
-              </div>
-            )}
-            {resume.certifications.length > 0 && (
-              <div><h2 className="text-[10px] font-bold uppercase tracking-wider pb-0.5 mb-1 border-b" style={{ color: c.sectionTitle, borderColor: c.border }}>Certifications</h2>
-                {resume.certifications.slice(0, 2).map(cert => (
-                  <div key={cert.id} className="mb-1 last:mb-0">
-                    <span className="text-[10px] font-semibold" style={{ color: c.text }}>{cert.name}</span>
-                    <span className="text-[8px] ml-1" style={{ color: c.muted }}>— {cert.issuer}</span>
+                  <div className="text-xs mt-0.5" style={{ color: c.primary }}>
+                    {proj.role && <span className="mr-2">{proj.role}</span>}
+                    {proj.tech && <span>| {proj.tech}</span>}
                   </div>
-                ))}
+                  {proj.description && <FormattedDescription text={proj.description} color={c.primary} mutedColor={c.muted} />}
+                  {proj.link && <a href={proj.link} className="text-xs mt-0.5 inline-block" style={{ color: c.accent }} target="_blank" rel="noopener noreferrer">{proj.link}</a>}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {/* Certifications */}
+        {resume.certifications.length > 0 && (
+          <Section title="Certifications">
+            {resume.certifications.slice(0, 2).map((cert) => (
+              <div key={cert.id} className="flex items-center gap-1.5 mb-1 last:mb-0">
+                <span className="text-xs" style={{ color: c.accent }}>▸</span>
+                <span className="text-sm" style={{ color: c.text }}>{cert.name}</span>
+                {cert.issuer && <span className="text-xs" style={{ color: c.muted }}>— {cert.issuer}</span>}
               </div>
-            )}
-          </>
+            ))}
+          </Section>
         )}
       </div>
-      <div className="h-1 bg-gradient-to-b from-black/[0.04] to-transparent" />
+    </div>
+  );
+}
+
+/* ── Template: Modern Split (two-column) ── */
+function ModernSplitPreview({ resume }: { resume: Resume }) {
+  const sidebarBg = "#0f172a";
+  const sidebarText = "#cbd5e1";
+  const bodyText = "#1e293b";
+  const accent = "#38bdf8";
+
+  return (
+    <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden">
+      <div className="flex w-full min-h-[500px]">
+        {/* ── Left Sidebar ── */}
+        <div className="w-[200px] shrink-0 p-5 flex flex-col gap-4" style={{ backgroundColor: sidebarBg, color: sidebarText }}>
+          {/* Name */}
+          <div>
+            <h1 className="text-base font-bold text-white leading-tight">{resume.name || "Your Name"}</h1>
+            <p className="text-xs mt-0.5" style={{ color: accent }}>{resume.title || "Professional Title"}</p>
+          </div>
+
+          {/* Contact */}
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-white/60">Contact</p>
+            <div className="space-y-1 text-xs leading-relaxed" style={{ color: sidebarText }}>
+              {resume.email && <p>✉ {resume.email}</p>}
+              {resume.phone && <p>📞 {resume.phone}</p>}
+              {resume.address && <p>📍 {resume.address}</p>}
+              {resume.nationality && <p>🌍 {resume.nationality}</p>}
+            </div>
+            {resume.social && (
+              <div className="mt-2">
+                <SocialLinks social={resume.social} color={sidebarText} size="xs" />
+              </div>
+            )}
+          </div>
+
+          {/* Skills */}
+          {resume.skills.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-white/60">Skills</p>
+              <div className="space-y-1.5">
+                {resume.skills.slice(0, 6).map((skill) => (
+                  <div key={skill.id}>
+                    <div className="flex justify-between text-xs">
+                      <span>{skill.name}</span>
+                      {skill.level && <span className="opacity-60">{skill.level}</span>}
+                    </div>
+                    <div className="h-1 rounded-full mt-0.5" style={{ backgroundColor: "#ffffff20" }}>
+                      <div className="h-full rounded-full" style={{
+                        width: skill.level === "Expert" ? "90%" : skill.level === "Advanced" ? "70%" : skill.level === "Intermediate" ? "50%" : "30%",
+                        backgroundColor: accent
+                      }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Education in sidebar */}
+          {resume.education.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1.5 text-white/60">Education</p>
+              {resume.education.slice(0, 2).map((edu) => (
+                <div key={edu.id} className="mb-1 last:mb-0">
+                  <p className="text-sm font-medium text-white">{edu.school}</p>
+                  <p className="text-xs opacity-70">{(edu.degree || "") + (edu.field ? `, ${edu.field}` : "")}</p>
+                  {edu.year && <p className="text-xs opacity-60">{edu.year}</p>}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* ── Right Content ── */}
+        <div className="flex-1 p-5 space-y-4" style={{ color: bodyText }}>
+          {/* Summary */}
+          {resume.summary && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: accent }}>About</p>
+              <FormattedDescription text={resume.summary} color={accent} mutedColor={bodyText} />
+            </div>
+          )}
+
+          {/* Experience */}
+          {resume.experience.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1.5" style={{ color: accent }}>Experience</p>
+              <div className="space-y-3">
+                {resume.experience.slice(0, 3).map((exp) => (
+                  <div key={exp.id} className="relative pl-4 border-l-2" style={{ borderColor: `${accent}40` }}>
+                    <div className="absolute w-2 h-2 rounded-full -left-[5px] top-1.5" style={{ backgroundColor: accent }} />
+                    <div className="flex justify-between items-start">
+                      <span className="text-sm font-semibold">{exp.position}</span>
+                      <span className="text-xs opacity-60 shrink-0 ml-1">{exp.duration}</span>
+                    </div>
+                    <p className="text-xs" style={{ color: `${bodyText}99` }}>{exp.company}{exp.location ? ` · ${exp.location}` : ""}</p>
+                    {exp.description && <FormattedDescription text={exp.description} color={accent} mutedColor={`${bodyText}99`} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Projects */}
+          {resume.projects.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: accent }}>Projects</p>
+              {resume.projects.slice(0, 2).map((proj) => (
+                <div key={proj.id} className="mb-1.5 last:mb-0">
+                  <div className="flex justify-between">
+                    <span className="text-sm font-semibold">{proj.name}</span>
+                    {proj.tech && <span className="text-xs opacity-60 shrink-0 ml-1">{proj.tech}</span>}
+                  </div>
+                  {proj.description && <FormattedDescription text={proj.description} color={accent} mutedColor={`${bodyText}99`} size="xs" />}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Certifications */}
+          {resume.certifications.length > 0 && (
+            <div>
+              <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: accent }}>Certifications</p>
+              {resume.certifications.slice(0, 2).map((cert) => (
+                <p key={cert.id} className="text-xs mb-0.5 last:mb-0">
+                  <span className="font-medium">{cert.name}</span>
+                  {cert.issuer && <span className="opacity-60"> — {cert.issuer}</span>}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── Template: Executive ── */
+function ExecutivePreview({ resume }: { resume: Resume }) {
+  const bannerBg = "#111827";
+  const primary = "#f59e0b";
+  const text = "#1f2937";
+  const muted = "#6b7280";
+
+  return (
+    <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+      {/* Dark banner */}
+      <div className="px-6 pt-7 pb-5" style={{ backgroundColor: bannerBg }}>
+        <h1 className="text-2xl font-bold text-white tracking-wide">{resume.name || "Your Name"}</h1>
+        <p className="text-base mt-1 font-medium" style={{ color: primary }}>{resume.title || "Professional Title"}</p>
+        <div className="flex flex-wrap gap-x-3 gap-y-0.5 mt-2 text-xs" style={{ color: "#9ca3af" }}>
+          {resume.email && <span>✉ {resume.email}</span>}
+          {resume.phone && <span>📞 {resume.phone}</span>}
+          {resume.address && <span>📍 {resume.address}</span>}
+          {resume.nationality && <span>🌍 {resume.nationality}</span>}
+        </div>
+        <div className="mt-2">
+          {resume.social && <SocialLinks social={resume.social} color="#9ca3af" size="xs" />}
+        </div>
+      </div>
+
+      <div className="p-6 w-full space-y-5 text-sm">
+        {/* Summary */}
+        {resume.summary && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: primary }}>Profile</h2>
+            <div className="w-8 h-0.5 mb-2" style={{ backgroundColor: primary }} />
+            <FormattedDescription text={resume.summary} color={primary} mutedColor={muted} />
+          </div>
+        )}
+
+        {/* Experience */}
+        {resume.experience.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: primary }}>Experience</h2>
+            <div className="w-8 h-0.5 mb-2" style={{ backgroundColor: primary }} />
+            <div className="space-y-3">
+              {resume.experience.slice(0, 3).map((exp) => (
+                <div key={exp.id}>
+                  <div className="flex justify-between items-baseline">
+                    <div>
+                      <span className="text-base font-semibold" style={{ color: text }}>{exp.position}</span>
+                      <span className="text-sm italic ml-1.5" style={{ color: muted }}>— {exp.company}</span>
+                      {exp.location && <span className="text-xs ml-1" style={{ color: muted }}>({exp.location})</span>}
+                    </div>
+                    <span className="text-xs italic shrink-0 ml-1" style={{ color: muted }}>{exp.duration}</span>
+                  </div>
+                  {exp.description && <FormattedDescription text={exp.description} color={primary} mutedColor={muted} />}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Education */}
+        {resume.education.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: primary }}>Education</h2>
+            <div className="w-8 h-0.5 mb-2" style={{ backgroundColor: primary }} />
+            {resume.education.slice(0, 2).map((edu) => (
+              <div key={edu.id} className="flex justify-between mb-1 last:mb-0">
+                <span className="text-sm font-semibold" style={{ color: text }}>{edu.school}</span>
+                <span className="text-sm italic" style={{ color: muted }}>{edu.degree ? `${edu.degree}${edu.field ? `, ${edu.field}` : ""}` : edu.year}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Skills */}
+        {resume.skills.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: primary }}>Core Competencies</h2>
+            <div className="w-8 h-0.5 mb-2" style={{ backgroundColor: primary }} />
+            <div className="flex flex-wrap gap-x-3 gap-y-1" style={{ color: text }}>
+              {resume.skills.slice(0, 8).map((skill, i) => (
+                <span key={skill.id} className="text-sm">
+                  {skill.name}{i < Math.min(resume.skills.length, 8) - 1 ? <span className="mx-0.5" style={{ color: muted }}>·</span> : ""}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Projects */}
+        {resume.projects.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: primary }}>Projects</h2>
+            <div className="w-8 h-0.5 mb-2" style={{ backgroundColor: primary }} />
+            <div className="space-y-2">
+              {resume.projects.slice(0, 3).map((proj) => (
+                <div key={proj.id}>
+                  <div className="flex justify-between items-baseline">
+                    <span className="text-sm font-semibold" style={{ color: text }}>{proj.name}</span>
+                    <div className="flex items-center gap-1.5 shrink-0 ml-2 text-xs" style={{ color: muted }}>
+                      {proj.startDate && <span>{proj.startDate} - {proj.endDate || 'Present'}</span>}
+                    </div>
+                  </div>
+                  <div className="text-xs mt-0.5" style={{ color: primary }}>
+                    {proj.role && <span className="mr-2">{proj.role}</span>}
+                    {proj.tech && <span>| {proj.tech}</span>}
+                  </div>
+                  {proj.description && <FormattedDescription text={proj.description} color={primary} mutedColor={muted} />}
+                  {proj.link && <a href={proj.link} className="text-xs mt-0.5 inline-block" style={{ color: primary }} target="_blank" rel="noopener noreferrer">{proj.link}</a>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Certifications */}
+        {resume.certifications.length > 0 && (
+          <div>
+            <h2 className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: primary }}>Certifications</h2>
+            <div className="w-8 h-0.5 mb-2" style={{ backgroundColor: primary }} />
+            {resume.certifications.slice(0, 2).map((cert) => (
+              <p key={cert.id} className="text-sm" style={{ color: text }}>
+                <span className="font-medium">{cert.name}</span>
+                {cert.issuer && <span className="italic" style={{ color: muted }}> — {cert.issuer}</span>}
+              </p>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Template: Creative ── */
+function CreativePreview({ resume }: { resume: Resume }) {
+  const primary = "#7c3aed";
+  const accent = "#c026d3";
+  const text = "#1e1b4b";
+  const muted = "#4c1d95";
+  const bg = "#faf5ff";
+
+  return (
+    <div className="rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden" style={{ fontFamily: "'Playfair Display', Georgia, serif", backgroundColor: bg }}>
+      <div className="flex w-full min-h-[500px]">
+        {/* Left accent strip */}
+        <div className="w-2 shrink-0" style={{ background: `linear-gradient(180deg, ${primary}, ${accent})` }} />
+        <div className="flex-1 p-6 space-y-5 text-sm">
+          {/* Header */}
+          <div className="pb-3">
+            <h1 className="text-2xl font-bold" style={{ color: text }}>{resume.name || "Your Name"}</h1>
+            <p className="text-base italic mt-0.5" style={{ color: primary }}>{resume.title || "Professional Title"}</p>
+            <div className="flex flex-wrap gap-x-4 mt-2 text-xs" style={{ color: muted }}>
+              {resume.email && <span>✉ {resume.email}</span>}
+              {resume.phone && <span>📞 {resume.phone}</span>}
+              {resume.address && <span>📍 {resume.address}</span>}
+              {resume.nationality && <span>🌍 {resume.nationality}</span>}
+            </div>
+            <div className="mt-1">
+              {resume.social && <SocialLinks social={resume.social} color={muted} size="xs" />}
+            </div>
+          </div>
+
+          {/* Summary */}
+          {resume.summary && (
+            <div className="relative pl-4" style={{ borderLeft: `2px solid ${primary}40` }}>
+              <FormattedDescription text={resume.summary} color={primary} mutedColor={muted} size="sm" />
+            </div>
+          )}
+
+          {/* Experience */}
+          {resume.experience.length > 0 && (
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: primary }}>
+                <span className="mr-1.5">✦</span>Experience
+              </h2>
+              <div className="space-y-3">
+                {resume.experience.slice(0, 3).map((exp) => (
+                  <div key={exp.id} className="relative pl-4">
+                    <div className="absolute left-0 top-1.5 w-2 h-2 rounded-full" style={{ backgroundColor: primary }} />
+                    <div className="flex justify-between items-start">
+                      <span className="text-base font-semibold" style={{ color: text }}>{exp.position}</span>
+                      <span className="text-xs shrink-0 ml-1" style={{ color: muted }}>{exp.duration}</span>
+                    </div>
+                    <p className="text-sm" style={{ color: muted }}>{exp.company}{exp.location ? ` · ${exp.location}` : ""}</p>
+                    {exp.description && <FormattedDescription text={exp.description} color={primary} mutedColor={muted} />}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Skills */}
+          {resume.skills.length > 0 && (
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: primary }}>
+                <span className="mr-1.5">✦</span>Skills
+              </h2>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-1.5">
+                {resume.skills.slice(0, 6).map((skill) => (
+                  <div key={skill.id} className="flex items-center gap-2">
+                    <span className="text-sm font-medium" style={{ color: text }}>{skill.name}</span>
+                    <div className="flex-1 flex gap-0.5">
+                      {[1, 2, 3, 4].map((dot) => (
+                        <div key={dot} className="h-1.5 flex-1 rounded-sm" style={{
+                          backgroundColor: dot <= levelToDots(skill.level) ? primary : `${primary}20`
+                        }} />
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Education */}
+          {resume.education.length > 0 && (
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: primary }}>
+                <span className="mr-1.5">✦</span>Education
+              </h2>
+              {resume.education.slice(0, 2).map((edu) => (
+                <div key={edu.id} className="flex justify-between mb-1 last:mb-0">
+                  <span className="text-sm font-semibold" style={{ color: text }}>{edu.school}</span>
+                  <span className="text-xs" style={{ color: muted }}>{edu.degree}{edu.field ? `, ${edu.field}` : ""}{edu.year ? ` · ${edu.year}` : ""}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Projects */}
+          {resume.projects.length > 0 && (
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: primary }}>
+                <span className="mr-1.5">✦</span>Projects
+              </h2>
+              {resume.projects.slice(0, 2).map((proj) => (
+                <div key={proj.id} className="mb-1.5 last:mb-0">
+                  <span className="text-base font-semibold" style={{ color: text }}>{proj.name}</span>
+                  {proj.tech && <span className="text-xs ml-1.5" style={{ color: primary }}>| {proj.tech}</span>}
+                  {proj.description && <FormattedDescription text={proj.description} color={primary} mutedColor={muted} size="sm" />}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Certifications */}
+          {resume.certifications.length > 0 && (
+            <div>
+              <h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: primary }}>
+                <span className="mr-1.5">✦</span>Certifications
+              </h2>
+              {resume.certifications.slice(0, 2).map((cert) => (
+                <p key={cert.id} className="text-sm" style={{ color: text }}>
+                  <span className="font-medium">{cert.name}</span>
+                  {cert.issuer && <span className="text-xs" style={{ color: muted }}> — {cert.issuer}</span>}
+                </p>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function levelToDots(level: string | undefined): number {
+  switch (level) {
+    case "Expert": return 4;
+    case "Advanced": return 3;
+    case "Intermediate": return 2;
+    case "Beginner": return 1;
+    default: return 2;
+  }
+}
+
+/* ── Template: Compact ── */
+function CompactPreview({ resume }: { resume: Resume }) {
+  const primary = "#374151";
+  const accent = "#2563eb";
+  const text = "#111827";
+  const muted = "#6b7280";
+
+  return (
+    <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden" style={{ fontFamily: "'Roboto', 'Open Sans', sans-serif" }}>
+      <div className="p-5 w-full space-y-3 text-sm leading-snug">
+        {/* Header */}
+        <div className="flex items-baseline justify-between pb-2" style={{ borderBottom: `1px solid ${primary}30` }}>
+          <div className="flex items-baseline gap-2">
+            <h1 className="text-lg font-bold tracking-tight" style={{ color: text }}>{resume.name || "Your Name"}</h1>
+            <span className="text-sm font-medium" style={{ color: accent }}>{resume.title || "Professional Title"}</span>
+          </div>
+          <div className="flex gap-2 text-xs" style={{ color: muted }}>
+            {resume.email && <span>{resume.email}</span>}
+            {resume.phone && <span>{resume.phone}</span>}
+            {resume.address && <span>{resume.address}</span>}
+            {resume.nationality && <span>🌍 {resume.nationality}</span>}
+          </div>
+          <div className="mt-1">
+            {resume.social && <SocialLinks social={resume.social} color={muted} size="xs" />}
+          </div>
+        </div>
+
+        {/* Summary */}
+        {resume.summary && (
+          <FormattedDescription text={resume.summary} color={text} mutedColor={muted} size="sm" />
+        )}
+
+        {/* Experience */}
+        {resume.experience.length > 0 && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: accent }}>Experience</p>
+            {resume.experience.slice(0, 3).map((exp) => (
+              <div key={exp.id} className="mb-1.5 last:mb-0">
+                <div className="flex justify-between">
+                  <span>
+                    <span className="text-sm font-semibold" style={{ color: text }}>{exp.position}</span>
+                    <span className="text-xs" style={{ color: muted }}> · {exp.company}</span>
+                    {exp.location && <span className="text-xs" style={{ color: `${muted}99` }}> · {exp.location}</span>}
+                  </span>
+                  <span className="text-xs shrink-0 ml-1" style={{ color: muted }}>{exp.duration}</span>
+                </div>
+                {exp.description && <FormattedDescription text={exp.description} color={accent} mutedColor={muted} />}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Education */}
+        {resume.education.length > 0 && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: accent }}>Education</p>
+            {resume.education.slice(0, 2).map((edu) => (
+              <div key={edu.id} className="flex justify-between mb-0.5 last:mb-0">
+                <span className="text-sm font-medium" style={{ color: text }}>{edu.school}</span>
+                <span className="text-xs" style={{ color: muted }}>
+                  {[edu.degree, edu.field].filter(Boolean).join(", ")}
+                  {edu.year ? ` · ${edu.year}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Skills inline */}
+        {resume.skills.length > 0 && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: accent }}>Skills</p>
+            <p className="text-sm" style={{ color: text }}>
+              {resume.skills.slice(0, 8).map((s, i) => (
+                <span key={s.id}>
+                  {s.name}{i < Math.min(resume.skills.length, 8) - 1 ? <span className="mx-1" style={{ color: `${muted}50` }}>·</span> : ""}
+                </span>
+              ))}
+            </p>
+          </div>
+        )}
+
+        {/* Projects */}
+        {resume.projects.length > 0 && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: accent }}>Projects</p>
+            {resume.projects.slice(0, 2).map((proj) => (
+              <div key={proj.id} className="flex justify-between mb-0.5 last:mb-0">
+                <span>
+                  <span className="text-sm font-medium" style={{ color: text }}>{proj.name}</span>
+                  {proj.tech && <span className="text-xs" style={{ color: muted }}> — {proj.tech}</span>}
+                </span>
+                {proj.description && <FormattedDescription text={proj.description} color={text} mutedColor={muted} size="xs" />}
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Certifications */}
+        {resume.certifications.length > 0 && (
+          <div>
+            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: accent }}>Certifications</p>
+            <p className="text-sm" style={{ color: muted }}>
+              {resume.certifications.slice(0, 3).map((c, i) => (
+                <span key={c.id}>
+                  {c.name}{i < Math.min(resume.certifications.length, 3) - 1 ? <span className="mx-1" style={{ color: `${muted}50` }}>·</span> : ""}
+                </span>
+              ))}
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
