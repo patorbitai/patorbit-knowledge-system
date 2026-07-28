@@ -1,8 +1,8 @@
 "use server";
 
 import { NextRequest, NextResponse } from "next/server";
-import mammoth from "mammoth";
-import pdfParse from "pdf-parse";
+import * as mammoth from "mammoth";
+import * as pdfParse from "pdf-parse";
 import { parseResumeJson } from "@/utils/resume-schema";
 import { ResumeSchema } from "@/utils/resume-schema";
 
@@ -28,13 +28,13 @@ export async function POST(request: NextRequest) {
     } else if (fileType === "application/pdf") {
       // Handle PDF file
       const arrayBuffer = await file.arrayBuffer();
-      parsedData = await pdfParse(Buffer.from(arrayBuffer));
+      parsedData = await (pdfParse as any)(Buffer.from(new Uint8Array(arrayBuffer)));
     } else if (
       fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
       // Handle DOCX file
       const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.parse(arrayBuffer);
+      const result = await mammoth.convertToHtml({ buffer: arrayBuffer as any });
       parsedData = result.value;
     } else {
       return NextResponse.json(

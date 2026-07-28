@@ -76,7 +76,7 @@ export const ResumeSchema = z.object({
   nationality: z.string().default(""),
   pronouns: z.string().default(""),
   summary: z.string().default(""),
-  social: SocialLinksSchema.default({}),
+  social: SocialLinksSchema.default({ linkedin: "", github: "", website: "", twitter: "", portfolio: "", stackoverflow: "" }),
   experience: z.array(ExperienceSchema).default([]),
   education: z.array(EducationSchema).default([]),
   skills: z.array(SkillSchema).default([]),

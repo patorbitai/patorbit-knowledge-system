@@ -1,0 +1,108 @@
+﻿
+> patorbit@0.1.0 build
+> next build
+
+▲ Next.js 16.2.12 (Turbopack)
+- Environments: .env
+
+  Creating an optimized production build ...
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+> Build error occurred
+Error: Turbopack build failed with 4 errors:
+./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx:22:612
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  [90m20 |[0m ...
+  [90m21 |[0m ...
+[31m[1m>[0m [90m22 |[0m ...[35msName="text-xs" style={{ color: comment }}>> git log --oneline</p[0m><[35m/article>)}</Section[0m>}
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m23 |[0m ...
+  [90m24 |[0m ...
+  [90m25 |[0m ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx [Client Component Browser]
+    ./src/app/(marketing)/resume-builder/page.tsx [Client Component Browser]
+    ./src/app/(marketing)/resume-builder/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx [Client Component SSR]
+    ./src/app/(marketing)/resume-builder/page.tsx [Client Component SSR]
+    ./src/app/(marketing)/resume-builder/page.tsx [Server Component]
+
+
+./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx:27:238
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  [90m25 |[0m ...e={{ color: accent }}>{p.name}<[35m/span>{p.tech && <span className="ml-2" style={{ color: ...[0m
+  [90m26 |[0m ...
+[31m[1m>[0m [90m27 |[0m ...[35msume.certifications.map(c => <p key={c.id}>> {c.name}</p[0m>)}<[35m/div>}{resume.languages.len...[0m
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m28 |[0m ...
+  [90m29 |[0m ...
+  [90m30 |[0m ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx [Client Component Browser]
+    ./src/app/(marketing)/resume-builder/page.tsx [Client Component Browser]
+    ./src/app/(marketing)/resume-builder/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx [Client Component SSR]
+    ./src/app/(marketing)/resume-builder/page.tsx [Client Component SSR]
+    ./src/app/(marketing)/resume-builder/page.tsx [Server Component]
+
+
+./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx:27:625
+Unexpected token. Did you mean `{'>'}` or `&gt;`?
+  [90m25 |[0m ...
+  [90m26 |[0m ...
+[31m[1m>[0m [90m27 |[0m ...[35mresume.achievements.map(a => <p key={a.id}>> {a.description}</p[0m>)}<[35m/div>}{resume.intere...[0m
+  [90m   |[0m                                               [31m[1m^[0m
+  [90m28 |[0m ...
+  [90m29 |[0m ...
+  [90m30 |[0m ...
+
+Parsing ecmascript source code failed
+
+Import traces:
+  Client Component Browser:
+    ./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx [Client Component Browser]
+    ./src/app/(marketing)/resume-builder/page.tsx [Client Component Browser]
+    ./src/app/(marketing)/resume-builder/page.tsx [Server Component]
+
+  Client Component SSR:
+    ./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx [Client Component SSR]
+    ./src/app/(marketing)/resume-builder/page.tsx [Client Component SSR]
+    ./src/app/(marketing)/resume-builder/page.tsx [Server Component]
+
+
+./src/app/api/import/route.ts:5:1
+Export default doesn't exist in target module
+  [90m3 |[0m [36mimport[0m { [33mNextRequest[0m, [33mNextResponse[0m } [36mfrom[0m [32m"next/server"[0m;
+  [90m4 |[0m [36mimport[0m mammoth [36mfrom[0m [32m"mammoth"[0m;
+[31m[1m>[0m [90m5 |[0m [36mimport[0m pdfParse [36mfrom[0m [32m"pdf-parse"[0m;
+  [90m  |[0m [31m[1m^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^[0m
+  [90m6 |[0m [36mimport[0m { parseResumeJson } [36mfrom[0m [32m"@/utils/resume-schema"[0m;
+  [90m7 |[0m [36mimport[0m { [33mResumeSchema[0m } [36mfrom[0m [32m"@/utils/resume-schema"[0m;
+  [90m8 |[0m
+
+The export default was not found in module [project]/node_modules/pdf-parse/dist/pdf-parse/esm/index.js [app-route] (ecmascript).
+Did you mean to import Rectangle?
+All exports of the module are statically known (It doesn't have dynamic exports). So it's known statically that the requested export doesn't exist.
+
+
+    at <unknown> (./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx:22:612)
+    at <unknown> (./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx:27:238)
+    at <unknown> (./src/app/(marketing)/resume-builder/template-components/tech-mono.tsx:27:625)
+    at <unknown> (./src/app/api/import/route.ts:5:1)

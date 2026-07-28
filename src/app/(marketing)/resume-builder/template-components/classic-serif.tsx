@@ -2,26 +2,30 @@
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
 
 export function ClassicSerifPreview({ resume }: { resume: Resume }) {
-  const p = "#1e3a8a", t = "#1f2937", m = "#6b7280", b = "#d1d5db";
+  const navy = "#1e3a8a", ink = "#1f2937", muted = "#4b5563", line = "#d1d5db";
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-6"><h2 className="text-sm font-bold uppercase tracking-[0.12em] mb-3 border-b pb-1.5" style={{ color: navy, borderColor: line }}><span className="inline-block w-3 h-3 rounded-full mr-2" style={{ backgroundColor: navy }} />{title}</h2>{children}</section>;
   return (
-    <div className="bg-white text-black rounded-lg shadow overflow-hidden" style={{ fontFamily: "'Playfair Display', 'Georgia', serif" }}>
-      <div className="p-8 space-y-5">
-        <div className="text-center pb-4" style={{ borderBottom: `1px solid ${b}` }}>
-          <h1 className="text-3xl font-bold tracking-wide" style={{ color: p }}>{resume.name || "Your Name"}</h1>
-          <p className="text-base italic mt-1" style={{ color: m }}>{resume.title || "Professional Title"}</p>
-          <div className="flex flex-wrap justify-center gap-x-4 mt-2 text-sm" style={{ color: m }}>{resume.email && <span>{resume.email}</span>}{resume.phone && <span>{resume.phone}</span>}{resume.address && <span>{resume.address}</span>}</div>
-          {resume.social && <div className="mt-2"><SocialLinks social={resume.social} color={m} size="xs" /></div>}
+    <div className="bg-white text-black rounded-lg shadow-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
+      <main className="p-8">
+        <header className="text-center pb-6 mb-6 border-b-2 border-t-2 pt-4" style={{ borderColor: navy }}>
+          <h1 className="text-4xl font-bold tracking-wide" style={{ color: navy }}>{resume.name || "Your Name"}</h1>
+          <p className="text-lg italic mt-2" style={{ color: muted }}>{resume.title || "Professional Title"}</p>
+          <div className="flex flex-wrap justify-center gap-x-4 mt-3 text-sm" style={{ color: muted }}>{resume.email && <span>{resume.email}</span>}| {resume.phone && <span>{resume.phone}</span>}| {resume.address && <span>{resume.address}</span>}{resume.pronouns && <span>| {resume.pronouns}</span>}</div>
+          {resume.social && <div className="mt-2"><SocialLinks social={resume.social} color={muted} size="sm" /></div>}
+        </header>
+        {resume.summary && <Section title="Professional Summary"><FormattedDescription text={resume.summary} color={ink} mutedColor={muted} size="sm" /></Section>}
+        {resume.experience.length > 0 && <Section title="Professional Experience">{resume.experience.map(exp => <article key={exp.id} className="mb-4"><div className="flex justify-between items-baseline gap-3"><h3 className="text-lg font-bold" style={{ color: ink }}>{exp.position}</h3><span className="shrink-0 text-sm italic" style={{ color: muted }}>{exp.duration}</span></div><p className="text-base italic" style={{ color: navy }}>{exp.company}{exp.location && `, ${exp.location}`}</p>{exp.description && <div className="mt-1 pl-4 border-l-2" style={{ borderColor: `${navy}30` }}><FormattedDescription text={exp.description} color={ink} mutedColor={muted} /></div>}</article>)}</Section>}
+        <div className="grid grid-cols-2 gap-8">
+          <div>{resume.education.length > 0 && <Section title="Education">{resume.education.map(edu => <article key={edu.id} className="mb-3"><h3 className="text-base font-bold" style={{ color: navy }}>{edu.school}</h3><p className="text-sm">{edu.degree}{edu.field && `, ${edu.field}`}</p><p className="text-sm italic" style={{ color: muted }}>{edu.year}</p></article>)}</Section>}</div>
+          <div>{resume.skills.length > 0 && <Section title="Areas of Expertise">{resume.skills.map(s => <p key={s.id} className="text-sm mb-1">→ {s.name}</p>)}</Section>}</div>
         </div>
-        {resume.summary && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Summary</p><div className="pl-4 italic leading-relaxed" style={{ borderLeft: `2px solid ${p}30`, color: t }}><FormattedDescription text={resume.summary} color={p} mutedColor={t} /></div></div>}
-        {resume.experience.length > 0 && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Professional Experience</p>{resume.experience.slice(0, 3).map(exp => (<div key={exp.id} className="mb-2"><div className="flex justify-between items-baseline"><span className="text-base font-semibold" style={{ color: t }}>{exp.position}</span><span className="text-xs italic" style={{ color: m }}>{exp.duration}</span></div><p className="text-sm italic" style={{ color: m }}>{exp.company}{exp.location ? ` — ${exp.location}` : ""}</p>{exp.description && <FormattedDescription text={exp.description} color={p} mutedColor={m} />}</div>))}</div>}
-        {resume.education.length > 0 && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Education</p>{resume.education.slice(0, 2).map(edu => (<div key={edu.id} className="mb-1"><span className="text-base font-semibold" style={{ color: t }}>{edu.school}</span><span className="text-sm ml-2" style={{ color: m }}>— {edu.degree}{edu.field ? `, ${edu.field}` : ""}{edu.year ? ` (${edu.year})` : ""}</span></div>))}</div>}
-        {resume.skills.length > 0 && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Areas of Expertise</p><div className="flex flex-wrap gap-x-4 gap-y-1">{resume.skills.slice(0, 10).map(s => (<span key={s.id} className="text-sm" style={{ color: t }}>{s.name}{s.category && <span className="text-xs ml-1" style={{ color: m }}>({s.category})</span>}{s.level && s.level !== "Intermediate" && <span className="text-xs ml-1" style={{ color: m }}>· {s.level}</span>}{s.years && <span className="text-xs ml-1" style={{ color: m }}>· {s.years}y</span>}</span>))}</div></div>}
-        {resume.projects.length > 0 && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Selected Projects</p>{resume.projects.slice(0, 3).map(proj => (<div key={proj.id} className="mb-2"><span className="text-base font-semibold" style={{ color: t }}>{proj.name}</span><span className="text-sm ml-2" style={{ color: m }}>— {proj.tech}</span>{proj.description && <FormattedDescription text={proj.description} color={p} mutedColor={m} />}</div>))}</div>}
-        {resume.certifications.length > 0 && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Certifications</p>{resume.certifications.slice(0, 2).map(c => (<p key={c.id} className="text-sm" style={{ color: t }}><span className="font-semibold">{c.name}</span>{c.issuer && <span className="text-sm ml-1" style={{ color: m }}>— {c.issuer}</span>}</p>))}</div>}
-        {resume.languages.length > 0 && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Languages</p><div className="flex gap-3">{resume.languages.slice(0, 4).map(l => (<span key={l.id} className="text-sm" style={{ color: t }}>{l.name}<span className="text-xs ml-1" style={{ color: m }}>({l.proficiency})</span></span>))}</div></div>}
-        {resume.interests.length > 0 && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Interests</p><p className="text-sm italic" style={{ color: m }}>{resume.interests.slice(0, 5).map(i => i.name).join(", ")}</p></div>}
-        {resume.achievements.length > 0 && <div><p className="text-xs font-bold uppercase tracking-[0.15em] mb-2" style={{ color: p }}>Achievements</p>{resume.achievements.slice(0, 3).map(a => <p key={a.id} className="text-sm" style={{ color: t }}>— {a.description}</p>)}</div>}
-      </div>
+        {resume.projects.length > 0 && <Section title="Selected Projects">{resume.projects.map(p => <article key={p.id} className="mb-3"><h3 className="text-base font-bold" style={{ color: ink }}>{p.name}</h3><p className="text-sm italic" style={{ color: muted }}>{p.role} | {p.tech}</p>{p.description && <FormattedDescription text={p.description} color={ink} mutedColor={muted} />}</article>)}</Section>}
+        <div className="grid grid-cols-2 gap-8">
+          <div>{resume.certifications.length > 0 && <Section title="Certifications">{resume.certifications.map(c => <p key={c.id} className="text-sm mb-1">→ {c.name}</p>)}</Section>}</div>
+          <div>{resume.achievements.length > 0 && <Section title="Honors">{resume.achievements.map(a => <p key={a.id} className="text-sm mb-1">→ {a.description}</p>)}</Section>}</div>
+        </div>
+        <div className="mt-6 text-sm text-center" style={{ color: muted }}>{resume.languages.length > 0 && <p className="mb-1">Languages: {resume.languages.map(l => `${l.name} (${l.proficiency})`).join(", ")}</p>}{resume.interests.length > 0 && <p>Interests: {resume.interests.map(i => i.name).join(", ")}</p>}</div>
+      </main>
     </div>
   );
 }
