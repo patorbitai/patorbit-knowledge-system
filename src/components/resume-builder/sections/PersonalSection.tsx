@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
@@ -8,7 +8,8 @@ import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
 import { AIActionButton, AIActionDropdown } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
-import { generateSummary } from "@/lib/ai/resume-ai";
+import { generateSummary, grammarCorrect } from "@/lib/ai/resume-ai";
+import { useValidation } from "../hooks/useValidation";
 
 export function PersonalSection() {
   const resume = useResumeBuilder((s) => s.resume);
@@ -16,6 +17,7 @@ export function PersonalSection() {
   const updateSocial = useResumeBuilder((s) => s.updateSocial);
   const setAIAction = useResumeBuilder((s) => s.setAIAction);
   const aiActions = useResumeBuilder((s) => s.aiActions);
+  const { touch, getFieldError } = useValidation();
 
   const [collapsed, setCollapsed] = useState(false);
   const [summarySuggestion, setSummarySuggestion] = useState<string | null>(null);
@@ -66,6 +68,8 @@ export function PersonalSection() {
               placeholder="Alex Johnson"
               value={resume.name}
               onChange={(v) => updateField("name", v)}
+              onBlur={() => touch("personal.name")}
+              error={getFieldError("personal", "name")}
               type="text"
             />
           </motion.div>
@@ -87,6 +91,8 @@ export function PersonalSection() {
             placeholder="alex@example.com"
             value={resume.email}
             onChange={(v) => updateField("email", v)}
+            onBlur={() => touch("personal.email")}
+            error={getFieldError("personal", "email")}
             type="email"
           />
           <FieldInput
@@ -94,6 +100,8 @@ export function PersonalSection() {
             placeholder="+1 (555) 123-4567"
             value={resume.phone}
             onChange={(v) => updateField("phone", v)}
+            onBlur={() => touch("personal.phone")}
+            error={getFieldError("personal", "phone")}
             type="tel"
           />
           <FieldInput
@@ -129,15 +137,14 @@ export function PersonalSection() {
                   label="Improve Tone"
                   onClick={async () => {
                     setAIAction("summary-tone", { status: "loading", result: null, error: null });
-                    // Mock: enhance tone
-                    const enhanced = resume.summary
-                      .replace(/I think /gi, "")
-                      .replace(/ sort of /gi, " ")
-                      .replace(/ basically /gi, " ")
-                      .replace(/\. /g, ". "); // placeholder for real AI
-                    await new Promise((r) => setTimeout(r, 300));
-                    setToneSuggestion(enhanced);
-                    setAIAction("summary-tone", { status: "success", result: enhanced, error: null });
+                    try {
+                      const result = await grammarCorrect(resume.summary);
+                      const enhanced = result.corrected;
+                      setToneSuggestion(enhanced);
+                      setAIAction("summary-tone", { status: "success", result: enhanced, error: null });
+                    } catch (err: any) {
+                      setAIAction("summary-tone", { status: "error", result: null, error: err.message });
+                    }
                   }}
                   isLoading={aiActions["summary-tone"]?.status === "loading"}
                   variant="ghost"

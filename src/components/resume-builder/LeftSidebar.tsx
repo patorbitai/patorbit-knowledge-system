@@ -1,7 +1,7 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { clsx } from "clsx";
+import { useState, useEffect } from "react";
 import {
   User,
   Briefcase,
@@ -14,6 +14,8 @@ import {
   Link2,
   Eye,
   ChevronRight,
+  Upload,
+  Layout,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ProgressIndicator } from "./ProgressIndicator";
@@ -32,7 +34,41 @@ const sections: Array<{ id: SectionId; label: string; Icon: React.ComponentType<
   { id: "review", label: "Review & Preview", Icon: Eye, color: "#6366f1" },
 ];
 
+function ImportButton() {
+  const setResume = useResumeBuilder((s) => s.setResume);
+  const [importing, setImporting] = useState(false);
+
+  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImporting(true);
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      const res = await fetch("/api/import", { method: "POST", body: formData });
+      if (!res.ok) throw new Error((await res.json()).error || "Import failed");
+      const data = await res.json();
+      setResume(data);
+    } catch (err: any) {
+      alert("Import failed: " + err.message);
+    } finally {
+      setImporting(false);
+      e.target.value = "";
+    }
+  };
+
+  return (
+    <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer text-[10px] font-medium text-slate-500 hover:text-slate-300 hover:bg-white/[0.04] transition-all">
+      <Upload className="w-3 h-3" />
+      <span>{importing ? "Importing..." : "Import Resume"}</span>
+      <input type="file" accept=".json,.pdf,.docx" onChange={handleImport} className="hidden" disabled={importing} />
+    </label>
+  );
+}
+
 export function LeftSidebar() {
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => { setHydrated(true); }, []);
   const activeSection = useResumeBuilder((s) => s.activeSection);
   const setActiveSection = useResumeBuilder((s) => s.setActiveSection);
   const sectionComplete = useResumeBuilder((s) => s.sectionComplete);
@@ -44,13 +80,13 @@ export function LeftSidebar() {
       <div className="px-4 py-4 border-b border-white/[0.06] space-y-3">
         <ProgressIndicator
           title="Resume Completion"
-          value={progress()}
+          value={hydrated ? progress() : 0}
           color="#22d3ee"
         />
         <div className="flex items-center justify-between text-[10px]">
           <span className="text-slate-500">Sections complete</span>
           <span className="text-slate-300 font-medium">
-            {sections.filter((s) => s.id !== "review" && sectionComplete(s.id)).length} / 9
+            {hydrated ? sections.filter((s) => s.id !== "review" && sectionComplete(s.id)).length : 0} / 9
           </span>
         </div>
       </div>
@@ -76,9 +112,9 @@ export function LeftSidebar() {
               <div className={clsx(
                 "relative flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200",
                 isActive ? "bg-blue-500/15" : "bg-white/[0.04] group-hover:bg-white/[0.08]",
-              )}>
+              )} >
                 <Icon className={clsx("w-3.5 h-3.5", isActive ? "text-white" : "text-slate-500")} />
-                {isComplete && (
+                {hydrated && isComplete && (
                   <div
                     className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#080C18]"
                     style={{ backgroundColor: color }}
@@ -87,7 +123,7 @@ export function LeftSidebar() {
               </div>
               <span className="flex-1">{label}</span>
               {isActive && <ChevronRight className="w-3 h-3 text-blue-400" />}
-              {isComplete && (
+              {hydrated && isComplete && (
                 <span
                   className="w-1.5 h-1.5 rounded-full"
                   style={{ backgroundColor: color }}
@@ -99,11 +135,12 @@ export function LeftSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-white/[0.06]">
+      <div className="px-4 py-3 border-t border-white/[0.06] space-y-1.5">
         <div className="flex items-center gap-2 text-[10px] text-slate-600">
           <div className="h-1 w-1 rounded-full bg-emerald-500 shadow-[0_0_4px] shadow-emerald-500/50" />
           Auto-saving enabled
         </div>
+        <ImportButton />
       </div>
     </aside>
   );

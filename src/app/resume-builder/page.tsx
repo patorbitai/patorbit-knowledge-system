@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useState } from "react";
 import Link from "next/link";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
@@ -8,8 +8,9 @@ import { useResumeBuilder, defaultResume } from "@/store/resume-builder";
 import { analyzeResume } from "@/lib/ai/resume-ai";
 import { LeftSidebar, CenterWorkspace, RightCopilot } from "@/components/resume-builder";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
-import { Sparkles, ChevronDown, Eye, Settings } from "lucide-react";
-import { motion } from "framer-motion";
+import { SettingsModal } from "@/components/resume-builder/SettingsModal";
+import { ExportModal } from "@/components/resume-builder/ExportModal";
+import { Eye, Settings, Download, User } from "lucide-react";
 
 function debounce<F extends (...args: any[]) => any>(fn: F, delay: number) {
   let timeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -19,9 +20,11 @@ function debounce<F extends (...args: any[]) => any>(fn: F, delay: number) {
   };
 }
 
-/* ── App Header (Issue 1, 4) ── */
+/* ── App Header ── */
 function AppHeader() {
   const resume = useResumeBuilder((s) => s.resume);
+  const [showSettings, setShowSettings] = useState(false);
+  const [showExport, setShowExport] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 h-12 bg-[#070911]/90 backdrop-blur-xl border-b border-white/[0.06]">
@@ -36,18 +39,18 @@ function AppHeader() {
           </Link>
           <div className="h-3 w-px bg-white/[0.08]" />
           <span className="text-xs font-medium text-slate-400">Resume Builder</span>
-        </div>
 
-        {/* Right: Status + Actions */}
-        <div className="flex items-center gap-2">
-          <SaveStatusIndicator />
-
-          {/* Resume name (quick inline edit area) */}
+          {/* Resume name inline */}
           {resume.name && (
-            <div className="hidden sm:flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.04] border border-white/[0.06]">
+            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.04] border border-white/[0.06] ml-2">
               <span className="text-[11px] text-slate-400 max-w-[120px] truncate">{resume.name}</span>
             </div>
           )}
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-2">
+          <SaveStatusIndicator />
 
           <div className="h-3 w-px bg-white/[0.08]" />
 
@@ -59,11 +62,28 @@ function AppHeader() {
             <span className="hidden sm:inline">Preview</span>
           </Link>
 
-          <button className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all">
+          <button
+            onClick={() => setShowExport(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
+
+          <button
+            onClick={() => setShowSettings(true)}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+          >
             <Settings className="w-3.5 h-3.5" />
+          </button>
+
+          <button className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all">
+            <User className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
+      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
+      <ExportModal open={showExport} onClose={() => setShowExport(false)} />
     </header>
   );
 }

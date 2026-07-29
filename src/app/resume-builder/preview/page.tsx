@@ -3,12 +3,11 @@
 import { useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ResumePreview, getActiveTemplate } from "@/components/resume/ResumePreview";
-import { AnalysisScore } from "@/components/resume-builder/AnalysisScore";
-import { ProgressIndicator } from "@/components/resume-builder/ProgressIndicator";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
-import { ArrowLeft, FileText, IdCard, Share2, Shield, TrendingUp } from "lucide-react";
+import { ArrowLeft, FileText, IdCard, Share2, Shield, TrendingUp, Layout, Check } from "lucide-react";
 import Link from "next/link";
 import { clsx } from "clsx";
+import { TEMPLATES } from "@/app/resume-builder/templates";
 
 const tabs = [
   { id: "resume" as const, label: "Resume", icon: FileText },
@@ -19,9 +18,11 @@ const tabs = [
 
 export default function PreviewPage() {
   const resume = useResumeBuilder((s) => s.resume);
+  const applyTemplate = useResumeBuilder((s) => s.applyTemplate);
   const analysis = useResumeBuilder((s) => s.analysis);
   const resumeScore = useResumeBuilder((s) => s.resumeScore);
   const [activeTab, setActiveTab] = useState<typeof tabs[number]["id"]>("resume");
+  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
   const template = getActiveTemplate(resume);
 
   return (
@@ -42,8 +43,32 @@ export default function PreviewPage() {
             </div>
             <div className="flex items-center gap-3">
               <SaveStatusIndicator />
-              <div className="flex items-center gap-2">
-                <AnalysisScore label="Score" score={analysis?.resumeScore ?? resumeScore()} size="sm" />
+
+              <div className="relative">
+                <button
+                  onClick={() => setShowTemplatePicker(!showTemplatePicker)}
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                >
+                  <Layout className="w-3.5 h-3.5" />
+                  <span>{template.name}</span>
+                </button>
+                {showTemplatePicker && (
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-[#1A1F35] border border-white/[0.08] rounded-lg shadow-2xl z-10 p-1">
+                    {TEMPLATES.map(t => (
+                      <button
+                        key={t.id}
+                        onClick={() => { applyTemplate(t.id); setShowTemplatePicker(false); }}
+                        className={clsx(
+                          "w-full text-left flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors",
+                          t.id === resume.templateId ? "bg-blue-500/10 text-white" : "text-slate-400 hover:bg-white/[0.04]"
+                        )}
+                      >
+                        <span>{t.name}</span>
+                        {t.id === resume.templateId && <Check className="w-3.5 h-3.5" />}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -67,7 +92,6 @@ export default function PreviewPage() {
         {activeTab === "passport" && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2"><PreviewPanel><PassportPreview resume={resume} /></PreviewPanel></div>
-            <div className="space-y-4"><PassportScoreCard analysis={analysis} /></div>
           </div>
         )}
         {activeTab === "knowledge-graph" && <PreviewPanel><Placeholder icon={Share2} title="Knowledge Graph" desc="Visualize your skills, experience, and professional connections as an interactive graph." /></PreviewPanel>}
@@ -140,20 +164,6 @@ function PassportPreview({ resume }: { resume: any }) {
             </div>
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function PassportScoreCard({ analysis }: { analysis: any }) {
-  return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-4">
-      <h3 className="text-xs font-semibold text-white">Passport Health</h3>
-      <AnalysisScore label="Trust Score" score={analysis?.trustScore ?? 0} size="lg" />
-      <div className="space-y-2">
-        <ProgressIndicator title="Identity Verification" value={analysis?.trustScore ?? 0} color="#8b5cf6" size="sm" />
-        <ProgressIndicator title="Credential Verification" value={analysis?.trustScore ? Math.max(0, analysis.trustScore - 10) : 0} color="#22d3ee" size="sm" />
-        <ProgressIndicator title="Social Proof" value={analysis?.professionalImpact ?? 0} color="#10b981" size="sm" />
       </div>
     </div>
   );
