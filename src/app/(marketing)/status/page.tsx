@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { motion } from "framer-motion";
 
 export default function StatusPage() {
@@ -40,8 +41,13 @@ export default function StatusPage() {
           </div>
 
           <div className="mt-12 rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center">
-            <h2 className="text-xl font-semibold text-white mb-3">Past Incidents</h2>
-            <p className="text-sm text-slate-500">No major incidents in the past 90 days.</p>
+            <h2 className="text-xl font-semibold text-white mb-3">Subscribe to Updates</h2>
+            <p className="text-sm text-slate-500 mb-6">Get notified of any incidents or maintenance windows.</p>
+            <div className="flex justify-center">
+              <Link href="/contact" className="group inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-6 py-3 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100">
+                Subscribe
+              </Link>
+            </div>
           </div>
         </div>
       </section>

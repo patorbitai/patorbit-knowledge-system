@@ -67,6 +67,11 @@ const CertificationSchema = z.object({
   skills: z.string().default(""),
 });
 
+const LanguageSchema = z.object({ id: z.number().default(0), name: z.string().default(""), proficiency: z.string().default("Fluent") });
+const InterestSchema = z.object({ id: z.number().default(0), name: z.string().default("") });
+const AchievementSchema = z.object({ id: z.number().default(0), description: z.string().default("") });
+const ReferenceSchema = z.object({ id: z.number().default(0), name: z.string().default(""), company: z.string().default(""), position: z.string().default(""), email: z.string().default(""), phone: z.string().default("") });
+
 export const ResumeSchema = z.object({
   name: z.string().default(""),
   title: z.string().default(""),
@@ -82,6 +87,10 @@ export const ResumeSchema = z.object({
   skills: z.array(SkillSchema).default([]),
   projects: z.array(ProjectSchema).default([]),
   certifications: z.array(CertificationSchema).default([]),
+  languages: z.array(LanguageSchema).default([]),
+  interests: z.array(InterestSchema).default([]),
+  achievements: z.array(AchievementSchema).default([]),
+  references: z.array(ReferenceSchema).default([]),
   templateId: z.string().default("template-1"),
 });
 

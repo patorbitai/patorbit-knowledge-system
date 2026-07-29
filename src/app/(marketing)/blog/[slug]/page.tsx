@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function BlogPostPage() {
@@ -41,6 +43,35 @@ export default function BlogPostPage() {
               <p>The future of identity verification is decentralized, evidence-based, and user-controlled. As these technologies mature, we expect to see widespread adoption across industries from hiring and education to healthcare and finance.</p>
             </div>
           </motion.div>
+
+          {/* CTA */}
+          <div className="mt-16 text-center border-t border-white/10 pt-16">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl font-bold text-white mb-4">Enjoyed this article?</h2>
+              <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
+                Get the latest insights on digital trust, identity, and credential verification delivered to your inbox.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/blog"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition-all duration-150 hover:from-amber-400 hover:to-orange-500 hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-100"
+                >
+                  Read More
+                  <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                </Link>
+                <Link
+                  href="/contact"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+                >
+                  Subscribe
+                </Link>
+              </div>
+            </motion.div>
+          </div>
         </div>
       </article>
     </main>

@@ -260,20 +260,28 @@ export default function AboutPage() {
             viewport={{ once: true }}
           >
             <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
-              Ready to build trust through evidence?
+              Want to learn more about our mission?
             </h2>
             <p className="text-slate-400 text-lg mb-8">
-              Join the platform that&apos;s redefining how careers are verified.
+              We&apos;re building the infrastructure for digital trust — one verified claim at a time.
             </p>
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 transition-all"
-            >
-              Get Started
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </svg>
-            </Link>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 transition-all"
+              >
+                Learn Our Story
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+              <Link
+                href="/contact"
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-8 py-3.5 text-base font-medium text-slate-300 hover:bg-slate-900 hover:border-slate-700 hover:text-white transition-all"
+              >
+                Contact Us
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>

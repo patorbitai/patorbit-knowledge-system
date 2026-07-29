@@ -1,16 +1,26 @@
-import Hero from "@/components/landing/Hero";
-import WhyPatorbit from "@/components/landing/WhyPatorbit";
-import CoreModel from "@/components/landing/CoreModel";
-import Products from "@/components/landing/Products";
-import CTA from "@/components/landing/CTA";
+import Hero from "@/components/marketing/Hero";
+import SocialProof from "@/components/marketing/SocialProof";
+import Problem from "@/components/marketing/Problem";
+import HowItWorks from "@/components/marketing/HowItWorks";
+import FeatureGrid from "@/components/marketing/FeatureGrid";
+import TrustScoreDemo from "@/components/marketing/TrustScoreDemo";
+import ProfessionalPassport from "@/components/marketing/ProfessionalPassport";
+import WhyPatorbit from "@/components/marketing/WhyPatorbit";
+import ComparisonTable from "@/components/marketing/ComparisonTable";
+import CTA from "@/components/marketing/CTA";
 
 export default function Home() {
   return (
-    <main className="bg-slate-950 text-white">
+    <main className="bg-[#070B14] text-white">
       <Hero />
+      <SocialProof />
+      <Problem />
+      <HowItWorks />
+      <FeatureGrid />
+      <TrustScoreDemo />
+      <ProfessionalPassport />
       <WhyPatorbit />
-      <CoreModel />
-      <Products />
+      <ComparisonTable />
       <CTA />
     </main>
   );

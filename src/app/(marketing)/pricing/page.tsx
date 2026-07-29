@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 const plans = [
@@ -61,6 +63,29 @@ export default function PricingPage() {
                 </div>
               </motion.div>
             ))}
+          </div>
+
+          {/* Bottom CTA */}
+          <div className="mt-20 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">Choose Your Plan</h2>
+              <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
+                Start free and upgrade as your credential needs grow.
+              </p>
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                <Link
+                  href="/resume-builder"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all duration-150 hover:from-emerald-400 hover:to-green-500 hover:shadow-emerald-400/30 hover:scale-[1.02] active:scale-100"
+                >
+                  Start Free
+                  <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                </Link>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
