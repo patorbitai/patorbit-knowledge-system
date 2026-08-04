@@ -325,6 +325,16 @@ export interface TrustScoreComponent {
   potentialGain?: number;
 }
 
+/**
+ * A cached trust score snapshot — the output of `TrustService.calculateTrustScore()`.
+ * Derived from the graph, never canonical. Stored only as a presentation cache for the UI.
+ */
+export interface TrustSnapshot {
+  overall: number | null;
+  components: TrustScoreComponent[];
+  calculatedAt: string;
+}
+
 /** The overall Trust Score for the graph or a specific domain. */
 export interface TrustScoreNode extends GraphNode {
   type: "trust-score";

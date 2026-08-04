@@ -15,6 +15,7 @@ import type {
   EvidenceStatus,
   EvidenceVisibility,
 } from "@/types/resume";
+import type { TrustSnapshot } from "@/types/knowledge-graph";
 import { hasSufficientData } from "@/types/resume";
 import { ai } from "@/lib/ai/client";
 import { TEMPLATES } from "@/app/resume-builder/templates";
@@ -49,6 +50,10 @@ export interface ResumeBuilderState {
   suggestedClaims: SuggestedClaim[];
   /** Evidence attached to accepted claims (Slice 2). */
   evidence: Evidence[];
+  /** Trust score snapshot, derived from the graph, for UI presentation. */
+  trustScore: TrustSnapshot | null;
+  /** Set the trust score snapshot. Called by the coordinator. */
+  setTrustScore: (score: TrustSnapshot | null) => void;
   /** Add a new evidence record to an accepted claim. */
   addEvidence: (evidence: Evidence) => void;
   /** Update a persisted evidence record (e.g. status change, notes edit). */
@@ -139,6 +144,8 @@ const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
         suggestedClaims: [],
         evidence: [],
+        trustScore: null,
+        setTrustScore: (score) => set({ trustScore: score }),
         setResume: (resume) => set({ resume, saveStatus: "unsaved" }),
         updateField: (key, value) => set((s) => ({ resume: { ...s.resume, [key]: value }, saveStatus: "unsaved" })),
         updateSocial: (key, value) => set((s) => ({ resume: { ...s.resume, social: { ...s.resume.social, [key]: value } }, saveStatus: "unsaved" })),
