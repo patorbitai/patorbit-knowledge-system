@@ -159,6 +159,7 @@ function createMinimalResume(name: string = "Test User"): Resume {
     ],
     templateId: "modern-clean",
     careerStage: "working-professional",
+    claims: [],
   };
 }
 
@@ -251,6 +252,7 @@ describe("GraphMapper", () => {
       portfolio: [],
       templateId: "modern-clean",
       careerStage: "working-professional",
+      claims: [],
     };
 
     const graph = resumeToGraph(emptyResume);
@@ -372,6 +374,7 @@ describe("GraphMapper", () => {
       portfolio: [],
       templateId: "modern-clean",
       careerStage: "working-professional",
+      claims: [],
     };
 
     const graph = resumeToGraph(emptyResume);
@@ -464,4 +467,15 @@ describe("GraphMapper", () => {
     const graph = resumeToGraph(resume);
     expect(graph.profile.type).toBe("profile");
   });
-})
+
+  // ---------------------
+  // 10. graphToResume handles ACCOMPLISHED edges (achievement-to-role)
+  // ---------------------
+  it("graphToResume should process ACCOMPLISHED edges into bulletPoints", () => {
+    const resume = createMinimalResume();
+    const graph = resumeToGraph(resume);
+    const result = graphToResume(graph);
+    expect(result.experience).toHaveLength(1);
+    expect(Array.isArray(result.experience[0].bulletPoints)).toBe(true);
+  });
+});

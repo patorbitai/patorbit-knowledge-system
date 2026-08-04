@@ -11,7 +11,7 @@
  * @/types/resume. Only this module imports both.
  */
 
-import type { Resume } from "@/types/resume";
+import type { Resume, Evidence, ClaimType, ClaimVerificationStatus } from "@/types/resume";
 import type {
   KnowledgeGraph,
   ProfileNode,
@@ -26,6 +26,9 @@ import type {
   InterestNode,
   ReferenceNode,
   PortfolioNode,
+  ClaimNode,
+  EvidenceNode,
+  SourceNode,
 } from "@/types/knowledge-graph";
 
 // -----------------------------------------------------------------------
@@ -33,7 +36,11 @@ import type {
 // -----------------------------------------------------------------------
 
 /** Seed a KnowledgeGraph from a flat Resume object. */
-export function resumeToGraph(resume: Resume, source: string = "user-input"): KnowledgeGraph {
+export function resumeToGraph(
+  resume: Resume,
+  source: string = "user-input",
+  evidence: Evidence[] = [],
+): KnowledgeGraph {
   const now = new Date().toISOString();
   const profileId = `profile_${Date.now()}`;
 
@@ -209,6 +216,60 @@ export function resumeToGraph(resume: Resume, source: string = "user-input"): Kn
     addEdge(profileId, poid, "HAS_PORTFOLIO");
   }
 
+  // Claims → ClaimNodes (only accepted claims; no claim is created automatically)
+  for (const claim of resume.claims) {
+    if (!claim.accepted) continue;
+
+    const claimId = claim.id || `claim_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+    const claimNode: ClaimNode = {
+      id: claimId,
+      type: "claim",
+      label: claim.assertionText,
+      assertion: claim.assertionText,
+      // Map the resume claimType to the graph claimType taxonomy.
+      claimType: mapClaimType(claim.claimType),
+      hasMetric: false,
+      confidence: claim.confidence,
+      verificationStatus: mapVerificationStatus(claim.verificationStatus),
+      lastUpdated: now,
+      source,
+    };
+    nodes.push(claimNode);
+    addEdge(profileId, claimId, "HAS_CLAIM");
+
+    // Evidence → EvidenceNodes, linked to the claim via SUPPORTED_BY.
+    const evidenceForClaim = (evidence ?? []).filter((e) => e.claimId === claimId);
+    for (const ev of evidenceForClaim) {
+      const evId = ev.id || `evidence_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+      const evidenceNode: EvidenceNode = {
+        id: evId,
+        type: "evidence",
+        label: ev.metadata.fileName || ev.metadata.linkTitle || ev.evidenceKind,
+        format: mapEvidenceFormat(ev.evidenceType),
+        location: ev.content,
+        description: ev.notes || undefined,
+        lastUpdated: now,
+        source,
+      };
+      nodes.push(evidenceNode);
+      addEdge(claimId, evId, "SUPPORTED_BY");
+
+      // Evidence → SourceNode via DERIVED_FROM (provenance).
+      const sourceNode: SourceNode = {
+        id: `src_${ev.id || evId}`,
+        type: "source",
+        label: ev.evidenceKind,
+        sourceType: "user-input",
+        importedAt: now,
+        isPrimary: true,
+        lastUpdated: now,
+        source,
+      };
+      nodes.push(sourceNode);
+      addEdge(evId, sourceNode.id, "DERIVED_FROM");
+    }
+  }
+
   return { profile, nodes, edges };
 }
 
@@ -344,6 +405,42 @@ export function graphToResume(graph: KnowledgeGraph): Resume {
     summary: p.summary, social: { ...p.social },
     experience, education, skills, projects, certifications,
     languages, interests, achievements, references, portfolio,
-    templateId: "modern-clean", careerStage: p.careerStage,
+    templateId: "modern-clean", careerStage: p.careerStage, claims: [],
   };
+}
+
+// -----------------------------------------------------------------------
+//  Type mappings (Resume domain → KnowledgeGraph taxonomy)
+// -----------------------------------------------------------------------
+
+function mapClaimType(type: ClaimType): ClaimNode["claimType"] {
+  switch (type) {
+    case "Employment": return "experience";
+    case "Education": return "education";
+    case "Certification": return "credential";
+    case "Project": return "achievement";
+    case "Skill": return "skill-proficiency";
+    case "Contribution": return "achievement";
+    default: return "responsibility";
+  }
+}
+
+function mapVerificationStatus(status: ClaimVerificationStatus): ClaimNode["verificationStatus"] {
+  switch (status) {
+    case "verified": return "verified";
+    case "under-review": return "pending";
+    case "disputed": return "disputed";
+    case "revoked": return "disputed";
+    case "expired": return "expired";
+    default: return "unverified";
+  }
+}
+
+function mapEvidenceFormat(format: Evidence["evidenceType"]): EvidenceNode["format"] {
+  switch (format) {
+    case "file": return "document";
+    case "document": return "document";
+    case "link": return "link";
+    default: return "artifact";
+  }
 }
