@@ -14,6 +14,7 @@ import { clsx } from "clsx";
 import { analyzeResume } from "@/lib/ai/resume-ai";
 import { AnalysisScore } from "../AnalysisScore";
 import { ProgressIndicator } from "../ProgressIndicator";
+import { useValidation } from "../hooks/useValidation";
 
 /* ====================================================================
  * ACHIEVEMENTS
@@ -23,6 +24,7 @@ export function AchievementsSection() {
   const addAchievement = useResumeBuilder((s) => s.addAchievement);
   const updateAchievement = useResumeBuilder((s) => s.updateAchievement);
   const removeAchievement = useResumeBuilder((s) => s.removeAchievement);
+  const { touch, getFieldError } = useValidation();
 
   return (
     <SectionCard
@@ -54,7 +56,7 @@ export function AchievementsSection() {
                   </span>
                   <div className="flex-1 min-w-0 space-y-3">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <FieldInput label="Title" placeholder="Employee of the Month" value={ach.title} onChange={(v) => updateAchievement(ach.id, "title", v)} />
+                      <FieldInput label="Title" placeholder="Employee of the Month" value={ach.title} onChange={(v) => updateAchievement(ach.id, "title", v)} onBlur={() => touch(`achievements.${idx}.title`)} error={getFieldError("achievements", "title", idx)} />
                       <FieldInput label="Issuer" placeholder="Company Name" value={ach.issuer} onChange={(v) => updateAchievement(ach.id, "issuer", v)} />
                       <FieldInput label="Date" placeholder="Jan 2024" value={ach.date} onChange={(v) => updateAchievement(ach.id, "date", v)} />
                     </div>
@@ -83,6 +85,7 @@ export function LanguagesSection() {
   const addLanguage = useResumeBuilder((s) => s.addLanguage);
   const updateLanguage = useResumeBuilder((s) => s.updateLanguage);
   const removeLanguage = useResumeBuilder((s) => s.removeLanguage);
+  const { touch, getFieldError } = useValidation();
 
   return (
     <SectionCard
@@ -99,7 +102,7 @@ export function LanguagesSection() {
           <EmptyState icon={<Globe className="w-8 h-8 text-slate-600" />} message="No languages added" submessage="Add languages to showcase your multilingual skills" action={() => addLanguage()} actionLabel="Add Language" />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {resume.languages.map((lang) => (
+            {resume.languages.map((lang, idx) => (
               <motion.div
                 key={lang.id}
                 layout
@@ -108,13 +111,17 @@ export function LanguagesSection() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-3.5 flex items-center gap-3"
               >
-                <input
-                  type="text"
-                  value={lang.name}
-                  onChange={(e) => updateLanguage(lang.id, "name", e.target.value)}
-                  placeholder="Language"
-                  className="flex-1 bg-transparent text-sm text-white font-medium placeholder:text-slate-600 outline-none"
-                />
+                <div className="flex-1 min-w-0">
+                  <input
+                    type="text"
+                    value={lang.name}
+                    onChange={(e) => updateLanguage(lang.id, "name", e.target.value)}
+                    onBlur={() => touch(`languages.${idx}.name`)}
+                    placeholder="Language"
+                    className={"w-full bg-transparent text-sm text-white font-medium placeholder:text-slate-600 outline-none " + (getFieldError("languages", "name", idx) ? "text-red-400" : "")}
+                  />
+                  {getFieldError("languages", "name", idx) && <p className="text-[11px] text-red-400 mt-1">{getFieldError("languages", "name", idx)}</p>}
+                </div>
                 <select
                   value={lang.proficiency}
                   onChange={(e) => updateLanguage(lang.id, "proficiency", e.target.value)}
@@ -144,6 +151,7 @@ export function PortfolioSection() {
   const addPortfolio = useResumeBuilder((s) => s.addPortfolio);
   const updatePortfolio = useResumeBuilder((s) => s.updatePortfolio);
   const removePortfolio = useResumeBuilder((s) => s.removePortfolio);
+  const { touch, getFieldError } = useValidation();
 
   return (
     <SectionCard
@@ -160,7 +168,7 @@ export function PortfolioSection() {
           <EmptyState icon={<Link2 className="w-8 h-8 text-slate-600" />} message="No portfolio items" submessage="Add links to your best work to impress employers" action={() => addPortfolio()} actionLabel="Add Portfolio Item" />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {resume.portfolio.map((item) => (
+            {resume.portfolio.map((item, idx) => (
               <motion.div
                 key={item.id}
                 layout
@@ -170,8 +178,8 @@ export function PortfolioSection() {
                 className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-4 space-y-3"
               >
                 <div className="grid grid-cols-1 gap-3">
-                  <FieldInput label="Title" placeholder="My Portfolio" value={item.title} onChange={(v) => updatePortfolio(item.id, "title", v)} />
-                  <FieldInput label="URL" placeholder="https://..." value={item.url} onChange={(v) => updatePortfolio(item.id, "url", v)} type="url" />
+                  <FieldInput label="Title" placeholder="My Portfolio" value={item.title} onChange={(v) => updatePortfolio(item.id, "title", v)} onBlur={() => touch(`portfolio.${idx}.title`)} error={getFieldError("portfolio", "title", idx)} />
+                  <FieldInput label="URL" placeholder="https://..." value={item.url} onChange={(v) => updatePortfolio(item.id, "url", v)} type="url" onBlur={() => touch(`portfolio.${idx}.url`)} error={getFieldError("portfolio", "url", idx)} />
                   <div>
                     <label className="text-[10px] font-medium text-slate-500 mb-1 block">Type</label>
                     <select
@@ -276,13 +284,13 @@ export function ReviewSection() {
               {/* Score Overview */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-4 text-center">
-                  <AnalysisScore label="Resume Score" score={analysis.resumeScore} size="lg" />
+                  <AnalysisScore label="Resume Score" score={analysis.resumeScore?.overall} size="lg" />
                 </div>
                 <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-4 text-center">
                   <AnalysisScore label="ATS Score" score={analysis.atsScore} size="lg" />
                 </div>
                 <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-4 text-center">
-                  <AnalysisScore label="Trust Score" score={analysis.trustScore} size="lg" />
+                  <AnalysisScore label="Trust Score" score={analysis.trustScore?.overall} size="lg" />
                 </div>
                 <div className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-4 text-center">
                   <AnalysisScore label="Professional Impact" score={analysis.professionalImpact} size="lg" />
@@ -290,11 +298,11 @@ export function ReviewSection() {
               </div>
 
               <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-                <ProgressIndicator title="Grammar" value={analysis.grammar} color="#10b981" />
-                <ProgressIndicator title="Readability" value={analysis.readability} color="#22d3ee" />
-                <ProgressIndicator title="Keyword Match" value={analysis.keywordMatch} color="#8b5cf6" />
+                <ProgressIndicator title="Grammar" value={analysis.resumeScore?.grammar} color="#10b981" />
+                <ProgressIndicator title="Readability" value={analysis.resumeScore?.readability} color="#22d3ee" />
+                <ProgressIndicator title="Keyword Match" value={analysis.resumeScore?.keywordMatch} color="#8b5cf6" />
                 <ProgressIndicator title="Completion" value={progress()} color="#f59e0b" />
-                <ProgressIndicator title="Trust Score" value={analysis.trustScore} color="#ef4444" />
+                <ProgressIndicator title="Trust Score" value={analysis.trustScore?.overall} color="#ef4444" />
               </div>
 
               {/* Issues */}

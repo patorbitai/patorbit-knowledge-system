@@ -1,8 +1,9 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Cloud, CloudOff, CloudLightning, Loader2 } from "lucide-react";
+import { Cloud, CloudOff, CloudLightning, Loader2, AlertCircle } from "lucide-react";
 import { clsx } from "clsx";
+import { useEffect, useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 
 const indicators = {
@@ -38,21 +39,73 @@ const indicators = {
     border: "border-blue-500/20",
     icon: CloudLightning,
   },
+  offline: {
+    text: "Offline",
+    subtext: "No internet connection",
+    color: "text-slate-400",
+    bg: "bg-slate-500/10",
+    border: "border-slate-500/20",
+    icon: CloudOff,
+  },
+  "sync-failed": {
+    text: "Sync Failed",
+    subtext: "Could not save changes",
+    color: "text-rose-400",
+    bg: "bg-rose-500/10",
+    border: "border-rose-500/20",
+    icon: AlertCircle,
+  },
 };
 
 export function SaveStatusIndicator() {
   const saveStatus = useResumeBuilder((s) => s.saveStatus);
-  const config = indicators[saveStatus];
+  const setSaveStatus = useResumeBuilder((s) => s.setSaveStatus);
+  const [isOnline, setIsOnline] = useState(true);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setIsOnline(navigator.onLine);
+    }
+
+    const handleOnline = () => {
+      setIsOnline(true);
+      if (saveStatus === "offline") {
+        setSaveStatus("unsaved"); // Trigger a re-sync
+      }
+    };
+    const handleOffline = () => {
+      setIsOnline(false);
+      setSaveStatus("offline");
+    };
+
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
+  }, [saveStatus, setSaveStatus]);
+
+  const currentStatus = isOnline ? saveStatus : "offline";
+  const config = indicators[currentStatus];
   const Icon = config.icon;
 
   return (
     <AnimatePresence mode="wait">
       <motion.div
-        key={saveStatus}
-        initial={{ opacity: 0, y: -4 }}
-        animate={{ opacity: 1, y: 0 }}
+        key={currentStatus}
+        initial={{ opacity: 0, y: currentStatus === "sync-failed" ? 0 : -4 }}
+        animate={{
+          opacity: 1,
+          y: 0,
+          x: currentStatus === "sync-failed" ? [-3, 3, -3, 3, 0] : 0,
+        }}
         exit={{ opacity: 0, y: 4 }}
-        transition={{ duration: 0.15 }}
+        transition={{
+          duration: currentStatus === "sync-failed" ? 0.3 : 0.15,
+          ease: "easeOut"
+        }}
         className={clsx(
           "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors",
           config.bg,

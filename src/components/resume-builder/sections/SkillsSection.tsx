@@ -10,6 +10,7 @@ import { suggestMissingSkills } from "@/lib/ai/resume-ai";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { Trash2, Plus, Sparkles, Filter } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useValidation } from "../hooks/useValidation";
 
 const levels = ["Beginner", "Intermediate", "Advanced", "Expert"] as const;
 
@@ -19,6 +20,7 @@ export function SkillsSection() {
   const updateSkill = useResumeBuilder((s) => s.updateSkill);
   const removeSkill = useResumeBuilder((s) => s.removeSkill);
   const updateField = useResumeBuilder((s) => s.updateField);
+  const { touch, getFieldError } = useValidation();
 
   const [suggestions, setSuggestions] = useState<string[] | null>(null);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
@@ -120,9 +122,11 @@ export function SkillsSection() {
                     type="text"
                     value={skill.name}
                     onChange={(e) => updateSkill(skill.id, "name", e.target.value)}
+                    onBlur={() => touch(`skills.${idx}.name`)}
                     placeholder="Skill name"
-                    className="w-full bg-transparent text-sm text-white font-medium placeholder:text-slate-600 outline-none"
+                    className={"w-full bg-transparent text-sm text-white font-medium placeholder:text-slate-600 outline-none " + (getFieldError("skills", "name", idx) ? "text-red-400" : "")}
                   />
+                  {getFieldError("skills", "name", idx) && <p className="text-[11px] text-red-400">{getFieldError("skills", "name", idx)}</p>}
                   <div className="flex gap-2">
                     <div className="flex-1">
                       <select

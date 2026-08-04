@@ -9,6 +9,7 @@ import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton } from "../AIActionButton";
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useValidation } from "../hooks/useValidation";
 
 export function CertificationsSection() {
   const resume = useResumeBuilder((s) => s.resume);
@@ -16,6 +17,7 @@ export function CertificationsSection() {
   const updateCertification = useResumeBuilder((s) => s.updateCertification);
   const removeCertification = useResumeBuilder((s) => s.removeCertification);
   const moveCertification = useResumeBuilder((s) => s.moveCertification);
+  const { touch, getFieldError } = useValidation();
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const toggleExpand = (id: string) => {
@@ -100,7 +102,7 @@ export function CertificationsSection() {
                       >
                         <div className="px-4 py-4 space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput label="Certification Name" placeholder="AWS Solutions Architect" value={cert.name} onChange={(v) => updateCertification(cert.id, "name", v)} />
+                            <FieldInput label="Certification Name" placeholder="AWS Solutions Architect" value={cert.name} onChange={(v) => updateCertification(cert.id, "name", v)} onBlur={() => touch(`certifications.${idx}.name`)} error={getFieldError("certifications", "name", idx)} />
                             <FieldInput label="Issuer" placeholder="Amazon Web Services" value={cert.issuer} onChange={(v) => updateCertification(cert.id, "issuer", v)} />
                             <FieldInput label="Date" placeholder="Jan 2024" value={cert.date} onChange={(v) => updateCertification(cert.id, "date", v)} />
                             <FieldInput label="Expiry Date" placeholder="Jan 2027" value={cert.expiryDate} onChange={(v) => updateCertification(cert.id, "expiryDate", v)} />

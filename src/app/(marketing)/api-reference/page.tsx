@@ -28,7 +28,7 @@ export default function ApiReferencePage() {
           <div className="space-y-3">
             {endpoints.map((ep, i) => (
               <motion.div
-                key={ep.path}
+                key={`${ep.method}-${ep.path}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: i * 0.05 }}

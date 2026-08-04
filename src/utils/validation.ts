@@ -29,6 +29,16 @@ export const SECTION_RULES: Record<string, Record<string, string>> = {
   certifications: {
     name: "Certification name is required",
   },
+  achievements: {
+    title: "Achievement title is required",
+  },
+  languages: {
+    name: "Language is required",
+  },
+  portfolio: {
+    title: "Portfolio item title is required",
+    url: "Portfolio item URL is required",
+  },
 };
 
 /* ── Helpers ── */
@@ -161,4 +171,7 @@ export const REQUIRED_FIELDS: Record<string, string[]> = {
   skills: ["name"],
   projects: ["name"],
   certifications: ["name"],
+  achievements: ["title"],
+  languages: ["name"],
+  portfolio: ["title", "url"],
 };

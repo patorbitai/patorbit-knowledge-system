@@ -9,6 +9,7 @@ import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton } from "../AIActionButton";
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useValidation } from "../hooks/useValidation";
 
 export function EducationSection() {
   const resume = useResumeBuilder((s) => s.resume);
@@ -16,6 +17,7 @@ export function EducationSection() {
   const updateEducation = useResumeBuilder((s) => s.updateEducation);
   const removeEducation = useResumeBuilder((s) => s.removeEducation);
   const moveEducation = useResumeBuilder((s) => s.moveEducation);
+  const { touch, getFieldError } = useValidation();
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const toggleExpand = (id: string) => {
@@ -99,8 +101,8 @@ export function EducationSection() {
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-white/[0.06]">
                         <div className="px-4 py-4 space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput label="School / University" placeholder="Stanford University" value={edu.school} onChange={(v) => updateEducation(edu.id, "school", v)} />
-                            <FieldInput label="Degree" placeholder="Bachelor of Science" value={edu.degree} onChange={(v) => updateEducation(edu.id, "degree", v)} />
+                            <FieldInput label="School / University" placeholder="Stanford University" value={edu.school} onChange={(v) => updateEducation(edu.id, "school", v)} onBlur={() => touch(`education.${idx}.school`)} error={getFieldError("education", "school", idx)} />
+                            <FieldInput label="Degree" placeholder="Bachelor of Science" value={edu.degree} onChange={(v) => updateEducation(edu.id, "degree", v)} onBlur={() => touch(`education.${idx}.degree`)} error={getFieldError("education", "degree", idx)} />
                             <FieldInput label="Field of Study" placeholder="Computer Science" value={edu.field} onChange={(v) => updateEducation(edu.id, "field", v)} />
                             <FieldInput label="Year" placeholder="2020" value={edu.year} onChange={(v) => updateEducation(edu.id, "year", v)} />
                             <FieldInput label="GPA" placeholder="3.8 / 4.0" value={edu.gpa} onChange={(v) => updateEducation(edu.id, "gpa", v)} />

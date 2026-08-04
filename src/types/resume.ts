@@ -110,6 +110,16 @@ export interface Portfolio {
   type: "github" | "website" | "dribbble" | "figma" | "other";
 }
 
+export type CareerStage = "student" | "recent-graduate" | "working-professional" | "manager" | "freelancer";
+
+export const CAREER_STAGES: { value: CareerStage; label: string; description: string }[] = [
+  { value: "student", label: "Student", description: "Currently enrolled in an academic program" },
+  { value: "recent-graduate", label: "Recent Graduate", description: "Graduated within the last 2 years" },
+  { value: "working-professional", label: "Working Professional", description: "Employed with 2+ years of experience" },
+  { value: "manager", label: "Manager / Leader", description: "Leading teams or organizations" },
+  { value: "freelancer", label: "Freelancer / Consultant", description: "Independent contractor or consultant" },
+];
+
 export interface Resume {
   name: string;
   title: string;
@@ -131,6 +141,9 @@ export interface Resume {
   references: Reference[];
   portfolio: Portfolio[];
   templateId: string;
+  careerStage: CareerStage;
+  fontPreference?: string;
+  palettePreference?: string;
 }
 
 /** Sections available in the builder navigation */
@@ -153,31 +166,75 @@ export interface SectionMeta {
   description: string;
 }
 
+/* ── Analysis status ── */
+
+export type AnalysisStatus =
+  | "idle"
+  | "extracting"
+  | "analyzing"
+  | "evaluating-ats"
+  | "building-graph"
+  | "calculating-scores"
+  | "complete"
+  | "error"
+  | "insufficient-data";
+
+export interface AnalysisPhase {
+  key: string;
+  label: string;
+  status: "pending" | "active" | "complete" | "error";
+}
+
 /* ── AI Analysis Types ── */
 
 export interface ATSAnalysis {
-  score: number;
-  keywordMatch: number;
+  score: number | null;
+  keywordMatch: number | null;
   missingKeywords: string[];
   formatIssues: string[];
   suggestions: string[];
 }
 
-export interface ResumeAnalysis {
-  resumeScore: number;
-  atsScore: number;
-  trustScore: number;
-  grammar: number;
-  readability: number;
-  professionalImpact: number;
-  keywordMatch: number;
-  missingSections: string[];
-  weakBulletPoints: string[];
-  weakActionVerbs: string[];
-  missingMetrics: string[];
-  missingCertifications: string[];
-  missingSocialLinks: string[];
-  suggestions: Suggestion[];
+/** Resume Score evaluates: grammar, ATS, readability, keywords, structure */
+export interface ResumeScoreDetail {
+  grammar: number | null;
+  readability: number | null;
+  keywordMatch: number | null;
+  structure: number | null;
+  overall: number | null;
+}
+
+/** A single trust score component with explanation */
+export interface ScoreComponent {
+  label: string;
+  score: number | null;
+  maxScore: number;
+  weight: number;
+  status: "scored" | "not-applicable" | "missing" | "pending";
+  /** Human-readable reason for this component's status */
+  explanation: string;
+  /** What the user can do to improve this component */
+  improvementTip?: string;
+  /** Points the user could gain by completing this */
+  potentialGain?: number;
+}
+
+/** Trust Score with per-stage evaluation and explanations */
+export interface TrustScoreDetail {
+  /** Which career stage model was used */
+  careerStage: CareerStage;
+  /** All scored components for this career stage */
+  components: ScoreComponent[];
+  overall: number | null;
+  /** Suggestions specific to trust improvement */
+  improvementSuggestions: TrustImprovementSuggestion[];
+}
+
+export interface TrustImprovementSuggestion {
+  action: string;
+  potentialPoints: number;
+  difficulty: "easy" | "medium" | "hard";
+  category: string;
 }
 
 export interface Suggestion {
@@ -189,8 +246,44 @@ export interface Suggestion {
   type: "improvement" | "rewrite" | "ats" | "grammar" | "impact" | "metric";
 }
 
+export interface ResumeAnalysis {
+  status: AnalysisStatus;
+  phases: AnalysisPhase[];
+  resumeScore: ResumeScoreDetail;
+  trustScore: TrustScoreDetail;
+  atsScore: number | null;
+  professionalImpact: number | null;
+  missingSections: string[];
+  weakBulletPoints: string[];
+  weakActionVerbs: string[];
+  missingMetrics: string[];
+  missingCertifications: string[];
+  missingSocialLinks: string[];
+  suggestions: Suggestion[];
+  /** Human-readable reason if analysis couldn't complete */
+  dataSufficiencyNote?: string;
+}
+
+export function isAnalysisComplete(analysis: ResumeAnalysis | null): boolean {
+  return analysis?.status === "complete";
+}
+
+export function isAnalysisInProgress(analysis: ResumeAnalysis | null): boolean {
+  return !!analysis && ["extracting", "analyzing", "evaluating-ats", "building-graph", "calculating-scores"].includes(analysis.status);
+}
+
+export function hasSufficientData(resume: Resume): boolean {
+  const hasName = !!resume.name;
+  const hasEmail = !!resume.email;
+  const hasSummary = !!resume.summary;
+  const hasExperience = resume.experience.some((e) => e.company && e.position);
+  const hasEducation = resume.education.some((e) => e.school && e.degree);
+  const hasSkills = resume.skills.length > 0;
+  return (hasName && hasEmail) && (hasSummary || hasExperience || hasEducation || hasSkills);
+}
+
 export interface JobMatchResult {
-  overallScore: number;
+  overallScore: number | null;
   matchedSkills: string[];
   missingSkills: string[];
   recommendedKeywords: string[];

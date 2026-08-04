@@ -11,6 +11,7 @@ import { SmartSuggestion } from "../SmartSuggestion";
 import { generateProjectDescription } from "@/lib/ai/resume-ai";
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { useValidation } from "../hooks/useValidation";
 
 export function ProjectsSection() {
   const resume = useResumeBuilder((s) => s.resume);
@@ -19,6 +20,7 @@ export function ProjectsSection() {
   const removeProject = useResumeBuilder((s) => s.removeProject);
   const moveProject = useResumeBuilder((s) => s.moveProject);
   const setAIAction = useResumeBuilder((s) => s.setAIAction);
+  const { touch, getFieldError } = useValidation();
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [projectSuggestions, setProjectSuggestions] = useState<Map<string, { description: string; bulletPoints: string[] }>>(new Map());
@@ -95,7 +97,7 @@ export function ProjectsSection() {
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-white/[0.06]">
                         <div className="px-4 py-4 space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput label="Project Name" placeholder="AI Chat Platform" value={proj.name} onChange={(v) => updateProject(proj.id, "name", v)} />
+                            <FieldInput label="Project Name" placeholder="AI Chat Platform" value={proj.name} onChange={(v) => updateProject(proj.id, "name", v)} onBlur={() => touch(`projects.${idx}.name`)} error={getFieldError("projects", "name", idx)} />
                             <FieldInput label="Technologies Used" placeholder="React, Node.js, OpenAI" value={proj.tech} onChange={(v) => updateProject(proj.id, "tech", v)} />
                             <FieldInput label="Role" placeholder="Lead Developer" value={proj.role} onChange={(v) => updateProject(proj.id, "role", v)} />
                             <FieldInput label="Project Link" placeholder="https://github.com/..." value={proj.link} onChange={(v) => updateProject(proj.id, "link", v)} type="url" />

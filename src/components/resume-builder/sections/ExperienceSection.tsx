@@ -13,6 +13,7 @@ import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, RotateCcw } from "l
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import type { VerificationStatus } from "../fields/VerificationBadge";
+import { useValidation } from "../hooks/useValidation";
 
 export function ExperienceSection() {
   const resume = useResumeBuilder((s) => s.resume);
@@ -22,6 +23,8 @@ export function ExperienceSection() {
   const moveExperience = useResumeBuilder((s) => s.moveExperience);
   const setAIAction = useResumeBuilder((s) => s.setAIAction);
   const aiActions = useResumeBuilder((s) => s.aiActions);
+
+  const { touch, getFieldError } = useValidation();
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [suggestions, setSuggestions] = useState<Map<string, { type: string; content: any }>>(new Map());
@@ -239,12 +242,16 @@ export function ExperienceSection() {
                               placeholder="Company Name"
                               value={exp.company}
                               onChange={(v) => updateExperience(exp.id, "company", v)}
+                              onBlur={() => touch(`experience.${idx}.company`)}
+                              error={getFieldError("experience", "company", idx)}
                             />
                             <FieldInput
                               label="Position"
                               placeholder="Senior Software Engineer"
                               value={exp.position}
                               onChange={(v) => updateExperience(exp.id, "position", v)}
+                              onBlur={() => touch(`experience.${idx}.position`)}
+                              error={getFieldError("experience", "position", idx)}
                             />
                             <FieldInput
                               label="Location"

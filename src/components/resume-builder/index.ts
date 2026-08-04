@@ -8,4 +8,5 @@ export { SaveStatusIndicator } from "./SaveStatusIndicator";
 export { ProgressIndicator } from "./ProgressIndicator";
 export { JobMatchPanel } from "./JobMatchPanel";
 export { AnalysisScore } from "./AnalysisScore";
+export { TemplateGallery } from "./TemplateGallery";
 export type { SectionCardProps, AIActionButtonProps, SmartSuggestionProps, AnalysisScoreProps } from "./shared-types";

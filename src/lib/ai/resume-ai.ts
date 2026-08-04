@@ -258,7 +258,7 @@ function spellCheck(word: string): string {
     "monitered": "monitored",
     "montery": "monetary",
     "morgage": "mortgage",
-    "mot">"more",
+    "mot": "more",
     "mosture": "moisture",
     "mountian": "mountain",
     "movei": "movie",
