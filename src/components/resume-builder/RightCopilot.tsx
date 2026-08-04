@@ -8,6 +8,17 @@ import { JobMatchPanel } from "./JobMatchPanel";
 import { Sparkles, CheckCircle2, AlertTriangle, XCircle, Lightbulb, ChevronDown, ChevronUp, Briefcase, Target, FileSearch, Shield, GitBranch, Link2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { isAnalysisComplete, isAnalysisInProgress, hasSufficientData } from "@/types/resume";
+import type { ResumeAnalysis } from "@/types/resume";
+import type { TrustScoreComponent } from "@/types/knowledge-graph";
+
+/* ── Trust Score Component Lookup ── */
+/** Derive a trust component's score by label from the analysis result. */
+function trustComponentScore(analysis: ResumeAnalysis | null, label: string): number | null {
+  const component: TrustScoreComponent | undefined = analysis?.trustScore?.components?.find(
+    (c) => c.label === label,
+  );
+  return component?.score ?? null;
+}
 
 /* ── Collapsible Card ── */
 function CollapsibleCard({
@@ -169,11 +180,11 @@ export function RightCopilot() {
           {completed ? (
             <div className="space-y-2.5">
               <AnalysisScore label="Overall Trust" score={analysis?.trustScore?.overall ?? null} size="md" statusLabel="Not Calculated" />
-              <AnalysisScore label="Identity Verification" score={analysis?.trustScore?.identityVerification ?? null} size="sm" statusLabel="Not Verified" />
-              <AnalysisScore label="Employment Evidence" score={analysis?.trustScore?.employmentEvidence ?? null} size="sm" statusLabel="No Employment" />
-              <AnalysisScore label="Education Evidence" score={analysis?.trustScore?.educationEvidence ?? null} size="sm" statusLabel="No Education" />
-              <AnalysisScore label="Certifications" score={analysis?.trustScore?.certifications ?? null} size="sm" statusLabel="No Certifications" />
-              <AnalysisScore label="Social Proof" score={analysis?.trustScore?.socialProof ?? null} size="sm" statusLabel="Not Connected" />
+              <AnalysisScore label="Identity Verification" score={trustComponentScore(analysis, "Identity")} size="sm" statusLabel="Not Verified" />
+              <AnalysisScore label="Employment Evidence" score={trustComponentScore(analysis, "Experience")} size="sm" statusLabel="No Employment" />
+              <AnalysisScore label="Education Evidence" score={trustComponentScore(analysis, "Education")} size="sm" statusLabel="No Education" />
+              <AnalysisScore label="Certifications" score={trustComponentScore(analysis, "Certifications")} size="sm" statusLabel="No Certifications" />
+              <AnalysisScore label="Social Proof" score={trustComponentScore(analysis, "Portfolio")} size="sm" statusLabel="Not Connected" />
             </div>
           ) : inProgress ? (
             <div className="flex items-center justify-center py-4">

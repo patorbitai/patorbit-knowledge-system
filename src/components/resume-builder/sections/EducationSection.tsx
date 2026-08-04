@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
-import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
 import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton } from "../AIActionButton";
@@ -18,6 +17,13 @@ export function EducationSection() {
   const removeEducation = useResumeBuilder((s) => s.removeEducation);
   const moveEducation = useResumeBuilder((s) => s.moveEducation);
   const { touch, getFieldError } = useValidation();
+
+  // Map an education entry to its claim (via sourceActivityId "education-<n>") so
+  // the VerificationBadge reflects the claim's real evidence state.
+  const claimForEducation = (id: string, index: number) =>
+    resume.claims.find(
+      (c) => c.sourceActivityId === id || c.sourceActivityId === `education-${index}`,
+    );
 
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const toggleExpand = (id: string) => {
@@ -88,7 +94,14 @@ export function EducationSection() {
                       {edu.year && <span className="text-[11px] text-slate-500">{edu.year}</span>}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <VerificationBadge status="pending" size="sm" />
+                      {(() => {
+                        const claim = claimForEducation(edu.id, idx);
+                        return claim ? (
+                          <VerificationBadge claim={claim} size="sm" />
+                        ) : (
+                          <span className="text-[10px] text-slate-600 italic">No claim yet</span>
+                        );
+                      })()}
                       <div className="flex items-center gap-0.5">
                         <button onClick={(e) => { e.stopPropagation(); moveEducation(edu.id, -1); }} disabled={idx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
                         <button onClick={(e) => { e.stopPropagation(); moveEducation(edu.id, 1); }} disabled={idx === resume.education.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>

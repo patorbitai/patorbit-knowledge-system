@@ -22,6 +22,13 @@ export function ProjectsSection() {
   const setAIAction = useResumeBuilder((s) => s.setAIAction);
   const { touch, getFieldError } = useValidation();
 
+  // Map a project entry to its claim (via sourceActivityId "projects-<n>") so
+  // the VerificationBadge reflects the claim's real evidence state.
+  const claimForProject = (id: string, index: number) =>
+    resume.claims.find(
+      (c) => c.sourceActivityId === id || c.sourceActivityId === `projects-${index}`,
+    );
+
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const [projectSuggestions, setProjectSuggestions] = useState<Map<string, { description: string; bulletPoints: string[] }>>(new Map());
 
@@ -85,7 +92,14 @@ export function ProjectsSection() {
                       {proj.status && <span className="text-[11px] text-slate-500">{proj.status}</span>}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <VerificationBadge status="pending" size="sm" />
+                      {(() => {
+                        const claim = claimForProject(proj.id, idx);
+                        return claim ? (
+                          <VerificationBadge claim={claim} size="sm" />
+                        ) : (
+                          <span className="text-[10px] text-slate-600 italic">No claim yet</span>
+                        );
+                      })()}
                       <div className="flex items-center gap-0.5">
                         <button onClick={(e) => { e.stopPropagation(); moveProject(proj.id, -1); }} disabled={idx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
                         <button onClick={(e) => { e.stopPropagation(); moveProject(proj.id, 1); }} disabled={idx === resume.projects.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>

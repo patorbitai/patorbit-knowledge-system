@@ -19,6 +19,13 @@ export function CertificationsSection() {
   const moveCertification = useResumeBuilder((s) => s.moveCertification);
   const { touch, getFieldError } = useValidation();
 
+  // Map a certification entry to its claim (via sourceActivityId "certifications-<n>") so
+  // the VerificationBadge reflects the claim's real evidence state.
+  const claimForCertification = (id: string, index: number) =>
+    resume.claims.find(
+      (c) => c.sourceActivityId === id || c.sourceActivityId === `certifications-${index}`,
+    );
+
   const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
   const toggleExpand = (id: string) => {
     setExpandedIds((prev) => {
@@ -83,7 +90,14 @@ export function CertificationsSection() {
                       {cert.date && <span className="text-[11px] text-slate-500">{cert.date}</span>}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <VerificationBadge status="pending" size="sm" />
+                      {(() => {
+                        const claim = claimForCertification(cert.id, idx);
+                        return claim ? (
+                          <VerificationBadge claim={claim} size="sm" />
+                        ) : (
+                          <span className="text-[10px] text-slate-600 italic">No claim yet</span>
+                        );
+                      })()}
                       <div className="flex items-center gap-0.5">
                         <button onClick={(e) => { e.stopPropagation(); moveCertification(cert.id, -1); }} disabled={idx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
                         <button onClick={(e) => { e.stopPropagation(); moveCertification(cert.id, 1); }} disabled={idx === resume.certifications.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>

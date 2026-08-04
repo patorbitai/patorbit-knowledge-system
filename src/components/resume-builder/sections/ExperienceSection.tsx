@@ -12,7 +12,6 @@ import { ai } from "@/lib/ai/client";
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
-import type { VerificationStatus } from "../fields/VerificationBadge";
 import { useValidation } from "../hooks/useValidation";
 
 export function ExperienceSection() {

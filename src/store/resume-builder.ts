@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { StateCreator } from "zustand";
 import type {
   Resume,
   SectionId,
@@ -101,9 +102,7 @@ export interface ResumeBuilderState {
 
 /* ── Store ── */
 
-export const useResumeBuilder = create<ResumeBuilderState>()(
-  persist(
-    (set, get) => {
+const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
       function makeArrayHelpers<K extends keyof Resume>(key: K, defaultItem: Partial<Resume[K] extends (infer U)[] ? U : never>) {
         return {
           add: () => set((s) => {
@@ -326,7 +325,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
         },
         progress: () => {
           const sections: SectionId[] = ["personal", "experience", "education", "skills", "projects", "certifications", "achievements", "languages", "portfolio"];
-          const complete = sections.filter((sec) => useResumeBuilder.getState().sectionComplete(sec));
+          const complete = sections.filter((sec) => get().sectionComplete(sec));
           return Math.round((complete.length / sections.length) * 100);
         },
         resumeScore: () => get().analysis?.resumeScore?.overall ?? null,
@@ -344,7 +343,11 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
         },
         getSaveStatus: () => get().saveStatus,
       };
-    },
+  };
+
+export const useResumeBuilder = create<ResumeBuilderState>()(
+  persist(
+    resumeStore,
     {
       name: "patorbit-resume-v2",
       partialize: (state) => ({ resume: state.resume, evidence: state.evidence }),
