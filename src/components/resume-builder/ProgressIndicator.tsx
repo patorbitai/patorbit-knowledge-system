@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 
 interface ProgressIndicatorProps {
   title: string;
-  value: number;
+  /** Accepts null/undefined to render as 0%. */
+  value: number | null;
   max?: number;
   color: string;
   size?: "sm" | "md";
@@ -21,8 +22,9 @@ export function ProgressIndicator({
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
 
-  const displayValue = mounted ? value : 0;
-  const pct = mounted ? Math.min(Math.round((value / max) * 100), 100) : 0;
+  const safeValue = value ?? 0;
+  const displayValue = mounted ? safeValue : 0;
+  const pct = mounted ? Math.min(Math.round((safeValue / max) * 100), 100) : 0;
 
   return (
     <div className="group">

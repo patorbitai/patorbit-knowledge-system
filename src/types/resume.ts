@@ -144,6 +144,143 @@ export interface Resume {
   careerStage: CareerStage;
   fontPreference?: string;
   palettePreference?: string;
+  claims: Claim[];
+}
+
+/* ── Professional Identity Domain (PKS-SRS-PIP-1 §2) ── */
+
+export type ClaimType =
+  | "Employment"
+  | "Education"
+  | "Project"
+  | "Skill"
+  | "Certification"
+  | "Contribution";
+
+export type ClaimVerificationStatus =
+  | "suggested"
+  | "accepted"
+  | "evidence-added"
+  | "under-review"
+  | "verified"
+  | "expired"
+  | "revoked"
+  | "disputed";
+
+/** A discrete, verifiable assertion about the professional (PKS-SRS-PIP-1 §2.3). */
+export interface Claim {
+  id: string;
+  /** The claim as a clear, specific sentence. */
+  assertionText: string;
+  claimType: ClaimType;
+  /** Slug identifying the source activity (e.g. "experience-0"). */
+  sourceActivityId: string;
+  /** 0–1 how strongly the underlying data supports the claim. */
+  confidence: number;
+  /** One sentence on why this is verifiable. */
+  reasoning: string;
+  verificationStatus: ClaimVerificationStatus;
+  /** Accepted/rejected by the user via Claims Review. */
+  reviewed: boolean;
+  accepted: boolean;
+  createdAt: string;
+}
+
+export type EvidenceType = "file" | "link" | "document";
+export type EvidenceStatus =
+  | "none"
+  | "evidence-added"
+  | "under-review"
+  | "verified"
+  | "expired"
+  | "revoked";
+
+/**
+ * The user-facing evidence kind (PKS-SRS-PIP-1 §2.4, Beta taxonomy).
+ *
+ * A closed, curated set of 16 kinds grouped by category. This is the field the
+ * Add Evidence UI binds to; `EvidenceType` (frozen: "file"|"link"|"document") is
+ * the auto-derived transport. Keep this list in sync with the taxonomy table in
+ * `@/types/evidence-kinds`.
+ */
+export type EvidenceKind =
+  // Employment
+  | "Experience Letter"
+  | "Offer Letter"
+  | "Payslip"
+  | "Company Email"
+  // Education
+  | "Degree"
+  | "Transcript"
+  | "Student ID"
+  // Projects
+  | "GitHub Repository"
+  | "Live Demo"
+  | "Screenshots"
+  | "Demo Video"
+  // Skills
+  | "Certificate"
+  | "Assessment"
+  | "Portfolio"
+  // Portfolio
+  | "Website"
+  | "Behance"
+  | "Dribbble";
+
+/** Evidence visibility — who may see this evidence on a shared Passport. */
+export type EvidenceVisibility = "public" | "private";
+
+/**
+ * Information supporting a Claim (PKS-SRS-PIP-1 §2.4), extended for Beta.
+ *
+ * Fields marked **frozen** are the original SRS shape and are not renamed.
+ * Fields added by Slice 2 are additive only.
+ */
+export interface Evidence {
+  /** Frozen — unique evidence id. */
+  id: string;
+  /** Frozen — id of the accepted Claim this evidence supports. */
+  claimId: string;
+  /** Frozen — transport kind: "file" | "link" | "document". Auto-derived from `evidenceKind` (§2 table). */
+  evidenceType: EvidenceType;
+  /** Beta — user-facing evidence kind (§2 taxonomy). What the UI binds to. */
+  evidenceKind: EvidenceKind;
+  /** Frozen — source: IndexedDB key (file) or URL (link). */
+  content: string;
+  /** Frozen — e.g. PDF, JPG, DOCX, link. Used by the badge icon + graph mapping. */
+  format: string;
+  /** Beta — display metadata only; the blob itself lives in IndexedDB. */
+  metadata: {
+    fileName?: string;
+    fileSize?: number;
+    mimeType?: string;
+    linkTitle?: string;
+  };
+  /** Beta — "self" until auth threads through the builder store. */
+  uploadedBy: string;
+  /** Frozen — creation timestamp. */
+  createdAt: string;
+  /** Beta — last touch (status change, consent toggle, notes edit). */
+  updatedAt: string;
+  /** Frozen name; semantics per §4. */
+  status: EvidenceStatus;
+  /** Beta — per-evidence support strength (0–1). Derived, not user-editable. */
+  confidence: number;
+  /** Beta — optional user note surfaced in Passport tooltips. */
+  notes: string;
+  /** Beta — "public" is only meaningful once Passport sharing exists. */
+  visibility: EvidenceVisibility;
+  /** Beta — explicit consent. Submit is blocked until true. */
+  consent: boolean;
+}
+
+/** A suggested claim awaiting user review (from AI Claim Generation). */
+export interface SuggestedClaim {
+  assertionText: string;
+  claimType: ClaimType;
+  sourceActivityId: string;
+  confidence: number;
+  reasoning: string;
 }
 
 /** Sections available in the builder navigation */

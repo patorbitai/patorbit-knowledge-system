@@ -8,7 +8,7 @@ import { FieldInput } from "../fields/FieldInput";
 import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton, AIActionDropdown } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
-import { generateProjectDescription } from "@/lib/ai/resume-ai";
+import { ai } from "@/lib/ai/client";
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
@@ -39,9 +39,10 @@ export function ProjectsSection() {
     if (!proj) return;
     setAIAction(`proj-${id}-gen`, { status: "loading", result: null, error: null });
     try {
-      const result = await generateProjectDescription(proj);
-      setProjectSuggestions((prev) => { const n = new Map(prev); n.set(id, result); return n; });
-      setAIAction(`proj-${id}-gen`, { status: "success", result: result.description, error: null });
+      const result = await ai.generateProjects(proj);
+      const suggestion = { description: result.content, bulletPoints: [result.content] };
+      setProjectSuggestions((prev) => { const n = new Map(prev); n.set(id, suggestion); return n; });
+      setAIAction(`proj-${id}-gen`, { status: "success", result: result.content, error: null });
     } catch (err: any) {
       setAIAction(`proj-${id}-gen`, { status: "error", result: null, error: err.message });
     }

@@ -37,7 +37,8 @@ export interface SectionCardProps {
 
 export interface AnalysisScoreProps {
   label: string;
-  score: number;
+  /** Accepts null/undefined to render the "no data" placeholder state. */
+  score: number | null;
   maxScore?: number;
   color?: string;
   size?: "sm" | "md" | "lg";

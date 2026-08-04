@@ -8,7 +8,7 @@ import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
 import { AIActionButton, AIActionDropdown } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
-import { generateSummary, grammarCorrect } from "@/lib/ai/resume-ai";
+import { ai } from "@/lib/ai/client";
 import { useValidation } from "../hooks/useValidation";
 
 export function PersonalSection() {
@@ -26,11 +26,35 @@ export function PersonalSection() {
   const handleGenerateSummary = async () => {
     setAIAction("summary-generate", { status: "loading", result: null, error: null });
     try {
-      const result = await generateSummary(resume);
-      setSummarySuggestion(result.summary);
-      setAIAction("summary-generate", { status: "success", result: result.summary, error: null });
+      const result = await ai.generateSummary(resume);
+      setSummarySuggestion(result.content);
+      setAIAction("summary-generate", { status: "success", result: result.content, error: null });
     } catch (err: any) {
       setAIAction("summary-generate", { status: "error", result: null, error: err.message });
+    }
+  };
+
+  const handleRewrite = async () => {
+    if (!resume.summary) return;
+    setAIAction("summary-rewrite", { status: "loading", result: null, error: null });
+    try {
+      const result = await ai.rewrite(resume.summary);
+      setSummarySuggestion(result.content);
+      setAIAction("summary-rewrite", { status: "success", result: result.content, error: null });
+    } catch (err: any) {
+      setAIAction("summary-rewrite", { status: "error", result: null, error: err.message });
+    }
+  };
+
+  const handleImproveTone = async () => {
+    if (!resume.summary) return;
+    setAIAction("summary-tone", { status: "loading", result: null, error: null });
+    try {
+      const result = await ai.improveTone(resume.summary);
+      setToneSuggestion(result.content);
+      setAIAction("summary-tone", { status: "success", result: result.content, error: null });
+    } catch (err: any) {
+      setAIAction("summary-tone", { status: "error", result: null, error: err.message });
     }
   };
 
@@ -127,25 +151,15 @@ export function PersonalSection() {
               {resume.summary && (
                 <AIActionButton
                   label="Rewrite"
-                  onClick={() => handleGenerateSummary()}
-                  isLoading={false}
+                  onClick={handleRewrite}
+                  isLoading={aiActions["summary-rewrite"]?.status === "loading"}
                   variant="ghost"
                 />
               )}
               {resume.summary && (
                 <AIActionButton
                   label="Improve Tone"
-                  onClick={async () => {
-                    setAIAction("summary-tone", { status: "loading", result: null, error: null });
-                    try {
-                      const result = await grammarCorrect(resume.summary);
-                      const enhanced = result.corrected;
-                      setToneSuggestion(enhanced);
-                      setAIAction("summary-tone", { status: "success", result: enhanced, error: null });
-                    } catch (err: any) {
-                      setAIAction("summary-tone", { status: "error", result: null, error: err.message });
-                    }
-                  }}
+                  onClick={handleImproveTone}
                   isLoading={aiActions["summary-tone"]?.status === "loading"}
                   variant="ghost"
                 />

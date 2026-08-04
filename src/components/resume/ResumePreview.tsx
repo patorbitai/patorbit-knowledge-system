@@ -1,17 +1,6 @@
 import { ExecutivePreview, ModernCleanPreview, SplitVibrantPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview, SidebarElegancePreview, GradientFlowPreview, AcademicFormalPreview, StartupVibePreview, DarkElegancePreview, TimelineProPreview, PremiumSlatePreview, NatureGreenPreview, LuxuryGoldPreview, SwissDesignPreview, ScientificPreview, CreativePortfolioPreview } from "@/app/resume-builder/template-components";
 import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
-
-export interface Experience { id: number; company: string; position: string; location: string; employmentType: string; industry: string; duration: string; description: string; achievements: string; techUsed: string; }
-export interface Education { id: number; school: string; degree: string; year: string; field: string; gpa: string; minor: string; honors: string; activities: string; location: string; }
-export interface Skill { id: number; name: string; level: "Beginner" | "Intermediate" | "Advanced" | "Expert"; category: string; years: string; }
-export interface Project { id: number; name: string; description: string; tech: string; link: string; startDate: string; endDate: string; role: string; teamSize: string; status: "Completed" | "In Progress" | "Ongoing"; }
-export interface Certification { id: number; name: string; issuer: string; date: string; link: string; description: string; expiryDate: string; skills: string; }
-export interface Language { id: number; name: string; proficiency: "Native" | "Fluent" | "Professional" | "Conversational" | "Beginner"; }
-export interface Interest { id: number; name: string; }
-export interface Achievement { id: number; description: string; }
-export interface Reference { id: number; name: string; company: string; position: string; email: string; phone: string; }
-export interface SocialLinks { linkedin: string; github: string; website: string; twitter: string; portfolio: string; stackoverflow: string; }
-export interface Resume { name: string; title: string; email: string; phone: string; address: string; nationality: string; pronouns: string; summary: string; social: SocialLinks; experience: Experience[]; education: Education[]; skills: Skill[]; projects: Project[]; certifications: Certification[]; languages: Language[]; interests: Interest[]; achievements: Achievement[]; references: Reference[]; templateId: string; }
+import type { Resume } from "@/types/resume";
 
 const STORAGE_KEY = "patorbit-resume-data";
 

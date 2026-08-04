@@ -4,7 +4,8 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { useResumeBuilder } from "@/store/resume-builder";
-import { matchJobDescription, optimizeForJob } from "@/lib/ai/resume-ai";
+import { ai } from "@/lib/ai/client";
+import type { JobMatchResult } from "@/types/resume";
 import { AnalysisScore } from "./AnalysisScore";
 import { AIActionButton } from "./AIActionButton";
 import { Sparkles, CheckCircle2, XCircle, ArrowRight, ChevronDown, ChevronUp, Target, Wand2 } from "lucide-react";
@@ -25,8 +26,8 @@ export function JobMatchPanel() {
     if (!jobDescription.trim()) return;
     setIsAnalyzing(true);
     try {
-      const result = await matchJobDescription(resume, jobDescription);
-      setJobMatch(result);
+      const result = await ai.analyzeJobMatch(resume, jobDescription);
+      setJobMatch(result as unknown as JobMatchResult);
     } catch (err) {
       console.error(err);
     } finally {
@@ -38,7 +39,7 @@ export function JobMatchPanel() {
     if (!jobDescription.trim()) return;
     setIsOptimizing(true);
     try {
-      const result = await optimizeForJob(resume, jobDescription, resume.title || "professional");
+      const result = await ai.optimizeForJob(resume, jobDescription, resume.title || "professional");
       setOptimizationResult(result.summary);
     } catch (err) {
       console.error(err);

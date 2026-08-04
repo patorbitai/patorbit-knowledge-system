@@ -8,8 +8,14 @@ import type {
   ResumeAnalysis,
   JobMatchResult,
   AIActionState,
+  Claim,
+  SuggestedClaim,
+  Evidence,
+  EvidenceStatus,
+  EvidenceVisibility,
 } from "@/types/resume";
-import { hasSufficientData, analyzeResume } from "@/lib/ai/resume-ai";
+import { hasSufficientData } from "@/types/resume";
+import { ai } from "@/lib/ai/client";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 
 /* ── Defaults ── */
@@ -21,6 +27,7 @@ export const defaultResume: Resume = {
   social: defaultSocial, experience: [], education: [], skills: [], projects: [], certifications: [],
   languages: [], interests: [], achievements: [], references: [], portfolio: [], templateId: "modern-clean",
   careerStage: "working-professional", fontPreference: "inter", palettePreference: "slate",
+  claims: [],
 };
 
 let _idCounter = Date.now();
@@ -37,6 +44,26 @@ export interface ResumeBuilderState {
   aiActions: Record<string, AIActionState>;
   isCopilotOpen: boolean; isJobMatchOpen: boolean;
   previewTab: "resume" | "passport" | "knowledge-graph" | "trust-timeline";
+  /** AI-suggested claims awaiting user review (Claims Review workflow). */
+  suggestedClaims: SuggestedClaim[];
+  /** Evidence attached to accepted claims (Slice 2). */
+  evidence: Evidence[];
+  /** Add a new evidence record to an accepted claim. */
+  addEvidence: (evidence: Evidence) => void;
+  /** Update a persisted evidence record (e.g. status change, notes edit). */
+  updateEvidence: (id: string, updates: Partial<Evidence>) => void;
+  /** Remove an evidence record from a claim. */
+  removeEvidence: (id: string) => void;
+  /** Set a single evidence record's verification status. */
+  setEvidenceStatus: (id: string, status: EvidenceStatus) => void;
+  /** Toggle explicit user consent for an evidence record. */
+  setEvidenceConsent: (id: string, consent: boolean) => void;
+  /** Toggle an evidence record's visibility (public/private). */
+  setEvidenceVisibility: (id: string, visibility: EvidenceVisibility) => void;
+  /** Mark all of a claim's evidence as ready for review. */
+  markClaimReadyForReview: (claimId: string) => void;
+  /** Get all evidence for a claim id. */
+  evidenceForClaim: (claimId: string) => Evidence[];
   setResume: (resume: Resume) => void;
   updateField: <K extends keyof Resume>(key: K, value: Resume[K]) => void;
   updateSocial: (key: keyof typeof defaultSocial, value: string) => void;
@@ -44,6 +71,17 @@ export interface ResumeBuilderState {
   setCareerStage: (stage: import("@/types/resume").CareerStage) => void;
   resetResume: () => void;
   applyTemplate: (templateId: string) => void;
+  setSuggestedClaims: (claims: SuggestedClaim[]) => void;
+  /** Accept a suggested claim into the Professional Identity (never automatic). */
+  acceptClaim: (suggestion: SuggestedClaim) => void;
+  /** Edit + accept a suggested claim. */
+  acceptEditedClaim: (suggestion: SuggestedClaim, editedText: string) => void;
+  /** Remove a suggested claim from the review queue. */
+  rejectClaim: (index: number) => void;
+  /** Persist an accepted claim back into the resume. */
+  persistClaim: (claim: Claim) => void;
+  /** Update a persisted claim (e.g. edit after acceptance). */
+  updateClaim: (id: string, updates: Partial<Claim>) => void;
   startAnalysis: () => Promise<void>;
   addExperience: () => void; updateExperience: (id: string, field: string, value: unknown) => void; removeExperience: (id: string) => void; moveExperience: (id: string, dir: -1 | 1) => void;
   addEducation: () => void; updateEducation: (id: string, field: string, value: unknown) => void; removeEducation: (id: string) => void; moveEducation: (id: string, dir: -1 | 1) => void;
@@ -100,12 +138,14 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
         resume: defaultResume, analysis: null, activeSection: "personal", saveStatus: "unsaved",
         analysisLoading: false, jobMatch: null, jobDescription: "", aiActions: {},
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
+        suggestedClaims: [],
+        evidence: [],
         setResume: (resume) => set({ resume, saveStatus: "unsaved" }),
         updateField: (key, value) => set((s) => ({ resume: { ...s.resume, [key]: value }, saveStatus: "unsaved" })),
         updateSocial: (key, value) => set((s) => ({ resume: { ...s.resume, social: { ...s.resume.social, [key]: value } }, saveStatus: "unsaved" })),
         setActiveSection: (id) => set({ activeSection: id }),
         setCareerStage: (stage) => set((s) => ({ resume: { ...s.resume, careerStage: stage }, saveStatus: "unsaved" })),
-        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, saveStatus: "unsaved" }),
+        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, saveStatus: "unsaved", suggestedClaims: [], evidence: [] }),
         setSaveStatus: (status) => set({ saveStatus: status }),
         setAnalysis: (analysis) => set({ analysis }), setAnalysisLoading: (loading) => set({ analysisLoading: loading }),
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),
@@ -124,6 +164,146 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
             }));
           }
         },
+        setSuggestedClaims: (claims) => set({ suggestedClaims: claims }),
+        acceptClaim: (suggestion) =>
+          set((s) => {
+            const claim: Claim = {
+              id: uid(),
+              assertionText: suggestion.assertionText,
+              claimType: suggestion.claimType,
+              sourceActivityId: suggestion.sourceActivityId,
+              confidence: suggestion.confidence,
+              reasoning: suggestion.reasoning,
+              verificationStatus: "accepted",
+              reviewed: true,
+              accepted: true,
+              createdAt: new Date().toISOString(),
+            };
+            return {
+              resume: { ...s.resume, claims: [...s.resume.claims, claim] },
+              suggestedClaims: s.suggestedClaims.filter((c) => c.assertionText !== suggestion.assertionText),
+              saveStatus: "unsaved",
+            };
+          }),
+        acceptEditedClaim: (suggestion, editedText) =>
+          set((s) => {
+            const claim: Claim = {
+              id: uid(),
+              assertionText: editedText.trim() || suggestion.assertionText,
+              claimType: suggestion.claimType,
+              sourceActivityId: suggestion.sourceActivityId,
+              confidence: suggestion.confidence,
+              reasoning: suggestion.reasoning,
+              verificationStatus: "accepted",
+              reviewed: true,
+              accepted: true,
+              createdAt: new Date().toISOString(),
+            };
+            return {
+              resume: { ...s.resume, claims: [...s.resume.claims, claim] },
+              suggestedClaims: s.suggestedClaims.filter((c) => c.assertionText !== suggestion.assertionText),
+              saveStatus: "unsaved",
+            };
+          }),
+        rejectClaim: (index) =>
+          set((s) => ({
+            suggestedClaims: s.suggestedClaims.filter((_, i) => i !== index),
+          })),
+        persistClaim: (claim) =>
+          set((s) => ({
+            resume: {
+              ...s.resume,
+              claims: s.resume.claims.some((c) => c.id === claim.id)
+                ? s.resume.claims.map((c) => (c.id === claim.id ? claim : c))
+                : [...s.resume.claims, claim],
+            },
+            saveStatus: "unsaved",
+          })),
+        updateClaim: (id, updates) =>
+          set((s) => ({
+            resume: {
+              ...s.resume,
+              claims: s.resume.claims.map((c) => (c.id === id ? { ...c, ...updates } : c)),
+            },
+            saveStatus: "unsaved",
+          })),
+        addEvidence: (evidence) =>
+          set((s) => {
+            // Evidence may only attach to accepted claims.
+            const claim = s.resume.claims.find((c) => c.id === evidence.claimId);
+            if (!claim) return s;
+            const updated = [...s.evidence, evidence];
+            // Project claim status: accepted → evidence-added when first evidence lands.
+            let claims = s.resume.claims;
+            if (claim.accepted && claim.verificationStatus === "accepted") {
+              claims = s.resume.claims.map((c) =>
+                c.id === claim.id ? { ...c, verificationStatus: "evidence-added" as const } : c,
+              );
+            }
+            return { resume: { ...s.resume, claims }, evidence: updated, saveStatus: "unsaved" };
+          }),
+        updateEvidence: (id, updates) =>
+          set((s) => ({
+            evidence: s.evidence.map((e) =>
+              e.id === id ? { ...e, ...updates, updatedAt: new Date().toISOString() } : e,
+            ),
+            saveStatus: "unsaved",
+          })),
+        removeEvidence: (id) =>
+          set((s) => {
+            const target = s.evidence.find((e) => e.id === id);
+            const evidence = s.evidence.filter((e) => e.id !== id);
+            // If a claim lost its last evidence, revert its status to accepted.
+            let claims = s.resume.claims;
+            if (target && !evidence.some((e) => e.claimId === target.claimId)) {
+              claims = s.resume.claims.map((c) =>
+                c.id === target.claimId && c.verificationStatus !== "accepted"
+                  ? { ...c, verificationStatus: "accepted" as const }
+                  : c,
+              );
+            }
+            return { resume: { ...s.resume, claims }, evidence, saveStatus: "unsaved" };
+          }),
+        setEvidenceStatus: (id, status) =>
+          set((s) => ({
+            evidence: s.evidence.map((e) =>
+              e.id === id ? { ...e, status, updatedAt: new Date().toISOString() } : e,
+            ),
+            saveStatus: "unsaved",
+          })),
+        setEvidenceConsent: (id, consent) =>
+          set((s) => ({
+            evidence: s.evidence.map((e) =>
+              e.id === id ? { ...e, consent, updatedAt: new Date().toISOString() } : e,
+            ),
+            saveStatus: "unsaved",
+          })),
+        setEvidenceVisibility: (id, visibility) =>
+          set((s) => ({
+            evidence: s.evidence.map((e) =>
+              e.id === id ? { ...e, visibility, updatedAt: new Date().toISOString() } : e,
+            ),
+            saveStatus: "unsaved",
+          })),
+        markClaimReadyForReview: (claimId) =>
+          set((s) => ({
+            resume: {
+              ...s.resume,
+              claims: s.resume.claims.map((c) =>
+                c.id === claimId && c.verificationStatus === "evidence-added"
+                  ? { ...c, verificationStatus: "under-review" as const }
+                  : c,
+              ),
+            },
+            // Mark all of the claim's evidence as under-review too.
+            evidence: s.evidence.map((e) =>
+              e.claimId === claimId && e.status === "evidence-added"
+                ? { ...e, status: "under-review" as const, updatedAt: new Date().toISOString() }
+                : e,
+            ),
+            saveStatus: "unsaved",
+          })),
+        evidenceForClaim: (claimId) => get().evidence.filter((e) => e.claimId === claimId),
         addExperience: expH.add, updateExperience: expH.update, removeExperience: expH.remove, moveExperience: expH.move,
         addEducation: eduH.add, updateEducation: eduH.update, removeEducation: eduH.remove, moveEducation: eduH.move,
         addSkill: skillH.add, updateSkill: skillH.update, removeSkill: skillH.remove,
@@ -137,19 +317,20 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
           if (!hasSufficientData(resume) || get().analysisLoading) return;
           set({ analysisLoading: true, analysis: null });
           try {
-            const result = await analyzeResume(resume);
+            const result = await ai.analyzeResume(resume);
             set({ analysis: result, analysisLoading: false });
-          } catch (err: any) {
-            set({ analysis: { status: "error", dataSufficiencyNote: err.message, phases: [], resumeScore: { overall: null, grammar: null, readability: null, keywordMatch: null, structure: null }, trustScore: { careerStage: resume.careerStage || "working-professional", components: [], overall: null, improvementSuggestions: [] }, atsScore: null, professionalImpact: null, missingSections: [], weakBulletPoints: [], weakActionVerbs: [], missingMetrics: [], missingCertifications: [], missingSocialLinks: [], suggestions: [] }, analysisLoading: false });
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "AI analysis failed.";
+            set({ analysis: { status: "error", dataSufficiencyNote: message, phases: [], resumeScore: { overall: null, grammar: null, readability: null, keywordMatch: null, structure: null }, trustScore: { careerStage: resume.careerStage || "working-professional", components: [], overall: null, improvementSuggestions: [] }, atsScore: null, professionalImpact: null, missingSections: [], weakBulletPoints: [], weakActionVerbs: [], missingMetrics: [], missingCertifications: [], missingSocialLinks: [], suggestions: [] }, analysisLoading: false });
           }
         },
         progress: () => {
-          const { resume } = get(); const sections: SectionId[] = ["personal", "experience", "education", "skills", "projects", "certifications", "achievements", "languages", "portfolio"];
+          const sections: SectionId[] = ["personal", "experience", "education", "skills", "projects", "certifications", "achievements", "languages", "portfolio"];
           const complete = sections.filter((sec) => useResumeBuilder.getState().sectionComplete(sec));
           return Math.round((complete.length / sections.length) * 100);
         },
         resumeScore: () => get().analysis?.resumeScore?.overall ?? null,
-        sectionComplete: (section) => {
+        sectionComplete: (section: SectionId) => {
           const { resume } = get();
           switch (section) {
             case "personal": return !!(resume.name && resume.email && resume.phone);
@@ -166,7 +347,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     },
     {
       name: "patorbit-resume-v2",
-      partialize: (state) => ({ resume: state.resume }),
+      partialize: (state) => ({ resume: state.resume, evidence: state.evidence }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.setSaveStatus("saved");

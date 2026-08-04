@@ -5,8 +5,8 @@ import Link from "next/link";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useResumeBuilder, defaultResume } from "@/store/resume-builder";
-import { analyzeResume } from "@/lib/ai/resume-ai";
-import { LeftSidebar, CenterWorkspace, RightCopilot } from "@/components/resume-builder";
+import { ai } from "@/lib/ai/client";
+import { LeftSidebar, CenterWorkspace, RightCopilot, ClaimsReview } from "@/components/resume-builder";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
 import { SettingsModal } from "@/components/resume-builder/SettingsModal";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
@@ -96,12 +96,13 @@ export default function ResumeBuilderPage() {
   const setAnalysisLoading = useResumeBuilder((s) => s.setAnalysisLoading);
   const saveStatus = useResumeBuilder((s) => s.saveStatus);
   const setSaveStatus = useResumeBuilder((s) => s.setSaveStatus);
+  const setSuggestedClaims = useResumeBuilder((s) => s.setSuggestedClaims);
 
   const debouncedAnalysis = useCallback(
     debounce(async (currentResume) => {
       setAnalysisLoading(true);
       try {
-        const result = await analyzeResume(currentResume);
+        const result = await ai.analyzeResume(currentResume);
         setAnalysis(result);
       } catch {
         setAnalysis(null);
@@ -120,6 +121,22 @@ export default function ResumeBuilderPage() {
       }
     }, 1200),
     [setSaveStatus],
+  );
+
+  const debouncedClaimGen = useCallback(
+    debounce(async (currentResume) => {
+      // Only suggest claims when there is enough identity data.
+      if (!currentResume?.name && !currentResume?.summary && currentResume?.experience?.length === 0) return;
+      try {
+        const result = await ai.generateClaims(currentResume, currentResume.claims);
+        if (result?.claims?.length) {
+          setSuggestedClaims(result.claims);
+        }
+      } catch {
+        // Silently ignore claim generation failures — it must never block resume editing.
+      }
+    }, 2500),
+    [setSuggestedClaims],
   );
 
   useEffect(() => {
@@ -141,8 +158,9 @@ export default function ResumeBuilderPage() {
       setSaveStatus("saving");
       debouncedAnalysis(resume);
       debouncedSave(resume);
+      debouncedClaimGen(resume);
     }
-  }, [resume, saveStatus, setSaveStatus, debouncedAnalysis, debouncedSave]);
+  }, [resume, saveStatus, setSaveStatus, debouncedAnalysis, debouncedSave, debouncedClaimGen]);
 
   return (
     <DndProvider backend={HTML5Backend}>
@@ -167,6 +185,9 @@ export default function ResumeBuilderPage() {
             <RightCopilot />
           </div>
         </div>
+
+        {/* Claims Review — non-blocking identity workflow surface */}
+        <ClaimsReview />
       </div>
     </DndProvider>
   );

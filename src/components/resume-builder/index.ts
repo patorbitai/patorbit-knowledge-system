@@ -9,4 +9,5 @@ export { ProgressIndicator } from "./ProgressIndicator";
 export { JobMatchPanel } from "./JobMatchPanel";
 export { AnalysisScore } from "./AnalysisScore";
 export { TemplateGallery } from "./TemplateGallery";
+export { ClaimsReview } from "./ClaimsReview";
 export type { SectionCardProps, AIActionButtonProps, SmartSuggestionProps, AnalysisScoreProps } from "./shared-types";

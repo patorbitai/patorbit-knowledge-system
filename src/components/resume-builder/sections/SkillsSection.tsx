@@ -6,7 +6,7 @@ import { SectionCard } from "../section-card";
 import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
 import { AIActionButton, AIActionDropdown } from "../AIActionButton";
-import { suggestMissingSkills } from "@/lib/ai/resume-ai";
+import { ai } from "@/lib/ai/client";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { Trash2, Plus, Sparkles, Filter } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -28,8 +28,8 @@ export function SkillsSection() {
   const handleSuggestSkills = async () => {
     setIsLoadingSuggestions(true);
     try {
-      const result = await suggestMissingSkills(resume);
-      setSuggestions(result.suggestions);
+      const result = await ai.suggestSkills(resume);
+      setSuggestions(result.content);
     } catch (err) {
       console.error(err);
     } finally {

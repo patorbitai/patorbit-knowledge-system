@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ResumePreview, getActiveTemplate } from "@/components/resume/ResumePreview";
+import { Passport } from "@/components/identity/Passport";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
 import { ArrowLeft, FileText, IdCard, Share2, Shield, TrendingUp, Layout, Check } from "lucide-react";
 import Link from "next/link";
@@ -90,9 +91,9 @@ export default function PreviewPage() {
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === "resume" && <PreviewPanel><ResumePreview resume={resume} template={template} /></PreviewPanel>}
         {activeTab === "passport" && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2"><PreviewPanel><PassportPreview resume={resume} /></PreviewPanel></div>
-          </div>
+          <PreviewPanel>
+            <Passport />
+          </PreviewPanel>
         )}
         {activeTab === "knowledge-graph" && <PreviewPanel><Placeholder icon={Share2} title="Knowledge Graph" desc="Visualize your skills, experience, and professional connections as an interactive graph." /></PreviewPanel>}
         {activeTab === "trust-timeline" && <PreviewPanel><Placeholder icon={TrendingUp} title="Trust Timeline" desc="Track how your trust score evolves as you verify credentials and add evidence." /></PreviewPanel>}
@@ -115,56 +116,3 @@ function Placeholder({ icon: Icon, title, desc }: { icon: any; title: string; de
   );
 }
 
-function PassportPreview({ resume }: { resume: any }) {
-  const skills = resume.skills || []; const certs = resume.certifications || []; const exp = resume.experience || [];
-  return (
-    <div className="space-y-6">
-      <h2 className="text-lg font-semibold text-white">Professional Passport</h2>
-      <p className="text-sm text-slate-400">A verified, portable identity that travels with you across platforms.</p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-          <h3 className="text-xs font-semibold text-slate-300 mb-2">🎓 Verified Skills</h3>
-          <div className="flex flex-wrap gap-1.5">
-            {skills.length > 0 ? skills.slice(0, 8).map((s: any, i: number) => (
-              <span key={i} className="px-2 py-1 rounded-md bg-emerald-500/10 text-emerald-400 text-[10px] font-medium">{s.name}</span>
-            )) : <span className="text-[11px] text-slate-500 italic">No skills added</span>}
-          </div>
-        </div>
-        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-          <h3 className="text-xs font-semibold text-slate-300 mb-2">🏅 Verified Credentials</h3>
-          <div className="space-y-1.5">
-            {certs.length > 0 ? certs.slice(0, 3).map((c: any, i: number) => (
-              <div key={i} className="flex items-center gap-2 text-[11px]">
-                <span className="flex h-5 w-5 items-center justify-center rounded bg-emerald-500/10"><Shield className="w-3 h-3 text-emerald-400" /></span>
-                <span className="text-slate-300">{c.name}</span>
-              </div>
-            )) : <span className="text-[11px] text-slate-500 italic">No certifications added</span>}
-          </div>
-        </div>
-        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-          <h3 className="text-xs font-semibold text-slate-300 mb-2">💼 Work History</h3>
-          <div className="space-y-1.5">
-            {exp.length > 0 ? exp.slice(0, 3).map((e: any, i: number) => (
-              <div key={i} className="text-[11px] text-slate-300"><span className="font-medium">{e.position}</span> at <span>{e.company}</span></div>
-            )) : <span className="text-[11px] text-slate-500 italic">No experience added</span>}
-          </div>
-        </div>
-        <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] p-4">
-          <h3 className="text-xs font-semibold text-slate-300 mb-2">🔗 Connected Accounts</h3>
-          <div className="space-y-1.5">
-            <div className="flex items-center gap-2 text-[11px]">
-              <div className={clsx("flex h-5 w-5 items-center justify-center rounded", resume.social.linkedin ? "bg-blue-500/10" : "bg-slate-500/10")}>
-                <span className={resume.social.linkedin ? "text-blue-400" : "text-slate-500"}>in</span>
-              </div>
-              <span className={resume.social.linkedin ? "text-slate-300" : "text-slate-500"}>{resume.social.linkedin ? "LinkedIn" : "Not connected"}</span>
-            </div>
-            <div className="flex items-center gap-2 text-[11px]">
-              <div className="flex h-5 w-5 items-center justify-center rounded bg-slate-500/10"><span className={resume.social.github ? "text-white" : "text-slate-500"}>G</span></div>
-              <span className={resume.social.github ? "text-slate-300" : "text-slate-500"}>{resume.social.github ? "GitHub" : "Not connected"}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}

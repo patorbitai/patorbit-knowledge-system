@@ -11,7 +11,7 @@ import { AIActionButton, AIActionDropdown } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, Sparkles, Trophy, Globe, Link2, Award, Eye, CheckCircle2, AlertTriangle, XCircle, FileText } from "lucide-react";
 import { clsx } from "clsx";
-import { analyzeResume } from "@/lib/ai/resume-ai";
+import { ai } from "@/lib/ai/client";
 import { AnalysisScore } from "../AnalysisScore";
 import { ProgressIndicator } from "../ProgressIndicator";
 import { useValidation } from "../hooks/useValidation";
@@ -219,7 +219,7 @@ export function ReviewSection() {
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
     try {
-      const result = await analyzeResume(resume);
+      const result = await ai.analyzeResume(resume);
       setAnalysis(result);
     } catch (err) {
       console.error(err);

@@ -8,7 +8,7 @@ import { FieldInput } from "../fields/FieldInput";
 import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton, AIActionDropdown } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
-import { rewriteExperience, generateQuantifiedAchievements, improveBulletPoints } from "@/lib/ai/resume-ai";
+import { ai } from "@/lib/ai/client";
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, RotateCcw } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
@@ -23,6 +23,13 @@ export function ExperienceSection() {
   const moveExperience = useResumeBuilder((s) => s.moveExperience);
   const setAIAction = useResumeBuilder((s) => s.setAIAction);
   const aiActions = useResumeBuilder((s) => s.aiActions);
+
+  // Map an experience entry to its claim (via sourceActivityId "experience-<n>") so
+  // the VerificationBadge reflects the claim's real evidence state.
+  const claimForExperience = (id: string, index: number) =>
+    resume.claims.find(
+      (c) => c.sourceActivityId === id || c.sourceActivityId === `experience-${index}`,
+    );
 
   const { touch, getFieldError } = useValidation();
 
@@ -44,13 +51,19 @@ export function ExperienceSection() {
     const key = `exp-${id}-${tone}`;
     setAIAction(key, { status: "loading", result: null, error: null });
     try {
-      const result = await rewriteExperience(exp, tone);
+      const inputText = exp.description || exp.position;
+      const result =
+        tone === "ats"
+          ? await ai.atsOptimization(inputText)
+          : await ai.rewrite(inputText, tone);
+      // Downstream SmartSuggestion expects { description, bulletPoints }
+      const content = { description: result.content, bulletPoints: [result.content] };
       setSuggestions((prev) => {
         const next = new Map(prev);
-        next.set(id, { type: `rewrite-${tone}`, content: result });
+        next.set(id, { type: `rewrite-${tone}`, content });
         return next;
       });
-      setAIAction(key, { status: "success", result: JSON.stringify(result), error: null });
+      setAIAction(key, { status: "success", result: JSON.stringify(content), error: null });
     } catch (err: any) {
       setAIAction(key, { status: "error", result: null, error: err.message });
     }
@@ -61,13 +74,14 @@ export function ExperienceSection() {
     if (!exp) return;
     setAIAction(`exp-${id}-bullets`, { status: "loading", result: null, error: null });
     try {
-      const result = await generateQuantifiedAchievements(exp);
+      const result = await ai.generateAchievements(exp);
+      const bullets = result.content;
       setSuggestions((prev) => {
         const next = new Map(prev);
-        next.set(id, { type: "bullets", content: result.bulletPoints });
+        next.set(id, { type: "bullets", content: bullets });
         return next;
       });
-      setAIAction(`exp-${id}-bullets`, { status: "success", result: result.bulletPoints.join("\n"), error: null });
+      setAIAction(`exp-${id}-bullets`, { status: "success", result: bullets.join("\n"), error: null });
     } catch (err: any) {
       setAIAction(`exp-${id}-bullets`, { status: "error", result: null, error: err.message });
     }
@@ -82,10 +96,11 @@ export function ExperienceSection() {
     if (bullets.length === 0) return;
     setAIAction(`exp-${id}-improve-bullets`, { status: "loading", result: null, error: null });
     try {
-      const result = await improveBulletPoints(bullets);
+      const result = await ai.improveBulletPoints(bullets);
+      const improved = result.content;
       setSuggestions((prev) => {
         const next = new Map(prev);
-        next.set(id, { type: "improve-bullets", content: result.bulletPoints });
+        next.set(id, { type: "improve-bullets", content: improved });
         return next;
       });
       setAIAction(`exp-${id}-improve-bullets`, { status: "success", result: null, error: null });
@@ -199,7 +214,14 @@ export function ExperienceSection() {
                       )}
                     </div>
                     <div className="flex items-center gap-1.5">
-                      <VerificationBadge status="pending" size="sm" />
+                      {(() => {
+                        const claim = claimForExperience(exp.id, idx);
+                        return claim ? (
+                          <VerificationBadge claim={claim} size="sm" />
+                        ) : (
+                          <span className="text-[10px] text-slate-600 italic">No claim yet</span>
+                        );
+                      })()}
                       <div className="flex items-center gap-0.5">
                         <button
                           onClick={(e) => { e.stopPropagation(); moveExperience(exp.id, -1); }}
@@ -387,7 +409,7 @@ export function ExperienceSection() {
                             />
                           )}
 
-                          {(expSuggestion?.type as string)?.startsWith("rewrite-") && (
+                          {(expSuggestion?.type as string)?.startsWith("rewrite-") && expSuggestion?.content && (
                             <SmartSuggestion
                               original={exp.description}
                               suggestion={(expSuggestion.content as any).description || ""}
