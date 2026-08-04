@@ -19,7 +19,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
             <div className="mt-2 flex justify-end"><SocialLinks social={resume.social} color={muted} size="sm" /></div>
           </div>
         </header>
-        {resume.summary && <p className="mb-8 text-sm italic" style={{ color: muted }}><FormattedDescription text={resume.summary} color={ink} mutedColor={muted} size="sm" /></p>}
+        {resume.summary && <div className="mb-8 text-sm italic" style={{ color: muted }}><FormattedDescription text={resume.summary} color={ink} mutedColor={muted} size="sm" /></div>}
         <div className="grid grid-cols-3 gap-x-8">
           <div className="col-span-2 space-y-6">
             {resume.experience.length > 0 && <Section title="Experience">{resume.experience.map(exp => <article key={exp.id}><div className="flex justify-between items-baseline"><h3 className="text-base font-semibold" style={{ color: accent }}>{exp.position}</h3><span className="text-xs font-medium" style={{ color: muted }}>{exp.duration}</span></div><p className="text-sm" style={{ color: muted }}>{exp.company}{exp.location && ` | ${exp.location}`}</p>{exp.description && <div className="mt-1 text-sm"><FormattedDescription text={exp.description} color={ink} mutedColor={muted} /></div>}</article>)}</Section>}

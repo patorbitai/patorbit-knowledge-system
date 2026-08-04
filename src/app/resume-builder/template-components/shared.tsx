@@ -1,19 +1,28 @@
 "use client";
 
 import React from "react";
+import type { SocialLinks as SocialLinksShape } from "@/types/resume";
 
-/* ── Shared Types ── */
-export interface Experience { id: number; company: string; position: string; location: string; employmentType: string; industry: string; duration: string; description: string; achievements: string; techUsed: string; }
-export interface Education { id: number; school: string; degree: string; year: string; field: string; gpa: string; minor: string; honors: string; activities: string; location: string; }
-export interface Skill { id: number; name: string; level: "Beginner" | "Intermediate" | "Advanced" | "Expert"; category: string; years: string; }
-export interface Project { id: number; name: string; description: string; tech: string; link: string; startDate: string; endDate: string; role: string; teamSize: string; status: "Completed" | "In Progress" | "Ongoing"; }
-export interface Certification { id: number; name: string; issuer: string; date: string; link: string; description: string; expiryDate: string; skills: string; }
-export interface Language { id: number; name: string; proficiency: "Native" | "Fluent" | "Professional" | "Conversational" | "Beginner"; }
-export interface Interest { id: number; name: string; }
-export interface Achievement { id: number; description: string; }
-export interface Reference { id: number; name: string; company: string; position: string; email: string; phone: string; }
-export interface SocialLinks { linkedin: string; github: string; website: string; twitter: string; portfolio: string; stackoverflow: string; }
-export interface Resume { name: string; title: string; email: string; phone: string; address: string; nationality: string; pronouns: string; summary: string; social: SocialLinks; experience: Experience[]; education: Education[]; skills: Skill[]; projects: Project[]; certifications: Certification[]; languages: Language[]; interests: Interest[]; achievements: Achievement[]; references: Reference[]; templateId: string; }
+/* ── Shared Types ──
+ * Single source of truth: these types are defined once in src/types/resume.ts
+ * and re-exported here so every template component consumes the canonical
+ * shape. Do not redeclare local Resume/entity types.
+ *
+ * NOTE: `SocialLinks` is intentionally NOT re-exported as a type here — the
+ * SocialLinks *component* below owns that name. Components needing the type can
+ * import it directly from `@/types/resume`. */
+export type {
+  Experience,
+  Education,
+  Skill,
+  Project,
+  Certification,
+  Language,
+  Interest,
+  Achievement,
+  Reference,
+  Resume,
+} from "@/types/resume";
 
 /* ── FormattedDescription ── */
 export function FormattedDescription({ text, color, mutedColor, size = "xs" }: { text: string; color: string; mutedColor?: string; size?: string }) {
@@ -37,7 +46,7 @@ export function FormattedDescription({ text, color, mutedColor, size = "xs" }: {
 }
 
 /* ── SocialLinks ── */
-export function SocialLinks({ social, color, size = "sm" }: { social: SocialLinks; color: string; size?: "sm" | "xs" }) {
+export function SocialLinks({ social, color, size = "sm" }: { social: SocialLinksShape; color: string; size?: "sm" | "xs" }) {
   const s = size === "sm" ? "w-4 h-4" : "w-3.5 h-3.5";
   const links = [
     { key: "linkedin", href: social.linkedin, icon: <svg className={s} viewBox="0 0 24 24" fill="currentColor"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg> },

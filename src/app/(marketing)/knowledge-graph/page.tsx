@@ -1,6 +1,8 @@
 "use client";
 
 import { motion } from "framer-motion";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
 export default function KnowledgeGraphPage() {
   return (
@@ -31,6 +33,35 @@ export default function KnowledgeGraphPage() {
                   <p className="text-slate-400">{item.desc}</p>
                 </motion.div>
               ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-16 text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-3xl font-bold text-white mb-4">Explore the graph</h2>
+                <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
+                  See how your credentials connect — and discover new opportunities.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    href="/resume-builder"
+                    className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-indigo-500/20 transition-all duration-150 hover:from-indigo-400 hover:to-purple-500 hover:shadow-indigo-400/30 hover:scale-[1.02] active:scale-100"
+                  >
+                    Build Your Graph
+                    <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                  </Link>
+                  <Link
+                    href="/docs"
+                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+                  >
+                    Read the Docs
+                  </Link>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>

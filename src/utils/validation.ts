@@ -29,6 +29,16 @@ export const SECTION_RULES: Record<string, Record<string, string>> = {
   certifications: {
     name: "Certification name is required",
   },
+  achievements: {
+    title: "Achievement title is required",
+  },
+  languages: {
+    name: "Language is required",
+  },
+  portfolio: {
+    title: "Portfolio item title is required",
+    url: "Portfolio item URL is required",
+  },
 };
 
 /* ── Helpers ── */
@@ -62,6 +72,8 @@ function validatePhone(value: string): string | null {
 
 /* ── Section validators ── */
 
+import type { SocialLinks } from "@/types/resume";
+
 export interface ValidationContext {
   name: string;
   email: string;
@@ -71,7 +83,7 @@ export interface ValidationContext {
   nationality: string;
   pronouns: string;
   summary: string;
-  social: Record<string, string>;
+  social: SocialLinks;
 }
 
 /** Validate the Personal Info section */
@@ -95,14 +107,14 @@ export function validatePersonalSection(ctx: ValidationContext): ValidationError
 }
 
 /** Validate an array-based section (experience, education, skills, projects, certifications) */
-export function validateArraySection(
-  items: Record<string, unknown>[],
+export function validateArraySection<T extends object>(
+  items: T[],
   requiredFields: string[],
 ): ArrayValidationErrors {
   return items.map((item) => {
     const errors: ValidationErrors = {};
     for (const field of requiredFields) {
-      if (isEmpty(item[field])) errors[field] = "Required";
+      if (isEmpty(item[field as keyof T])) errors[field] = "Required";
     }
     return errors;
   });
@@ -161,4 +173,7 @@ export const REQUIRED_FIELDS: Record<string, string[]> = {
   skills: ["name"],
   projects: ["name"],
   certifications: ["name"],
+  achievements: ["title"],
+  languages: ["name"],
+  portfolio: ["title", "url"],
 };

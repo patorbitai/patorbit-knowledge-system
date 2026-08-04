@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function EnterprisePage() {
@@ -22,9 +24,10 @@ export default function EnterprisePage() {
                     <div key={f} className="rounded-full border border-slate-700 bg-slate-800/50 px-4 py-2 text-sm text-slate-300">{f}</div>
                   ))}
                 </div>
-                <button className="rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 transition-all">
+                <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 transition-all hover:from-purple-400 hover:to-pink-400 hover:shadow-purple-500/40 hover:-translate-y-0.5 active:scale-100">
                   Contact Sales
-                </button>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
               </motion.div>
             </div>
             <div className="flex-1">

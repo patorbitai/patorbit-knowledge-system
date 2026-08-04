@@ -1,5 +1,7 @@
 "use client";
 
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function TrustVerificationPage() {
@@ -31,6 +33,29 @@ export default function TrustVerificationPage() {
                   <p className="text-slate-400">{item.desc}</p>
                 </motion.div>
               ))}
+            </div>
+
+            {/* CTA */}
+            <div className="mt-16 text-center">
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+              >
+                <h2 className="text-3xl font-bold text-white mb-4">Set up verification in minutes</h2>
+                <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
+                  Connect your credentials and let our verification engine do the rest.
+                </p>
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+                  <Link
+                    href="/resume-builder"
+                    className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all duration-150 hover:from-emerald-400 hover:to-green-500 hover:shadow-emerald-400/30 hover:scale-[1.02] active:scale-100"
+                  >
+                    Verify Your Claims
+                    <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
+                  </Link>
+                </div>
+              </motion.div>
             </div>
           </div>
         </div>

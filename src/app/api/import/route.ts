@@ -2,9 +2,8 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import * as mammoth from "mammoth";
-import * as pdfParse from "pdf-parse";
-import { parseResumeJson } from "@/utils/resume-schema";
-import { ResumeSchema } from "@/utils/resume-schema";
+import { parseResumeJson, ResumeSchema } from "@/utils/resume-schema";
+import { rawToResume } from "@/utils/resume-parser";
 
 export async function POST(request: NextRequest) {
   try {
@@ -26,16 +25,29 @@ export async function POST(request: NextRequest) {
       const text = await file.text();
       parsedData = JSON.parse(text);
     } else if (fileType === "application/pdf") {
-      // Handle PDF file
+      // Handle PDF file — extract text, return as a resume object with text in summary
       const arrayBuffer = await file.arrayBuffer();
-      parsedData = await (pdfParse as any)(Buffer.from(new Uint8Array(arrayBuffer)));
+      const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      const workerPath = "file://" + process.cwd().replace(/\\/g, "/") + "/public/pdf.worker.mjs";
+      pdfjs.GlobalWorkerOptions.workerSrc = workerPath;
+      const loadingTask = pdfjs.getDocument({ data: new Uint8Array(arrayBuffer) });
+      const doc = await loadingTask.promise;
+      let fullText = "";
+      for (let i = 1; i <= doc.numPages; i++) {
+        const page = await doc.getPage(i);
+        const content = await page.getTextContent();
+        const strings = content.items.map((item: any) => item.str);
+        fullText += strings.join(" ") + "\n\n";
+        page.cleanup();
+      }
+      parsedData = rawToResume(fullText);
     } else if (
       fileType === "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     ) {
       // Handle DOCX file
       const arrayBuffer = await file.arrayBuffer();
-      const result = await mammoth.convertToHtml({ buffer: arrayBuffer as any });
-      parsedData = result.value;
+      const result = await mammoth.extractRawText({ buffer: arrayBuffer as any });
+      parsedData = rawToResume(result.value);
     } else {
       return NextResponse.json(
         { error: "Unsupported file type. Please upload a JSON, PDF, or DOCX file." },

@@ -33,7 +33,7 @@ export default function ContactPage() {
                 </div>
                 <input placeholder="Subject" className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder-slate-500" />
                 <textarea rows={5} placeholder="Message" className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white placeholder-slate-500 resize-none" />
-                <div className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-8 py-4 text-center font-semibold text-white">Send Message</div>
+                <div className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-8 py-4 text-center font-semibold text-white cursor-pointer hover:from-cyan-400 hover:to-blue-400 transition-all">Talk to Our Team</div>
               </div>
             </div>
           </motion.div>
