@@ -1,92 +1,641 @@
 "use client";
 
+import { useState, useRef } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
 import { motion } from "framer-motion";
+import {
+  ArrowRight,
+  Check,
+  Minus,
+  ShieldCheck,
+  Sparkles,
+  CreditCard,
+  X,
+  ChevronDown,
+} from "lucide-react";
 
-const plans = [
-  { name: "Freemium", price: "$0", description: "Perfect for individuals getting started", popular: false, features: ["Create one digital identity", "Add 5 claims per month", "Basic trust scoring", "Email support"] },
-  { name: "Professional", price: "$29", description: "For career professionals and recruiters", popular: true, features: ["Unlimited identities", "100 claims per month", "Advanced trust algorithms", "Priority support", "Export capabilities"] },
-  { name: "Enterprise", price: "Custom", description: "For organizations at scale", popular: false, features: ["Unlimited everything", "Single sign-on", "Dedicated support", "Custom integrations", "Advanced analytics"] },
+/* ═══════════════ Data ═══════════════ */
+
+type Plan = {
+  name: string;
+  tagline: string;
+  monthly: number | null;
+  yearly: number | null;
+  badges?: string[];
+  features: string[];
+  cta: string;
+  href: string;
+};
+
+const plans: Plan[] = [
+  {
+    name: "Starter",
+    tagline: "Perfect for students and early professionals.",
+    monthly: 0,
+    yearly: 0,
+    features: [
+      "AI Resume Builder",
+      "1 Professional Passport",
+      "Basic AI suggestions",
+      "Resume export",
+      "Community support",
+    ],
+    cta: "Get Started Free",
+    href: "/resume-builder",
+  },
+  {
+    name: "Professional",
+    tagline: "For career professionals ready to stand out.",
+    monthly: 29,
+    yearly: 23,
+    badges: ["Most Popular", "Best Value"],
+    features: [
+      "Unlimited resumes",
+      "Professional Passport",
+      "Knowledge Graph",
+      "Trust Score",
+      "Evidence Management",
+      "Career Timeline",
+      "AI Career Insights",
+      "Priority support",
+    ],
+    cta: "Start Professional",
+    href: "/resume-builder",
+  },
+  {
+    name: "Enterprise",
+    tagline: "For universities and organizations.",
+    monthly: null,
+    yearly: null,
+    features: [
+      "Dedicated onboarding",
+      "SSO & SCIM",
+      "API access",
+      "Custom integrations",
+      "Priority support",
+      "SLA",
+      "Custom AI policies",
+      "Security review",
+    ],
+    cta: "Contact Sales",
+    href: "/contact",
+  },
 ];
 
-export default function PricingPage() {
+type ComparisonRow = {
+  feature: string;
+  values: [string | boolean, string | boolean, string | boolean];
+};
+
+const comparisonRows: ComparisonRow[] = [
+  { feature: "Resume Builder", values: [true, true, true] },
+  { feature: "Professional Passport", values: [true, true, true] },
+  { feature: "Trust Score", values: [false, true, true] },
+  { feature: "Knowledge Graph", values: [false, true, true] },
+  { feature: "Evidence Verification", values: ["Limited", "Unlimited", "Unlimited"] },
+  { feature: "AI Insights", values: ["Basic", "Advanced", "Enterprise"] },
+  { feature: "API Access", values: [false, false, true] },
+];
+
+const faqs = [
+  {
+    q: "Why is Patorbit different from a resume builder?",
+    a: "A resume builder produces a document. Patorbit builds a verified professional identity — every claim you make is backed by evidence, connected in a knowledge graph, and summarized in a dynamic Trust Score. Recruiters don't just read your story; they can verify it.",
+  },
+  {
+    q: "What is a Professional Passport?",
+    a: "Your Professional Passport is a shareable, verifiable summary of your professional identity. It consolidates your verified claims, evidence, and Trust Score into a single link or QR code you can share with employers, clients, and networks.",
+  },
+  {
+    q: "What is a Trust Score?",
+    a: "Your Trust Score is a 0–100 rating that reflects the strength and completeness of your verified professional identity. It's computed from the quality, recency, and verification status of the evidence behind each claim you've added.",
+  },
+  {
+    q: "Can I switch plans?",
+    a: "Yes. You can upgrade or downgrade at any time. Changes are prorated automatically, and you'll never be locked in — cancel or change whenever your needs evolve.",
+  },
+  {
+    q: "Do you offer student discounts?",
+    a: "Yes. We offer a discounted Professional plan for verified students. Contact our team through the contact page with your institutional email to get started.",
+  },
+  {
+    q: "Is my data private?",
+    a: "Your data belongs to you. We encrypt data in transit and at rest, never sell your information, and give you full control over what's public, private, or shared. See our Privacy Policy for details.",
+  },
+];
+
+const upgradeReasons = [
+  {
+    title: "Build Trust",
+    icon: "🛡️",
+    points: [
+      "Evidence-backed achievements",
+      "Verified claims",
+      "Professional Identity Score",
+    ],
+  },
+  {
+    title: "Get Better AI",
+    icon: "🤖",
+    points: [
+      "Personalized career guidance",
+      "Resume intelligence",
+      "Opportunity matching",
+    ],
+  },
+  {
+    title: "Stand Out",
+    icon: "⭐",
+    points: [
+      "Shareable Professional Passport",
+      "Recruiter-ready profile",
+      "Verified career timeline",
+    ],
+  },
+];
+
+const focusRing =
+  "focus-visible:ring-2 focus-visible:ring-cyan-500 focus-visible:outline-none focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950";
+
+/* ═══════════════ UI helpers ═══════════════ */
+
+function PriceDisplay({ plan, yearly }: { plan: Plan; yearly: boolean }) {
+  if (plan.monthly === null) {
+    return <div className="text-4xl font-bold text-white mb-2">Custom</div>;
+  }
+  const price = yearly && plan.yearly !== null ? plan.yearly : plan.monthly;
   return (
-    <main className="min-h-screen bg-slate-950 pt-24">
-      <section className="py-24">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="mx-auto max-w-3xl text-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-              <span className="inline-block rounded-full border border-emerald-500/20 bg-emerald-500/5 px-4 py-1.5 text-sm text-emerald-400 mb-6">Pricing</span>
-              <h1 className="text-5xl font-bold text-white leading-tight mb-6">Simple, Transparent Pricing</h1>
-              <p className="text-slate-400 text-lg">Choose the plan that fits your needs.</p>
-            </motion.div>
+    <div className="flex items-baseline justify-center gap-1 mb-2">
+      <span className="text-4xl font-bold text-white tabular-nums">${price}</span>
+      <span className="text-sm text-slate-400">/month</span>
+    </div>
+  );
+}
+
+function ComparisonCell({ value }: { value: string | boolean }) {
+  if (value === true) {
+    return (
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-cyan-500/15">
+        <Check className="h-3.5 w-3.5 text-cyan-400" />
+      </span>
+    );
+  }
+  if (value === false) {
+    return (
+      <span className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-slate-800/60">
+        <Minus className="h-3.5 w-3.5 text-slate-600" />
+      </span>
+    );
+  }
+  return <span className="text-sm text-slate-300">{value}</span>;
+}
+
+function CheckItem({ children }: { children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-3">
+      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/15">
+        <Check className="h-3 w-3 text-cyan-400" />
+      </span>
+      <span className="text-sm text-slate-300 leading-relaxed">{children}</span>
+    </li>
+  );
+}
+
+/* ═══════════════ Page ═══════════════ */
+
+export default function PricingPage() {
+  const [yearly, setYearly] = useState(true);
+  const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const monthlyRef = useRef<HTMLButtonElement>(null);
+  const yearlyRef = useRef<HTMLButtonElement>(null);
+
+  const handleToggleKey = (e: React.KeyboardEvent, current: "Monthly" | "Yearly") => {
+    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
+      e.preventDefault();
+      const next = current === "Monthly" ? "Yearly" : "Monthly";
+      setYearly(next === "Yearly");
+      (next === "Monthly" ? monthlyRef : yearlyRef).current?.focus();
+    }
+  };
+
+  return (
+    <main className="min-h-screen bg-slate-950">
+      {/* ── Hero ── */}
+      <section className="relative pt-36 pb-24 overflow-hidden">
+        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.007)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.007)_1px,transparent_1px)] bg-[size:64px_64px]" />
+        <div className="absolute inset-0 bg-gradient-to-b from-slate-950/80 via-slate-950 to-slate-950" />
+        <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] h-[300px] bg-gradient-radial from-cyan-500/8 via-blue-500/5 to-transparent rounded-full blur-3xl" />
+
+        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <span className="inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 mb-6">
+              <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
+              <span className="text-xs text-slate-400 tracking-wide uppercase font-medium">Pricing</span>
+            </span>
+          </motion.div>
+
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-5xl sm:text-6xl font-bold tracking-tight text-white"
+          >
+            Invest in Your{" "}
+            <span className="text-gradient">Professional Identity</span>
+          </motion.h1>
+
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed"
+          >
+            Build a trusted professional profile, verify your experience, and stand out with
+            AI-powered career intelligence.
+          </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.3 }}
+            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
+          >
+            <Link
+              href="/resume-builder"
+              className={`group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 transition-all hover:scale-[1.02] ${focusRing}`}
+            >
+              Start Free
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+            </Link>
+            <Link
+              href="/contact"
+              className={`inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-8 py-3.5 text-base font-medium text-slate-300 hover:bg-slate-900 hover:border-slate-700 hover:text-white transition-all ${focusRing}`}
+            >
+              Talk to Sales
+            </Link>
+          </motion.div>
+
+          {/* Billing toggle */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="mt-12 inline-flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900/60 p-1"
+            role="radiogroup"
+            aria-label="Billing period"
+          >
+            {(["Monthly", "Yearly"] as const).map((label) => {
+              const isYearly = label === "Yearly";
+              const active = yearly === isYearly;
+              return (
+                <button
+                  key={label}
+                  ref={isYearly ? yearlyRef : monthlyRef}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  tabIndex={active ? 0 : -1}
+                  onClick={() => setYearly(isYearly)}
+                  onKeyDown={(e) => handleToggleKey(e, label)}
+                  className={`relative inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-colors ${focusRing} ${
+                    active ? "text-white" : "text-slate-400 hover:text-slate-200"
+                  }`}
+                >
+                  {active && (
+                    <motion.span
+                      layoutId="billing-pill"
+                      className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-600/20 border border-cyan-500/30"
+                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
+                    />
+                  )}
+                  <span className="relative">{label}</span>
+                  {isYearly && (
+                    <span className="relative inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
+                      Save 20%
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Social proof ── */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        className="mx-auto max-w-3xl px-6 pb-4 text-center"
+      >
+        <p className="text-sm text-slate-400 leading-relaxed">
+          Trusted for building{" "}
+          <span className="text-slate-300 font-medium">verifiable professional identities</span> —
+          built for students, professionals, recruiters, and enterprise hiring teams.
+        </p>
+      </motion.div>
+
+      {/* ── Pricing Cards ── */}
+      <section className="pt-8 pb-24">
+        <div className="mx-auto max-w-6xl px-6">
+          <div className="grid gap-8 lg:grid-cols-3 items-center">
+            {plans.map((plan, i) => {
+              const isHighlighted = plan.badges && plan.badges.length > 0;
+              return (
+                <motion.div
+                  key={plan.name}
+                  initial={{ opacity: 0, y: 30 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.1 }}
+                  className={`relative flex flex-col rounded-2xl border p-8 ${
+                    isHighlighted
+                      ? "border-cyan-500/50 bg-slate-900/80 shadow-[0_0_80px_-15px_rgba(34,211,238,0.45)] lg:scale-[1.05] lg:z-10"
+                      : "border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all duration-300"
+                  }`}
+                >
+                  {plan.badges && (
+                    <div className="absolute -top-4 left-1/2 -translate-x-1/2 flex items-center gap-2 whitespace-nowrap">
+                      {plan.badges.map((badge) => (
+                        <span
+                          key={badge}
+                          className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-1 text-xs font-semibold text-white shadow-lg shadow-cyan-500/30"
+                        >
+                          {badge}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  <h2 className="text-xl font-bold text-white mb-1">{plan.name}</h2>
+                  <p className="text-sm text-slate-400 mb-6">{plan.tagline}</p>
+
+                  <div className="mb-6">
+                    <PriceDisplay plan={plan} yearly={yearly} />
+                    {plan.monthly !== null && (
+                      <p className="text-xs text-slate-400 text-center">
+                        {plan.yearly !== null && yearly
+                          ? `billed annually ($${plan.yearly * 12}/yr)`
+                          : "billed monthly"}
+                      </p>
+                    )}
+                  </div>
+
+                  <ul className="space-y-3.5 mb-8 flex-1">
+                    {plan.features.map((feat) => (
+                      <CheckItem key={feat}>{feat}</CheckItem>
+                    ))}
+                  </ul>
+
+                  <Link
+                    href={plan.href}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all duration-150 hover:scale-[1.02] active:scale-100 ${focusRing} ${
+                      isHighlighted
+                        ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500"
+                        : plan.monthly === 0
+                          ? "border border-slate-700 text-slate-200 hover:border-cyan-500/40 hover:text-white"
+                          : "border border-slate-700 text-slate-200 hover:border-slate-600 hover:bg-slate-800/40"
+                    }`}
+                  >
+                    {plan.cta}
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                </motion.div>
+              );
+            })}
           </div>
 
-          <div className="mt-20 grid gap-8 md:grid-cols-3">
-            {plans.map((plan, i) => (
+          {/* Trust indicators */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="mt-10 flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-slate-400"
+          >
+            <span className="inline-flex items-center gap-2">
+              <ShieldCheck className="h-4 w-4 text-emerald-400" />
+              Secure payments
+            </span>
+            <span className="hidden sm:inline text-slate-700">·</span>
+            <span className="inline-flex items-center gap-2">
+              <CreditCard className="h-4 w-4 text-cyan-400" />
+              Cancel anytime
+            </span>
+            <span className="hidden sm:inline text-slate-700">·</span>
+            <span className="inline-flex items-center gap-2">
+              <X className="h-4 w-4 text-slate-500" />
+              No hidden fees
+            </span>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── Why Professionals Upgrade ── */}
+      <section className="py-24 border-t border-white/5">
+        <div className="mx-auto max-w-6xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Why Professionals <span className="text-gradient">Upgrade</span>
+            </h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              It&apos;s not just a plan — it&apos;s the difference between a résumé and a verified career.
+            </p>
+          </motion.div>
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {upgradeReasons.map((reason, i) => (
               <motion.div
-                key={plan.name}
-                initial={{ opacity: 0, y: 30 }}
+                key={reason.title}
+                initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className="relative rounded-2xl border border-slate-800 bg-slate-900/60 p-8"
+                className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 hover:border-cyan-500/30 transition-all"
               >
-                {plan.popular && (
-                  <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-                    <span className="rounded-full bg-emerald-500 px-4 py-1 text-xs font-semibold text-white">MOST POPULAR</span>
-                  </div>
-                )}
-                <div className="text-center mb-8">
-                  <h2 className="text-2xl font-bold text-white mb-2">{plan.name}</h2>
-                  <div className="text-4xl font-bold text-emerald-400 mb-2">
-                    {plan.price}
-                    {plan.price !== "Custom" && <span className="text-lg text-slate-500">/month</span>}
-                  </div>
-                  <p className="text-slate-500 text-sm">{plan.description}</p>
-                </div>
-                <ul className="space-y-4 mb-8">
-                  {plan.features.map((feat) => (
-                    <li key={feat} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
-                        <svg className="w-3 h-3 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                        </svg>
-                      </div>
-                      <span className="text-slate-300">{feat}</span>
+                <span className="text-3xl mb-4 block">{reason.icon}</span>
+                <h3 className="text-xl font-semibold text-white mb-4">{reason.title}</h3>
+                <ul className="space-y-3">
+                  {reason.points.map((point) => (
+                    <li key={point} className="flex items-start gap-3">
+                      <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-cyan-500/15">
+                        <Check className="h-3 w-3 text-cyan-400" />
+                      </span>
+                      <span className="text-sm text-slate-300 leading-relaxed">{point}</span>
                     </li>
                   ))}
                 </ul>
-                <div className={`w-full rounded-xl py-4 px-6 font-semibold text-center transition-all ${plan.popular ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white shadow-lg" : "border border-slate-700 text-slate-300 hover:border-slate-600"}`}>
-                  {plan.price === "Custom" ? "Contact Sales" : "Get Started"}
-                </div>
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
 
-          {/* Bottom CTA */}
-          <div className="mt-20 text-center">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">Choose Your Plan</h2>
-              <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
-                Start free and upgrade as your credential needs grow.
-              </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-                <Link
-                  href="/resume-builder"
-                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-500 to-green-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition-all duration-150 hover:from-emerald-400 hover:to-green-500 hover:shadow-emerald-400/30 hover:scale-[1.02] active:scale-100"
+      {/* ── Feature Comparison ── */}
+      <section className="py-24 border-t border-white/5">
+        <div className="mx-auto max-w-4xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Compare Features</h2>
+            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+              Everything you need to see which plan fits your goals.
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/40"
+          >
+            <table className="w-full min-w-[1000px] text-left">
+              <thead>
+                <tr className="border-b border-slate-800">
+                  <th className="px-6 py-5 text-sm font-semibold text-slate-400">Feature</th>
+                  {plans.map((plan) => (
+                    <th key={plan.name} className="px-6 py-5 text-center">
+                      <span className={`text-sm font-bold ${plan.badges ? "text-cyan-400" : "text-white"}`}>
+                        {plan.name}
+                      </span>
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {comparisonRows.map((row, i) => (
+                  <tr key={row.feature} className={i % 2 === 0 ? "bg-slate-950/40" : ""}>
+                    <td className="px-6 py-4 text-sm text-slate-300">{row.feature}</td>
+                    {row.values.map((value, j) => (
+                      <td key={j} className="px-6 py-4 text-center">
+                        <ComparisonCell value={value} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── ROI ── */}
+      <section className="py-24 border-t border-white/5">
+        <div className="mx-auto max-w-4xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="rounded-2xl border border-slate-800 bg-gradient-to-br from-slate-900 to-slate-950 p-8 lg:p-12 text-center"
+          >
+            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-4">
+              The real ROI of a verified identity
+            </h2>
+            <p className="text-slate-400 text-lg leading-relaxed max-w-2xl mx-auto">
+              A stronger professional identity helps you stand out — not just with a polished resume,
+              but with verifiable achievements and evidence-backed experience.
+            </p>
+          </motion.div>
+        </div>
+      </section>
+
+      {/* ── FAQ ── */}
+      <section className="py-24 border-t border-white/5">
+        <div className="mx-auto max-w-3xl px-6">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-14"
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Frequently Asked Questions</h2>
+            <p className="text-slate-400 text-lg">Everything you need to know about Patorbit plans.</p>
+          </motion.div>
+
+          <div className="space-y-3">
+            {faqs.map((faq, i) => {
+              const isOpen = openFaq === i;
+              return (
+                <motion.div
+                  key={faq.q}
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.03 }}
+                  className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden"
                 >
-                  Start Free
-                  <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
-                </Link>
-              </div>
-            </motion.div>
+                  <h3>
+                    <button
+                      type="button"
+                      onClick={() => setOpenFaq(isOpen ? null : i)}
+                      aria-expanded={isOpen}
+                      aria-controls={`faq-panel-${i}`}
+                      id={`faq-button-${i}`}
+                      className={`w-full flex items-center justify-between gap-4 px-6 py-5 text-left ${focusRing}`}
+                    >
+                      <span className="text-sm font-semibold text-white">{faq.q}</span>
+                      <ChevronDown
+                        className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 ${
+                          isOpen ? "rotate-180 text-cyan-400" : ""
+                        }`}
+                      />
+                    </button>
+                  </h3>
+                  <div
+                    id={`faq-panel-${i}`}
+                    role="region"
+                    aria-labelledby={`faq-button-${i}`}
+                    className="grid transition-[grid-template-rows] duration-200 ease-out"
+                    style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
+                  >
+                    <div className="overflow-hidden min-h-0">
+                      <p className="px-6 pb-5 text-sm text-slate-400 leading-relaxed">{faq.a}</p>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
+        </div>
+      </section>
+
+      {/* ── Final CTA ── */}
+      <section className="py-24 border-t border-white/5">
+        <div className="mx-auto max-w-3xl px-6 text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+              Ready to build your <span className="text-gradient">Professional Identity?</span>
+            </h2>
+            <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
+              Start free and verify your first achievements today.
+            </p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link
+                href="/resume-builder"
+                className={`group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 transition-all hover:scale-[1.02] ${focusRing}`}
+              >
+                Start Free Today
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <Link
+                href="/contact"
+                className={`inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-8 py-3.5 text-base font-medium text-slate-300 hover:bg-slate-900 hover:border-slate-700 hover:text-white transition-all ${focusRing}`}
+              >
+                Talk to Sales
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
     </main>

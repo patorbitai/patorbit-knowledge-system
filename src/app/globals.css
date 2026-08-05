@@ -146,6 +146,18 @@ body {
 }
 
 /* ============================================================
+   KEYBOARD FOCUS
+   ============================================================ */
+
+/* Default visible keyboard focus for every interactive element.
+   Components that want a richer ring (box-shadow) override this by
+   setting their own focus-visible styles and clearing the outline. */
+:where(a[href], button, summary, select, input, textarea, [role="button"], [contenteditable="true"], [tabindex]):focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+}
+
+/* ============================================================
    BACKGROUND PATTERNS
    ============================================================ */
 
