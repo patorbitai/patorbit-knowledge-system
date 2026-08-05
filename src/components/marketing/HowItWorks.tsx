@@ -82,8 +82,8 @@ export default function HowItWorks() {
 
         {/* Steps grid */}
         <div className="relative max-w-5xl mx-auto">
-          {/* Connecting line */}
-          <div className="absolute left-8 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/0 via-cyan-500/20 to-cyan-500/0 hidden md:block" />
+          {/* Connecting line — centered behind the circles; the circles' solid discs mask it */}
+          <div className="absolute left-10 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/0 via-cyan-500/20 to-cyan-500/0 hidden md:block" />
 
           <div className="space-y-8 md:space-y-0">
             {steps.map((step, i) => (
@@ -94,20 +94,24 @@ export default function HowItWorks() {
                   transform: isInView ? "translateY(0)" : "translateY(20px)",
                   transition: `opacity 0.4s ease-out ${i * 0.08}s, transform 0.4s ease-out ${i * 0.08}s`,
                 }}
-                className="relative md:grid md:grid-cols-[80px_1fr] gap-6 items-start py-4"
+                className="relative md:grid md:grid-cols-[80px_1fr] gap-6 items-center py-4"
               >
                 {/* Step number + icon */}
-                <div className="flex md:flex-col items-center gap-3 md:items-center">
-                  <div
-                    className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full border"
-                    style={{
-                      borderColor: `${step.color}30`,
-                      backgroundColor: `${step.color}10`,
-                    }}
-                  >
-                    <step.icon className="h-6 w-6" style={{ color: step.color }} />
+                <div className="relative flex md:flex-col items-center gap-3 md:items-center md:h-full">
+                  {/* Circle is pinned to the row's vertical midpoint so it centers
+                      exactly on the card, independent of the step number below it. */}
+                  <div className="relative z-10 h-14 w-14 shrink-0 rounded-full bg-[#070B14] md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
+                    <div
+                      className="absolute inset-0 flex items-center justify-center rounded-full border"
+                      style={{
+                        borderColor: `${step.color}30`,
+                        backgroundColor: `${step.color}10`,
+                      }}
+                    >
+                      <step.icon className="h-6 w-6" style={{ color: step.color }} />
+                    </div>
                   </div>
-                  <span className="text-xs font-bold tabular-nums" style={{ color: step.color }}>
+                  <span className="text-xs font-bold tabular-nums md:mt-auto md:mb-0" style={{ color: step.color }}>
                     {String(i + 1).padStart(2, "0")}
                   </span>
                 </div>
