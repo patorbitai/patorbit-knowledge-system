@@ -32,7 +32,7 @@ const navGroups = [
       { href: "/docs", label: "Documentation" },
       { href: "/api-reference", label: "API" },
       { href: "/developers", label: "Developers" },
-      { href: "/status", label: "Changelog" },
+      { href: "/changelog", label: "Changelog" },
       { href: "/status", label: "Status" },
     ],
   },
