@@ -107,7 +107,7 @@ export interface ResumeBuilderState {
 
 /* ── Store ── */
 
-const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
+export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
       function makeArrayHelpers<K extends keyof Resume>(key: K, defaultItem: Partial<Resume[K] extends (infer U)[] ? U : never>) {
         return {
           add: () => set((s) => {
@@ -151,7 +151,7 @@ const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         updateSocial: (key, value) => set((s) => ({ resume: { ...s.resume, social: { ...s.resume.social, [key]: value } }, saveStatus: "unsaved" })),
         setActiveSection: (id) => set({ activeSection: id }),
         setCareerStage: (stage) => set((s) => ({ resume: { ...s.resume, careerStage: stage }, saveStatus: "unsaved" })),
-        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, saveStatus: "unsaved", suggestedClaims: [], evidence: [] }),
+        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null }),
         setSaveStatus: (status) => set({ saveStatus: status }),
         setAnalysis: (analysis) => set({ analysis }), setAnalysisLoading: (loading) => set({ analysisLoading: loading }),
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),

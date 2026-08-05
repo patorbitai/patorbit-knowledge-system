@@ -11,14 +11,7 @@ import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndic
 import { SettingsModal } from "@/components/resume-builder/SettingsModal";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
 import { Eye, Settings, Download, User } from "lucide-react";
-
-function debounce<F extends (...args: any[]) => any>(fn: F, delay: number) {
-  let timeoutId: ReturnType<typeof setTimeout> | null = null;
-  return function (this: any, ...args: any[]) {
-    if (timeoutId) clearTimeout(timeoutId);
-    timeoutId = setTimeout(() => fn.apply(this, args), delay);
-  };
-}
+import { debounce } from "@/lib/debounce";
 
 /* ── App Header ── */
 function AppHeader() {
