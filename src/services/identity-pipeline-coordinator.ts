@@ -4,7 +4,7 @@ import { resumeToGraph } from "./graph-mapper";
 import type { GraphService } from "./graph-service";
 import type { TrustService } from "./trust-service";
 import type { Resume, Evidence } from "@/types/resume";
-import type { KnowledgeGraph, TrustSnapshot } from "@/types/knowledge-graph";
+import type { KnowledgeGraph, TrustReport } from "@/types/knowledge-graph";
 
 /**
  * Identity Pipeline Coordinator — orchestration only.
@@ -20,9 +20,9 @@ import type { KnowledgeGraph, TrustSnapshot } from "@/types/knowledge-graph";
  *   Store (resume, claims, evidence)
  *     ↓  resumeToGraph(...)
  *   GraphService.setGraph(graph)
- *     ↓  calculateTrustScore()
+ *     ↓  calculateTrustReport()
  *   TrustService
- *     ↓  setTrustScore(snapshot)
+ *     ↓  setTrustReport(report) + setTrustScore(report.snapshot)
  *   Store cache
  */
 
@@ -30,7 +30,8 @@ import type { KnowledgeGraph, TrustSnapshot } from "@/types/knowledge-graph";
 export interface IdentityPipelineStorePort {
   resume: Resume;
   evidence: Evidence[];
-  setTrustScore: (score: TrustSnapshot | null) => void;
+  setTrustScore: (score: TrustReport["snapshot"] | null) => void;
+  setTrustReport: (report: TrustReport | null) => void;
 }
 
 export class IdentityPipelineCoordinator {
@@ -50,22 +51,23 @@ export class IdentityPipelineCoordinator {
 
   /**
    * Rebuild the derived graph from canonical store state, recompute the
-   * trust score, and cache the snapshot back into the store.
+   * trust report, and cache both the report and its snapshot back into the store.
    *
    * Failures (graph build or trust calc) propagate to the caller; because
-   * `setTrustScore` only runs after both succeed, a failed recomputation
-   * leaves the prior cached snapshot untouched.
+   * the store writes only run after both succeed, a failed recomputation
+   * leaves the prior cached values untouched.
    */
-  refreshIdentityPipeline(): TrustSnapshot {
+  refreshIdentityPipeline(): TrustReport {
     const resume: Resume = this.store.resume;
     const evidence: Evidence[] = this.store.evidence;
 
     const graph: KnowledgeGraph = resumeToGraph(resume, "user-input", evidence);
     this.graphService.setGraph(graph);
 
-    const snapshot: TrustSnapshot = this.trustService.calculateTrustScore();
-    this.store.setTrustScore(snapshot);
+    const report: TrustReport = this.trustService.calculateTrustReport();
+    this.store.setTrustReport(report);
+    this.store.setTrustScore(report.snapshot);
 
-    return snapshot;
+    return report;
   }
 }

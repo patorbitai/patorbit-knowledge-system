@@ -47,6 +47,7 @@ export function startIdentityPipeline(): () => void {
         return useResumeBuilder.getState().evidence;
       },
       setTrustScore: (score) => useResumeBuilder.getState().setTrustScore(score),
+      setTrustReport: (report) => useResumeBuilder.getState().setTrustReport(report),
     },
   );
 

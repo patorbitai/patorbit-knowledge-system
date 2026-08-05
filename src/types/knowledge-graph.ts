@@ -335,6 +335,54 @@ export interface TrustSnapshot {
   calculatedAt: string;
 }
 
+/** Aggregate verification status across all claims. */
+export interface VerificationSummary {
+  total: number;
+  verified: number;
+  pending: number;
+  unverified: number;
+  disputed: number;
+  expired: number;
+  coverage: number; // percentage
+}
+
+/** How well claims are supported by evidence. */
+export interface EvidenceCoverage {
+  totalClaims: number;
+  claimsWithEvidence: number;
+  claimsWithoutEvidence: number;
+  coveragePercent: number;
+  evidenceByFormat: Record<string, number>;
+  strongestAreas: string[];
+  weakestAreas: string[];
+}
+
+/** A claim that needs attention, with reasons and priority. */
+export interface WeakClaim {
+  claim: ClaimNode;
+  reasons: string[];
+  evidenceCount: number;
+  priority: "high" | "medium" | "low";
+}
+
+/**
+ * A richer trust report — the canonical output of `TrustService.calculateTrustReport()`.
+ *
+ * Wraps the lightweight `TrustSnapshot` together with the diagnostic insights that
+ * explain it (verification, evidence coverage, weak claims). Keeps `TrustSnapshot`
+ * focused on the score while giving the UI everything it needs for explainability.
+ *
+ * Derived from the graph, never canonical.
+ */
+export interface TrustReport {
+  snapshot: TrustSnapshot;
+  verificationSummary: VerificationSummary;
+  evidenceCoverage: EvidenceCoverage;
+  weakClaims: WeakClaim[];
+  /** When the report was generated (ISO 8601). */
+  generatedAt: string;
+}
+
 /** The overall Trust Score for the graph or a specific domain. */
 export interface TrustScoreNode extends GraphNode {
   type: "trust-score";

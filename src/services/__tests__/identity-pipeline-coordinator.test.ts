@@ -85,21 +85,27 @@ function makeResume(claims: Claim[]): Resume {
 function makeStore(overrides: {
   resume?: Resume;
   evidence?: Evidence[];
-} = {}): { store: IdentityPipelineStorePort; setTrustScore: ReturnType<typeof vi.fn> } {
+} = {}): {
+  store: IdentityPipelineStorePort;
+  setTrustScore: ReturnType<typeof vi.fn>;
+  setTrustReport: ReturnType<typeof vi.fn>;
+} {
   const resume = overrides.resume ?? makeResume([]);
   const evidence = overrides.evidence ?? [];
   const setTrustScore = vi.fn();
+  const setTrustReport = vi.fn();
   const store: IdentityPipelineStorePort = {
     resume,
     evidence,
     setTrustScore,
+    setTrustReport,
   };
-  return { store, setTrustScore };
+  return { store, setTrustScore, setTrustReport };
 }
 
 /** Build a coordinated pipeline over a store double, returning the seams. */
 function buildPipeline(storeData: Parameters<typeof makeStore>[0] = {}) {
-  const { store, setTrustScore } = makeStore(storeData);
+  const { store, setTrustScore, setTrustReport } = makeStore(storeData);
   const graphService = new GraphService();
   const trustService = new TrustService(graphService);
   const coordinator = new IdentityPipelineCoordinator(graphService, trustService, store);
@@ -107,6 +113,7 @@ function buildPipeline(storeData: Parameters<typeof makeStore>[0] = {}) {
     coordinator,
     store,
     setTrustScore,
+    setTrustReport,
     graphService,
     trustService,
   };
@@ -155,39 +162,44 @@ describe("IdentityPipelineCoordinator", () => {
     );
   });
 
-  it("executes TrustService.calculateTrustScore", () => {
+  it("executes TrustService.calculateTrustReport", () => {
     const resume = makeResume([makeClaim("c1", true)]);
     const { coordinator, trustService } = buildPipeline({ resume });
 
-    const calcSpy = vi.spyOn(trustService, "calculateTrustScore");
+    const calcSpy = vi.spyOn(trustService, "calculateTrustReport");
     coordinator.refreshIdentityPipeline();
 
     expect(calcSpy).toHaveBeenCalledTimes(1);
   });
 
-  it("caches the trust snapshot into the store", () => {
+  it("caches the trust report and its snapshot into the store", () => {
     const resume = makeResume([makeClaim("c1", true)]);
     const evidence = [makeEvidence("e1", "c1")];
-    const { coordinator, setTrustScore } = buildPipeline({ resume, evidence });
+    const { coordinator, setTrustScore, setTrustReport } = buildPipeline({ resume, evidence });
 
     // The standalone reference pipeline builds the proper graph and scores it.
     const before = runStandalone(resume, evidence);
 
-    const snapshot = coordinator.refreshIdentityPipeline();
+    const report = coordinator.refreshIdentityPipeline();
 
+    // The report carries the full snapshot plus the diagnostic insights.
+    expect(report.snapshot.overall).toBe(before.overall);
+    expect(report.snapshot.components).toEqual(before.components);
+    expect(report.verificationSummary.total).toBe(1);
+    expect(report.evidenceCoverage.totalClaims).toBe(1);
+    expect(Array.isArray(report.weakClaims)).toBe(true);
+    expect(typeof report.generatedAt).toBe("string");
+
+    // The coordinator writes BOTH the report and its snapshot to the store.
+    expect(setTrustReport).toHaveBeenCalledTimes(1);
+    expect(setTrustReport).toHaveBeenCalledWith(report);
     expect(setTrustScore).toHaveBeenCalledTimes(1);
-    expect(setTrustScore).toHaveBeenCalledWith(snapshot);
-    // The cached snapshot is the same scalar output the standalone pipeline yields.
-    expect(snapshot.overall).toBe(before.overall);
-    expect(snapshot.components).toEqual(before.components);
-    expect(setTrustScore).toHaveBeenCalledWith(
-      expect.objectContaining({ overall: before.overall }),
-    );
+    expect(setTrustScore).toHaveBeenCalledWith(report.snapshot);
   });
 
   it("propagates graph generation failure", () => {
     const resume = makeResume([makeClaim("c1", true)]);
-    const { coordinator, graphService, setTrustScore } = buildPipeline({ resume });
+    const { coordinator, graphService, setTrustScore, setTrustReport } = buildPipeline({ resume });
 
     const boom = new Error("graph exploded");
     vi.spyOn(graphMapper, "resumeToGraph").mockImplementation(() => {
@@ -197,46 +209,57 @@ describe("IdentityPipelineCoordinator", () => {
     const setGraphSpy = vi.spyOn(graphService, "setGraph");
 
     expect(() => coordinator.refreshIdentityPipeline()).toThrow(boom);
-    // Graph never reaches GraphService, and the prior snapshot is untouched.
+    // Graph never reaches GraphService, and prior caches are untouched.
     expect(setGraphSpy).not.toHaveBeenCalled();
     expect(setTrustScore).not.toHaveBeenCalled();
+    expect(setTrustReport).not.toHaveBeenCalled();
   });
 
-  it("propagates trust calculation failure and keeps prior snapshot", () => {
+  it("propagates trust calculation failure and keeps prior values", () => {
     const resume = makeResume([makeClaim("c1", true)]);
     const evidence = [makeEvidence("e1", "c1")];
-    const { coordinator, trustService, graphService, setTrustScore } = buildPipeline({ resume, evidence });
+    const { coordinator, trustService, graphService, setTrustScore, setTrustReport } = buildPipeline({ resume, evidence });
 
-    // First successful run establishes the graph + a prior snapshot.
+    // First successful run establishes the graph + a prior report/snapshot.
     const first = coordinator.refreshIdentityPipeline();
     expect(setTrustScore).toHaveBeenCalledTimes(1);
+    expect(setTrustReport).toHaveBeenCalledTimes(1);
 
-    // Second run: trust calc throws. It must propagate and NOT write a snapshot.
+    // Second run: trust calc throws. It must propagate and NOT write anything.
     const boom = new Error("trust exploded");
     const setGraphSpy = vi.spyOn(graphService, "setGraph");
-    vi.spyOn(trustService, "calculateTrustScore").mockImplementation(() => {
+    vi.spyOn(trustService, "calculateTrustReport").mockImplementation(() => {
       throw boom;
     });
 
     expect(() => coordinator.refreshIdentityPipeline()).toThrow(boom);
     // The graph was still rebuilt (setGraph ran), but trust failed.
     expect(setGraphSpy).toHaveBeenCalledTimes(1);
-    // Prior cached snapshot retained — no new write.
+    // Prior cached report + snapshot retained — no new writes.
     expect(setTrustScore).toHaveBeenCalledTimes(1);
-    expect(setTrustScore).toHaveBeenLastCalledWith(first);
+    expect(setTrustReport).toHaveBeenCalledTimes(1);
+    expect(setTrustScore).toHaveBeenLastCalledWith(first.snapshot);
+    expect(setTrustReport).toHaveBeenLastCalledWith(first);
   });
 
   it("executes a valid pipeline with empty claims and evidence", () => {
-    const { coordinator, graphService, setTrustScore } = buildPipeline({ resume: defaultResume });
+    const { coordinator, graphService, setTrustScore, setTrustReport } = buildPipeline({ resume: defaultResume });
 
-    const snapshot = coordinator.refreshIdentityPipeline();
+    const report = coordinator.refreshIdentityPipeline();
 
-    expect(snapshot).toBeDefined();
-    expect(Array.isArray(snapshot.components)).toBe(true);
+    expect(report).toBeDefined();
+    expect(report.snapshot).toBeDefined();
+    expect(Array.isArray(report.snapshot.components)).toBe(true);
     // Empty identity produces an overall of null but a completed run.
-    expect(snapshot.overall).toBeNull();
+    expect(report.snapshot.overall).toBeNull();
+    // Empty report: zero claims, zero coverage, no weak claims.
+    expect(report.verificationSummary.total).toBe(0);
+    expect(report.evidenceCoverage.totalClaims).toBe(0);
+    expect(report.weakClaims).toHaveLength(0);
     expect(setTrustScore).toHaveBeenCalledTimes(1);
-    expect(setTrustScore).toHaveBeenCalledWith(snapshot);
+    expect(setTrustScore).toHaveBeenCalledWith(report.snapshot);
+    expect(setTrustReport).toHaveBeenCalledTimes(1);
+    expect(setTrustReport).toHaveBeenCalledWith(report);
     // The graph has a shell profile node, but nothing else.
     expect(graphService.getGraph().nodes.length).toBe(1);
     expect(graphService.getGraph().nodes[0].type).toBe("profile");

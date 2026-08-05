@@ -6,6 +6,11 @@ import type {
   EvidenceNode,
   VerifierNode,
   TrustScoreComponent,
+  TrustSnapshot,
+  TrustReport,
+  VerificationSummary,
+  EvidenceCoverage,
+  WeakClaim,
   EdgeType,
   NodeId,
 } from "@/types/knowledge-graph";
@@ -31,12 +36,52 @@ export class TrustService {
   //  Trust Score
   // -----------------------------------------------------------------
 
-  /** Compute an overall trust score for the entire profile (0–100). */
-  calculateTrustScore(): {
-    overall: number | null;
-    components: TrustScoreComponent[];
-    calculatedAt: string;
-  } {
+  /**
+   * Canonical trust API.
+   *
+   * All new consumers should use `calculateTrustReport()`.
+   *
+   * `calculateTrustScore()` exists only for backward compatibility and
+   * returns `report.snapshot`.
+   */
+
+  /**
+   * Compute a rich trust report — including the lightweight snapshot,
+   * verification summary, evidence coverage, weak claims, and generation timestamp.
+   *
+   * This is the canonical aggregation method used internally. Existing consumers
+   * that only need the score call calculateTrustScore(), which extracts the snapshot
+   * from the report.
+   */
+  calculateTrustReport(): TrustReport {
+    const snapshot = this._calculateScoreSnapshot();
+    const verificationSummary = this.getVerificationSummary();
+    const evidenceCoverage = this.getEvidenceCoverage();
+    const weakClaims = this.findWeakClaims();
+
+    return {
+      snapshot,
+      verificationSummary,
+      evidenceCoverage,
+      weakClaims,
+      generatedAt: snapshot.calculatedAt, // reuse snapshot timestamp
+    };
+  }
+
+  /** Public lightweight version returning just the score snapshot (backward compatible). */
+  calculateTrustScore(): TrustSnapshot {
+    return this._calculateScoreSnapshot();
+  }
+
+  // -----------------------------------------------------------------
+  //  Private — score snapshot
+  // -----------------------------------------------------------------
+
+  /**
+   * Compute an overall trust score for the entire profile (0–100).
+   * This is the actual scoring implementation; both public methods surface it.
+   */
+  private _calculateScoreSnapshot(): TrustSnapshot {
     const components: TrustScoreComponent[] = [
       this.scoreIdentity(),
       this.scoreSkills(),
@@ -85,15 +130,7 @@ export class TrustService {
   // -----------------------------------------------------------------
 
   /** Aggregate verification status across all claims. */
-  getVerificationSummary(): {
-    total: number;
-    verified: number;
-    pending: number;
-    unverified: number;
-    disputed: number;
-    expired: number;
-    coverage: number; // percentage
-  } {
+  getVerificationSummary(): VerificationSummary {
     const claims = this.graph.findClaims();
     const verified = claims.filter((c) => c.verificationStatus === "verified").length;
     const pending = claims.filter((c) => c.verificationStatus === "pending").length;
@@ -111,15 +148,7 @@ export class TrustService {
   // -----------------------------------------------------------------
 
   /** Measure how well claims are supported by evidence. */
-  getEvidenceCoverage(): {
-    totalClaims: number;
-    claimsWithEvidence: number;
-    claimsWithoutEvidence: number;
-    coveragePercent: number;
-    evidenceByFormat: Record<string, number>;
-    strongestAreas: string[];
-    weakestAreas: string[];
-  } {
+  getEvidenceCoverage(): EvidenceCoverage {
     const claims = this.graph.findClaims();
     const allEvidence = this.graph.findEvidence();
 
@@ -170,18 +199,8 @@ export class TrustService {
   // -----------------------------------------------------------------
 
   /** Find claims that need attention (unverified, low confidence, disputed). */
-  findWeakClaims(): Array<{
-    claim: ClaimNode;
-    reasons: string[];
-    evidenceCount: number;
-    priority: "high" | "medium" | "low";
-  }> {
-    const weak: Array<{
-      claim: ClaimNode;
-      reasons: string[];
-      evidenceCount: number;
-      priority: "high" | "medium" | "low";
-    }> = [];
+  findWeakClaims(): WeakClaim[] {
+    const weak: WeakClaim[] = [];
 
     for (const claim of this.graph.findClaims()) {
       const evidence = this.graph.findEvidenceForClaim(claim.id);

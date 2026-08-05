@@ -39,7 +39,7 @@ function makeEvidence(id: string, claimId: string): Evidence {
     id,
     claimId,
     evidenceType: "file",
-    evidenceKind: "Screenshot",
+    evidenceKind: "Screenshots",
     content: "blob",
     format: "image/png",
     metadata: {},
