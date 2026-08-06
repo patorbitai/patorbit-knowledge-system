@@ -9,7 +9,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
       <main className="p-8">
         <header className="grid grid-cols-3 gap-8 mb-8 items-center">
           <div className="col-span-2">
-            <h1 className="text-4xl font-extralight tracking-tight" style={{ color: ink }}>{resume.name || "Your Name"}</h1>
+            <h1 className="text-4xl font-semibold tracking-tight" style={{ color: ink }}>{resume.name || "Your Name"}</h1>
             <p className="mt-1 text-lg font-light" style={{ color: accent }}>{resume.title || "Professional Title"}</p>
           </div>
           <div className="text-right text-xs" style={{ color: muted }}>
@@ -19,16 +19,16 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
             <div className="mt-2 flex justify-end"><SocialLinks social={resume.social} color={muted} size="sm" /></div>
           </div>
         </header>
-        {resume.summary && <div className="mb-8 text-sm italic" style={{ color: muted }}><FormattedDescription text={resume.summary} color={ink} mutedColor={muted} size="sm" /></div>}
+        {resume.summary && <div className="mb-8 text-sm" style={{ color: ink }}><FormattedDescription text={resume.summary} color={ink} mutedColor={muted} size="sm" /></div>}
         <div className="grid grid-cols-3 gap-x-8">
           <div className="col-span-2 space-y-6">
-            {resume.experience.length > 0 && <Section title="Experience">{resume.experience.map(exp => <article key={exp.id}><div className="flex justify-between items-baseline"><h3 className="text-base font-semibold" style={{ color: accent }}>{exp.position}</h3><span className="text-xs font-medium" style={{ color: muted }}>{exp.duration}</span></div><p className="text-sm" style={{ color: muted }}>{exp.company}{exp.location && ` | ${exp.location}`}</p>{exp.description && <div className="mt-1 text-sm"><FormattedDescription text={exp.description} color={ink} mutedColor={muted} /></div>}</article>)}</Section>}
+            {resume.experience.length > 0 && <Section title="Experience"><div className="space-y-5">{resume.experience.map(exp => <article key={exp.id}><div className="flex justify-between items-baseline"><h3 className="text-base font-semibold" style={{ color: accent }}>{exp.position}</h3><span className="text-xs font-medium" style={{ color: muted }}>{exp.duration || [exp.startDate, exp.endDate || "Present"].filter(Boolean).join(" – ")}</span></div><p className="text-sm" style={{ color: muted }}>{exp.company}{exp.location && ` | ${exp.location}`}</p>{exp.description && <div className="mt-1 text-sm"><FormattedDescription text={exp.description} color={ink} mutedColor={muted} /></div>}{exp.bulletPoints && exp.bulletPoints.length > 0 && <ul className="mt-1 list-disc list-inside space-y-0.5 text-sm" style={{ color: ink }}>{exp.bulletPoints.map((bp, i) => <li key={i}>{bp}</li>)}</ul>}</article>)}</div></Section>}
             {resume.projects.length > 0 && <Section title="Projects">{resume.projects.map(p => <article key={p.id}><h3 className="text-base font-semibold" style={{ color: accent }}>{p.name}</h3>{p.role && <p className="text-sm" style={{ color: muted }}>{p.role}</p>}{p.description && <div className="mt-1 text-sm"><FormattedDescription text={p.description} color={ink} mutedColor={muted} /></div>}</article>)}</Section>}
           </div>
           <div className="col-span-1 space-y-6">
-            {resume.education.length > 0 && <Section title="Education">{resume.education.map(edu => <article key={edu.id}><h3 className="text-base font-semibold" style={{ color: accent }}>{edu.school}</h3><p className="text-sm" style={{ color: muted }}>{edu.degree}</p><p className="text-xs" style={{ color: muted }}>{edu.year}</p></article>)}</Section>}
+            {resume.education.length > 0 && <Section title="Education">{resume.education.map(edu => <article key={edu.id}><h3 className="text-base font-semibold" style={{ color: accent }}>{edu.school}</h3><p className="text-sm" style={{ color: muted }}>{edu.degree}{edu.field && ` in ${edu.field}`}</p><p className="text-xs" style={{ color: muted }}>{edu.year}</p></article>)}</Section>}
             {resume.skills.length > 0 && <Section title="Skills">{resume.skills.map(skill => <div key={skill.id} className="mb-2"><p className="text-sm font-semibold">{skill.name}</p><div className="h-1.5 w-full rounded-full mt-1" style={{ backgroundColor: border }}><div className="h-full rounded-full" style={{ width: skill.level === "Expert" ? "100%" : skill.level === "Advanced" ? "75%" : "50%", backgroundColor: accent }} /></div></div>)}</Section>}
-            {resume.certifications.length > 0 && <Section title="Certifications">{resume.certifications.map(c => <p key={c.id} className="text-sm mb-1">{c.name}</p>)}</Section>}
+            {resume.certifications.length > 0 && <Section title="Certifications">{resume.certifications.map(c => <div key={c.id} className="mb-2"><p className="text-sm font-medium">{c.name}</p>{(c.issuer || c.date) && <p className="text-xs" style={{ color: muted }}>{[c.issuer, c.date].filter(Boolean).join(" · ")}</p>}</div>)}</Section>}
             {resume.languages.length > 0 && <Section title="Languages">{resume.languages.map(l => <p key={l.id} className="text-sm">{l.name} <span style={{ color: muted }}>({l.proficiency})</span></p>)}</Section>}
           </div>
         </div>

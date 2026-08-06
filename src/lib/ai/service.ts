@@ -84,8 +84,8 @@ export class AIService {
     return { content: result };
   }
 
-  async improveTone(text: string): Promise<{ content: string }> {
-    const { system, user } = Prompts.improveTone(text);
+  async improveTone(data: { text: string }): Promise<{ content: string }> {
+    const { system, user } = Prompts.improveTone(data.text);
     const result = await this.complete(system, user);
     return { content: result };
   }
@@ -96,8 +96,8 @@ export class AIService {
     return { content: result };
   }
 
-  async improveBulletPoints(bullets: string[]): Promise<{ content: string[] }> {
-    const { system, user } = Prompts.improveBulletPoints(bullets);
+  async improveBulletPoints(data: { bullets: string[] }): Promise<{ content: string[] }> {
+    const { system, user } = Prompts.improveBulletPoints(data.bullets);
     const result = await this.complete(system, user, { maxTokens: 512 });
     return { content: splitLines(result) };
   }

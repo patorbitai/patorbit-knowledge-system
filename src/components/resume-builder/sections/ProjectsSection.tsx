@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
-import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
 import { VerificationBadge } from "../fields/VerificationBadge";
-import { AIActionButton, AIActionDropdown } from "../AIActionButton";
+import { AIActionButton } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { ai } from "@/lib/ai/client";
 import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
@@ -15,17 +14,20 @@ import { useValidation } from "../hooks/useValidation";
 
 export function ProjectsSection() {
   const resume = useResumeBuilder((s) => s.resume);
+  const claims = useResumeBuilder((s) => s.resume.claims ?? []);
+  const projects = useResumeBuilder((s) => s.resume.projects ?? []);
   const addProject = useResumeBuilder((s) => s.addProject);
   const updateProject = useResumeBuilder((s) => s.updateProject);
   const removeProject = useResumeBuilder((s) => s.removeProject);
   const moveProject = useResumeBuilder((s) => s.moveProject);
   const setAIAction = useResumeBuilder((s) => s.setAIAction);
+  const aiActions = useResumeBuilder((s) => s.aiActions);
   const { touch, getFieldError } = useValidation();
 
   // Map a project entry to its claim (via sourceActivityId "projects-<n>") so
   // the VerificationBadge reflects the claim's real evidence state.
   const claimForProject = (id: string, index: number) =>
-    resume.claims.find(
+    claims.find(
       (c) => c.sourceActivityId === id || c.sourceActivityId === `projects-${index}`,
     );
 
@@ -42,7 +44,7 @@ export function ProjectsSection() {
   };
 
   const handleGenerateDescription = async (id: string) => {
-    const proj = resume.projects.find((p) => p.id === id);
+    const proj = projects.find((p) => p.id === id);
     if (!proj) return;
     setAIAction(`proj-${id}-gen`, { status: "loading", result: null, error: null });
     try {
@@ -61,13 +63,13 @@ export function ProjectsSection() {
       title="Projects"
       description="Notable projects that demonstrate your skills"
       icon="📁"
-      isValid={resume.projects.length > 0 && resume.projects.some((p) => p.name)}
+      isValid={projects.length > 0 && projects.some((p) => p.name)}
       actions={
         <AIActionButton label="Add Project" onClick={addProject} variant="outline" icon={<Plus className="w-3 h-3" />} />
       }
     >
       <AnimatePresence>
-        {resume.projects.length === 0 ? (
+        {projects.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-14 text-center bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]">
             <FolderIcon />
             <p className="text-sm text-slate-400 mb-1 mt-4">No projects yet</p>
@@ -76,7 +78,7 @@ export function ProjectsSection() {
           </motion.div>
         ) : (
           <div className="space-y-3">
-            {resume.projects.map((proj, idx) => {
+            {projects.map((proj, idx) => {
               const isExpanded = expandedIds.has(proj.id);
               const projSug = projectSuggestions.get(proj.id);
 
@@ -102,7 +104,7 @@ export function ProjectsSection() {
                       })()}
                       <div className="flex items-center gap-0.5">
                         <button onClick={(e) => { e.stopPropagation(); moveProject(proj.id, -1); }} disabled={idx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
-                        <button onClick={(e) => { e.stopPropagation(); moveProject(proj.id, 1); }} disabled={idx === resume.projects.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); moveProject(proj.id, 1); }} disabled={idx === projects.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
                       </div>
                       <button onClick={(e) => { e.stopPropagation(); removeProject(proj.id); }} className="p-1.5 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10"><Trash2 className="w-3 h-3" /></button>
                     </div>
@@ -120,11 +122,13 @@ export function ProjectsSection() {
                             <FieldInput label="End Date" placeholder="Jun 2024" value={proj.endDate} onChange={(v) => updateProject(proj.id, "endDate", v)} />
                           </div>
 
-                          {/* AI actions */}
                           <div className="flex items-center flex-wrap gap-1.5">
-                            <AIActionButton label="Generate Description" onClick={() => handleGenerateDescription(proj.id)} isLoading={false} variant="ghost" />
-                            {proj.description && <AIActionButton label="Improve Description" onClick={() => handleGenerateDescription(proj.id)} variant="ghost" />}
+                            <AIActionButton label="Generate Description" onClick={() => handleGenerateDescription(proj.id)} isLoading={aiActions[`proj-${proj.id}-gen`]?.status === "loading"} variant="ghost" />
+                            {proj.description && <AIActionButton label="Improve Description" onClick={() => handleGenerateDescription(proj.id)} isLoading={aiActions[`proj-${proj.id}-gen`]?.status === "loading"} variant="ghost" />}
                           </div>
+                          {aiActions[`proj-${proj.id}-gen`]?.status === "error" && (
+                            <p className="text-[11px] text-red-400">{aiActions[`proj-${proj.id}-gen`].error || "AI request failed. Please try again."}</p>
+                          )}
 
                           <FieldInput label="Description" placeholder="Describe the project and your contributions..." value={proj.description} onChange={(v) => updateProject(proj.id, "description", v)} type="textarea" rows={3} />
 

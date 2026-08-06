@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
 import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
-import { AIActionButton, AIActionDropdown } from "../AIActionButton";
+import { AIActionButton } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { ai } from "@/lib/ai/client";
 import { useValidation } from "../hooks/useValidation";
@@ -166,6 +166,11 @@ export function PersonalSection() {
               )}
             </div>
           </div>
+          {(aiActions["summary-generate"]?.status === "error" || aiActions["summary-rewrite"]?.status === "error" || aiActions["summary-tone"]?.status === "error") && (
+            <p className="text-[11px] text-red-400">
+              {aiActions["summary-generate"]?.error || aiActions["summary-rewrite"]?.error || aiActions["summary-tone"]?.error || "AI request failed. Please try again."}
+            </p>
+          )}
           <FieldInput
             label=""
             placeholder="Write a brief summary of your background and career goals..."

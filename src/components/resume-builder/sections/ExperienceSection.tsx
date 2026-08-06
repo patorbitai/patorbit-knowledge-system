@@ -1,21 +1,18 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
-import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
 import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton, AIActionDropdown } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { ai } from "@/lib/ai/client";
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, RotateCcw } from "lucide-react";
+import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { clsx } from "clsx";
 import { useValidation } from "../hooks/useValidation";
 
 export function ExperienceSection() {
-  const resume = useResumeBuilder((s) => s.resume);
   const claims = useResumeBuilder((s) => s.resume.claims ?? []);
   const experience = useResumeBuilder((s) => s.resume.experience ?? []);
   const addExperience = useResumeBuilder((s) => s.addExperience);
@@ -182,6 +179,11 @@ export function ExperienceSection() {
             {experience.map((exp, idx) => {
               const isExpanded = expandedIds.has(exp.id);
               const expSuggestion = suggestions.get(exp.id);
+              const expAIError = [
+                aiActions[`exp-${exp.id}-bullets`],
+                aiActions[`exp-${exp.id}-improve-bullets`],
+                ...["ats", "impact", "concise", "expanded", "professional"].map((t) => aiActions[`exp-${exp.id}-${t}`]),
+              ].find((a) => a?.status === "error")?.error ?? null;
 
               return (
                 <motion.div
@@ -325,6 +327,9 @@ export function ExperienceSection() {
                               />
                             )}
                           </div>
+                          {expAIError && (
+                            <p className="text-[11px] text-red-400">{expAIError}</p>
+                          )}
 
                           {/* Description */}
                           <FieldInput
@@ -425,6 +430,20 @@ export function ExperienceSection() {
                               onRegenerate={() => handleAIRewrite(exp.id, (expSuggestion.type as string).replace("rewrite-", "") as any)}
                               onDismiss={() => setSuggestions((prev) => { const n = new Map(prev); n.delete(exp.id); return n; })}
                               type="rewrite"
+                            />
+                          )}
+
+                          {expSuggestion?.type === "improve-bullets" && Array.isArray(expSuggestion.content) && (
+                            <SmartSuggestion
+                              original={(exp.bulletPoints ?? []).join("\n• ")}
+                              suggestion={(expSuggestion.content as string[]).join("\n• ")}
+                              onAccept={() => {
+                                updateExperience(exp.id, "bulletPoints", expSuggestion.content as string[]);
+                                setSuggestions((prev) => { const n = new Map(prev); n.delete(exp.id); return n; });
+                              }}
+                              onRegenerate={() => handleImproveBullets(exp.id)}
+                              onDismiss={() => setSuggestions((prev) => { const n = new Map(prev); n.delete(exp.id); return n; })}
+                              type="improvement"
                             />
                           )}
                         </div>

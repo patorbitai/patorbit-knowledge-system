@@ -214,15 +214,17 @@ export function ReviewSection() {
   const progress = useResumeBuilder((s) => s.progress);
   const sectionComplete = useResumeBuilder((s) => s.sectionComplete);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const setAnalysis = useResumeBuilder((s) => s.setAnalysis);
 
   const handleRunAnalysis = async () => {
     setIsAnalyzing(true);
+    setAnalyzeError(null);
     try {
       const result = await ai.analyzeResume(resume);
       setAnalysis(result);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setAnalyzeError(err.message || "AI request failed. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -275,6 +277,9 @@ export function ReviewSection() {
                 size="md"
                 icon={<Sparkles className="w-4 h-4" />}
               />
+              {analyzeError && (
+                <p className="text-[11px] text-red-400 mt-2">{analyzeError}</p>
+              )}
             </div>
           )}
 

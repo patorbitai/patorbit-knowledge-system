@@ -24,14 +24,16 @@ export function SkillsSection() {
 
   const [suggestions, setSuggestions] = useState<string[] | null>(null);
   const [isLoadingSuggestions, setIsLoadingSuggestions] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
 
   const handleSuggestSkills = async () => {
     setIsLoadingSuggestions(true);
+    setSuggestError(null);
     try {
       const result = await ai.suggestSkills(resume);
       setSuggestions(result.content);
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      setSuggestError(err.message || "AI request failed. Please try again.");
     } finally {
       setIsLoadingSuggestions(false);
     }
@@ -104,6 +106,9 @@ export function SkillsSection() {
             <AIActionButton label="Add Skill" onClick={addSkill} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
             <AIActionButton label="Suggest with AI" onClick={handleSuggestSkills} isLoading={isLoadingSuggestions} variant="secondary" size="md" />
           </div>
+          {suggestError && (
+            <p className="text-[11px] text-red-400 mt-2">{suggestError}</p>
+          )}
         </motion.div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
