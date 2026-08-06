@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
-import { Menu, X, FileText } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import { useSession } from "next-auth/react";
 
@@ -53,13 +53,6 @@ export default function AppShell({
             >
               <Menu className="h-5 w-5" />
             </button>
-            <Link
-              href="/resume-builder"
-              className="hidden items-center gap-1.5 rounded-lg border border-white/[0.08] px-3 py-1.5 text-xs font-medium text-slate-400 transition-colors hover:border-cyan-400/30 hover:text-cyan-300 sm:inline-flex"
-            >
-              <FileText className="h-3.5 w-3.5" />
-              Resume Builder
-            </Link>
           </div>
 
           <div className="flex items-center gap-3">

@@ -200,7 +200,7 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
             </p>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/" })}
+            onClick={() => signOut({ callbackUrl: "/login" })}
             aria-label="Sign out"
             className="text-slate-500 transition-colors hover:text-rose-400"
           >

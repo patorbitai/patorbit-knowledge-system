@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useState, useId } from "react";
-import { signIn } from "next-auth/react";
 import { registerUser, type RegisterState } from "@/actions/auth/register";
 
 const initialState: RegisterState = { success: false, message: "" };
@@ -148,13 +147,8 @@ export default function RegisterPage() {
 
   useEffect(() => {
     if (!state.success) return;
-    signIn("credentials", { email, password, redirect: false }).then((result) => {
-      if (!result?.error) {
-        router.push("/overview");
-        router.refresh();
-      }
-    });
-  }, [state.success, email, password, router]);
+    router.push("/login?registered=1");
+  }, [state.success, router]);
 
   const handleSubmit = (e: React.BaseSyntheticEvent) => {
     let hasError = false;

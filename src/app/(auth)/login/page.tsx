@@ -73,7 +73,8 @@ function Spinner() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get("callbackUrl") || "/overview";
+  const callbackUrl = "/overview";
+  const registered = searchParams.get("registered") === "1";
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -123,6 +124,20 @@ function LoginForm() {
           Access your verified Professional Identity.
         </p>
       </div>
+
+      {registered && (
+        <div
+          role="status"
+          className="mb-6 flex items-start gap-2.5 rounded-lg border border-emerald-500/20 bg-emerald-500/[0.08] px-4 py-3"
+        >
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+          </svg>
+          <p className="text-sm text-emerald-300">
+            Account created successfully. Please sign in.
+          </p>
+        </div>
+      )}
 
       {/* Social providers */}
       <div className="grid grid-cols-2 gap-2.5 mb-6">
