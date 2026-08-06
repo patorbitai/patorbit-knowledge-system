@@ -3,12 +3,19 @@ import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({
-    req: request,
-    secret: process.env.NEXTAUTH_SECRET,
-  });
-
   const { pathname } = request.nextUrl;
+  console.log("[middleware] path:", pathname);
+
+  let token;
+  try {
+    token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+    });
+    console.log("[middleware] token present:", !!token, "path:", pathname);
+  } catch (err) {
+    console.error("[middleware] getToken threw:", err);
+  }
 
   // Auth pages — redirect to overview if already authenticated
   if (pathname === "/login" || pathname === "/register") {
