@@ -15,7 +15,7 @@
     "@auth/prisma-adapter": "^2.11.3",
     "@hookform/resolvers": "^5.5.7",
     "@prisma/client": "^6.19.3",
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
     "docx": "^9.7.1",
     "file-saver": "^2.0.5",
@@ -42,7 +42,7 @@
   "devDependencies": {
     "@playwright/test": "^1.62.1",
     "@tailwindcss/postcss": "^4",
-    "@types/bcrypt": "^6.0.0",
+    "@types/bcryptjs": "^2.4.6",
     "@types/file-saver": "^2.0.7",
     "@types/node": "^20.19.43",
     "@types/react": "^19",
