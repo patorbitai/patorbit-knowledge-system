@@ -8,7 +8,7 @@ export default function ForgotPasswordPage() {
   const [submitted, setSubmitted] = useState(false);
   const [email, setEmail] = useState("");
 
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
     e.preventDefault();
     setSubmitted(true);
   };
@@ -20,7 +20,7 @@ export default function ForgotPasswordPage() {
           Reset your password
         </h1>
         <p className="mt-2 text-sm text-slate-400">
-          Enter your email and we&apos;ll send recovery instructions when this feature is available.
+          Enter your email to be notified when password recovery becomes available.
         </p>
       </div>
 
@@ -62,7 +62,7 @@ export default function ForgotPasswordPage() {
             <svg className="mt-0.5 h-4 w-4 text-slate-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
               <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
             </svg>
-            <p className="text-xs text-slate-500 leading-relaxed">
+            <p className="text-xs text-slate-400 leading-relaxed">
               Password recovery will be available in a future update.
             </p>
           </div>
@@ -71,7 +71,7 @@ export default function ForgotPasswordPage() {
             type="submit"
             className="mt-2 w-full rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:brightness-110 active:scale-[0.99] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
           >
-            Send recovery instructions
+            Notify me when available
           </button>
         </form>
       )}

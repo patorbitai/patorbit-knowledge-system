@@ -47,7 +47,7 @@ export default function AuthLayout({
           </ul>
         </div>
 
-        <p className="text-xs text-slate-600">
+        <p className="text-xs text-slate-400">
           © {new Date().getFullYear()} Patorbit. All rights reserved.
         </p>
       </div>

@@ -245,9 +245,37 @@ function LoginForm() {
   );
 }
 
+function LoginSkeleton() {
+  return (
+    <div className="animate-pulse">
+      <div className="mb-8 space-y-2">
+        <div className="h-7 w-48 rounded-md bg-white/[0.06]" />
+        <div className="h-4 w-64 rounded-md bg-white/[0.04]" />
+      </div>
+      <div className="grid grid-cols-2 gap-2.5 mb-6">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-10 rounded-lg bg-white/[0.04] border border-white/[0.08]" />
+        ))}
+      </div>
+      <div className="h-px bg-white/[0.08] mb-6" />
+      <div className="space-y-4">
+        <div className="space-y-1.5">
+          <div className="h-4 w-24 rounded bg-white/[0.06]" />
+          <div className="h-10 rounded-lg bg-white/[0.04] border border-white/[0.08]" />
+        </div>
+        <div className="space-y-1.5">
+          <div className="h-4 w-16 rounded bg-white/[0.06]" />
+          <div className="h-10 rounded-lg bg-white/[0.04] border border-white/[0.08]" />
+        </div>
+        <div className="mt-2 h-10 rounded-lg bg-white/[0.08]" />
+      </div>
+    </div>
+  );
+}
+
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={<LoginSkeleton />}>
       <LoginForm />
     </Suspense>
   );
