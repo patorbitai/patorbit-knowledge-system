@@ -2,6 +2,7 @@
 
 import { registerSchema } from "@/schemas/auth.schema";
 import { authService } from "@/services/auth.service";
+import { identityService } from "@/services/identity.service";
 
 export type RegisterState = {
   success: boolean;
@@ -27,11 +28,15 @@ export async function registerUser(
   }
 
   try {
-    await authService.register(
+    const user = await authService.register(
       validated.data.name,
       validated.data.email,
       validated.data.password
     );
+
+    // Bootstrap the ProfessionalIdentity aggregate (ADR-007):
+    // the identity is the canonical owner of all domain data.
+    await identityService.ensureProfessionalIdentity(user.id);
 
     return {
       success: true,

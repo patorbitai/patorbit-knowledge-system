@@ -7,17 +7,16 @@ import { HTML5Backend } from "react-dnd-html5-backend";
 import { useResumeBuilder, defaultResume } from "@/store/resume-builder";
 import { ai } from "@/lib/ai/client";
 import { LeftSidebar, CenterWorkspace, RightCopilot, ClaimsReview } from "@/components/resume-builder";
+import MobileSectionNav from "@/components/resume-builder/MobileSectionNav";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
 import { SettingsModal } from "@/components/resume-builder/SettingsModal";
-import { ExportModal } from "@/components/resume-builder/ExportModal";
-import { Eye, Settings, Download, User } from "lucide-react";
+import { Eye, Settings, User } from "lucide-react";
 import { debounce } from "@/lib/debounce";
 
 /* ── App Header ── */
 function AppHeader() {
   const resume = useResumeBuilder((s) => s.resume);
   const [showSettings, setShowSettings] = useState(false);
-  const [showExport, setShowExport] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 h-12 bg-[#070911]/90 backdrop-blur-xl border-b border-white/[0.06]">
@@ -56,14 +55,6 @@ function AppHeader() {
           </Link>
 
           <button
-            onClick={() => setShowExport(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
-          >
-            <Download className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Export</span>
-          </button>
-
-          <button
             onClick={() => setShowSettings(true)}
             className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
           >
@@ -76,7 +67,6 @@ function AppHeader() {
         </div>
       </div>
       <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
-      <ExportModal open={showExport} onClose={() => setShowExport(false)} />
     </header>
   );
 }
@@ -178,6 +168,9 @@ export default function ResumeBuilderPage() {
             <RightCopilot />
           </div>
         </div>
+
+        {/* Mobile section navigation — the LeftSidebar is hidden below md */}
+        <MobileSectionNav />
 
         {/* Claims Review — non-blocking identity workflow surface */}
         <ClaimsReview />

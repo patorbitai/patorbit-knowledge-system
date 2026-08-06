@@ -11,7 +11,6 @@ import {
 } from "lucide-react";
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { clsx } from "clsx";
 import { AddEvidenceModal } from "@/components/identity/AddEvidenceModal";
 import type { Claim } from "@/types/resume";
 
@@ -28,7 +27,7 @@ export function ClaimsReview() {
   // The claim the user chose to strengthen → drives AddEvidenceModal.
   const [strengthenClaim, setStrengthenClaim] = useState<Claim | null>(null);
 
-  if ((!suggestedClaims || suggestedClaims.length === 0) && acceptedClaims.length === 0) return null;
+  if ((!suggestedClaims || suggestedClaims.length === 0) && (!acceptedClaims || acceptedClaims.length === 0)) return null;
 
   return (
     <div className="fixed bottom-4 right-4 z-50 max-w-lg w-full">
@@ -45,9 +44,12 @@ export function ClaimsReview() {
               <div className="flex items-center gap-3">
                 <Lightbulb className="w-5 h-5 text-blue-400" />
                 <h3 className="text-sm font-semibold text-white">
-                  {suggestedClaims.length > 0
-                    ? `AI detected ${suggestedClaims.length} new claim${suggestedClaims.length > 1 ? "s" : ""}`
-                    : "Your Claims"}
+                  {(() => {
+                  const sc = suggestedClaims ?? [];
+                  return sc.length > 0
+                    ? `AI detected ${sc.length} new claim${sc.length > 1 ? "s" : ""}`
+                    : "Your Claims";
+                })()}
                 </h3>
               </div>
               <button
@@ -137,7 +139,7 @@ export function ClaimsReview() {
               ))}
 
               {/* Accepted claims → continue to evidence */}
-              {acceptedClaims.length > 0 && (
+              {acceptedClaims?.length > 0 && (
                 <div className="pt-2">
                   <div className="flex items-center gap-2 mb-2">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
@@ -176,7 +178,7 @@ export function ClaimsReview() {
           <span className="absolute -top-1 -right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-4 w-4 bg-sky-500 items-center justify-center text-[10px]">
-              {suggestedClaims.length + acceptedClaims.length}
+              {(suggestedClaims?.length ?? 0) + (acceptedClaims?.length ?? 0)}
             </span>
           </span>
         </button>

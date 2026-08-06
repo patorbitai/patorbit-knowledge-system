@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 
@@ -18,6 +19,8 @@ export default function SiteHeader() {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
+  const { data: session } = useSession();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -88,19 +91,38 @@ export default function SiteHeader() {
 
         {/* ── Actions & Mobile Toggle ── */}
         <div className="flex items-center gap-3">
-          <Link
-            href="/login"
-            className="relative hidden sm:inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition-all duration-300 hover:text-white hover:bg-white/[0.06]"
-          >
-            Sign In
-          </Link>
-          <Link
-            href="/register"
-            className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-400/40 hover:scale-105 active:scale-[1.02]"
-          >
-            <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-100" />
-            <span className="relative">Get Started</span>
-          </Link>
+          {session ? (
+            <>
+              <Link
+                href="/overview"
+                className="relative hidden sm:inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition-all duration-300 hover:text-white hover:bg-white/[0.06]"
+              >
+                Overview
+              </Link>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] border border-white/[0.08] px-5 py-2.5 text-sm font-medium text-slate-300 transition-all duration-300 hover:text-white hover:bg-white/[0.1]"
+              >
+                Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="relative hidden sm:inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition-all duration-300 hover:text-white hover:bg-white/[0.06]"
+              >
+                Sign In
+              </Link>
+              <Link
+                href="/register"
+                className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-400/40 hover:scale-105 active:scale-[1.02]"
+              >
+                <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-100" />
+                <span className="relative">Get Started</span>
+              </Link>
+            </>
+          )}
 
           {/* Mobile Toggle */}
           <button
@@ -174,20 +196,43 @@ export default function SiteHeader() {
                 transition={{ delay: navLinks.length * 0.05 + 0.05, duration: 0.2 }}
                 className="!mt-6 border-t border-white/[0.06] pt-4"
               >
-                <Link
-                  href="/login"
-                  onClick={() => setIsOpen(false)}
-                  className="flex items-center justify-center rounded-xl px-4 py-3 text-base font-medium text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition-all duration-200"
-                >
-                  Sign In
-                </Link>
-                <Link
-                  href="/register"
-                  onClick={() => setIsOpen(false)}
-                  className="mt-2 flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-200"
-                >
-                  Get Started
-                </Link>
+                {session ? (
+                  <>
+                    <Link
+                      href="/overview"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center rounded-xl px-4 py-3 text-base font-medium text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition-all duration-200"
+                    >
+                      Overview
+                    </Link>
+                    <button
+                      onClick={() => {
+                        setIsOpen(false);
+                        signOut({ callbackUrl: "/" });
+                      }}
+                      className="mt-2 w-full flex items-center justify-center rounded-xl bg-white/[0.06] border border-white/[0.08] px-4 py-3 text-base font-medium text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition-all duration-200"
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link
+                      href="/login"
+                      onClick={() => setIsOpen(false)}
+                      className="flex items-center justify-center rounded-xl px-4 py-3 text-base font-medium text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition-all duration-200"
+                    >
+                      Sign In
+                    </Link>
+                    <Link
+                      href="/register"
+                      onClick={() => setIsOpen(false)}
+                      className="mt-2 flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-200"
+                    >
+                      Get Started
+                    </Link>
+                  </>
+                )}
               </motion.div>
             </div>
           </motion.div>

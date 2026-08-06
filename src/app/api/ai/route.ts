@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import { getAIService, type AIAction } from "@/lib/ai/service";
 import { AIError } from "@/lib/ai/types";
 
@@ -59,6 +61,15 @@ function clientIp(req: NextRequest): string {
 }
 
 export async function POST(req: NextRequest) {
+  // 0. Authentication — required for all AI actions
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return NextResponse.json(
+      { success: false, error: "Unauthorized. Please sign in." },
+      { status: 401 },
+    );
+  }
+
   // 1. Body size validation
   const contentLength = Number(req.headers.get("content-length") || 0);
   if (contentLength > MAX_BODY_BYTES) {

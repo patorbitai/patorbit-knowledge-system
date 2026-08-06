@@ -1,14 +1,33 @@
-"use server";
-
 import { NextRequest, NextResponse } from "next/server";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
 import * as mammoth from "mammoth";
 import { parseResumeJson, ResumeSchema } from "@/utils/resume-schema";
 import { rawToResume } from "@/utils/resume-parser";
 
+/** Maximum file size for imports (10 MB). */
+const MAX_FILE_BYTES = 10 * 1024 * 1024;
+
 export async function POST(request: NextRequest) {
   try {
+    // 0. Authentication — required to import a resume
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        { error: "Unauthorized. Please sign in." },
+        { status: 401 }
+      );
+    }
+
     const formData = await request.formData();
     const file = formData.get("file") as File | null;
+
+    if (file && file.size > MAX_FILE_BYTES) {
+      return NextResponse.json(
+        { error: "File is too large. Maximum size is 10 MB." },
+        { status: 413 }
+      );
+    }
 
     if (!file) {
       return NextResponse.json(

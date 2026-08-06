@@ -3,7 +3,10 @@
 import "dotenv/config";
 import { defineConfig } from "prisma/config";
 
-const databaseUrl: string = process.env["DATABASE_URL"] ?? "postgresql://postgres:Tulsi1356@localhost:5433/patorbit?schema=public";
+const databaseUrl = process.env["DATABASE_URL"] as string;
+if (!databaseUrl) {
+  throw new Error("DATABASE_URL environment variable is required. See .env.example for configuration.");
+}
 
 export default defineConfig({
   schema: "prisma/schema.prisma",

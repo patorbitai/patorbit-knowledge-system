@@ -5,7 +5,8 @@ import { useResumeBuilder } from "@/store/resume-builder";
 import { ResumePreview, getActiveTemplate } from "@/components/resume/ResumePreview";
 import { Passport } from "@/components/identity/Passport";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
-import { ArrowLeft, FileText, IdCard, Share2, Shield, TrendingUp, Layout, Check } from "lucide-react";
+import { ExportModal } from "@/components/resume-builder/ExportModal";
+import { ArrowLeft, FileText, IdCard, Share2, Shield, TrendingUp, Layout, Check, Download } from "lucide-react";
 import Link from "next/link";
 import { clsx } from "clsx";
 import { TEMPLATES } from "@/app/resume-builder/templates";
@@ -24,6 +25,7 @@ export default function PreviewPage() {
   const resumeScore = useResumeBuilder((s) => s.resumeScore);
   const [activeTab, setActiveTab] = useState<typeof tabs[number]["id"]>("resume");
   const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showExport, setShowExport] = useState(false);
   const template = getActiveTemplate(resume);
 
   return (
@@ -44,6 +46,16 @@ export default function PreviewPage() {
             </div>
             <div className="flex items-center gap-3">
               <SaveStatusIndicator />
+
+              <button
+                onClick={() => setShowExport(true)}
+                aria-haspopup="dialog"
+                aria-expanded={showExport}
+                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Export</span>
+              </button>
 
               <div className="relative">
                 <button
@@ -88,6 +100,7 @@ export default function PreviewPage() {
           </div>
         </div>
       </div>
+      <ExportModal open={showExport} onClose={() => setShowExport(false)} />
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {activeTab === "resume" && <PreviewPanel><ResumePreview resume={resume} template={template} /></PreviewPanel>}
         {activeTab === "passport" && (
