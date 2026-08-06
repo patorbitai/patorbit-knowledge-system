@@ -16,6 +16,8 @@ import { useValidation } from "../hooks/useValidation";
 
 export function ExperienceSection() {
   const resume = useResumeBuilder((s) => s.resume);
+  const claims = useResumeBuilder((s) => s.resume.claims ?? []);
+  const experience = useResumeBuilder((s) => s.resume.experience ?? []);
   const addExperience = useResumeBuilder((s) => s.addExperience);
   const updateExperience = useResumeBuilder((s) => s.updateExperience);
   const removeExperience = useResumeBuilder((s) => s.removeExperience);
@@ -26,7 +28,7 @@ export function ExperienceSection() {
   // Map an experience entry to its claim (via sourceActivityId "experience-<n>") so
   // the VerificationBadge reflects the claim's real evidence state.
   const claimForExperience = (id: string, index: number) =>
-    resume.claims.find(
+    claims.find(
       (c) => c.sourceActivityId === id || c.sourceActivityId === `experience-${index}`,
     );
 
@@ -45,7 +47,7 @@ export function ExperienceSection() {
   };
 
   const handleAIRewrite = async (id: string, tone: "ats" | "impact" | "concise" | "expanded" | "professional") => {
-    const exp = resume.experience.find((e) => e.id === id);
+    const exp = experience.find((e) => e.id === id);
     if (!exp) return;
     const key = `exp-${id}-${tone}`;
     setAIAction(key, { status: "loading", result: null, error: null });
@@ -69,7 +71,7 @@ export function ExperienceSection() {
   };
 
   const handleGenerateBullets = async (id: string) => {
-    const exp = resume.experience.find((e) => e.id === id);
+    const exp = experience.find((e) => e.id === id);
     if (!exp) return;
     setAIAction(`exp-${id}-bullets`, { status: "loading", result: null, error: null });
     try {
@@ -87,7 +89,7 @@ export function ExperienceSection() {
   };
 
   const handleImproveBullets = async (id: string) => {
-    const exp = resume.experience.find((e) => e.id === id);
+    const exp = experience.find((e) => e.id === id);
     if (!exp) return;
     const bullets = exp.bulletPoints?.length > 0
       ? exp.bulletPoints
@@ -109,7 +111,7 @@ export function ExperienceSection() {
   };
 
   const handleMoveBullet = (expId: string, fromIdx: number, dir: -1 | 1) => {
-    const exp = resume.experience.find((e) => e.id === expId);
+    const exp = experience.find((e) => e.id === expId);
     if (!exp || !exp.bulletPoints) return;
     const bullets = [...exp.bulletPoints];
     const toIdx = fromIdx + dir;
@@ -120,21 +122,21 @@ export function ExperienceSection() {
   };
 
   const handleRemoveBullet = (expId: string, idx: number) => {
-    const exp = resume.experience.find((e) => e.id === expId);
+    const exp = experience.find((e) => e.id === expId);
     if (!exp || !exp.bulletPoints) return;
     const bullets = exp.bulletPoints.filter((_, i) => i !== idx);
     updateExperience(expId, "bulletPoints", bullets);
   };
 
   const handleAddBullet = (expId: string) => {
-    const exp = resume.experience.find((e) => e.id === expId);
+    const exp = experience.find((e) => e.id === expId);
     if (!exp) return;
     const bullets = [...(exp.bulletPoints || []), ""];
     updateExperience(expId, "bulletPoints", bullets);
   };
 
   const handleUpdateBullet = (expId: string, idx: number, value: string) => {
-    const exp = resume.experience.find((e) => e.id === expId);
+    const exp = experience.find((e) => e.id === expId);
     if (!exp || !exp.bulletPoints) return;
     const bullets = [...exp.bulletPoints];
     bullets[idx] = value;
@@ -147,7 +149,7 @@ export function ExperienceSection() {
       title="Experience"
       description="Your work history — add metrics and strong action verbs"
       icon="💼"
-      isValid={resume.experience.length > 0 && resume.experience.some((e) => e.company && e.position)}
+      isValid={experience.length > 0 && experience.some((e) => e.company && e.position)}
       actions={
         <AIActionButton
           label="Add Experience"
@@ -158,7 +160,7 @@ export function ExperienceSection() {
       }
     >
       <AnimatePresence>
-        {resume.experience.length === 0 ? (
+        {experience.length === 0 ? (
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -177,7 +179,7 @@ export function ExperienceSection() {
           </motion.div>
         ) : (
           <div className="space-y-4">
-            {resume.experience.map((exp, idx) => {
+            {experience.map((exp, idx) => {
               const isExpanded = expandedIds.has(exp.id);
               const expSuggestion = suggestions.get(exp.id);
 
@@ -231,7 +233,7 @@ export function ExperienceSection() {
                         </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); moveExperience(exp.id, 1); }}
-                          disabled={idx === resume.experience.length - 1}
+                          disabled={idx === experience.length - 1}
                           className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"
                         >
                           <ChevronDown className="w-3 h-3" />
