@@ -41,6 +41,20 @@ export function resumeToGraph(
   source: string = "user-input",
   evidence: Evidence[] = [],
 ): KnowledgeGraph {
+  const {
+    skills = [],
+    experience = [],
+    education = [],
+    projects = [],
+    certifications = [],
+    languages = [],
+    interests = [],
+    achievements = [],
+    references = [],
+    portfolio = [],
+    claims = [],
+  } = resume;
+
   const now = new Date().toISOString();
   const profileId = `profile_${Date.now()}`;
 
@@ -103,7 +117,7 @@ export function resumeToGraph(
   };
 
   // Skills (deduplicate across both resume.skills and techUsed)
-  for (const s of resume.skills) {
+  for (const s of skills) {
     const sid = getOrCreateSkill(s.name);
     // Update proficiency and category from the explicit skill entry
     const node = nodes.find((n): n is SkillNode => n.id === sid && n.type === "skill");
@@ -115,7 +129,7 @@ export function resumeToGraph(
   }
 
   // Experience → Roles + Organizations
-  for (const exp of resume.experience) {
+  for (const exp of experience) {
     const roleId = exp.id || `role_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const orgId = exp.company ? getOrCreateOrg(exp.company, exp.location, exp.industry) : undefined;
 
@@ -139,7 +153,7 @@ export function resumeToGraph(
   }
 
   // Education
-  for (const edu of resume.education) {
+  for (const edu of education) {
     const eduId = edu.id || `edu_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const orgId = edu.school ? getOrCreateOrg(edu.school, edu.location) : undefined;
 
@@ -155,7 +169,7 @@ export function resumeToGraph(
   }
 
   // Projects
-  for (const proj of resume.projects) {
+  for (const proj of projects) {
     const pid = proj.id || `project_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const pn: ProjectNode = {
       id: pid, type: "project", label: proj.name, description: proj.description ?? "",
@@ -170,7 +184,7 @@ export function resumeToGraph(
   }
 
   // Certifications
-  for (const cert of resume.certifications) {
+  for (const cert of certifications) {
     const cid = cert.id || `cert_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const cn: CertificationNode = {
       id: cid, type: "certification", label: cert.name, issuer: cert.issuer,
@@ -182,42 +196,42 @@ export function resumeToGraph(
   }
 
   // Languages
-  for (const lang of resume.languages) {
+  for (const lang of languages) {
     const lid = lang.id || `lang_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     nodes.push({ id: lid, type: "language", label: lang.name, lastUpdated: now, source, proficiency: lang.proficiency } as LanguageNode);
     addEdge(profileId, lid, "HAS_LANGUAGE");
   }
 
   // Interests
-  for (const int of resume.interests) {
+  for (const int of interests) {
     const iid = int.id || `int_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     nodes.push({ id: iid, type: "interest", label: int.name, lastUpdated: now, source } as InterestNode);
     addEdge(profileId, iid, "HAS_INTEREST");
   }
 
   // Achievements
-  for (const ach of resume.achievements) {
+  for (const ach of achievements) {
     const aid = ach.id || `ach_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     nodes.push({ id: aid, type: "achievement", label: ach.title, description: ach.description, date: ach.date, issuer: ach.issuer, lastUpdated: now, source } as AchievementNode);
     addEdge(profileId, aid, "HAS_ACHIEVEMENT");
   }
 
   // References
-  for (const ref of resume.references) {
+  for (const ref of references) {
     const rid = ref.id || `ref_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     nodes.push({ id: rid, type: "reference", label: ref.name, name: ref.name, position: ref.position, email: ref.email, phone: ref.phone, organization: ref.company, lastUpdated: now, source } as ReferenceNode);
     addEdge(profileId, rid, "HAS_REFERENCE");
   }
 
   // Portfolio
-  for (const por of resume.portfolio) {
+  for (const por of portfolio) {
     const poid = por.id || `port_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     nodes.push({ id: poid, type: "portfolio", label: por.title, description: por.description, url: por.url, mediaType: por.type || "other", lastUpdated: now, source } as PortfolioNode);
     addEdge(profileId, poid, "HAS_PORTFOLIO");
   }
 
   // Claims → ClaimNodes (only accepted claims; no claim is created automatically)
-  for (const claim of resume.claims) {
+  for (const claim of claims) {
     if (!claim.accepted) continue;
 
     const claimId = claim.id || `claim_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;

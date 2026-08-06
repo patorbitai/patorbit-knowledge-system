@@ -331,8 +331,8 @@ function ProfessionalHighlights({ claims, evidence }: { claims: Claim[]; evidenc
  */
 export function Passport() {
   const resume = useResumeBuilder((s) => s.resume);
-  const claims = useResumeBuilder((s) => s.resume.claims);
-  const evidence = useResumeBuilder((s) => s.evidence);
+  const claims = useResumeBuilder((s) => s.resume.claims ?? []);
+  const evidence = useResumeBuilder((s) => s.evidence ?? []);
 
   return (
     <div className="space-y-6">
