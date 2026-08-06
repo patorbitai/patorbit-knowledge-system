@@ -366,6 +366,8 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
       partialize: (state) => ({ resume: state.resume, evidence: state.evidence }),
       onRehydrateStorage: () => (state) => {
         if (state) {
+          state.resume = { ...defaultResume, ...state.resume };
+          state.evidence = state.evidence ?? [];
           state.setSaveStatus("saved");
           if (hasSufficientData(state.resume)) {
             state.startAnalysis();
