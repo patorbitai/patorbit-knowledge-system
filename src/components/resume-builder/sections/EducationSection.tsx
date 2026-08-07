@@ -35,6 +35,12 @@ export function EducationSection() {
     });
   };
 
+  const handleAddEducation = () => {
+    addEducation();
+    const newId = useResumeBuilder.getState().resume.education.at(-1)?.id;
+    if (newId) setExpandedIds((prev) => new Set([...prev, newId]));
+  };
+
   return (
     <SectionCard
       id="education"
@@ -45,7 +51,7 @@ export function EducationSection() {
       actions={
         <AIActionButton
           label="Add Education"
-          onClick={addEducation}
+          onClick={handleAddEducation}
           variant="outline"
           icon={<Plus className="w-3 h-3" />}
         />
@@ -61,7 +67,7 @@ export function EducationSection() {
             <GraduationCapIcon />
             <p className="text-sm text-slate-400 mb-1 mt-4">No education entries yet</p>
             <p className="text-xs text-slate-500 mb-5">Add your degrees and academic achievements</p>
-            <AIActionButton label="Add Education" onClick={addEducation} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
+            <AIActionButton label="Add Education" onClick={handleAddEducation} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
           </motion.div>
         ) : (
           <div className="space-y-3">

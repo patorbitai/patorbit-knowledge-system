@@ -13,7 +13,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
 export function ProjectsSection() {
-  const resume = useResumeBuilder((s) => s.resume);
   const claims = useResumeBuilder((s) => s.resume.claims ?? []);
   const projects = useResumeBuilder((s) => s.resume.projects ?? []);
   const addProject = useResumeBuilder((s) => s.addProject);
@@ -43,6 +42,12 @@ export function ProjectsSection() {
     });
   };
 
+  const handleAddProject = () => {
+    addProject();
+    const newId = useResumeBuilder.getState().resume.projects.at(-1)?.id;
+    if (newId) setExpandedIds((prev) => new Set([...prev, newId]));
+  };
+
   const handleGenerateDescription = async (id: string) => {
     const proj = projects.find((p) => p.id === id);
     if (!proj) return;
@@ -65,7 +70,7 @@ export function ProjectsSection() {
       icon="📁"
       isValid={projects.length > 0 && projects.some((p) => p.name)}
       actions={
-        <AIActionButton label="Add Project" onClick={addProject} variant="outline" icon={<Plus className="w-3 h-3" />} />
+        <AIActionButton label="Add Project" onClick={handleAddProject} variant="outline" icon={<Plus className="w-3 h-3" />} />
       }
     >
       <AnimatePresence>
@@ -74,7 +79,7 @@ export function ProjectsSection() {
             <FolderIcon />
             <p className="text-sm text-slate-400 mb-1 mt-4">No projects yet</p>
             <p className="text-xs text-slate-500 mb-5">Add projects to showcase your hands-on experience</p>
-            <AIActionButton label="Add Project" onClick={addProject} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
+            <AIActionButton label="Add Project" onClick={handleAddProject} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
           </motion.div>
         ) : (
           <div className="space-y-3">

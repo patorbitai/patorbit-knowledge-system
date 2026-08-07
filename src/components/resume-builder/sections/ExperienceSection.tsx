@@ -43,6 +43,12 @@ export function ExperienceSection() {
     });
   };
 
+  const handleAddExperience = () => {
+    addExperience();
+    const newId = useResumeBuilder.getState().resume.experience.at(-1)?.id;
+    if (newId) setExpandedIds((prev) => new Set([...prev, newId]));
+  };
+
   const handleAIRewrite = async (id: string, tone: "ats" | "impact" | "concise" | "expanded" | "professional") => {
     const exp = experience.find((e) => e.id === id);
     if (!exp) return;
@@ -150,7 +156,7 @@ export function ExperienceSection() {
       actions={
         <AIActionButton
           label="Add Experience"
-          onClick={addExperience}
+          onClick={handleAddExperience}
           variant="outline"
           icon={<Plus className="w-3 h-3" />}
         />
@@ -168,7 +174,7 @@ export function ExperienceSection() {
             <p className="text-xs text-slate-500 mb-5">Add your work history to build a stronger resume</p>
             <AIActionButton
               label="Add First Experience"
-              onClick={addExperience}
+              onClick={handleAddExperience}
               variant="primary"
               size="md"
               icon={<Plus className="w-3.5 h-3.5" />}

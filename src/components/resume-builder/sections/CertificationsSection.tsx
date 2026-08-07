@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
-import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
 import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton } from "../AIActionButton";
@@ -36,6 +35,12 @@ export function CertificationsSection() {
     });
   };
 
+  const handleAddCertification = () => {
+    addCertification();
+    const newId = useResumeBuilder.getState().resume.certifications.at(-1)?.id;
+    if (newId) setExpandedIds((prev) => new Set([...prev, newId]));
+  };
+
   return (
     <SectionCard
       id="certifications"
@@ -46,7 +51,7 @@ export function CertificationsSection() {
       actions={
         <AIActionButton
           label="Add Certification"
-          onClick={addCertification}
+          onClick={handleAddCertification}
           variant="outline"
           icon={<Plus className="w-3 h-3" />}
         />
@@ -62,7 +67,7 @@ export function CertificationsSection() {
             <AwardIcon />
             <p className="text-sm text-slate-400 mb-1 mt-4">No certifications yet</p>
             <p className="text-xs text-slate-500 mb-5">Add relevant certifications to boost credibility</p>
-            <AIActionButton label="Add Certification" onClick={addCertification} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
+            <AIActionButton label="Add Certification" onClick={handleAddCertification} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
           </motion.div>
         ) : (
           <div className="space-y-3">
