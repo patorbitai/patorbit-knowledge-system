@@ -37,7 +37,7 @@ function uid(): string { return `id_${++_idCounter}_${Math.random().toString(36)
 
 /* ── Store types ── */
 
-export type SaveStatus = "saved" | "saving" | "unsaved" | "cloud-synced" | "offline" | "sync-failed";
+export type SaveStatus = "saved" | "saving" | "unsaved" | "offline" | "sync-failed";
 
 export interface ResumeBuilderState {
   resume: Resume; activeSection: SectionId; saveStatus: SaveStatus;

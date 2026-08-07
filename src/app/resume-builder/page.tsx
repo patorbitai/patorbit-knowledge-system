@@ -115,7 +115,7 @@ export default function ResumeBuilderPage() {
     debounce((currentResume) => {
       if (typeof window !== "undefined") {
         localStorage.setItem("patorbit-resume-v2", JSON.stringify({ state: { resume: currentResume } }));
-        setSaveStatus("cloud-synced");
+        setSaveStatus("saved");
       }
     }, 1200),
     [setSaveStatus],

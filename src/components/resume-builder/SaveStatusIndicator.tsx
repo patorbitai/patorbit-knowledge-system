@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { Cloud, CloudOff, CloudLightning, Loader2, AlertCircle } from "lucide-react";
+import { HardDrive, CloudOff, Loader2, AlertCircle } from "lucide-react";
 import { clsx } from "clsx";
 import { useEffect, useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
@@ -9,15 +9,15 @@ import { useResumeBuilder } from "@/store/resume-builder";
 const indicators = {
   saved: {
     text: "Saved",
-    subtext: "All changes saved",
+    subtext: "Saved locally",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/20",
-    icon: Cloud,
+    icon: HardDrive,
   },
   saving: {
     text: "Saving...",
-    subtext: "Syncing to cloud",
+    subtext: "Saving changes",
     color: "text-amber-400",
     bg: "bg-amber-500/10",
     border: "border-amber-500/20",
@@ -31,14 +31,6 @@ const indicators = {
     border: "border-slate-500/20",
     icon: CloudOff,
   },
-  "cloud-synced": {
-    text: "Cloud Synced",
-    subtext: "Synced to cloud",
-    color: "text-blue-400",
-    bg: "bg-blue-500/10",
-    border: "border-blue-500/20",
-    icon: CloudLightning,
-  },
   offline: {
     text: "Offline",
     subtext: "No internet connection",
@@ -48,7 +40,7 @@ const indicators = {
     icon: CloudOff,
   },
   "sync-failed": {
-    text: "Sync Failed",
+    text: "Save Failed",
     subtext: "Could not save changes",
     color: "text-rose-400",
     bg: "bg-rose-500/10",
