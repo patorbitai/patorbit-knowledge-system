@@ -319,9 +319,13 @@ body {
     visibility: visible !important;
   }
 
-  /* Step 3: position the resume at the top-left of the printable area */
+  /* Step 3: position the resume at the top-left of the page.
+     Must be `absolute`, NOT `fixed`. Fixed elements repeat on every printed
+     page in CSS print layout, causing duplicates. Absolute elements fall at
+     their document position and paginate normally. */
+  body { position: relative !important; }
   #pdf-export-target {
-    position: fixed !important;
+    position: absolute !important;
     top: 0 !important;
     left: 0 !important;
     width: 100% !important;
