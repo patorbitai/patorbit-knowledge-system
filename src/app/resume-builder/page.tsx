@@ -111,12 +111,9 @@ export default function ResumeBuilderPage() {
     [setAnalysis, setAnalysisLoading],
   );
 
-  const debouncedSave = useCallback(
-    debounce((currentResume) => {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("patorbit-resume-v2", JSON.stringify({ state: { resume: currentResume } }));
-        setSaveStatus("saved");
-      }
+  const debouncedMarkSaved = useCallback(
+    debounce(() => {
+      setSaveStatus("saved");
     }, 1200),
     [setSaveStatus],
   );
@@ -155,10 +152,10 @@ export default function ResumeBuilderPage() {
     if (saveStatus === "unsaved") {
       setSaveStatus("saving");
       debouncedAnalysis(resume);
-      debouncedSave(resume);
+      debouncedMarkSaved();
       debouncedClaimGen(resume);
     }
-  }, [resume, saveStatus, setSaveStatus, debouncedAnalysis, debouncedSave, debouncedClaimGen]);
+  }, [resume, saveStatus, setSaveStatus, debouncedAnalysis, debouncedMarkSaved, debouncedClaimGen]);
 
   return (
     <DndProvider backend={HTML5Backend}>
