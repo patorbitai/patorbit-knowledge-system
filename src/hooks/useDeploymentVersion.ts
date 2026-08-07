@@ -3,11 +3,20 @@
 import { useEffect, useRef, useState } from "react";
 
 const POLL_INTERVAL_MS = 12 * 60 * 1000; // 12 minutes
-const CURRENT_SHA = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? "local";
+export const CURRENT_SHA = process.env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA ?? "local";
 
-export function useDeploymentVersion(): boolean {
-  const [updateAvailable, setUpdateAvailable] = useState(false);
-  // Ref avoids stale closure in event handlers
+export interface DeploymentVersionState {
+  updateAvailable: boolean;
+  newSha: string | null;
+  detectedAt: Date | null;
+}
+
+export function useDeploymentVersion(): DeploymentVersionState {
+  const [state, setState] = useState<DeploymentVersionState>({
+    updateAvailable: false,
+    newSha: null,
+    detectedAt: null,
+  });
   const detectedRef = useRef(false);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -19,7 +28,7 @@ export function useDeploymentVersion(): boolean {
       const { sha } = await res.json();
       if (sha && sha !== "local" && sha !== CURRENT_SHA) {
         detectedRef.current = true;
-        setUpdateAvailable(true);
+        setState({ updateAvailable: true, newSha: sha, detectedAt: new Date() });
       }
     } catch {
       // Silently ignore network errors
@@ -34,10 +43,7 @@ export function useDeploymentVersion(): boolean {
     function onVisibilityChange() {
       if (document.visibilityState === "visible") check();
     }
-
-    function onOnline() {
-      check();
-    }
+    function onOnline() { check(); }
 
     document.addEventListener("visibilitychange", onVisibilityChange);
     window.addEventListener("online", onOnline);
@@ -50,5 +56,5 @@ export function useDeploymentVersion(): boolean {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  return updateAvailable;
+  return state;
 }
