@@ -2,10 +2,10 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useCallback, useState } from "react";
-import { X, FileText, Download, AlertCircle } from "lucide-react";
+import { X, FileText, Download, AlertCircle, Printer } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ResumePreview, getActiveTemplate } from "@/components/resume/ResumePreview";
-import { exportToPdf, exportToDocx } from "@/utils/export";
+import { exportToDocx } from "@/utils/export";
 
 export function ExportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
@@ -16,8 +16,19 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const [docxError, setDocxError] = useState<string | null>(null);
 
   const handleExportPdf = () => {
-    exportToPdf("pdf-export-target", resume.name || "resume");
+    const prev = document.title;
+    document.title = resume.name || "resume";
     onClose();
+    // Triple-rAF: first two let React unmount the modal, third fires print
+    // after the DOM has settled so only #pdf-export-target is visible.
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          window.print();
+          document.title = prev;
+        });
+      });
+    });
   };
 
   const handleExportDocx = async () => {
@@ -31,7 +42,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   };
 
   const exportOptions = [
-    { label: "PDF", description: "Download as a polished PDF document", icon: FileText, action: handleExportPdf },
+    { label: "Print / Save as PDF", description: "Opens browser print dialog — save as PDF or print directly", icon: Printer, action: handleExportPdf },
     { label: "DOCX", description: "Export as a Microsoft Word document", icon: FileText, action: handleExportDocx },
   ];
 
@@ -98,6 +109,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   };
 
   return (
+    <>
     <AnimatePresence>
       {open && (
         <>
@@ -108,6 +120,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
             className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm"
             onClick={onClose}
           />
+          {/* Modal */}
           <motion.div
             role="dialog"
             aria-modal="true"
@@ -161,13 +174,20 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
               )}
             </div>
           </motion.div>
-
-          {/* Hidden resume preview for PDF capture */}
-          <div id="pdf-export-target" aria-hidden="true" inert className="fixed -left-[9999px] top-0" style={{ width: "210mm", backgroundColor: "#fff" }}>
-            <ResumePreview resume={resume} template={template} />
-          </div>
         </>
       )}
     </AnimatePresence>
+
+    {/* Resume render target — lives outside AnimatePresence so it persists in the
+        DOM during the print sequence (modal has already closed by then). */}
+    <div
+      id="pdf-export-target"
+      aria-hidden="true"
+      className="fixed -left-[9999px] top-0 print:static print:left-auto"
+      style={{ width: "210mm", backgroundColor: "#fff" }}
+    >
+      <ResumePreview resume={resume} template={template} />
+    </div>
+    </>
   );
 }

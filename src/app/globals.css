@@ -239,22 +239,22 @@ body {
 
 .glass {
   background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .glass-strong {
   background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .glass-card {
   background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
   border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
@@ -304,76 +304,48 @@ body {
 
 @page {
   size: A4 portrait;
-  margin: 12mm 15mm;
+  margin: 0;
 }
 
 @media print {
-  /* White canvas — strip app dark theme */
-  html, body {
-    background: white !important;
-    color: black !important;
+  /* Step 1: hide everything in the document */
+  body * {
+    visibility: hidden !important;
   }
 
-  /* Hide all app chrome — nav, sidebars, modals, banners */
-  header,
-  nav,
-  aside,
-  footer,
-  [data-print-hide],
-  .print-hide {
-    display: none !important;
+  /* Step 2: reveal only the resume target and all its descendants */
+  #pdf-export-target,
+  #pdf-export-target * {
+    visibility: visible !important;
   }
 
-  /* Remove decorative shadows and UI border-radius */
-  * {
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
-
-  /* Resume container strips rounded corners at page edges */
-  .rounded-lg,
-  .rounded-xl,
-  .rounded-2xl {
-    border-radius: 0 !important;
-  }
-
-  /* ── Page-break control ── */
-
-  /* Section blocks (used by all templates) */
-  section {
-    break-inside: avoid;
-  }
-
-  /* Individual entry cards — experience, education, projects, certs */
-  article {
-    break-inside: avoid;
-  }
-
-  /* Tailwind .break-inside-avoid utility (applied in template components) */
-  .break-inside-avoid {
-    break-inside: avoid;
-  }
-
-  /* Keep headings with their first content line */
-  h1, h2, h3, h4 {
-    break-after: avoid;
-    orphans: 3;
-    widows: 3;
-  }
-
-  /* Prevent isolated labels at bottom of page */
-  p, li {
-    orphans: 2;
-    widows: 2;
-  }
-
-  /* Ensure full-width resume render */
+  /* Step 3: position the resume at the top-left of the printable area */
   #pdf-export-target {
-    width: 210mm !important;
-    max-width: 210mm !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
-    position: static !important;
-    left: auto !important;
+    background: white !important;
+  }
+
+  /* Page-break control */
+  section { break-inside: avoid; }
+  article { break-inside: avoid; }
+  .break-inside-avoid { break-inside: avoid; }
+  h1, h2, h3, h4 { break-after: avoid; orphans: 3; widows: 3; }
+  p, li { orphans: 2; widows: 2; }
+
+  /* Strip decorative chrome from template components */
+  #pdf-export-target .rounded-lg,
+  #pdf-export-target .rounded-xl,
+  #pdf-export-target .rounded-2xl {
+    border-radius: 0 !important;
+  }
+  #pdf-export-target * {
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 }
