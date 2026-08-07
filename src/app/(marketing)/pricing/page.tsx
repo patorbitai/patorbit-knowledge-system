@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import {
@@ -89,7 +89,7 @@ type ComparisonRow = {
 
 const comparisonRows: ComparisonRow[] = [
   { feature: "Resume Builder", values: [true, true, true] },
-  { feature: "Professional Passport", values: [true, true, true] },
+  { feature: "Passport", values: [true, true, true] },
   { feature: "Trust Score", values: [false, true, true] },
   { feature: "Knowledge Graph", values: [false, true, true] },
   { feature: "Evidence Verification", values: ["Limited", "Unlimited", "Unlimited"] },
@@ -208,6 +208,28 @@ export default function PricingPage() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
   const monthlyRef = useRef<HTMLButtonElement>(null);
   const yearlyRef = useRef<HTMLButtonElement>(null);
+  const tableWrapperRef = useRef<HTMLDivElement>(null);
+  const [showLeftFade, setShowLeftFade] = useState(false);
+  const [showRightFade, setShowRightFade] = useState(false);
+
+  useEffect(() => {
+    const wrapper = tableWrapperRef.current;
+    if (!wrapper) return;
+
+    const handleScroll = () => {
+      const { scrollLeft, scrollWidth, clientWidth } = wrapper;
+      setShowLeftFade(scrollLeft > 10);
+      setShowRightFade(scrollLeft < scrollWidth - clientWidth - 10);
+    };
+
+    handleScroll();
+    wrapper.addEventListener("scroll", handleScroll);
+    window.addEventListener("resize", handleScroll);
+    return () => {
+      wrapper.removeEventListener("scroll", handleScroll);
+      window.removeEventListener("resize", handleScroll);
+    };
+  }, []);
 
   const handleToggleKey = (e: React.KeyboardEvent, current: "Monthly" | "Yearly") => {
     if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
@@ -477,7 +499,7 @@ export default function PricingPage() {
 
       {/* ── Feature Comparison ── */}
       <section className="py-24 border-t border-white/5">
-        <div className="mx-auto max-w-4xl px-6">
+        <div className="mx-auto max-w-5xl px-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -490,38 +512,146 @@ export default function PricingPage() {
             </p>
           </motion.div>
 
+          {/* ── Desktop / Tablet table ── */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/40"
+            className="hidden sm:block"
           >
-            <table className="w-full min-w-[1000px] text-left">
-              <thead>
-                <tr className="border-b border-slate-800">
-                  <th className="px-6 py-5 text-sm font-semibold text-slate-400">Feature</th>
-                  {plans.map((plan) => (
-                    <th key={plan.name} className="px-6 py-5 text-center">
-                      <span className={`text-sm font-bold ${plan.badges ? "text-cyan-400" : "text-white"}`}>
-                        {plan.name}
-                      </span>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonRows.map((row, i) => (
-                  <tr key={row.feature} className={i % 2 === 0 ? "bg-slate-950/40" : ""}>
-                    <td className="px-6 py-4 text-sm text-slate-300">{row.feature}</td>
-                    {row.values.map((value, j) => (
-                      <td key={j} className="px-6 py-4 text-center">
-                        <ComparisonCell value={value} />
-                      </td>
+            <div className="relative rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+              {/* Tablet gradient fades */}
+              <div
+                aria-hidden="true"
+                className={`pointer-events-none absolute left-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-r from-slate-900/80 to-transparent transition-opacity duration-200 ${showLeftFade ? "opacity-100" : "opacity-0"}`}
+              />
+              <div
+                aria-hidden="true"
+                className={`pointer-events-none absolute right-0 top-0 bottom-0 w-12 z-10 bg-gradient-to-l from-slate-900/80 to-transparent transition-opacity duration-200 ${showRightFade ? "opacity-100" : "opacity-0"}`}
+              />
+
+              <div
+                ref={tableWrapperRef}
+                className="overflow-x-auto scrollbar-none"
+              >
+                <table className="w-full table-fixed text-left">
+                  <colgroup>
+                    <col className="w-[38%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[20%]" />
+                    <col className="w-[20%]" />
+                  </colgroup>
+                  <thead>
+                    <tr className="border-b border-slate-800">
+                      <th
+                        scope="col"
+                        className="sticky left-0 z-20 bg-slate-900/95 backdrop-blur-sm px-5 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                      >
+                        Feature
+                      </th>
+                      {plans.map((plan) => {
+                        const isPro = Boolean(plan.badges?.length);
+                        return (
+                          <th
+                            key={plan.name}
+                            scope="col"
+                            className={`px-4 py-4 text-center text-sm font-bold ${
+                              isPro
+                                ? "text-cyan-400 border-x border-cyan-500/20 bg-cyan-500/[0.04]"
+                                : "text-white"
+                            }`}
+                          >
+                            {plan.name}
+                            {isPro && (
+                              <span className="ml-2 inline-flex items-center rounded-full bg-cyan-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-cyan-400">
+                                Popular
+                              </span>
+                            )}
+                          </th>
+                        );
+                      })}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {comparisonRows.map((row, i) => (
+                      <tr key={row.feature} className={i % 2 === 0 ? "bg-slate-950/30" : ""}>
+                        <td className="sticky left-0 z-10 bg-inherit px-5 py-3 text-sm text-slate-300 font-medium">
+                          {row.feature}
+                        </td>
+                        {row.values.map((value, j) => {
+                          const isPro = Boolean(plans[j].badges?.length);
+                          return (
+                            <td
+                              key={j}
+                              className={`px-4 py-3 text-center ${
+                                isPro ? "border-x border-cyan-500/10 bg-cyan-500/[0.02]" : ""
+                              }`}
+                            >
+                              <ComparisonCell value={value} />
+                            </td>
+                          );
+                        })}
+                      </tr>
                     ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ── Mobile stacked cards ── */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="sm:hidden space-y-4"
+            aria-label="Feature comparison by plan"
+          >
+            {plans.map((plan) => {
+              const isPro = Boolean(plan.badges?.length);
+              return (
+                <div
+                  key={plan.name}
+                  className={`rounded-2xl border bg-slate-900/60 overflow-hidden ${
+                    isPro
+                      ? "border-cyan-500/40 shadow-[0_0_32px_-8px_rgba(34,211,238,0.2)]"
+                      : "border-slate-800"
+                  }`}
+                >
+                  <div
+                    className={`px-5 py-3.5 border-b flex items-center justify-between ${
+                      isPro ? "border-cyan-500/20 bg-cyan-500/[0.06]" : "border-slate-800"
+                    }`}
+                  >
+                    <span className={`text-sm font-bold ${isPro ? "text-cyan-400" : "text-white"}`}>
+                      {plan.name}
+                    </span>
+                    {isPro && (
+                      <span className="inline-flex items-center rounded-full bg-cyan-500/15 px-2 py-0.5 text-[10px] font-semibold text-cyan-400">
+                        Most Popular
+                      </span>
+                    )}
+                  </div>
+                  <ul>
+                    {comparisonRows.map((row, i) => {
+                      const planIndex = plans.indexOf(plan);
+                      const value = row.values[planIndex];
+                      return (
+                        <li
+                          key={row.feature}
+                          className={`flex items-center justify-between px-5 py-3 text-sm ${
+                            i % 2 === 0 ? "bg-slate-950/30" : ""
+                          }`}
+                        >
+                          <span className="text-slate-400">{row.feature}</span>
+                          <ComparisonCell value={value} />
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              );
+            })}
           </motion.div>
         </div>
       </section>
