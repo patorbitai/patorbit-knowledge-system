@@ -101,7 +101,7 @@ export default function PlatformPage() {
                 transition={{ delay: i * 0.1 }}
                 className="group relative pl-0 md:pl-16"
               >
-                <div className="hidden md:block absolute left-[14px] top-8 w-[34px] h-[34px] rounded-full bg-slate-900 border-2 border-slate-700 group-hover:border-cyan-500/50 transition-colors z-10 flex items-center justify-center">
+                <div className="hidden md:flex absolute left-[14px] top-1/2 -translate-y-1/2 w-[34px] h-[34px] rounded-full bg-slate-900 border-2 border-slate-700 group-hover:border-cyan-500/50 transition-colors z-10 items-center justify-center">
                   <span className="text-[10px] font-bold tabular-nums text-slate-400 group-hover:text-cyan-400 transition-colors">{String(i + 1).padStart(2, "0")}</span>
                 </div>
                 <div className="rounded-2xl border border-slate-800/60 bg-gradient-to-br from-slate-900/60 to-slate-900/30 p-6 lg:p-8 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-700/60">
