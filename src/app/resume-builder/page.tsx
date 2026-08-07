@@ -10,7 +10,7 @@ import { LeftSidebar, CenterWorkspace, RightCopilot, ClaimsReview } from "@/comp
 import MobileSectionNav from "@/components/resume-builder/MobileSectionNav";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
 import { SettingsModal } from "@/components/resume-builder/SettingsModal";
-import { Eye, Settings, User } from "lucide-react";
+import { Eye, Settings, User, ArrowLeft, ChevronRight } from "lucide-react";
 import { debounce } from "@/lib/debounce";
 
 /* ── App Header ── */
@@ -21,21 +21,36 @@ function AppHeader() {
   return (
     <header className="sticky top-0 z-40 h-12 bg-[#070911]/90 backdrop-blur-xl border-b border-white/[0.06]">
       <div className="flex items-center justify-between h-full px-4">
-        {/* Left: Logo + App name */}
-        <div className="flex items-center gap-3">
-          <Link href="/" className="flex items-center gap-2">
+        {/* Left: Logo + breadcrumb nav */}
+        <div className="flex items-center gap-2.5">
+          {/* Logo mark */}
+          <Link href="/" className="flex items-center gap-2 shrink-0">
             <div className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-blue-500 to-indigo-600 shadow-sm">
               <span className="text-[10px] font-bold text-white">P</span>
             </div>
-            <span className="text-sm font-semibold text-white tracking-tight">Patorbit</span>
+            <span className="text-sm font-semibold text-white tracking-tight hidden sm:inline">Patorbit</span>
           </Link>
-          <div className="h-3 w-px bg-white/[0.08]" />
-          <span className="text-xs font-medium text-slate-400">Resume Builder</span>
 
-          {/* Resume name inline */}
+          <div className="h-3 w-px bg-white/[0.08]" />
+
+          {/* ← Dashboard */}
+          <Link
+            href="/overview"
+            className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all group"
+          >
+            <ArrowLeft className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" />
+            <span>Dashboard</span>
+          </Link>
+
+          <ChevronRight className="w-3 h-3 text-slate-700 shrink-0" />
+
+          {/* Current context */}
+          <span className="text-[11px] font-medium text-slate-300">Resume Builder</span>
+
+          {/* Resume name pill */}
           {resume.name && (
-            <div className="flex items-center gap-1.5 px-2 py-1 rounded-md bg-white/[0.04] border border-white/[0.06] ml-2">
-              <span className="text-[11px] text-slate-400 max-w-[120px] truncate">{resume.name}</span>
+            <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06]">
+              <span className="text-[11px] text-slate-500 max-w-[140px] truncate">{resume.name}</span>
             </div>
           )}
         </div>
