@@ -4,53 +4,10 @@ import { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { X, Check, Shield, Layers, AlertTriangle, Sparkles, Search } from "lucide-react";
-import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
+import { TEMPLATES } from "@/app/resume-builder/templates";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
-
-// Semantic tags per template — extend with industry keywords freely without changing filtering logic
-const TEMPLATE_TAGS: Record<string, string[]> = {
-  "executive":           ["executive", "leadership", "senior", "professional", "corporate", "serif", "bold", "management", "c-suite"],
-  "modern-clean":        ["modern", "clean", "minimal", "tech", "sleek", "simple", "white", "professional"],
-  "split-vibrant":       ["creative", "vibrant", "colorful", "two-column", "sidebar", "design", "visual", "bold"],
-  "classic-serif":       ["classic", "traditional", "serif", "formal", "academic", "professional", "law", "finance", "timeless"],
-  "tech-mono":           ["tech", "mono", "monospace", "developer", "code", "engineering", "minimal", "dark"],
-  "creative-burst":      ["creative", "colorful", "burst", "design", "portfolio", "vibrant", "artistic", "expressive"],
-  "compact-pro":         ["compact", "dense", "professional", "devops", "engineering", "technical", "condensed"],
-  "corporate-blue":      ["corporate", "blue", "professional", "formal", "business", "enterprise", "senior"],
-  "minimal-edge":        ["minimal", "edge", "clean", "simple", "modern", "white", "airy", "elegant"],
-  "banner-bold":         ["banner", "bold", "fresh", "entry", "graduate", "junior", "vibrant", "modern"],
-  "sidebar-elegance":    ["sidebar", "elegant", "design", "creative", "two-column", "visual", "refined"],
-  "gradient-flow":       ["gradient", "modern", "ai", "ml", "data", "tech", "flow", "colorful"],
-  "academic-formal":     ["academic", "formal", "research", "phd", "scholar", "data", "science", "traditional", "classic"],
-  "startup-vibe":        ["startup", "fresh", "modern", "energetic", "entry", "graduate", "tech", "casual"],
-  "dark-elegance":       ["dark", "elegant", "cybersecurity", "security", "professional", "premium", "sleek"],
-  "timeline-pro":        ["timeline", "chronological", "professional", "modern", "clean", "tech"],
-  "premium-slate":       ["premium", "slate", "sophisticated", "professional", "executive", "dark", "modern"],
-  "nature-green":        ["nature", "green", "fresh", "sustainability", "data", "science", "calm", "clean"],
-  "luxury-gold":         ["luxury", "gold", "premium", "executive", "elegant", "upscale", "refined", "leadership"],
-  "swiss-design":        ["swiss", "minimal", "grid", "clean", "design", "devops", "structured", "precise"],
-  "scientific":          ["scientific", "academic", "research", "data", "formal", "precise", "professional", "phd"],
-  "creative-portfolio":  ["creative", "portfolio", "design", "artistic", "visual", "colorful", "expressive"],
-};
-
-function matchesSearch(t: ResumeTemplate, query: string): boolean {
-  if (!query) return true;
-  const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  const tags = TEMPLATE_TAGS[t.id] ?? [];
-  const searchable = [
-    t.name,
-    t.description,
-    t.category,
-    t.experienceLevel,
-    t.layout,
-    // ATS quality alias
-    t.atsRating > 90 ? "ats high ats friendly" : t.atsRating > 80 ? "ats good" : "ats",
-    ...tags,
-  ].join(" ").toLowerCase();
-
-  return tokens.every((tok) => searchable.includes(tok));
-}
+import { filterTemplates } from "@/lib/template-search";
 
 const CATEGORIES = [
   "All",
@@ -124,13 +81,10 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
     }
   };
 
-  const filteredTemplates = useMemo(() => {
-    let list = activeCategory === "All" ? TEMPLATES : TEMPLATES.filter((t) => t.category === activeCategory);
-    if (searchQuery) {
-      list = list.filter((t) => matchesSearch(t, searchQuery));
-    }
-    return list;
-  }, [activeCategory, searchQuery]);
+  const filteredTemplates = useMemo(
+    () => filterTemplates(TEMPLATES, { query: searchQuery, category: activeCategory }),
+    [activeCategory, searchQuery]
+  );
 
   return (
     <AnimatePresence>
@@ -174,7 +128,8 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search — try 'minimal', 'ats', 'executive', 'creative'…"
+                  onKeyDown={(e) => { if (e.key === "Escape") searchRef.current?.blur(); }}
+                  placeholder="Search templates…"
                   className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg pl-8 pr-4 py-2 text-[12px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/40 focus:bg-white/[0.06] transition-all"
                   aria-label="Search templates"
                 />
