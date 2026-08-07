@@ -1,12 +1,56 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
-import { X, Check, Shield, Layers, AlertTriangle, Sparkles } from "lucide-react";
-import { TEMPLATES } from "@/app/resume-builder/templates";
+import { X, Check, Shield, Layers, AlertTriangle, Sparkles, Search } from "lucide-react";
+import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
+
+// Semantic tags per template — extend with industry keywords freely without changing filtering logic
+const TEMPLATE_TAGS: Record<string, string[]> = {
+  "executive":           ["executive", "leadership", "senior", "professional", "corporate", "serif", "bold", "management", "c-suite"],
+  "modern-clean":        ["modern", "clean", "minimal", "tech", "sleek", "simple", "white", "professional"],
+  "split-vibrant":       ["creative", "vibrant", "colorful", "two-column", "sidebar", "design", "visual", "bold"],
+  "classic-serif":       ["classic", "traditional", "serif", "formal", "academic", "professional", "law", "finance", "timeless"],
+  "tech-mono":           ["tech", "mono", "monospace", "developer", "code", "engineering", "minimal", "dark"],
+  "creative-burst":      ["creative", "colorful", "burst", "design", "portfolio", "vibrant", "artistic", "expressive"],
+  "compact-pro":         ["compact", "dense", "professional", "devops", "engineering", "technical", "condensed"],
+  "corporate-blue":      ["corporate", "blue", "professional", "formal", "business", "enterprise", "senior"],
+  "minimal-edge":        ["minimal", "edge", "clean", "simple", "modern", "white", "airy", "elegant"],
+  "banner-bold":         ["banner", "bold", "fresh", "entry", "graduate", "junior", "vibrant", "modern"],
+  "sidebar-elegance":    ["sidebar", "elegant", "design", "creative", "two-column", "visual", "refined"],
+  "gradient-flow":       ["gradient", "modern", "ai", "ml", "data", "tech", "flow", "colorful"],
+  "academic-formal":     ["academic", "formal", "research", "phd", "scholar", "data", "science", "traditional", "classic"],
+  "startup-vibe":        ["startup", "fresh", "modern", "energetic", "entry", "graduate", "tech", "casual"],
+  "dark-elegance":       ["dark", "elegant", "cybersecurity", "security", "professional", "premium", "sleek"],
+  "timeline-pro":        ["timeline", "chronological", "professional", "modern", "clean", "tech"],
+  "premium-slate":       ["premium", "slate", "sophisticated", "professional", "executive", "dark", "modern"],
+  "nature-green":        ["nature", "green", "fresh", "sustainability", "data", "science", "calm", "clean"],
+  "luxury-gold":         ["luxury", "gold", "premium", "executive", "elegant", "upscale", "refined", "leadership"],
+  "swiss-design":        ["swiss", "minimal", "grid", "clean", "design", "devops", "structured", "precise"],
+  "scientific":          ["scientific", "academic", "research", "data", "formal", "precise", "professional", "phd"],
+  "creative-portfolio":  ["creative", "portfolio", "design", "artistic", "visual", "colorful", "expressive"],
+};
+
+function matchesSearch(t: ResumeTemplate, query: string): boolean {
+  if (!query) return true;
+  const tokens = query.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const tags = TEMPLATE_TAGS[t.id] ?? [];
+  const searchable = [
+    t.name,
+    t.description,
+    t.category,
+    t.experienceLevel,
+    t.layout,
+    // ATS quality alias
+    t.atsRating > 90 ? "ats high ats friendly" : t.atsRating > 80 ? "ats good" : "ats",
+    ...tags,
+  ].join(" ").toLowerCase();
+
+  return tokens.every((tok) => searchable.includes(tok));
+}
 
 const CATEGORIES = [
   "All",
@@ -58,8 +102,10 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
   const resume = useResumeBuilder((s) => s.resume);
   const applyTemplate = useResumeBuilder((s) => s.applyTemplate);
   const [activeCategory, setActiveCategory] = useState("All");
+  const [searchQuery, setSearchQuery] = useState("");
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [confirmOverwrite, setConfirmOverwrite] = useState<string | null>(null);
+  const searchRef = useRef<HTMLInputElement>(null);
 
   const handleSelect = (id: string) => {
     if (hasResumeData(resume)) {
@@ -78,8 +124,13 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
     }
   };
 
-  const filteredTemplates =
-    activeCategory === "All" ? TEMPLATES : TEMPLATES.filter((t) => t.category === activeCategory);
+  const filteredTemplates = useMemo(() => {
+    let list = activeCategory === "All" ? TEMPLATES : TEMPLATES.filter((t) => t.category === activeCategory);
+    if (searchQuery) {
+      list = list.filter((t) => matchesSearch(t, searchQuery));
+    }
+    return list;
+  }, [activeCategory, searchQuery]);
 
   return (
     <AnimatePresence>
@@ -101,22 +152,46 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
             style={{ background: "linear-gradient(160deg, #0c1122 0%, #080d1a 100%)" }}
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] shrink-0 backdrop-blur-sm"
+            <div className="flex items-center gap-4 px-6 py-4 border-b border-white/[0.06] shrink-0 backdrop-blur-sm"
               style={{ background: "rgba(255,255,255,0.02)" }}>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 shrink-0">
                 <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500/20 to-violet-500/20 border border-white/[0.08]">
                   <Sparkles className="w-4 h-4 text-cyan-400" />
                 </div>
-                <div>
+                <div className="hidden sm:block">
                   <h2 className="text-base font-semibold text-white tracking-tight">Choose a Template</h2>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     {filteredTemplates.length} template{filteredTemplates.length !== 1 ? "s" : ""} available
                   </p>
                 </div>
               </div>
+
+              {/* Smart search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500 pointer-events-none" />
+                <input
+                  ref={searchRef}
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search — try 'minimal', 'ats', 'executive', 'creative'…"
+                  className="w-full bg-white/[0.04] border border-white/[0.07] rounded-lg pl-8 pr-4 py-2 text-[12px] text-slate-200 placeholder:text-slate-600 focus:outline-none focus:border-cyan-500/40 focus:bg-white/[0.06] transition-all"
+                  aria-label="Search templates"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => { setSearchQuery(""); searchRef.current?.focus(); }}
+                    className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 text-slate-500 hover:text-slate-300 transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+
               <button
                 onClick={() => { if (!confirmOverwrite) onClose(); }}
-                className="p-2 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
+                className="p-2 shrink-0 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
                 aria-label="Close"
               >
                 <X className="w-4 h-4" />
@@ -146,6 +221,21 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
 
               {/* Grid */}
               <div className="flex-1 overflow-y-auto p-5">
+                {filteredTemplates.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full gap-3 text-center py-16">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06]">
+                      <Search className="w-5 h-5 text-slate-600" />
+                    </div>
+                    <p className="text-sm font-medium text-slate-400">No templates match &ldquo;{searchQuery}&rdquo;</p>
+                    <p className="text-[11px] text-slate-600">Try 'minimal', 'executive', 'ats', or 'creative'</p>
+                    <button
+                      onClick={() => setSearchQuery("")}
+                      className="mt-1 px-3 py-1.5 rounded-lg text-[11px] font-medium text-cyan-400 hover:text-cyan-300 hover:bg-cyan-500/10 transition-all"
+                    >
+                      Clear search
+                    </button>
+                  </div>
+                ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
                   {filteredTemplates.map((t) => {
                     const isActive = resume.templateId === t.id;
@@ -221,6 +311,7 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                     );
                   })}
                 </div>
+                )}
               </div>
             </div>
 
