@@ -87,6 +87,6 @@ export const exportToDocx = async (resumeData: any, fileName: string) => {
     saveAs(blob, `${fileName}.docx`);
   } catch (error) {
     console.error("Failed to export DOCX:", error);
-    alert("Failed to generate DOCX file. Please try again.");
+    throw error;
   }
 };

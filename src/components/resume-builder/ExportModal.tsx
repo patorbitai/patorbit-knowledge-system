@@ -1,8 +1,8 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useRef, useCallback } from "react";
-import { X, FileText, Download } from "lucide-react";
+import { useEffect, useRef, useCallback, useState } from "react";
+import { X, FileText, Download, AlertCircle } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ResumePreview, getActiveTemplate } from "@/components/resume/ResumePreview";
 import { exportToPdf, exportToDocx } from "@/utils/export";
@@ -13,15 +13,21 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
+  const [docxError, setDocxError] = useState<string | null>(null);
 
   const handleExportPdf = () => {
     exportToPdf("pdf-export-target", resume.name || "resume");
     onClose();
   };
 
-  const handleExportDocx = () => {
-    exportToDocx(resume, resume.name || "resume");
-    onClose();
+  const handleExportDocx = async () => {
+    setDocxError(null);
+    try {
+      await exportToDocx(resume, resume.name || "resume");
+      onClose();
+    } catch {
+      setDocxError("Failed to generate DOCX. Please try again.");
+    }
   };
 
   const exportOptions = [
@@ -147,6 +153,12 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
                   <Download className="w-4 h-4 text-slate-500" />
                 </button>
               ))}
+              {docxError && (
+                <div role="alert" className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-[11px]">
+                  <AlertCircle className="w-3.5 h-3.5 shrink-0" aria-hidden="true" />
+                  {docxError}
+                </div>
+              )}
             </div>
           </motion.div>
 

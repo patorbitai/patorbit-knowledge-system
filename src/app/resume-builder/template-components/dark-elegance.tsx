@@ -2,27 +2,230 @@
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
 
 export function DarkElegancePreview({ resume }: { resume: Resume }) {
-  const bg = "#0f172a", accent = "#60a5fa", text = "#f3f4f6", muted = "#9ca3af", card = "#1e293b";
+  const ink = "#111827";
+  const accent = "#1e293b";
+  const muted = "#4b5563";
+  const rule = "#e2e8f0";
+  const subtleBg = "#f8fafc";
+
+  const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
+    <section className="mb-6 break-inside-avoid">
+      <h2
+        className="text-[10px] font-bold uppercase tracking-[0.22em] mb-3 pb-2 border-b"
+        style={{ color: accent, borderColor: rule }}
+      >
+        {title}
+      </h2>
+      {children}
+    </section>
+  );
+
   return (
-    <div className="rounded-lg shadow-2xl overflow-hidden" style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", backgroundColor: bg }}>
-      <div className="px-6 pt-8 pb-6 text-center" style={{ backgroundColor: "#111827" }}>
-        <h1 className="text-2xl font-bold text-white tracking-wide">{resume.name || "Your Name"}</h1>
-        <p className="text-sm mt-1 font-medium" style={{ color: accent }}>{resume.title || "Professional Title"}</p>
-        <div className="flex flex-wrap justify-center gap-x-4 mt-3 text-xs" style={{ color: muted }}>{resume.email && <span>✉ {resume.email}</span>}{resume.phone && <span>📞 {resume.phone}</span>}{resume.address && <span>📍 {resume.address}</span>}</div>
-        {resume.social && <div className="mt-2"><SocialLinks social={resume.social} color={muted} size="xs" /></div>}
-      </div>
-      <div className="p-6 space-y-5 text-sm" style={{ color: text }}>
-        {resume.summary && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Profile</h2><FormattedDescription text={resume.summary} color={accent} mutedColor={muted} /></div>}
-        {resume.experience.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Experience</h2>{resume.experience.map(e => <div key={e.id} className="p-3 rounded-lg mb-2" style={{ backgroundColor: card }}><div className="flex justify-between"><span className="text-sm font-semibold" style={{ color: text }}>{e.position}</span><span className="text-xs" style={{ color: muted }}>{e.duration}</span></div><p className="text-xs" style={{ color: accent }}>{e.company}{e.location && ` · ${e.location}`}</p>{e.description && <FormattedDescription text={e.description} color={accent} mutedColor={muted} />}</div>)}</div>}
-        {resume.education.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Education</h2>{resume.education.map(e => <div key={e.id} className="flex justify-between mb-1"><span className="text-sm" style={{ color: text }}>{e.school}</span><span className="text-xs" style={{ color: muted }}>{e.degree}{e.year ? ` · ${e.year}` : ""}</span></div>)}</div>}
-        {resume.skills.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Skills</h2><div className="flex flex-wrap gap-2">{resume.skills.map(s => <span key={s.id} className="text-xs px-2.5 py-1 rounded-md" style={{ backgroundColor: card, color: muted }}>{s.name}</span>)}</div></div>}
-        {resume.projects.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Projects</h2>{resume.projects.map(p => <div key={p.id} className="p-3 rounded-lg mb-1" style={{ backgroundColor: card }}><div className="flex justify-between"><span className="text-sm font-semibold" style={{ color: text }}>{p.name}</span><span className="text-xs" style={{ color: muted }}>{p.tech}</span></div>{p.description && <FormattedDescription text={p.description} color={accent} mutedColor={muted} />}</div>)}</div>}
-        {resume.certifications.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Certifications</h2><div className="flex flex-wrap gap-2">{resume.certifications.map(c => <span key={c.id} className="text-xs px-2 py-1 rounded-md" style={{ backgroundColor: card, color: muted }}>{c.name}</span>)}</div></div>}
-        {resume.languages.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Languages</h2><p className="text-xs" style={{ color: muted }}>{resume.languages.map(l => `${l.name} (${l.proficiency})`).join(", ")}</p></div>}
-        {resume.achievements.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Achievements</h2>{resume.achievements.map(a => <p key={a.id} className="text-xs mb-0.5">✦ {a.description}</p>)}</div>}
-        {resume.interests.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>Interests</h2><p className="text-xs" style={{ color: muted }}>{resume.interests.map(i => i.name).join(", ")}</p></div>}
-        {resume.references.length > 0 && <div><h2 className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: accent }}>References</h2>{resume.references.map(r => <p key={r.id} className="text-xs mb-1" style={{ color: muted }}>{r.name}{r.position && ` — ${r.position}`}</p>)}</div>}
-      </div>
+    <div
+      className="bg-white rounded-lg shadow-2xl print:shadow-none print:rounded-none overflow-hidden"
+      style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", color: ink }}
+    >
+      {/* Header — charcoal left border accent, white background */}
+      <header
+        className="px-8 py-7 border-l-4"
+        style={{ borderLeftColor: accent, backgroundColor: subtleBg, borderBottom: `1px solid ${rule}` }}
+      >
+        <h1
+          className="text-[2rem] font-bold tracking-tight leading-none"
+          style={{ color: ink }}
+        >
+          {resume.name || "Your Name"}
+        </h1>
+        <p
+          className="mt-2 text-[13px] font-semibold uppercase tracking-[0.18em]"
+          style={{ color: muted }}
+        >
+          {resume.title || "Professional Title"}
+        </p>
+
+        {/* Contact row — no emojis for ATS */}
+        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-[11px]" style={{ color: muted }}>
+          {resume.email && <span>{resume.email}</span>}
+          {resume.phone && <span>{resume.phone}</span>}
+          {resume.address && <span>{resume.address}</span>}
+          {resume.nationality && <span>{resume.nationality}</span>}
+        </div>
+
+        {resume.social && (
+          <div className="mt-2">
+            <SocialLinks social={resume.social} color={muted} size="xs" />
+          </div>
+        )}
+      </header>
+
+      <main className="px-8 py-7">
+        {resume.summary && (
+          <Section title="Profile">
+            <div className="text-[12.5px] leading-relaxed" style={{ color: ink }}>
+              <FormattedDescription text={resume.summary} color={ink} mutedColor={muted} size="sm" />
+            </div>
+          </Section>
+        )}
+
+        {resume.experience.length > 0 && (
+          <Section title="Experience">
+            <div className="space-y-5">
+              {resume.experience.map((e) => (
+                <article key={e.id} className="break-inside-avoid">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h3 className="text-[13px] font-semibold" style={{ color: ink }}>
+                      {e.position}
+                    </h3>
+                    <span className="shrink-0 text-[11px]" style={{ color: muted }}>
+                      {e.duration || [e.startDate, e.endDate || "Present"].filter(Boolean).join(" – ")}
+                    </span>
+                  </div>
+                  <p className="text-[12px] font-medium mt-0.5" style={{ color: muted }}>
+                    {e.company}
+                    {e.location && <span className="font-normal"> · {e.location}</span>}
+                  </p>
+                  {e.description && (
+                    <div className="mt-1.5 text-[12px] leading-relaxed">
+                      <FormattedDescription text={e.description} color={ink} mutedColor={muted} />
+                    </div>
+                  )}
+                  {e.bulletPoints && e.bulletPoints.length > 0 && (
+                    <ul className="mt-1.5 ml-4 list-disc list-outside space-y-0.5 text-[12px] leading-relaxed" style={{ color: ink }}>
+                      {e.bulletPoints.map((bp, i) => <li key={i}>{bp}</li>)}
+                    </ul>
+                  )}
+                </article>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {resume.education.length > 0 && (
+          <Section title="Education">
+            <div className="space-y-3">
+              {resume.education.map((e) => (
+                <article key={e.id} className="flex items-baseline justify-between gap-4 break-inside-avoid">
+                  <div>
+                    <h3 className="text-[13px] font-semibold" style={{ color: ink }}>{e.school}</h3>
+                    <p className="text-[12px] mt-0.5" style={{ color: muted }}>
+                      {e.degree}{e.field && ` in ${e.field}`}
+                      {e.honors && ` · ${e.honors}`}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-[11px]" style={{ color: muted }}>
+                    {e.year}{e.gpa && ` · GPA ${e.gpa}`}
+                  </span>
+                </article>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {resume.skills.length > 0 && (
+          <Section title="Skills">
+            <div className="flex flex-wrap gap-x-5 gap-y-1.5">
+              {resume.skills.map((s) => (
+                <div key={s.id} className="flex items-center gap-1.5 text-[12px]">
+                  <span
+                    className="inline-block w-1 h-1 rounded-full shrink-0"
+                    style={{ backgroundColor: accent }}
+                    aria-hidden
+                  />
+                  <span style={{ color: ink }}>{s.name}</span>
+                  {s.level && (
+                    <span className="text-[11px]" style={{ color: muted }}>({s.level})</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {resume.projects.length > 0 && (
+          <Section title="Projects">
+            <div className="space-y-4">
+              {resume.projects.map((p) => (
+                <article key={p.id} className="break-inside-avoid">
+                  <div className="flex items-baseline justify-between gap-4">
+                    <h3 className="text-[13px] font-semibold" style={{ color: ink }}>{p.name}</h3>
+                    {p.tech && (
+                      <span className="shrink-0 text-[11px]" style={{ color: muted }}>{p.tech}</span>
+                    )}
+                  </div>
+                  {p.role && (
+                    <p className="text-[12px] font-medium mt-0.5" style={{ color: muted }}>{p.role}</p>
+                  )}
+                  {p.description && (
+                    <div className="mt-1 text-[12px] leading-relaxed">
+                      <FormattedDescription text={p.description} color={ink} mutedColor={muted} />
+                    </div>
+                  )}
+                </article>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {resume.certifications.length > 0 && (
+          <Section title="Certifications">
+            <div className="space-y-1.5">
+              {resume.certifications.map((c) => (
+                <div key={c.id} className="flex items-baseline justify-between gap-4 text-[12px] break-inside-avoid">
+                  <span className="font-medium" style={{ color: ink }}>{c.name}</span>
+                  <span className="shrink-0" style={{ color: muted }}>
+                    {[c.issuer, c.date].filter(Boolean).join(" · ")}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        {resume.achievements.length > 0 && (
+          <Section title="Achievements">
+            <div className="space-y-1">
+              {resume.achievements.map((a) => (
+                <p key={a.id} className="text-[12px] leading-relaxed" style={{ color: ink }}>
+                  {a.description}
+                </p>
+              ))}
+            </div>
+          </Section>
+        )}
+
+        <div className="grid grid-cols-2 gap-x-10">
+          {resume.languages.length > 0 && (
+            <Section title="Languages">
+              {resume.languages.map((l) => (
+                <p key={l.id} className="text-[12px] mb-1" style={{ color: ink }}>
+                  {l.name}
+                  <span className="ml-1.5" style={{ color: muted }}>({l.proficiency})</span>
+                </p>
+              ))}
+            </Section>
+          )}
+
+          {resume.interests.length > 0 && (
+            <Section title="Interests">
+              <p className="text-[12px]" style={{ color: muted }}>
+                {resume.interests.map((i) => i.name).join(", ")}
+              </p>
+            </Section>
+          )}
+        </div>
+
+        {resume.references.length > 0 && (
+          <Section title="References">
+            {resume.references.map((r) => (
+              <p key={r.id} className="text-[12px] mb-1" style={{ color: ink }}>
+                <span className="font-medium">{r.name}</span>
+                {r.position && <span style={{ color: muted }}> — {r.position}</span>}
+                {r.company && <span style={{ color: muted }}>, {r.company}</span>}
+              </p>
+            ))}
+          </Section>
+        )}
+      </main>
     </div>
   );
 }

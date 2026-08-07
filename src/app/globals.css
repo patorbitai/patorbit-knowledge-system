@@ -297,6 +297,83 @@ body {
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
-.scrollbar-none::-webkit-scrollbar {
-  display: none;
+
+/* ============================================================
+   PRINT / PDF
+   ============================================================ */
+
+@page {
+  size: A4 portrait;
+  margin: 12mm 15mm;
+}
+
+@media print {
+  /* White canvas — strip app dark theme */
+  html, body {
+    background: white !important;
+    color: black !important;
+  }
+
+  /* Hide all app chrome — nav, sidebars, modals, banners */
+  header,
+  nav,
+  aside,
+  footer,
+  [data-print-hide],
+  .print-hide {
+    display: none !important;
+  }
+
+  /* Remove decorative shadows and UI border-radius */
+  * {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Resume container strips rounded corners at page edges */
+  .rounded-lg,
+  .rounded-xl,
+  .rounded-2xl {
+    border-radius: 0 !important;
+  }
+
+  /* ── Page-break control ── */
+
+  /* Section blocks (used by all templates) */
+  section {
+    break-inside: avoid;
+  }
+
+  /* Individual entry cards — experience, education, projects, certs */
+  article {
+    break-inside: avoid;
+  }
+
+  /* Tailwind .break-inside-avoid utility (applied in template components) */
+  .break-inside-avoid {
+    break-inside: avoid;
+  }
+
+  /* Keep headings with their first content line */
+  h1, h2, h3, h4 {
+    break-after: avoid;
+    orphans: 3;
+    widows: 3;
+  }
+
+  /* Prevent isolated labels at bottom of page */
+  p, li {
+    orphans: 2;
+    widows: 2;
+  }
+
+  /* Ensure full-width resume render */
+  #pdf-export-target {
+    width: 210mm !important;
+    max-width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: static !important;
+    left: auto !important;
+  }
 }
