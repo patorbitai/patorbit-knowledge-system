@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
 import { SectionContent } from "../fields/SectionContent";
@@ -86,26 +85,22 @@ export function PersonalSection() {
       <SectionContent isCollapsed={collapsed}>
         {/* Name & Title */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.15 }}>
-            <FieldInput
-              label="Full Name"
-              placeholder="Alex Johnson"
-              value={resume.name}
-              onChange={(v) => updateField("name", v)}
-              onBlur={() => touch("personal.name")}
-              error={getFieldError("personal", "name")}
-              type="text"
-            />
-          </motion.div>
-          <motion.div whileHover={{ scale: 1.01 }} transition={{ duration: 0.15 }}>
-            <FieldInput
-              label="Professional Title"
-              placeholder="Senior Software Engineer"
-              value={resume.title}
-              onChange={(v) => updateField("title", v)}
-              type="text"
-            />
-          </motion.div>
+          <FieldInput
+            label="Full Name"
+            placeholder="Alex Johnson"
+            value={resume.name}
+            onChange={(v) => updateField("name", v)}
+            onBlur={() => touch("personal.name")}
+            error={getFieldError("personal", "name")}
+            type="text"
+          />
+          <FieldInput
+            label="Professional Title"
+            placeholder="Senior Software Engineer"
+            value={resume.title}
+            onChange={(v) => updateField("title", v)}
+            type="text"
+          />
         </div>
 
         {/* Contact */}

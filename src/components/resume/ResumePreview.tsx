@@ -2,26 +2,6 @@ import { ExecutivePreview, ModernCleanPreview, SplitVibrantPreview, ClassicSerif
 import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
 
-const STORAGE_KEY = "patorbit-resume-data";
-
-export function loadResume(): Resume | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    // Ensure all array fields exist (old saved data may lack some)
-    return {
-      ...parsed,
-      languages: parsed.languages ?? [],
-      interests: parsed.interests ?? [],
-      achievements: parsed.achievements ?? [],
-      references: parsed.references ?? [],
-    } as Resume;
-  } catch {
-    return null;
-  }
-}
-
 export function getActiveTemplate(resume: Resume): ResumeTemplate {
   return TEMPLATES.find(t => t.id === resume.templateId) || TEMPLATES[0];
 }

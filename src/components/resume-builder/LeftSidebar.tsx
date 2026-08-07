@@ -15,7 +15,6 @@ import {
   Eye,
   ChevronRight,
   Upload,
-  Layout,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ProgressIndicator } from "./ProgressIndicator";
@@ -37,11 +36,13 @@ const sections: Array<{ id: SectionId; label: string; Icon: React.ComponentType<
 function ImportButton() {
   const setResume = useResumeBuilder((s) => s.setResume);
   const [importing, setImporting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     setImporting(true);
+    setError(null);
     try {
       const formData = new FormData();
       formData.append("file", file);
@@ -50,7 +51,7 @@ function ImportButton() {
       const data = await res.json();
       setResume(data);
     } catch (err: any) {
-      alert("Import failed: " + err.message);
+      setError(err.message || "Import failed");
     } finally {
       setImporting(false);
       e.target.value = "";
@@ -58,11 +59,16 @@ function ImportButton() {
   };
 
   return (
-    <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer text-[10px] font-medium text-slate-500 hover:text-slate-300 hover:bg-white/[0.04] transition-all">
-      <Upload className="w-3 h-3" />
-      <span>{importing ? "Importing..." : "Import Resume"}</span>
-      <input type="file" accept=".json,.pdf,.docx" onChange={handleImport} className="hidden" disabled={importing} />
-    </label>
+    <div>
+      <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer text-[10px] font-medium text-slate-500 hover:text-slate-300 hover:bg-white/[0.04] transition-all">
+        <Upload className="w-3 h-3" />
+        <span>{importing ? "Importing..." : "Import Resume"}</span>
+        <input type="file" accept=".json,.pdf,.docx" onChange={handleImport} className="hidden" disabled={importing} />
+      </label>
+      {error && (
+        <p role="alert" className="mt-1 px-2.5 text-[10px] text-red-400 leading-snug">{error}</p>
+      )}
+    </div>
   );
 }
 
