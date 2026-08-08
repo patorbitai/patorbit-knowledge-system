@@ -96,7 +96,7 @@ test.describe("Pricing page responsive QA", () => {
     await page.goto("/pricing");
     await page.locator("body").click();
 
-    const seen = [];
+    const seen: { text: string; boxShadow: string; outlineStyle: string; outlineWidth: string }[] = [];
     for (let i = 0; i < 60; i++) {
       await page.keyboard.press("Tab");
       const info = await page.evaluate(() => {
@@ -126,7 +126,7 @@ test.describe("Pricing page responsive QA", () => {
 });
 
 test.describe("reduced motion", () => {
-  test.use({ reducedMotion: "reduce" });
+  test.use({ contextOptions: { reducedMotion: "reduce" } });
 
   test("FAQ opens instantly and remains fully visible", async ({ page }) => {
     await page.goto("/pricing");

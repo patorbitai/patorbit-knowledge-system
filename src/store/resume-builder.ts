@@ -16,6 +16,8 @@ import type {
   EvidenceVisibility,
 } from "@/types/resume";
 import type { TrustSnapshot, TrustReport } from "@/types/knowledge-graph";
+import type { CareerProfile } from "@/types/career-profile";
+import { buildCareerProfile } from "@/lib/career-profile";
 import { hasSufficientData } from "@/types/resume";
 import { ai } from "@/lib/ai/client";
 import { TEMPLATES } from "@/app/resume-builder/templates";
@@ -58,6 +60,12 @@ export interface ResumeBuilderState {
   trustReport: TrustReport | null;
   /** Set the rich trust report. Called by the coordinator. */
   setTrustReport: (report: TrustReport | null) => void;
+  /** Derived Career Profile (M1). Rebuilt deterministically from the resume. */
+  careerProfile: CareerProfile | null;
+  /** Set the career profile snapshot. Called by the coordinator or directly. */
+  setCareerProfile: (profile: CareerProfile | null) => void;
+  /** Rebuild the career profile from the current resume + claims + evidence. */
+  rebuildCareerProfile: () => CareerProfile | null;
   /** Add a new evidence record to an accepted claim. */
   addEvidence: (evidence: Evidence) => void;
   /** Update a persisted evidence record (e.g. status change, notes edit). */
@@ -152,12 +160,23 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         setTrustScore: (score) => set({ trustScore: score }),
         trustReport: null,
         setTrustReport: (report) => set({ trustReport: report }),
+        careerProfile: null,
+        setCareerProfile: (profile) => set({ careerProfile: profile }),
+        rebuildCareerProfile: () => {
+          const { resume } = get();
+          const profile = buildCareerProfile(resume, {
+            claims: resume.claims,
+            evidence: get().evidence,
+          });
+          set({ careerProfile: profile });
+          return profile;
+        },
         setResume: (resume) => set({ resume, saveStatus: "unsaved" }),
         updateField: (key, value) => set((s) => ({ resume: { ...s.resume, [key]: value }, saveStatus: "unsaved" })),
         updateSocial: (key, value) => set((s) => ({ resume: { ...s.resume, social: { ...s.resume.social, [key]: value } }, saveStatus: "unsaved" })),
         setActiveSection: (id) => set({ activeSection: id }),
         setCareerStage: (stage) => set((s) => ({ resume: { ...s.resume, careerStage: stage }, saveStatus: "unsaved" })),
-        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null }),
+        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null }),
         setSaveStatus: (status) => set({ saveStatus: status }),
         setAnalysis: (analysis) => set({ analysis }), setAnalysisLoading: (loading) => set({ analysisLoading: loading }),
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),

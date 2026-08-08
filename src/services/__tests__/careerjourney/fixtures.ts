@@ -18,8 +18,8 @@ export function makeStatement(overrides: Partial<JourneyStatement> = {}): Journe
     id: "stmt_1",
     statement: "Led migration of the payment platform.",
     confidence: 0.9,
-    evidence: [makeEvidence("ev_1")],
-    claims: [makeClaim("cl_1")],
+    evidence: [makeEvidence({ id: "ev_1" })],
+    claims: [makeClaim({ id: "cl_1" })],
     ...overrides,
   };
 }
