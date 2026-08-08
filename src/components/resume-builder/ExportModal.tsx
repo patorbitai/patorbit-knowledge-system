@@ -14,10 +14,12 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const [docxError, setDocxError] = useState<string | null>(null);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   const handleExportPdf = () => {
     const prev = document.title;
     document.title = resume.name || "resume";
+    setIsPrinting(true);
     onClose();
     // Triple-rAF: first two let React unmount the modal, third fires print
     // after the DOM has settled so only #pdf-export-target is visible.
@@ -74,6 +76,14 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open, onClose]);
+
+  // Unmount ResumePreview after print completes.
+  useEffect(() => {
+    if (!isPrinting) return;
+    const onAfterPrint = () => setIsPrinting(false);
+    window.addEventListener("afterprint", onAfterPrint);
+    return () => window.removeEventListener("afterprint", onAfterPrint);
+  }, [isPrinting]);
 
   // Keep Tab cycling within the dialog.
   const handleDialogKeyDown = (e: React.KeyboardEvent) => {
@@ -160,7 +170,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
                     <opt.icon className="w-5 h-5 text-blue-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-200">{`Download ${opt.label}`}</p>
+                    <p className="text-sm font-semibold text-slate-200">{opt.label}</p>
                     <p className="text-[11px] text-slate-500 mt-0.5">{opt.description}</p>
                   </div>
                   <Download className="w-4 h-4 text-slate-500" />
@@ -178,16 +188,17 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
       )}
     </AnimatePresence>
 
-    {/* Resume render target — lives outside AnimatePresence so it persists in the
-        DOM during the print sequence (modal has already closed by then). */}
-    <div
-      id="pdf-export-target"
-      aria-hidden="true"
-      className="fixed -left-[9999px] top-0 print:static print:left-auto"
-      style={{ width: "210mm", backgroundColor: "#fff" }}
-    >
-      <ResumePreview resume={resume} template={template} />
-    </div>
+    {/* Resume render target — mounted only when printing */}
+    {isPrinting && (
+      <div
+        id="pdf-export-target"
+        aria-hidden="true"
+        className="fixed -left-[9999px] top-0 print:static print:left-auto"
+        style={{ width: "210mm", backgroundColor: "#fff" }}
+      >
+        <ResumePreview resume={resume} template={template} />
+      </div>
+    )}
     </>
   );
 }

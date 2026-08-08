@@ -100,11 +100,29 @@ Based on the Patorbit Knowledge System (PKS) philosophy:
 
 ## Development and Deployment
 
-### Development
+### Development Setup
+
 1. Clone the repository
 2. `cd patorbit`
-3  `npm install`
-4. Set up `.env` file with environment variables
+3. `npm install`
+4. **Configure environment variables:**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   **Required environment variables:**
+   - `OPENAI_API_KEY` - OpenAI API key for AI features (get from https://platform.openai.com/api-keys)
+   - `DATABASE_URL` - PostgreSQL connection string
+   - `AUTH_SECRET` - Secret for JWT signing (generate with `openssl rand -hex 32`)
+   - `NEXTAUTH_URL` - Application URL (default: `http://localhost:3000`)
+   
+   ⚠️ **Critical:** Without `OPENAI_API_KEY`, all AI features will fail with 503 errors:
+   - Resume Score Analysis
+   - AI Bullet Improvement
+   - ATS Keyword Analysis
+   - Job Description Matching
+   - Summary Generation
+
 5. `npm run dev`
 
 ### Database Setup

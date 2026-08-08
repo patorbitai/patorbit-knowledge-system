@@ -1,5 +1,6 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function ModernCleanPreview({ resume }: { resume: Resume }) {
   const accent = "#1e40af";
@@ -23,7 +24,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
   return (
     <div
       className="bg-white rounded-lg shadow-2xl print:shadow-none print:rounded-none"
-      style={{ fontFamily: "'Inter', 'Helvetica Neue', Arial, sans-serif", color: ink }}
+      style={{ fontFamily: fontFamilies.sans, color: ink }}
     >
       <main className="p-8 print:p-6">
         <header className="grid grid-cols-1 sm:grid-cols-3 gap-6 items-start">

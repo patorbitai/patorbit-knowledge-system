@@ -1,11 +1,12 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function ExecutivePreview({ resume }: { resume: Resume }) {
   const bannerBg = "#111827", primary = "#c9b068", text = "#1f2937", muted = "#6b7280";
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-6"><h2 className="text-sm font-bold uppercase tracking-widest mb-2 border-b-2 pb-1" style={{ color: primary, borderColor: primary }}>{title}</h2>{children}</section>;
   return (
-    <div className="bg-white text-black rounded-lg shadow-2xl" style={{ fontFamily: "'EB Garamond', serif" }}>
+    <div className="bg-white text-black rounded-lg shadow-2xl" style={{ fontFamily: fontFamilies.garamond }}>
       <header className="px-8 py-6 text-center" style={{ backgroundColor: bannerBg, borderBottom: `4px solid ${primary}` }}>
         <h1 className="text-4xl font-black text-white tracking-wider">{resume.name || "Your Name"}</h1>
         <p className="mt-2 text-lg font-medium" style={{ color: "#e5e7eb" }}>{resume.title || "Professional Title"}</p>

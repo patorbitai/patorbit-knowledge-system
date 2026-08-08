@@ -10,4 +10,6 @@ export { JobMatchPanel } from "./JobMatchPanel";
 export { AnalysisScore } from "./AnalysisScore";
 export { TemplateGallery } from "./TemplateGallery";
 export { ClaimsReview } from "./ClaimsReview";
+export { ImportReviewScreen } from "./ImportReviewScreen";
+export type { ImportReviewScreenProps, ImportMeta } from "./ImportReviewScreen";
 export type { SectionCardProps, AIActionButtonProps, SmartSuggestionProps, AnalysisScoreProps } from "./shared-types";

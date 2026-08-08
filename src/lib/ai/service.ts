@@ -42,7 +42,8 @@ export type AIAction =
   | "interviewPreparation"
   | "analyzeJobMatch"
   | "optimizeForJob"
-  | "generateClaims";
+  | "generateClaims"
+  | "extractResume";
 
 /** Known action → handler map. The API route dispatches on these keys. */
 type ActionHandlers = {
@@ -289,6 +290,20 @@ export class AIService {
     return { claims };
   }
 
+  /**
+   * Extract structured resume data from raw text (PDF / DOCX import).
+   * Returns a partial resume object — callers must apply withIds before
+   * passing to Zod validation.
+   */
+  async extractResume(data: { rawText: string }): Promise<Record<string, unknown>> {
+    const { system, user } = Prompts.extractResume(data.rawText);
+    const result = await this.complete(system, user, {
+      maxTokens: 4096,
+      jsonMode: true,
+    });
+    return JSON.parse(result) as Record<string, unknown>;
+  }
+
   // ── Internal helper ──
 
   private async complete(system: string, user: string, options?: AIProviderOptions): Promise<string> {
@@ -314,6 +329,7 @@ export class AIService {
     analyzeJobMatch: this.analyzeJobMatch,
     optimizeForJob: this.optimizeForJob,
     generateClaims: this.generateClaims,
+    extractResume: this.extractResume,
   };
 }
 

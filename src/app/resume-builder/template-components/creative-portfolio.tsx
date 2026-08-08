@@ -1,11 +1,12 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function CreativePortfolioPreview({ resume }: { resume: Resume }) {
   const purple = "#7c3aed", pink = "#c026d3", ink = "#1f2937", muted = "#6b7280", soft = "#f5f3ff";
   const dots = (level: string) => level === "Expert" ? 4 : level === "Advanced" ? 3 : level === "Intermediate" ? 2 : 1;
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-5"><h2 className="mb-2 text-xs font-extrabold uppercase tracking-[0.18em]" style={{ color: purple }}>✦ {title}</h2>{children}</section>;
-  return <div className="relative overflow-hidden rounded-lg bg-white shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: ink }}>
+  return <div className="relative overflow-hidden rounded-lg bg-white shadow-2xl" style={{ fontFamily: fontFamilies.jakarta, color: ink }}>
     <div className="absolute inset-y-0 left-0 w-2" style={{ background: `linear-gradient(180deg, ${purple}, ${pink})` }} />
     <div className="p-6 pl-8">
       <header className="relative mb-5 overflow-hidden rounded-2xl px-5 py-4" style={{ background: `linear-gradient(120deg, ${purple}12, ${pink}18)` }}>

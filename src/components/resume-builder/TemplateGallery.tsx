@@ -9,30 +9,43 @@ import { useResumeBuilder } from "@/store/resume-builder";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { filterTemplates } from "@/lib/template-search";
 
-const CATEGORIES = [
-  "All",
-  "Software Engineer",
-  "AI/ML Engineer",
-  "Data Scientist",
-  "Product Manager",
-  "Designer",
-  "Student",
-  "Fresher",
-  "DevOps",
-  "Cybersecurity",
+const SIDEBAR_SECTIONS = [
+  { id: "Recommended", label: "Recommended", emoji: "⭐" },
+  { id: "Professional", label: "Professional", emoji: "💼" },
+  { id: "Engineering",  label: "Engineering",  emoji: "💻" },
+  { id: "Consulting",   label: "Consulting",   emoji: "📊" },
+  { id: "Product",      label: "Product",      emoji: "📦" },
+  { id: "Creative",     label: "Creative",     emoji: "🎨" },
+  { id: "Academic",     label: "Academic",     emoji: "🎓" },
+  { id: "Legacy",       label: "Legacy",       emoji: "📚" },
 ];
 
+const PREMIUM_IDS = new Set(["patorbit-modern", "executive-pro", "minimal-ats", "engineering-clean"]);
+
+const SECTION_IDS: Record<string, string[]> = {
+  Recommended: ["patorbit-modern", "executive-pro", "minimal-ats", "engineering-clean"],
+  Professional: ["executive-pro", "executive", "patorbit-modern", "corporate-blue", "premium-slate", "luxury-gold", "classic-serif", "modern-clean"],
+  Engineering:  ["engineering-clean", "minimal-ats", "patorbit-modern", "tech-mono", "compact-pro", "minimal-edge", "gradient-flow", "timeline-pro", "swiss-design"],
+  Consulting:   ["executive-pro", "executive", "corporate-blue", "patorbit-modern", "classic-serif", "premium-slate"],
+  Product:      ["premium-slate", "luxury-gold", "executive", "corporate-blue", "startup-vibe"],
+  Creative:     ["creative-burst", "sidebar-elegance", "creative-portfolio", "gradient-flow", "startup-vibe"],
+  Academic:     ["academic-formal", "scientific", "classic-serif", "nature-green"],
+};
+
 function AtsBadge({ score }: { score: number }) {
-  const color =
-    score > 90
-      ? "bg-emerald-500/15 text-emerald-400 border-emerald-500/30"
-      : score > 80
-      ? "bg-cyan-500/15 text-cyan-400 border-cyan-500/30"
-      : "bg-amber-500/15 text-amber-400 border-amber-500/30";
+  const { dot, style } =
+    score >= 95
+      ? { dot: "🟢", style: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" }
+      : score >= 90
+      ? { dot: "🔵", style: "bg-cyan-500/15 text-cyan-400 border-cyan-500/30" }
+      : score >= 85
+      ? { dot: "🟡", style: "bg-amber-500/15 text-amber-400 border-amber-500/30" }
+      : { dot: "⚪", style: "bg-slate-500/15 text-slate-400 border-slate-500/30" };
   return (
-    <div className={clsx("flex items-center gap-1 px-2 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide", color)}>
-      <Shield className="w-2.5 h-2.5" />
-      ATS {score}
+    <div className={clsx("flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[10px] font-semibold tracking-wide", style)}>
+      <span className="text-[9px] leading-none">{dot}</span>
+      <span>ATS Score</span>
+      <span className="opacity-70">{score}%</span>
     </div>
   );
 }
@@ -58,7 +71,7 @@ function hasResumeData(resume: any): boolean {
 export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
   const applyTemplate = useResumeBuilder((s) => s.applyTemplate);
-  const [activeCategory, setActiveCategory] = useState("All");
+  const [activeCategory, setActiveCategory] = useState("Recommended");
   const [searchQuery, setSearchQuery] = useState("");
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [confirmOverwrite, setConfirmOverwrite] = useState<string | null>(null);
@@ -81,10 +94,19 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
     }
   };
 
-  const filteredTemplates = useMemo(
-    () => filterTemplates(TEMPLATES, { query: searchQuery, category: activeCategory }),
-    [activeCategory, searchQuery]
-  );
+  const filteredTemplates = useMemo(() => {
+    const bySection = activeCategory === "Legacy"
+      ? TEMPLATES.filter((t) => !PREMIUM_IDS.has(t.id))
+      : activeCategory in SECTION_IDS
+        ? TEMPLATES.filter((t) => SECTION_IDS[activeCategory].includes(t.id))
+        : TEMPLATES;
+    const ordered = activeCategory in SECTION_IDS
+      ? SECTION_IDS[activeCategory]
+          .map((id) => bySection.find((t) => t.id === id))
+          .filter(Boolean) as typeof TEMPLATES
+      : bySection;
+    return filterTemplates(ordered, { query: searchQuery });
+  }, [activeCategory, searchQuery]);
 
   return (
     <AnimatePresence>
@@ -155,22 +177,28 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
 
             {/* Main */}
             <div className="flex flex-1 overflow-hidden">
-              {/* Category Sidebar */}
+              {/* Audience Sidebar */}
               <div className="w-44 shrink-0 border-r border-white/[0.05] overflow-y-auto p-3 space-y-0.5">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600 px-3 pt-1 pb-2">Category</p>
-                {CATEGORIES.map((cat) => (
-                  <button
-                    key={cat}
-                    onClick={() => setActiveCategory(cat)}
-                    className={clsx(
-                      "w-full text-left px-3 py-2 rounded-lg text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50",
-                      activeCategory === cat
-                        ? "bg-gradient-to-r from-cyan-500/10 to-violet-500/10 text-white border border-white/[0.07]"
-                        : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600 px-3 pt-1 pb-2">Browse</p>
+                {SIDEBAR_SECTIONS.map((section, i) => (
+                  <>
+                    {i === SIDEBAR_SECTIONS.length - 1 && (
+                      <div key="divider" className="my-2 border-t border-white/[0.05]" />
                     )}
-                  >
-                    {cat}
-                  </button>
+                    <button
+                      key={section.id}
+                      onClick={() => setActiveCategory(section.id)}
+                      className={clsx(
+                        "w-full text-left px-3 py-2 rounded-lg text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50 flex items-center gap-2",
+                        activeCategory === section.id
+                          ? "bg-gradient-to-r from-cyan-500/10 to-violet-500/10 text-white border border-white/[0.07]"
+                          : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"
+                      )}
+                    >
+                      <span>{section.emoji}</span>
+                      <span>{section.label}</span>
+                    </button>
+                  </>
                 ))}
               </div>
 
@@ -214,6 +242,13 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                             style={{ boxShadow: "inset 0 0 0 1px rgba(6,182,212,0.3)" }} />
                         )}
 
+                        {/* Premium badge */}
+                        {PREMIUM_IDS.has(t.id) && (
+                          <div className="absolute top-2.5 left-2.5 z-10 flex items-center gap-1 px-2 py-0.5 rounded-full bg-gradient-to-r from-amber-500/20 to-yellow-500/10 border border-amber-400/30 text-amber-300 text-[9px] font-semibold tracking-wide">
+                            ⭐ Premium
+                          </div>
+                        )}
+
                         {/* Selected badge */}
                         {isActive && (
                           <div className="absolute top-2.5 right-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-gradient-to-br from-cyan-500 to-cyan-600 shadow-[0_0_12px_rgba(6,182,212,0.5)]">
@@ -240,6 +275,36 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                             <AtsBadge score={t.atsRating} />
                             <CategoryBadge category={t.category} />
                           </div>
+                          {t.recommendedFor && (
+                            <div className="flex items-center gap-1 px-2 py-0.5 rounded-full border bg-amber-500/10 text-amber-300 border-amber-500/20 text-[10px] font-medium mt-1.5 w-fit">
+                              <Sparkles className="w-2.5 h-2.5 shrink-0" />
+                              <span className="text-amber-500/70">Best for:</span>&nbsp;{t.recommendedFor}
+                            </div>
+                          )}
+
+                          {/* Selected info panel */}
+                          {isActive && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: "auto" }}
+                              transition={{ duration: 0.18 }}
+                              className="mt-2.5 rounded-lg border border-cyan-500/20 bg-cyan-500/[0.04] px-3 py-2.5 space-y-1.5 overflow-hidden"
+                            >
+                              {[
+                                { label: "Best For",        value: t.category },
+                                { label: "ATS Score",       value: `${t.atsRating}%` },
+                                { label: "Experience",      value: t.experienceLevel },
+                                { label: "Recommended For", value: t.recommendedFor ?? "—" },
+                                { label: "One Page",        value: "✓" },
+                                { label: "Multi Page",      value: "✓" },
+                              ].map(({ label, value }) => (
+                                <div key={label} className="flex items-center justify-between gap-2">
+                                  <span className="text-[10px] text-slate-500">{label}</span>
+                                  <span className="text-[10px] font-medium text-slate-300 text-right">{value}</span>
+                                </div>
+                              ))}
+                            </motion.div>
+                          )}
 
                           {/* Actions */}
                           <div className="flex items-center gap-2 mt-3">

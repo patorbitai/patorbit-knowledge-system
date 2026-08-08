@@ -1,11 +1,12 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function ClassicSerifPreview({ resume }: { resume: Resume }) {
   const navy = "#1e3a8a", ink = "#1f2937", muted = "#4b5563", line = "#d1d5db";
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-6"><h2 className="text-sm font-bold uppercase tracking-[0.12em] mb-3 border-b pb-1.5" style={{ color: navy, borderColor: line }}><span className="inline-block w-3 h-3 rounded-full mr-2" style={{ backgroundColor: navy }} />{title}</h2>{children}</section>;
   return (
-    <div className="bg-white text-black rounded-lg shadow-2xl" style={{ fontFamily: "'Playfair Display', serif" }}>
+    <div className="bg-white text-black rounded-lg shadow-2xl" style={{ fontFamily: fontFamilies.playfair }}>
       <main className="p-8">
         <header className="text-center pb-6 mb-6 border-b-2 border-t-2 pt-4" style={{ borderColor: navy }}>
           <h1 className="text-4xl font-bold tracking-wide" style={{ color: navy }}>{resume.name || "Your Name"}</h1>

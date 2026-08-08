@@ -1,5 +1,6 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function DarkElegancePreview({ resume }: { resume: Resume }) {
   const ink = "#111827";
@@ -23,7 +24,7 @@ export function DarkElegancePreview({ resume }: { resume: Resume }) {
   return (
     <div
       className="bg-white rounded-lg shadow-2xl print:shadow-none print:rounded-none overflow-hidden"
-      style={{ fontFamily: "'Inter', 'Segoe UI', sans-serif", color: ink }}
+      style={{ fontFamily: fontFamilies.sans, color: ink }}
     >
       {/* Header — charcoal left border accent, white background */}
       <header

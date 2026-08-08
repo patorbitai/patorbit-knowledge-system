@@ -10,7 +10,7 @@ export async function middleware(request: NextRequest) {
   try {
     token = await getToken({
       req: request,
-      secret: process.env.NEXTAUTH_SECRET,
+      secret: process.env.AUTH_SECRET,
     });
     console.log("[middleware] token present:", !!token, "path:", pathname);
   } catch (err) {

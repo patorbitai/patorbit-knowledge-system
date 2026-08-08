@@ -1,11 +1,12 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function TechMonoPreview({ resume }: { resume: Resume }) {
   const bg = "#0d1117", fg = "#c9d1d9", green = "#3fb950", accent = "#58a6ff", comment = "#8b949e", orange = "#ffa657";
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-5"><p className="text-xs font-bold mb-2" style={{ color: comment }}>{title}</p>{children}</section>;
   return (
-    <div className="rounded-lg shadow-2xl overflow-hidden border" style={{ fontFamily: "'JetBrains Mono', 'SF Mono', monospace", backgroundColor: bg, color: fg, borderColor: "#30363d" }}>
+    <div className="rounded-lg shadow-2xl overflow-hidden border" style={{ fontFamily: fontFamilies.mono, backgroundColor: bg, color: fg, borderColor: "#30363d" }}>
       <div className="flex items-center gap-1.5 px-4 py-2" style={{ backgroundColor: "#161b22", borderBottom: "1px solid #30363d" }}>
         <span className="w-2.5 h-2.5 rounded-full bg-red-500" /><span className="w-2.5 h-2.5 rounded-full bg-yellow-500" /><span className="w-2.5 h-2.5 rounded-full bg-green-500" /><span className="text-xs ml-2" style={{ color: comment }}>~/resume.sh</span>
       </div>

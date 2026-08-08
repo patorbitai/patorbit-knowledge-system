@@ -1,11 +1,12 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function SplitVibrantPreview({ resume }: { resume: Resume }) {
   const sidebarBg = "#0f172a", accent = "#38bdf8", ink = "#1e293b", muted = "#64748b";
   const SideSection = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-5"><h2 className="text-xs font-bold uppercase tracking-widest mb-2 text-white/70">{title}</h2>{children}</section>;
   return (
-    <div className="bg-white text-black rounded-lg shadow-2xl overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <div className="bg-white text-black rounded-lg shadow-2xl overflow-hidden" style={{ fontFamily: fontFamilies.sans }}>
       <div className="flex min-h-[600px]">
         <aside className="w-[240px] shrink-0 p-5 flex flex-col gap-4" style={{ backgroundColor: sidebarBg }}>
           <div className="flex flex-col items-center pb-3 border-b border-white/10">

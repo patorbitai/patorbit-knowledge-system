@@ -1,10 +1,11 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function AcademicFormalPreview({ resume }: { resume: Resume }) {
   const navy = "#1e3a8a", ink = "#1f2937", muted = "#6b7280", line = "#d1d5db";
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-6"><h2 className="mb-2 border-b pb-1 text-sm font-bold uppercase tracking-[0.12em]" style={{ color: navy, borderColor: `${navy}50` }}>{title}</h2>{children}</section>;
-  return <div className="overflow-hidden rounded-lg bg-white shadow-2xl" style={{ fontFamily: "'EB Garamond', 'Times New Roman', serif", color: ink }}>
+  return <div className="overflow-hidden rounded-lg bg-white shadow-2xl" style={{ fontFamily: fontFamilies.garamond, color: ink }}>
     <div className="p-8">
       <header className="mb-7 text-center" style={{ borderBottom: `1.5px solid ${navy}40` }}>
         <h1 className="text-4xl font-bold leading-none" style={{ color: navy }}>{resume.name || "Your Name"}</h1>

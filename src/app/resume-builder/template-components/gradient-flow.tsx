@@ -1,11 +1,12 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function GradientFlowPreview({ resume }: { resume: Resume }) {
   const gradStart = "#0284c7", gradEnd = "#38bdf8", white = "#ffffff", ink = "#164e63", muted = "#64748b";
   const SideSection = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-5"><h2 className="mb-2 text-[10px] font-bold uppercase tracking-[0.18em] text-white/60">{title}</h2>{children}</section>;
   const MainSection = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="mb-5"><div className="mb-3 flex items-center gap-2"><span className="inline-block h-2 w-2 rounded-full" style={{ backgroundColor: gradStart }} /><h2 className="text-xs font-extrabold uppercase tracking-[0.16em]" style={{ color: gradStart }}>{title}</h2></div>{children}</section>;
-  return <div className="overflow-hidden rounded-lg bg-white shadow-2xl" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif", color: ink }}>
+  return <div className="overflow-hidden rounded-lg bg-white shadow-2xl" style={{ fontFamily: fontFamilies.jakarta, color: ink }}>
     <div className="flex min-h-[500px]">
       <div className="w-[220px] shrink-0 p-5 text-xs" style={{ background: `linear-gradient(180deg, ${gradStart}, ${gradEnd})`, color: white }}>
         <header className="mb-5"><h1 className="text-base font-black leading-tight">{resume.name || "Your Name"}</h1><p className="mt-0.5 text-xs text-white/80">{resume.title || "Professional Title"}</p></header>

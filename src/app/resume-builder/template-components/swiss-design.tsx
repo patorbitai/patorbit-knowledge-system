@@ -1,11 +1,12 @@
 "use client";
 import { Resume, FormattedDescription, SocialLinks } from "./shared";
+import { fontFamilies } from "@/lib/resume-design-system";
 
 export function SwissDesignPreview({ resume }: { resume: Resume }) {
   const accent = "#ef4444", ink = "#111827", muted = "#6b7280";
   const Section = ({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) => <section className={className}><h2 className="text-[9px] font-bold uppercase tracking-[0.2em] mb-2" style={{ color: accent }}>{title}</h2>{children}</section>;
   return (
-    <div className="bg-white text-black rounded-lg shadow-2xl overflow-hidden" style={{ fontFamily: "'Inter', 'Helvetica Neue', sans-serif" }}>
+    <div className="bg-white text-black rounded-lg shadow-2xl overflow-hidden" style={{ fontFamily: fontFamilies.sans }}>
       <div className="grid grid-cols-3 gap-6 p-6">
         <header className="col-span-3 grid grid-cols-3 gap-6 pb-4 border-b" style={{ borderColor: `${accent}30` }}>
           <div className="col-span-2"><h1 className="text-3xl font-black tracking-tighter" style={{ color: ink }}>{resume.name || "Your Name"}</h1><p className="text-sm font-medium tracking-wide" style={{ color: muted }}>{resume.title || "Professional Title"}</p></div>

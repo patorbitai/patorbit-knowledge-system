@@ -1,4 +1,4 @@
-import { ExecutivePreview, ModernCleanPreview, SplitVibrantPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview, SidebarElegancePreview, GradientFlowPreview, AcademicFormalPreview, StartupVibePreview, DarkElegancePreview, TimelineProPreview, PremiumSlatePreview, NatureGreenPreview, LuxuryGoldPreview, SwissDesignPreview, ScientificPreview, CreativePortfolioPreview } from "@/app/resume-builder/template-components";
+import { ExecutivePreview, ExecutiveProPreview, MinimalAtsPreview, EngineeringCleanPreview, ModernCleanPreview, PatorbitModernPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview, SidebarElegancePreview, GradientFlowPreview, AcademicFormalPreview, StartupVibePreview, DarkElegancePreview, TimelineProPreview, PremiumSlatePreview, NatureGreenPreview, LuxuryGoldPreview, SwissDesignPreview, ScientificPreview, CreativePortfolioPreview, ConsultingElitePreview, ProductManagerPreview, CreativeProfessionalPreview, AcademicCvPreview } from "@/app/resume-builder/template-components";
 import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
 
@@ -25,8 +25,11 @@ export function ResumePreview({ resume, template }: { resume: Resume; template: 
 
   switch (template.id) {
     case "executive": return <ExecutivePreview resume={resume} />;
+    case "executive-pro": return <ExecutiveProPreview resume={resume} />;
+    case "minimal-ats": return <MinimalAtsPreview resume={resume} />;
+    case "engineering-clean": return <EngineeringCleanPreview resume={resume} />;
     case "modern-clean": return <ModernCleanPreview resume={resume} />;
-    case "split-vibrant": return <SplitVibrantPreview resume={resume} />;
+    case "patorbit-modern": return <PatorbitModernPreview resume={resume} />;
     case "classic-serif": return <ClassicSerifPreview resume={resume} />;
     case "tech-mono": return <TechMonoPreview resume={resume} />;
     case "creative-burst": return <CreativeBurstPreview resume={resume} />;
@@ -46,6 +49,10 @@ export function ResumePreview({ resume, template }: { resume: Resume; template: 
     case "swiss-design": return <SwissDesignPreview resume={resume} />;
     case "scientific": return <ScientificPreview resume={resume} />;
     case "creative-portfolio": return <CreativePortfolioPreview resume={resume} />;
+    case "consulting-elite": return <ConsultingElitePreview resume={resume} />;
+    case "product-manager": return <ProductManagerPreview resume={resume} />;
+    case "creative-professional": return <CreativeProfessionalPreview resume={resume} />;
+    case "academic-cv": return <AcademicCvPreview resume={resume} />;
     default: return <ModernCleanPreview resume={resume} />;
   }
 }

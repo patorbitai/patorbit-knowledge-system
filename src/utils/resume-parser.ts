@@ -18,7 +18,6 @@ export interface ParsedResume {
 
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/i;
 const PHONE_RE = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
-const URL_RE = /(?:https?:\/\/)?(?:www\.)?[\w-]+\.[\w.-]+/i;
 
 const SECTION_HEADERS = [
   /(?:summary|profile|objective|about\s*me)/i,
@@ -304,6 +303,11 @@ function parseCertificationsSection(lines: string[]): ParsedResume["certificatio
   return items.length > 0 ? items : undefined;
 }
 
+/** Assign sequential numeric IDs starting from 1. ResumeSchema requires id: z.number(). */
+export function withIds<T extends object>(items: T[] | undefined): (T & { id: number })[] {
+  return (items || []).map((item, i) => ({ ...item, id: i + 1 }));
+}
+
 export function rawToResume(text: string) {
   const parsed = parseRawResumeText(text);
   return {
@@ -316,11 +320,11 @@ export function rawToResume(text: string) {
     pronouns: "",
     summary: parsed.summary || "",
     social: { linkedin: "", github: "", website: "", twitter: "", portfolio: "", stackoverflow: "" },
-    experience: parsed.experience || [],
-    education: parsed.education || [],
-    skills: parsed.skills || [],
-    projects: parsed.projects || [],
-    certifications: parsed.certifications || [],
+    experience: withIds(parsed.experience),
+    education: withIds(parsed.education),
+    skills: withIds(parsed.skills),
+    projects: withIds(parsed.projects),
+    certifications: withIds(parsed.certifications),
     languages: [],
     interests: [],
     achievements: [],

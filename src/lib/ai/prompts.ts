@@ -341,6 +341,108 @@ Guidelines:
 }
 
 /** -----------------------------------------------------------
+ * Extract Resume from raw text (PDF / DOCX import)
+ * ----------------------------------------------------------- */
+export function extractResume(rawText: string) {
+  const system = `${SYSTEM_PROFILE}
+
+You are a resume parser. Extract structured data from raw resume text into JSON.
+
+CRITICAL RULES:
+- Return ONLY valid JSON. No prose, no markdown, no code fences.
+- Never invent data. Only extract what is explicitly present in the text.
+- If a field is absent from the text, use an empty string "" or empty array [].
+- Dates: preserve exactly as written (e.g. "Jan 2022 – Mar 2024", "2020 – Present").
+- Skills: extract each skill as a separate object. Do not merge them into one string.
+- Experience bullets: if the text uses bullet points under a role, capture them in description as newline-separated lines starting with "•".
+
+Return STRICT JSON matching this exact schema:
+{
+  "name": "",
+  "title": "",
+  "email": "",
+  "phone": "",
+  "address": "",
+  "nationality": "",
+  "pronouns": "",
+  "summary": "",
+  "social": {
+    "linkedin": "",
+    "github": "",
+    "website": "",
+    "twitter": "",
+    "portfolio": "",
+    "stackoverflow": ""
+  },
+  "experience": [
+    {
+      "company": "",
+      "position": "",
+      "location": "",
+      "duration": "",
+      "description": "",
+      "achievements": "",
+      "techUsed": "",
+      "employmentType": "",
+      "industry": ""
+    }
+  ],
+  "education": [
+    {
+      "school": "",
+      "degree": "",
+      "field": "",
+      "year": "",
+      "gpa": "",
+      "honors": "",
+      "minor": "",
+      "activities": "",
+      "location": ""
+    }
+  ],
+  "skills": [
+    { "name": "", "level": "Intermediate", "category": "", "years": "" }
+  ],
+  "projects": [
+    {
+      "name": "",
+      "description": "",
+      "tech": "",
+      "role": "",
+      "startDate": "",
+      "endDate": "",
+      "link": "",
+      "status": "Completed"
+    }
+  ],
+  "certifications": [
+    { "name": "", "issuer": "", "date": "", "link": "", "description": "", "expiryDate": "", "skills": "" }
+  ],
+  "languages": [
+    { "name": "", "proficiency": "Fluent" }
+  ],
+  "interests": [
+    { "name": "" }
+  ],
+  "achievements": [
+    { "description": "" }
+  ],
+  "references": [
+    { "name": "", "company": "", "position": "", "email": "", "phone": "" }
+  ]
+}
+
+Skill level must be one of: "Beginner", "Intermediate", "Advanced", "Expert".
+Project status must be one of: "Completed", "In Progress", "Ongoing".`;
+
+  const user = `Extract the resume data from the following text. Return only the JSON.
+
+${rawText.slice(0, 24000)}`; // cap to avoid token overflow; 24k chars covers ~12 pages
+
+  return buildPrompt(system, user);
+}
+
+/** -----------------------------------------------------------
  * Generate Claims (Professional Identity assertions)
  * ----------------------------------------------------------- */
 export function generateClaims(data: { identity: unknown; existingClaims?: unknown[] }) {
@@ -386,6 +488,234 @@ Existing accepted claims (do not duplicate these):
 ${existing}
 
 Identify candidate claims. Return only the JSON.`;
+
+  return buildPrompt(system, user);
+}
+
+/** -----------------------------------------------------------
+ * Improve Bullets for one Experience entry (Milestone 3 — S2-1)
+ * ----------------------------------------------------------- */
+export function buildBulletsPrompt(entry: unknown, context?: string) {
+  const entryJson = formatContext(entry);
+  const contextNote = context
+    ? `\nAdditional context about the role or industry: ${context}\n`
+    : "";
+
+  const system = `${SYSTEM_PROFILE}
+
+You are improving resume bullet points for a single work experience entry.
+
+Return STRICT JSON — an array with exactly this shape and nothing else:
+[
+  {
+    "bulletIndex": 0,
+    "original": "original bullet text",
+    "improved": "improved bullet text",
+    "reasoning": "one sentence explaining the key change"
+  }
+]
+
+Rules:
+- Return one object per bullet point in the entry. Preserve the original order.
+- Start every improved bullet with a strong past-tense action verb.
+- Keep any concrete metrics, percentages, or dollar amounts the user provided — do NOT fabricate new ones.
+- Improve specificity, impact, and ATS keyword density without inventing facts.
+- Each improved bullet must be clearly better than the original — never echo it verbatim.
+- reasoning must be one concise sentence explaining the most important change made.
+- If the entry has no bullet points, return an empty array [].
+- Return only the JSON array — no markdown, no prose, no code fences.`;
+
+  const user = `Experience entry:
+${entryJson}
+${contextNote}
+Improve the bullet points. Return only the JSON array.`;
+
+  return buildPrompt(system, user);
+}
+
+/** -----------------------------------------------------------
+ * Generate Summary — streaming endpoint (Milestone 3 — S3-1)
+ * ----------------------------------------------------------- */
+export function buildSummaryPrompt(
+  resume: unknown,
+  tone: "professional" | "technical" | "creative" | "academic" = "professional",
+  jobDescription?: string,
+) {
+  const context = formatContext(resume);
+
+  const toneGuide: Record<typeof tone, string> = {
+    professional: "polished, confident, and results-oriented. Use clear professional language appropriate for any industry.",
+    technical:    "precise and skills-forward. Lead with technical depth, highlight systems/tools/scale, and use industry-specific terminology naturally.",
+    creative:     "engaging and personality-driven. Show voice and creative sensibility while remaining professional and concise.",
+    academic:     "formal and research-focused. Emphasise academic contributions, methodologies, and scholarly achievements.",
+  };
+
+  const system = `${SYSTEM_PROFILE}
+
+You are writing a resume professional summary (also called a career objective or professional profile).
+
+Tone: ${toneGuide[tone]}
+
+Requirements:
+- 3–5 sentences.
+- Completely new text — not a copy or light edit of the candidate's existing summary.
+- Grammatically correct and ATS-optimised.
+- Highlight the candidate's strongest skills, notable achievements, and career trajectory.
+- Match the candidate's career stage (student, recent graduate, working professional, manager, researcher, etc).
+- Do NOT invent facts that are not in the profile.
+- Output plain text only — no bullet points, no markdown, no headings.`;
+
+  const jdBlock = jobDescription
+    ? `\nTarget job description (use its keywords naturally in the summary):\n"""\n${jobDescription}\n"""\n`
+    : "";
+
+  const user = `Candidate profile:
+${context}
+${jdBlock}
+Write the professional summary now.`;
+
+  return buildPrompt(system, user);
+}
+/** -----------------------------------------------------------
+ * Job Description Match (Milestone 3 — S4-2)
+ * ----------------------------------------------------------- */
+export function buildMatchPrompt(resume: unknown, jobDescription: string) {
+  const context = formatContext(resume);
+
+  const system = `${SYSTEM_PROFILE}
+
+You are analysing how well a resume matches a specific job description.
+
+Return STRICT JSON with exactly this shape and nothing else:
+{
+  "matchScore": 0,
+  "matchedKeywords": [],
+  "missingKeywords": [],
+  "missingExperiences": [],
+  "tailoringSuggestions": [
+    {
+      "type": "rewrite-bullet",
+      "target": "",
+      "suggestion": ""
+    }
+  ]
+}
+
+Rules:
+- matchScore: integer 0–100. Overall match between the resume and job description.
+- matchedKeywords: keywords/skills from the JD that already appear in the resume. Strings only. Max 20.
+- missingKeywords: important keywords/skills from the JD absent from the resume. Strings only. Max 20.
+- missingExperiences: JD requirements (responsibilities, qualifications, years of experience) for which the resume has no coverage. Describe each as a concise phrase. Max 10.
+- tailoringSuggestions: 3–6 concrete actions to improve the match. Each must have:
+  - type: one of "rewrite-bullet" | "add-keyword" | "reorder-section" | "update-summary"
+  - target: for "rewrite-bullet" — the approximate text of the bullet to rewrite; for others — the section name (e.g. "summary", "skills", "experience")
+  - suggestion: one clear, actionable sentence describing exactly what to change
+- Be precise and honest. Only surface real gaps.
+- Do NOT invent credentials, employers, or skills not in the resume.
+- Return only the JSON — no markdown, no prose, no code fences.`;
+
+  const user = `Resume profile:
+${context}
+
+Job description:
+"""
+${jobDescription}
+"""
+
+Analyse the match. Return only the JSON.`;
+
+  return buildPrompt(system, user);
+}
+
+/** -----------------------------------------------------------
+ * ATS Keyword Analysis (Milestone 3 — S4-1)
+ * ----------------------------------------------------------- */
+export function buildKeywordsPrompt(resume: unknown, jobDescription: string) {
+  const context = formatContext(resume);
+
+  const system = `${SYSTEM_PROFILE}
+
+You are performing ATS keyword analysis — comparing a resume against a job description.
+
+Return STRICT JSON with exactly this shape and nothing else:
+{
+  "score": 0,
+  "present": [],
+  "missing": [],
+  "recommended": [],
+  "density": {}
+}
+
+Rules:
+- score: integer 0–100. How well the resume's keyword coverage matches the job description.
+- present: keywords/phrases from the job description that already appear in the resume. Strings only.
+- missing: important keywords/phrases from the job description that are absent from the resume. Strings only.
+- recommended: additional keywords not in the JD but strongly relevant to the role/industry that would improve ATS performance. Strings only.
+- density: an object mapping each keyword in "present" to the number of times it appears in the resume (integer counts).
+- Be precise: use the exact form the keyword appears in the JD (e.g. "React.js", not "react").
+- Limit present, missing, and recommended to the 20 most significant keywords each.
+- Do NOT invent keywords that are not relevant to the role or resume.
+- Return only the JSON — no markdown, no prose, no code fences.`;
+
+  const user = `Resume profile:
+${context}
+
+Job description:
+"""
+${jobDescription}
+"""
+
+Analyse keyword coverage. Return only the JSON.`;
+
+  return buildPrompt(system, user);
+}
+
+export function buildScorePrompt(resume: unknown, jobDescription?: string) {
+  const context = formatContext(resume);
+
+  const system = `${SYSTEM_PROFILE}
+
+You are scoring a resume for quality, ATS readiness, and (if a job description is provided) role fit.
+
+Return STRICT JSON with exactly this shape and nothing else:
+{
+  "overall": 0,
+  "breakdown": {
+    "impact": 0,
+    "clarity": 0,
+    "completeness": 0,
+    "ats": 0,
+    "tailoring": 0
+  },
+  "suggestions": [
+    {
+      "section": "experience",
+      "priority": "high",
+      "text": ""
+    }
+  ]
+}
+
+Scoring rules:
+- All scores are integers 0–100.
+- impact: are bullets achievement-driven with strong action verbs and measurable results?
+- clarity: is the language precise, jargon-free, and grammatically correct?
+- completeness: are summary, experience, education, and skills all present and substantive?
+- ats: clean formatting, standard section names, keyword density, no tables or columns.
+- tailoring: how well the resume targets the job description. Set to 0 if no JD is provided.
+- overall: weighted average (impact 25%, clarity 20%, completeness 25%, ats 20%, tailoring 10%).
+- suggestions: 3–6 items, each scoped to the section it addresses. priority must be "high", "medium", or "low". section must be one of: "experience", "summary", "skills", "education", "general".
+- Be honest. Only flag real issues. Do not fabricate problems.
+- Return only the JSON — no markdown, no prose.`;
+
+  const jdBlock = jobDescription
+    ? `\nJob description for tailoring analysis:\n"""\n${jobDescription}\n"""\n`
+    : "\n(No job description provided — set tailoring score to 0.)\n";
+
+  const user = `Resume profile:
+${context}
+${jdBlock}
+Score this resume. Return only the JSON.`;
 
   return buildPrompt(system, user);
 }

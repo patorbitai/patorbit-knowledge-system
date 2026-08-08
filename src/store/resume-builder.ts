@@ -369,9 +369,6 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
           state.resume = { ...defaultResume, ...state.resume };
           state.evidence = state.evidence ?? [];
           state.setSaveStatus("saved");
-          if (hasSufficientData(state.resume)) {
-            state.startAnalysis();
-          }
         }
       },
     },

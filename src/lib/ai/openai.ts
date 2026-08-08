@@ -22,11 +22,38 @@ export class OpenAIProvider implements AIProvider {
     if (this.client) return this.client;
 
     const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      throw new AIError("OPENAI_API_KEY is not configured.", "MISSING_API_KEY", {
-        status: 503,
-        userFacing: true,
-      });
+    if (!apiKey || apiKey === "sk-your-actual-openai-api-key-here" || apiKey === "your_api_key_here") {
+      console.error(
+        "\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "  ⚠️  OPENAI_API_KEY is not configured\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n" +
+        "\n" +
+        "  All AI features will fail until you add a valid OpenAI API key.\n" +
+        "\n" +
+        "  To fix:\n" +
+        "  1. Get an API key from: https://platform.openai.com/api-keys\n" +
+        "  2. Add it to your .env file:\n" +
+        "     OPENAI_API_KEY=sk-your-actual-key-here\n" +
+        "  3. Restart the development server\n" +
+        "\n" +
+        "  Affected features:\n" +
+        "  • Resume Score Analysis\n" +
+        "  • AI Bullet Improvement\n" +
+        "  • ATS Keyword Analysis\n" +
+        "  • Job Description Matching\n" +
+        "  • Summary Generation\n" +
+        "\n" +
+        "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n"
+      );
+      throw new AIError(
+        "OPENAI_API_KEY is not configured. Add your OpenAI API key to the .env file and restart the server.",
+        "MISSING_API_KEY",
+        {
+          status: 503,
+          userFacing: true,
+        }
+      );
     }
 
     const opts: Record<string, string> = { apiKey };
