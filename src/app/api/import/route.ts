@@ -6,85 +6,10 @@ import mammoth from "mammoth";
 import { parseResumeJson } from "@/utils/resume-schema";
 import { rawToResume, withIds } from "@/utils/resume-parser";
 import { getAIService } from "@/lib/ai/service";
+import { extractPageText, type PdfTextItem } from "@/utils/pdf-extract";
 
 /** Maximum file size for imports (10 MB). */
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
-
-interface PdfTextItem {
-  str: string;
-  transform: number[]; // [scaleX, skewX, skewY, scaleY, x, y]
-  width: number;
-  height: number;
-  hasEOL?: boolean;
-}
-
-/**
- * Reconstruct readable lines from pdfjs text items.
- *
- * pdfjs returns items in paint order — not reading order. We group items by Y
- * coordinate (±2pt), then within each Y bucket detect whether items belong to
- * separate columns by looking for a significant X gap (>150pt). When two column
- * clusters exist we emit left column items first, then right column items — so
- * a two-column resume is read left-column top-to-bottom, then right-column
- * top-to-bottom, rather than interleaving both columns line-by-line.
- */
-function extractPageText(items: PdfTextItem[]): string {
-  if (!items.length) return "";
-
-  const Y_TOLERANCE = 2;
-  const COLUMN_GAP_THRESHOLD = 150; // pt; gap between left and right column clusters
-
-  const rows = new Map<number, { x: number; str: string }[]>();
-
-  for (const item of items) {
-    if (!item.str.trim() && !item.hasEOL) continue;
-    const rawY = item.transform[5];
-    const bucketY = Math.round(rawY / Y_TOLERANCE) * Y_TOLERANCE;
-    if (!rows.has(bucketY)) rows.set(bucketY, []);
-    rows.get(bucketY)!.push({ x: item.transform[4], str: item.str });
-  }
-
-  // Detect whether this page is two-column: find largest X gap across all rows.
-  // If that gap exceeds COLUMN_GAP_THRESHOLD we split into left/right columns.
-  let maxGap = 0;
-  let splitX = 0;
-  for (const rowItems of rows.values()) {
-    const xs = rowItems.map(i => i.x).sort((a, b) => a - b);
-    for (let i = 1; i < xs.length; i++) {
-      const gap = xs[i] - xs[i - 1];
-      if (gap > maxGap) { maxGap = gap; splitX = (xs[i - 1] + xs[i]) / 2; }
-    }
-  }
-  const isTwoColumn = maxGap > COLUMN_GAP_THRESHOLD;
-
-  // Sort Y descending (PDF Y increases upward)
-  const sortedYs = [...rows.keys()].sort((a, b) => b - a);
-
-  if (!isTwoColumn) {
-    const lines: string[] = [];
-    for (const y of sortedYs) {
-      const lineItems = rows.get(y)!.sort((a, b) => a.x - b.x);
-      const lineText = lineItems.map(i => i.str).join(" ").trim();
-      if (lineText) lines.push(lineText);
-    }
-    return lines.join("\n") + "\n\n";
-  }
-
-  // Two-column: accumulate left and right column lines independently, then
-  // emit left column first so section boundaries are not interleaved.
-  const leftLines: string[] = [];
-  const rightLines: string[] = [];
-
-  for (const y of sortedYs) {
-    const rowItems = rows.get(y)!.sort((a, b) => a.x - b.x);
-    const left = rowItems.filter(i => i.x < splitX).map(i => i.str).join(" ").trim();
-    const right = rowItems.filter(i => i.x >= splitX).map(i => i.str).join(" ").trim();
-    if (left) leftLines.push(left);
-    if (right) rightLines.push(right);
-  }
-
-  return leftLines.join("\n") + "\n\n" + rightLines.join("\n") + "\n\n";
-}
 
 /**
  * Try AI extraction first. If AI fails for any reason (missing key, timeout,
