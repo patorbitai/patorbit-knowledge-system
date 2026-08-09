@@ -18,8 +18,10 @@ import type {
 import type { TrustSnapshot, TrustReport } from "@/types/knowledge-graph";
 import type { CareerProfile } from "@/types/career-profile";
 import type { JobProfile } from "@/types/job-profile";
+import type { QualificationMatch } from "@/types/qualification-match";
 import { buildCareerProfile } from "@/lib/career-profile";
 import { buildJobProfile } from "@/lib/job-profile";
+import { buildQualificationMatch } from "@/lib/qualification-match";
 import { hasSufficientData } from "@/types/resume";
 import { ai } from "@/lib/ai/client";
 import { TEMPLATES } from "@/app/resume-builder/templates";
@@ -74,6 +76,12 @@ export interface ResumeBuilderState {
   setJobProfile: (profile: JobProfile | null) => void;
   /** Rebuild the job profile from the current job description text. */
   rebuildJobProfile: () => JobProfile | null;
+  /** Derived Qualification Match (M3). Rebuilt deterministically from M1 + M2. */
+  qualificationMatch: QualificationMatch | null;
+  /** Set the qualification match snapshot. */
+  setQualificationMatch: (match: QualificationMatch | null) => void;
+  /** Rebuild M1/M2 and recompute the qualification match from them. */
+  rebuildQualificationMatch: () => QualificationMatch | null;
   /** Add a new evidence record to an accepted claim. */
   addEvidence: (evidence: Evidence) => void;
   /** Update a persisted evidence record (e.g. status change, notes edit). */
@@ -161,6 +169,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
       return {
         resume: defaultResume, analysis: null, activeSection: "personal", saveStatus: "unsaved",
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
+        qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
         suggestedClaims: [],
         evidence: [],
@@ -186,12 +195,21 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           set({ jobProfile: profile });
           return profile;
         },
+        setQualificationMatch: (match) => set({ qualificationMatch: match }),
+        rebuildQualificationMatch: () => {
+          const careerProfile = get().careerProfile;
+          const jobProfile = get().jobProfile;
+          if (!careerProfile || !jobProfile) return null;
+          const match = buildQualificationMatch(careerProfile, jobProfile);
+          set({ qualificationMatch: match });
+          return match;
+        },
         setResume: (resume) => set({ resume, saveStatus: "unsaved" }),
         updateField: (key, value) => set((s) => ({ resume: { ...s.resume, [key]: value }, saveStatus: "unsaved" })),
         updateSocial: (key, value) => set((s) => ({ resume: { ...s.resume, social: { ...s.resume.social, [key]: value } }, saveStatus: "unsaved" })),
         setActiveSection: (id) => set({ activeSection: id }),
         setCareerStage: (stage) => set((s) => ({ resume: { ...s.resume, careerStage: stage }, saveStatus: "unsaved" })),
-        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, jobProfile: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null }),
+        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null }),
         setSaveStatus: (status) => set({ saveStatus: status }),
         setAnalysis: (analysis) => set({ analysis }), setAnalysisLoading: (loading) => set({ analysisLoading: loading }),
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),
