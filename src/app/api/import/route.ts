@@ -168,7 +168,6 @@ export async function POST(request: NextRequest) {
     } else if (fileType === "application/pdf") {
       const arrayBuffer = await file.arrayBuffer();
       const pdfjs = await import("pdfjs-dist/legacy/build/pdf.mjs");
-      pdfjs.GlobalWorkerOptions.workerSrc = "";
       const loadingTask = pdfjs.getDocument({
         data: new Uint8Array(arrayBuffer),
         useWorkerFetch: false,
