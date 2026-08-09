@@ -14,14 +14,11 @@ import {
   Link2,
   Eye,
   ChevronRight,
-  Upload,
 } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ProgressIndicator } from "./ProgressIndicator";
-import { ImportReviewScreen } from "./ImportReviewScreen";
-import type { ImportMeta } from "./ImportReviewScreen";
-import type { SectionId, Resume } from "@/types/resume";
+import { ImportButton } from "./ImportButton";
+import type { SectionId } from "@/types/resume";
 
 const sections: Array<{ id: SectionId; label: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = [
   { id: "personal", label: "Personal Info", Icon: User, color: "#22d3ee" },
@@ -35,72 +32,6 @@ const sections: Array<{ id: SectionId; label: string; Icon: React.ComponentType<
   { id: "portfolio", label: "Portfolio", Icon: Link2, color: "#14b8a6" },
   { id: "review", label: "Review & Preview", Icon: Eye, color: "#6366f1" },
 ];
-
-interface PendingImport {
-  resume: Resume;
-  meta: ImportMeta;
-}
-
-function ImportButton() {
-  const setResume = useResumeBuilder((s) => s.setResume);
-  const [importing, setImporting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [pending, setPending] = useState<PendingImport | null>(null);
-
-  const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setImporting(true);
-    setError(null);
-    try {
-      const formData = new FormData();
-      formData.append("file", file);
-      const res = await fetch("/api/import", { method: "POST", body: formData });
-      if (!res.ok) throw new Error((await res.json()).error || "Import failed");
-      const data = await res.json();
-      // Show review screen instead of writing directly to store
-      setPending({
-        resume: data.resume ?? data,
-        meta: data.meta ?? { path: "regex", truncated: false, charCount: 0, rawText: "" },
-      });
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Import failed");
-    } finally {
-      setImporting(false);
-      e.target.value = "";
-    }
-  };
-
-  const handleConfirm = (draft: Resume) => {
-    setResume(draft);
-    setPending(null);
-  };
-
-  return (
-    <>
-      <div>
-        <label className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg cursor-pointer text-[10px] font-medium text-slate-500 hover:text-slate-300 hover:bg-white/[0.04] transition-all">
-          <Upload className="w-3 h-3" />
-          <span>{importing ? "Importing..." : "Import Resume"}</span>
-          <input type="file" accept=".json,.pdf,.docx" onChange={handleImport} className="hidden" disabled={importing} />
-        </label>
-        {error && (
-          <p role="alert" className="mt-1 px-2.5 text-[10px] text-red-400 leading-snug">{error}</p>
-        )}
-      </div>
-      <AnimatePresence>
-        {pending && (
-          <ImportReviewScreen
-            resume={pending.resume}
-            meta={pending.meta}
-            onConfirm={handleConfirm}
-            onCancel={() => setPending(null)}
-          />
-        )}
-      </AnimatePresence>
-    </>
-  );
-}
 
 export function LeftSidebar() {
   const [hydrated, setHydrated] = useState(false);

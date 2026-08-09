@@ -1,10 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
 import SidebarNav from "./SidebarNav";
-import { useSession } from "next-auth/react";
+import AccountMenu from "./AccountMenu";
 
 export default function AppShell({
   children,
@@ -12,7 +11,6 @@ export default function AppShell({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { data: session } = useSession();
 
   return (
     <div className="flex h-screen overflow-hidden bg-[#070911] text-slate-300">
@@ -56,12 +54,7 @@ export default function AppShell({
           </div>
 
           <div className="flex items-center gap-3">
-            <span className="hidden text-xs text-slate-500 md:block">
-              Welcome back, {session?.user?.name?.split(" ")[0] || "there"}
-            </span>
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-              {(session?.user?.name || "U").charAt(0).toUpperCase()}
-            </div>
+            <AccountMenu />
           </div>
         </header>
 

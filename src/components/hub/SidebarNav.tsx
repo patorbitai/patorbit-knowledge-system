@@ -21,7 +21,6 @@ import {
   Briefcase,
   Settings,
 } from "lucide-react";
-import { useSession, signOut } from "next-auth/react";
 
 type NavItem = {
   label: string;
@@ -81,7 +80,6 @@ const SINGLE_ITEMS: NavItem[] = [
 
 export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const { data: session } = useSession();
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
@@ -184,30 +182,6 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
           </li>
         </ul>
       </nav>
-
-      {/* User footer */}
-      <div className="border-t border-white/[0.06] px-4 py-3">
-        <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-xs font-bold text-white">
-            {(session?.user?.name || "U").charAt(0).toUpperCase()}
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-xs font-medium text-white">
-              {session?.user?.name || "User"}
-            </p>
-            <p className="truncate text-[11px] text-slate-500">
-              {session?.user?.email}
-            </p>
-          </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            aria-label="Sign out"
-            className="text-slate-500 transition-colors hover:text-rose-400"
-          >
-            <span className="text-[11px] font-medium">Sign out</span>
-          </button>
-        </div>
-      </div>
     </div>
   );
 }

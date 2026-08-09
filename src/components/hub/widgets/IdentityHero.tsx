@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ImportButton } from "@/components/resume-builder/ImportButton";
 import type { IdentityScoreData } from "@/lib/identity-score";
 
 type Props = {
@@ -68,59 +69,67 @@ export default function IdentityHero({ name, email, data }: Props) {
       <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-cyan-500/[0.05] blur-3xl" aria-hidden="true" />
       <div className="pointer-events-none absolute -bottom-16 -left-8 h-48 w-48 rounded-full bg-purple-500/[0.05] blur-3xl" aria-hidden="true" />
 
-      <div className="relative flex flex-col items-start gap-6 sm:flex-row sm:items-center">
-        {/* Score ring */}
-        <ScoreRing score={data.score} />
+      <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center">
+        {/* Left — identity */}
+        <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-center lg:flex-1 lg:min-w-0">
+          {/* Score ring */}
+          <ScoreRing score={data.score} />
 
-        {/* Identity info */}
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-1">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
-              {initials}
+          {/* Identity info */}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
+                {initials}
+              </div>
+              <div className="min-w-0">
+                <h1 className="text-xl font-semibold tracking-tight text-white truncate">
+                  {firstName}&apos;s Professional Identity
+                </h1>
+                <p className="text-xs text-slate-500 truncate">{email}</p>
+              </div>
             </div>
-            <div className="min-w-0">
-              <h1 className="text-xl font-semibold tracking-tight text-white truncate">
-                {firstName}&apos;s Professional Identity
-              </h1>
-              <p className="text-xs text-slate-500 truncate">{email}</p>
+
+            <p className="mt-3 text-sm text-slate-400 leading-relaxed max-w-md">
+              Your Identity Score reflects how complete, verified, and trusted your professional profile is.
+              Build your resume, verify credentials, and grow your passport to raise it.
+            </p>
+
+            {/* Micro-stats */}
+            <div className="mt-4 flex flex-wrap gap-4">
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-white leading-none">{data.verifiedCredentials}</span>
+                <span className="mt-0.5 text-[11px] text-slate-500">Verified credentials</span>
+              </div>
+              <div className="h-8 w-px bg-white/[0.06]" aria-hidden="true" />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-white leading-none">{data.passportClaims}</span>
+                <span className="mt-0.5 text-[11px] text-slate-500">Passport claims</span>
+              </div>
+              <div className="h-8 w-px bg-white/[0.06]" aria-hidden="true" />
+              <div className="flex flex-col">
+                <span className="text-lg font-bold text-white leading-none">{data.resumeCompleteness}%</span>
+                <span className="mt-0.5 text-[11px] text-slate-500">Resume completeness</span>
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="mt-5">
+              <Link
+                href={cta.href}
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
+              >
+                {cta.label}
+                <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 8h10M9 4l4 4-4 4" />
+                </svg>
+              </Link>
             </div>
           </div>
+        </div>
 
-          <p className="mt-3 text-sm text-slate-400 leading-relaxed max-w-md">
-            Your Identity Score reflects how complete, verified, and trusted your professional profile is.
-            Build your resume, verify credentials, and grow your passport to raise it.
-          </p>
-
-          {/* Micro-stats */}
-          <div className="mt-4 flex flex-wrap gap-4">
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-white leading-none">{data.verifiedCredentials}</span>
-              <span className="mt-0.5 text-[11px] text-slate-500">Verified credentials</span>
-            </div>
-            <div className="h-8 w-px bg-white/[0.06]" aria-hidden="true" />
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-white leading-none">{data.passportClaims}</span>
-              <span className="mt-0.5 text-[11px] text-slate-500">Passport claims</span>
-            </div>
-            <div className="h-8 w-px bg-white/[0.06]" aria-hidden="true" />
-            <div className="flex flex-col">
-              <span className="text-lg font-bold text-white leading-none">{data.resumeCompleteness}%</span>
-              <span className="mt-0.5 text-[11px] text-slate-500">Resume completeness</span>
-            </div>
-          </div>
-
-          {/* CTA */}
-          <div className="mt-5">
-            <Link
-              href={cta.href}
-              className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
-            >
-              {cta.label}
-              <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M3 8h10M9 4l4 4-4 4" />
-              </svg>
-            </Link>
-          </div>
+        {/* Right — Import Resume */}
+        <div className="w-full shrink-0 lg:w-64">
+          <ImportButton variant="hero" />
         </div>
       </div>
     </section>
