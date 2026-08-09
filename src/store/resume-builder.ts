@@ -17,7 +17,9 @@ import type {
 } from "@/types/resume";
 import type { TrustSnapshot, TrustReport } from "@/types/knowledge-graph";
 import type { CareerProfile } from "@/types/career-profile";
+import type { JobProfile } from "@/types/job-profile";
 import { buildCareerProfile } from "@/lib/career-profile";
+import { buildJobProfile } from "@/lib/job-profile";
 import { hasSufficientData } from "@/types/resume";
 import { ai } from "@/lib/ai/client";
 import { TEMPLATES } from "@/app/resume-builder/templates";
@@ -66,6 +68,12 @@ export interface ResumeBuilderState {
   setCareerProfile: (profile: CareerProfile | null) => void;
   /** Rebuild the career profile from the current resume + claims + evidence. */
   rebuildCareerProfile: () => CareerProfile | null;
+  /** Derived Job Profile (M2). Rebuilt deterministically from the job description. */
+  jobProfile: JobProfile | null;
+  /** Set the job profile snapshot. */
+  setJobProfile: (profile: JobProfile | null) => void;
+  /** Rebuild the job profile from the current job description text. */
+  rebuildJobProfile: () => JobProfile | null;
   /** Add a new evidence record to an accepted claim. */
   addEvidence: (evidence: Evidence) => void;
   /** Update a persisted evidence record (e.g. status change, notes edit). */
@@ -152,7 +160,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
 
       return {
         resume: defaultResume, analysis: null, activeSection: "personal", saveStatus: "unsaved",
-        analysisLoading: false, jobMatch: null, jobDescription: "", aiActions: {},
+        analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
         suggestedClaims: [],
         evidence: [],
@@ -171,12 +179,19 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           set({ careerProfile: profile });
           return profile;
         },
+        setJobProfile: (profile) => set({ jobProfile: profile }),
+        rebuildJobProfile: () => {
+          const { jobDescription } = get();
+          const profile = buildJobProfile(jobDescription);
+          set({ jobProfile: profile });
+          return profile;
+        },
         setResume: (resume) => set({ resume, saveStatus: "unsaved" }),
         updateField: (key, value) => set((s) => ({ resume: { ...s.resume, [key]: value }, saveStatus: "unsaved" })),
         updateSocial: (key, value) => set((s) => ({ resume: { ...s.resume, social: { ...s.resume.social, [key]: value } }, saveStatus: "unsaved" })),
         setActiveSection: (id) => set({ activeSection: id }),
         setCareerStage: (stage) => set((s) => ({ resume: { ...s.resume, careerStage: stage }, saveStatus: "unsaved" })),
-        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null }),
+        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, jobProfile: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null }),
         setSaveStatus: (status) => set({ saveStatus: status }),
         setAnalysis: (analysis) => set({ analysis }), setAnalysisLoading: (loading) => set({ analysisLoading: loading }),
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),

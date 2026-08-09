@@ -5,6 +5,7 @@ import { useResumeBuilder } from "@/store/resume-builder";
 import { AnalysisScore, AnalysisStatusBadge } from "./AnalysisScore";
 import { ProgressIndicator } from "./ProgressIndicator";
 import { JobMatchPanel } from "./JobMatchPanel";
+import { JobProfilePanel } from "./JobProfilePanel";
 import { Sparkles, CheckCircle2, AlertTriangle, XCircle, Lightbulb, ChevronDown, ChevronUp, Briefcase, Target, FileSearch, Shield, GitBranch, Link2, Loader2 } from "lucide-react";
 import { useState } from "react";
 import { isAnalysisComplete, isAnalysisInProgress, hasSufficientData } from "@/types/resume";
@@ -249,6 +250,11 @@ export function RightCopilot() {
           ) : (
             <div className="text-[11px] text-slate-500 italic text-center py-2">Add resume content to get AI suggestions.</div>
           )}
+        </CollapsibleCard>
+
+        {/* Job Profile */}
+        <CollapsibleCard title="Job Profile" icon={<FileSearch className="w-3 h-3 text-cyan-400" />} color="#06b6d4" defaultOpen={false}>
+          <JobProfilePanel />
         </CollapsibleCard>
 
         {/* Job Match */}
