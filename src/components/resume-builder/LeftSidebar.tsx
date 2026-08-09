@@ -17,7 +17,6 @@ import {
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ProgressIndicator } from "./ProgressIndicator";
-import { ImportButton } from "./ImportButton";
 import type { SectionId } from "@/types/resume";
 
 const sections: Array<{ id: SectionId; label: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = [
@@ -102,12 +101,11 @@ export function LeftSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-white/[0.06] space-y-1.5">
+      <div className="px-4 py-3 border-t border-white/[0.06]">
         <div className="flex items-center gap-2 text-[10px] text-slate-600">
           <div className="h-1 w-1 rounded-full bg-emerald-500 shadow-[0_0_4px] shadow-emerald-500/50" />
           Auto-saving enabled
         </div>
-        <ImportButton />
       </div>
     </aside>
   );
