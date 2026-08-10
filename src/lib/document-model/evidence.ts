@@ -252,7 +252,7 @@ export function extractEvidenceFacts(blocks: DocumentBlock[]): EvidenceFact[] {
   const facts: EvidenceFact[] = [];
 
   for (const block of blocks) {
-    for (const line of block.lines) {
+    for (const [index, line] of block.lines.entries()) {
       // The block's own heading line is structural, not evidence.
       if (detectSectionKind(line.raw) === block.kind) continue;
 
@@ -279,7 +279,7 @@ export function extractEvidenceFacts(blocks: DocumentBlock[]): EvidenceFact[] {
       };
 
       const before = emitted;
-      extractLine(block, line, add);
+      extractLine(block, line, index, add);
       // Guarantee "never drop": if nothing matched, keep the line as `other`.
       if (emitted === before) add("other", line.raw, 0.3);
     }
