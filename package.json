@@ -2,6 +2,9 @@
   "name": "patorbit",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22.3.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "prisma generate && next build",
@@ -14,6 +17,7 @@
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.3",
     "@hookform/resolvers": "^5.5.7",
+    "@napi-rs/canvas": "0.1.80",
     "@prisma/client": "^6.19.3",
     "bcryptjs": "^2.4.3",
     "clsx": "^2.1.1",
