@@ -18,6 +18,9 @@ export interface ParsedResume {
 
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/i;
 const PHONE_RE = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
+/** A trailing date range ("Mar 2020 – Present", "2014 – 2018") on a company line. */
+const DATE_RANGE_RE =
+  /((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Winter|Spring|Summer|Fall)?\s*\d{4})\s*(?:-|–|to)\s*(Present|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Winter|Spring|Summer|Fall)?\s*\d{4})/i;
 
 const SECTION_HEADERS = [
   /(?:summary|profile|objective|about\s*me)/i,
@@ -124,8 +127,15 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
+    // Split a trailing date range off first, so the en-dash inside
+    // "Mar 2020 – Present" is never read as a company/position separator.
+    const rangeEnd = new RegExp(DATE_RANGE_RE.source + "$", "i");
+    const rangeMatch = trimmed.match(rangeEnd);
+    const range = rangeMatch ? rangeMatch[0] : "";
+    const head = rangeMatch ? trimmed.slice(0, rangeMatch.index).trim() : trimmed;
+
     // Detect company/position line: "Company Name | Position" or "Position at Company" or "Company - Position"
-    const companyMatch = trimmed.match(/^(.+?)(?:\s*[|–—-]\s*)(.+)$/);
+    const companyMatch = head.match(/^(.+?)(?:\s*[|–—-]\s*)(.+)$/);
     if (companyMatch) {
       if (current) {
         current.description = bulletLines.join("\n");
@@ -135,7 +145,7 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
       current = {
         company: companyMatch[1].trim(),
         position: companyMatch[2].trim(),
-        duration: "",
+        duration: range,
         location: "",
         description: "",
       };
@@ -143,28 +153,44 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     }
 
     // Or: "Position, Company"
-    const positionFirst = trimmed.match(/^(.+?),\s*(.+)$/) && !/^\d/.test(trimmed);
+    const positionFirst = head.match(/^(.+?),\s*(.+)$/) && !/^\d/.test(head);
     if (positionFirst && !companyMatch) {
       if (current) {
         current.description = bulletLines.join("\n");
         items.push(current);
         bulletLines.length = 0;
       }
-      // Check if next line looks like a company
       current = {
-        company: trimmed,
-        position: trimmed,
-        duration: "",
+        company: head,
+        position: head,
+        duration: range,
         location: "",
         description: "",
       };
       continue;
     }
 
-    // Date range
-    const dateMatch = trimmed.match(/((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Winter|Spring|Summer|Fall)?\s*\d{4})\s*(?:-|–|to)\s*(Present|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Winter|Spring|Summer|Fall)?\s*\d{4})/i);
-    if (dateMatch && current) {
-      current.duration = trimmed;
+    // Company-only line with a date range on the same line:
+    // "Acme Corp  Mar 2020 – Present" → company "Acme Corp", duration the range.
+    if (rangeMatch && head) {
+      if (current) {
+        current.description = bulletLines.join("\n");
+        items.push(current);
+        bulletLines.length = 0;
+      }
+      current = {
+        company: head,
+        position: "",
+        duration: range,
+        location: "",
+        description: "",
+      };
+      continue;
+    }
+
+    // Bare date range on its own line → attach as duration to the current entry.
+    if (rangeMatch && !head) {
+      if (current) current.duration = range;
       continue;
     }
 

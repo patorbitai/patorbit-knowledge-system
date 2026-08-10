@@ -7,6 +7,7 @@ import { parseResumeJson } from "@/utils/resume-schema";
 import { rawToResume, withIds } from "@/utils/resume-parser";
 import { getAIService } from "@/lib/ai/service";
 import { extractPageText, type PdfTextItem } from "@/utils/pdf-extract";
+import "@/utils/pdfjs-polyfill";
 
 /** Maximum file size for imports (10 MB). */
 const MAX_FILE_BYTES = 10 * 1024 * 1024;

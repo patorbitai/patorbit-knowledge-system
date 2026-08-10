@@ -72,6 +72,27 @@ const InterestSchema = z.object({ id: z.number().default(0), name: z.string().de
 const AchievementSchema = z.object({ id: z.number().default(0), description: z.string().default("") });
 const ReferenceSchema = z.object({ id: z.number().default(0), name: z.string().default(""), company: z.string().default(""), position: z.string().default(""), email: z.string().default(""), phone: z.string().default("") });
 
+const PortfolioSchema = z.object({
+  id: z.union([z.number(), z.string()]).default(0),
+  title: z.string().default(""),
+  description: z.string().default(""),
+  url: z.string().default(""),
+  type: z.string().default("website"),
+});
+
+const ClaimSchema = z.object({
+  id: z.union([z.number(), z.string()]).default(0),
+  assertionText: z.string().default(""),
+  claimType: z.string().default("Skill"),
+  sourceActivityId: z.string().default(""),
+  confidence: z.number().default(0),
+  reasoning: z.string().default(""),
+  verificationStatus: z.string().default("suggested"),
+  reviewed: z.boolean().default(false),
+  accepted: z.boolean().default(false),
+  createdAt: z.string().default(() => new Date().toISOString()),
+});
+
 export const ResumeSchema = z.object({
   name: z.string().default(""),
   title: z.string().default(""),
@@ -91,7 +112,12 @@ export const ResumeSchema = z.object({
   interests: z.array(InterestSchema).default([]),
   achievements: z.array(AchievementSchema).default([]),
   references: z.array(ReferenceSchema).default([]),
+  portfolio: z.array(PortfolioSchema).default([]),
   templateId: z.string().default("template-1"),
+  careerStage: z.enum(["student", "recent-graduate", "working-professional", "manager", "freelancer"]).default("working-professional"),
+  fontPreference: z.string().default("inter"),
+  palettePreference: z.string().default("slate"),
+  claims: z.array(ClaimSchema).default([]),
 });
 
 /** Parse and validate unknown data into a Resume object with safe defaults */
