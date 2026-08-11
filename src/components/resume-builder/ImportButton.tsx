@@ -2,12 +2,14 @@
 
 import { clsx } from "clsx";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
 import { AnimatePresence } from "framer-motion";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ImportReviewScreen } from "./ImportReviewScreen";
 import type { ImportMeta } from "./ImportReviewScreen";
 import type { Resume } from "@/types/resume";
+import { normalizeImportedResume } from "@/utils/normalize-import";
 
 interface PendingImport {
   resume: Resume;
@@ -19,6 +21,7 @@ type ImportButtonProps = {
 };
 
 export function ImportButton({ variant = "sidebar" }: ImportButtonProps) {
+  const router = useRouter();
   const setResume = useResumeBuilder((s) => s.setResume);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -49,8 +52,9 @@ export function ImportButton({ variant = "sidebar" }: ImportButtonProps) {
   };
 
   const handleConfirm = (draft: Resume) => {
-    setResume(draft);
+    setResume(normalizeImportedResume(draft));
     setPending(null);
+    router.push("/resume-builder");
   };
 
   return (
