@@ -179,7 +179,7 @@ export function ProductManagerPreview({ resume }: { resume: Resume }) {
 
       {/* ── SUMMARY ────────────────────────────────────────────────── */}
       {resume.summary && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Professional Summary</SectionHeading>
           <div style={{ ...typography.body, color: C.body, lineHeight: 1.75 }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
@@ -344,7 +344,7 @@ export function ProductManagerPreview({ resume }: { resume: Resume }) {
 
       {/* ── SKILLS (grouped) ───────────────────────────────────────── */}
       {skillGroups.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Skills &amp; Competencies</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {skillGroups.map(([group, names]) => (
@@ -403,7 +403,7 @@ export function ProductManagerPreview({ resume }: { resume: Resume }) {
 
       {/* ── CERTIFICATIONS ─────────────────────────────────────────── */}
       {resume.certifications.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Certifications</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.certifications.map((c) => (
@@ -430,7 +430,7 @@ export function ProductManagerPreview({ resume }: { resume: Resume }) {
 
       {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
       {resume.achievements.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Key Achievements</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.achievements.map((a) => (
@@ -447,7 +447,7 @@ export function ProductManagerPreview({ resume }: { resume: Resume }) {
 
       {/* ── LANGUAGES ──────────────────────────────────────────────── */}
       {resume.languages.length > 0 && (
-        <section className="break-inside-avoid">
+        <section>
           <SectionHeading>Languages</SectionHeading>
           <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             {resume.languages

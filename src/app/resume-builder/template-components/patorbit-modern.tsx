@@ -185,7 +185,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
         <div>
           {/* Summary */}
           {resume.summary && (
-            <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+            <section style={{ marginBottom: spacing[6] }}>
               <SectionTitle>Professional Profile</SectionTitle>
               <div style={{ ...typography.body, color: colors.body, lineHeight: 1.7 }}>
                 <FormattedDescription text={resume.summary} color={colors.body} mutedColor={colors.muted} size="sm" />
@@ -298,7 +298,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Achievements */}
           {resume.achievements.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+            <section style={{ marginBottom: spacing[6] }}>
               <SectionTitle>Achievements</SectionTitle>
               {resume.achievements.map((a) => (
                 <p
@@ -317,7 +317,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
         <div>
           {/* Education */}
           {resume.education.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+            <section style={{ marginBottom: spacing[6] }}>
               <SectionTitle>Education</SectionTitle>
               <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
                 {resume.education.map((edu) => (
@@ -342,7 +342,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Skills */}
           {resume.skills.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+            <section style={{ marginBottom: spacing[6] }}>
               <SectionTitle>Skills</SectionTitle>
               <div style={{ display: "flex", flexWrap: "wrap", gap: spacing[1] }}>
                 {resume.skills.map((s) => (
@@ -354,7 +354,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Certifications */}
           {resume.certifications.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+            <section style={{ marginBottom: spacing[6] }}>
               <SectionTitle>Certifications</SectionTitle>
               {resume.certifications.map((c) => (
                 <div key={c.id} style={{ marginBottom: spacing[3] }}>
@@ -371,7 +371,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Languages */}
           {resume.languages.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+            <section style={{ marginBottom: spacing[6] }}>
               <SectionTitle>Languages</SectionTitle>
               {resume.languages.map((l) => (
                 <div
@@ -392,7 +392,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Interests */}
           {resume.interests.length > 0 && (
-            <section className="break-inside-avoid">
+            <section style={{ marginBottom: spacing[6] }}>
               <SectionTitle>Interests</SectionTitle>
               <p style={{ ...typography.body, color: colors.muted }}>
                 {resume.interests.map((i) => i.name).join(" · ")}
@@ -402,7 +402,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* References */}
           {resume.references.length > 0 && (
-            <section style={{ marginTop: spacing[6] }} className="break-inside-avoid">
+            <section style={{ marginTop: spacing[6] }}>
               <SectionTitle>References</SectionTitle>
               {resume.references.map((r) => (
                 <div key={r.id} style={{ marginBottom: spacing[3] }}>

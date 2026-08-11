@@ -206,7 +206,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
 
       {/* ── SUMMARY ────────────────────────────────────────────────── */}
       {resume.summary && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Summary</SectionHeading>
           <div style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
@@ -375,7 +375,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
 
       {/* ── SKILLS (grouped) ───────────────────────────────────────── */}
       {skillGroups.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Technical Skills</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {skillGroups.map(([group, names]) => (
@@ -438,7 +438,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
 
       {/* ── CERTIFICATIONS ─────────────────────────────────────────── */}
       {resume.certifications.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Certifications</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.certifications.map((c) => (
@@ -465,7 +465,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
 
       {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
       {resume.achievements.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Achievements</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.achievements.map((a) => (
@@ -480,7 +480,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
 
       {/* ── LANGUAGES ──────────────────────────────────────────────── */}
       {resume.languages.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Languages</SectionHeading>
           <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             {resume.languages
@@ -492,7 +492,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
 
       {/* ── INTERESTS ──────────────────────────────────────────────── */}
       {resume.interests.length > 0 && (
-        <section className="break-inside-avoid">
+        <section>
           <SectionHeading>Interests</SectionHeading>
           <p style={{ ...typography.body, color: C.muted }}>
             {resume.interests.map((i) => i.name).join("  ·  ")}

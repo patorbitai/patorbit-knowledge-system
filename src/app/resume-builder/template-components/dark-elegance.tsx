@@ -10,7 +10,7 @@ export function DarkElegancePreview({ resume }: { resume: Resume }) {
   const subtleBg = "#f8fafc";
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <section className="mb-6 break-inside-avoid">
+    <section className="mb-6">
       <h2
         className="text-[10px] font-bold uppercase tracking-[0.22em] mb-3 pb-2 border-b"
         style={{ color: accent, borderColor: rule }}

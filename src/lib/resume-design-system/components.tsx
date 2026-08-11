@@ -55,7 +55,7 @@ export function ResumeSection({
   className?: string;
 }) {
   return (
-    <section className={`break-inside-avoid ${className}`} style={{ marginBottom: spacing[6] }}>
+    <section className={className} style={{ marginBottom: spacing[6] }}>
       <h2
         className="break-after-avoid"
         style={{

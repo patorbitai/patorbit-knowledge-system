@@ -336,7 +336,6 @@ body {
   }
 
   /* Page-break control */
-  section { break-inside: avoid; }
   article { break-inside: avoid; }
   .break-inside-avoid { break-inside: avoid; }
   h1, h2, h3, h4 { break-after: avoid; orphans: 3; widows: 3; }

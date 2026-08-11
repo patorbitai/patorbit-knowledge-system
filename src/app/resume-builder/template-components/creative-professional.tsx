@@ -92,7 +92,7 @@ export function CreativeProfessionalPreview({ resume }: { resume: Resume }) {
 
       {/* ── SUMMARY ────────────────────────────────────────────────── */}
       {resume.summary && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>About</SectionHeading>
           <div style={{ ...typography.body, color: C.body, lineHeight: 1.8 }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
@@ -174,7 +174,7 @@ export function CreativeProfessionalPreview({ resume }: { resume: Resume }) {
 
       {/* ── SKILLS ─────────────────────────────────────────────────── */}
       {resume.skills.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Skills</SectionHeading>
           <div style={{ display: "flex", flexWrap: "wrap", gap: spacing[2] }}>
             {resume.skills.map((s) => (
@@ -207,7 +207,7 @@ export function CreativeProfessionalPreview({ resume }: { resume: Resume }) {
 
       {/* ── CERTIFICATIONS ─────────────────────────────────────────── */}
       {resume.certifications.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Certifications</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.certifications.map((c) => (
@@ -222,7 +222,7 @@ export function CreativeProfessionalPreview({ resume }: { resume: Resume }) {
 
       {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
       {resume.achievements.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Achievements</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.achievements.map((a) => (
@@ -237,7 +237,7 @@ export function CreativeProfessionalPreview({ resume }: { resume: Resume }) {
 
       {/* ── LANGUAGES ──────────────────────────────────────────────── */}
       {resume.languages.length > 0 && (
-        <section className="break-inside-avoid">
+        <section>
           <SectionHeading>Languages</SectionHeading>
           <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             {resume.languages.map((l) => (l.proficiency ? `${l.name} (${l.proficiency})` : l.name)).join("  ·  ")}

@@ -168,7 +168,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── SUMMARY ────────────────────────────────────────────────── */}
       {resume.summary && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Summary</SectionHeading>
           <div style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
@@ -279,7 +279,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── SKILLS ─────────────────────────────────────────────────── */}
       {resume.skills.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Skills</SectionHeading>
           <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             {resume.skills.map((s) => s.name).join("  ·  ")}
@@ -289,7 +289,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── CERTIFICATIONS ─────────────────────────────────────────── */}
       {resume.certifications.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Certifications</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.certifications.map((c) => (
@@ -308,7 +308,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── LANGUAGES ──────────────────────────────────────────────── */}
       {resume.languages.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Languages</SectionHeading>
           <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             {resume.languages.map((l) =>
@@ -320,7 +320,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
       {resume.achievements.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Achievements</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.achievements.map((a) => (
@@ -335,7 +335,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── REFERENCES ─────────────────────────────────────────────── */}
       {resume.references.length > 0 && (
-        <section className="break-inside-avoid">
+        <section>
           <SectionHeading>References</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
             {resume.references.map((r) => (

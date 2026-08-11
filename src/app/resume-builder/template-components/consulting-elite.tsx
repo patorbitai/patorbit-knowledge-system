@@ -163,7 +163,7 @@ export function ConsultingElitePreview({ resume }: { resume: Resume }) {
 
       {/* ── EXECUTIVE SUMMARY ──────────────────────────────────────── */}
       {resume.summary && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Executive Summary</SectionHeading>
           <div
             style={{
@@ -295,7 +295,7 @@ export function ConsultingElitePreview({ resume }: { resume: Resume }) {
 
       {/* ── SKILLS ─────────────────────────────────────────────────── */}
       {resume.skills.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Core Competencies</SectionHeading>
           <div
             style={{
@@ -326,7 +326,7 @@ export function ConsultingElitePreview({ resume }: { resume: Resume }) {
 
       {/* ── CERTIFICATIONS ─────────────────────────────────────────── */}
       {resume.certifications.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Certifications</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.certifications.map((c) => (
@@ -353,7 +353,7 @@ export function ConsultingElitePreview({ resume }: { resume: Resume }) {
 
       {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
       {resume.achievements.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }} className="break-inside-avoid">
+        <section style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Key Achievements</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.achievements.map((a) => (
@@ -368,7 +368,7 @@ export function ConsultingElitePreview({ resume }: { resume: Resume }) {
 
       {/* ── LANGUAGES ──────────────────────────────────────────────── */}
       {resume.languages.length > 0 && (
-        <section className="break-inside-avoid">
+        <section>
           <SectionHeading>Languages</SectionHeading>
           <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             {resume.languages
