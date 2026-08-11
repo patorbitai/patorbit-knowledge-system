@@ -11,7 +11,7 @@ export interface ParsedResume {
   summary?: string;
   experience?: { company: string; position: string; duration: string; location: string; description: string }[];
   education?: { school: string; degree: string; year: string; field: string }[];
-  skills?: { name: string; level: string; category: string }[];
+  skills?: { name: string; level?: string; category: string }[];
   projects?: { name: string; description: string; tech: string }[];
   certifications?: { name: string; issuer: string; date: string }[];
 }
@@ -257,6 +257,31 @@ function parseEducationSection(lines: string[]): ParsedResume["education"] {
   return items.length > 0 ? items : undefined;
 }
 
+/** Known skill proficiency levels. Only these are ever preserved; others are
+ *  never inferred — a proficiency is only kept when it is explicit in source. */
+export const SKILL_LEVELS = ["Beginner", "Intermediate", "Advanced", "Expert"] as const;
+
+/**
+ * Deterministically split an explicit "Skill – Level", "Skill: Level" or
+ * "Skill (Level)" from a skill entry. No proficiency in source → level "".
+ * Never infers a level from a plain skill name.
+ */
+export function splitSkillLevel(
+  value: string,
+): { name: string; level: string } {
+  const v = value.trim();
+  const m =
+    v.match(/^(.*?)\s*[:\-–—]\s*\b(Beginner|Intermediate|Advanced|Expert)\b\s*$/i) ||
+    v.match(/^(.*?)\s+\(?\s*\b(Beginner|Intermediate|Advanced|Expert)\b\s*\)?\s*$/i);
+  if (m) {
+    const name = (m[1]?.trim() ?? "").replace(/\s+/g, " ");
+    const rawLevel = m[2];
+    const level = SKILL_LEVELS.find((l) => l.toLowerCase() === rawLevel?.toLowerCase()) ?? "";
+    return name ? { name, level } : { name: v, level: "" };
+  }
+  return { name: v, level: "" };
+}
+
 function parseSkillsSection(body: string): ParsedResume["skills"] {
   const items: ParsedResume["skills"] = [];
   // Split by commas, newlines, bullets, pipes
@@ -265,7 +290,11 @@ function parseSkillsSection(body: string): ParsedResume["skills"] {
   for (const part of parts) {
     const clean = part.replace(/^skills|\bskills\b/i, "").trim();
     if (clean && clean.length > 1 && !SECTION_HEADERS.some(re => re.test(clean))) {
-      items.push({ name: clean, level: "Intermediate", category: "" });
+      const { name, level } = splitSkillLevel(clean);
+      // Omit an empty level so the schema default (Intermediate) applies —
+      // never invent a proficiency that isn't literally in source. An empty
+      // string would be rejected by the LevelSchema enum and crash validation.
+      items.push(level ? { name, level, category: "" } : { name, category: "" });
     }
   }
 

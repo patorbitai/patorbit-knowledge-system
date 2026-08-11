@@ -64,6 +64,9 @@ const SECTION_ALIASES: { kind: SectionKind; aliases: readonly string[] }[] = [
       "certifications", "certification", "certificates", "licenses",
       "licenses & certifications", "licenses and certifications",
       "professional certifications", "certifications and licenses",
+      "certifications & awards", "certifications and awards",
+      "certificates & awards", "certificates and awards",
+      "certifications, awards", "certifications and awards and honors",
     ],
   },
   {

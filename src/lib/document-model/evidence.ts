@@ -58,10 +58,10 @@ export interface EvidenceFact {
 
 /* ── Regexes ──────────────────────────────────────────────────────────────── */
 
-const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
-const PHONE_RE = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
-const URL_RE = /\b(?:https?:\/\/|www\.|linkedin\.com\/|github\.com\/)[^\s,;]+/gi;
-const HANDLE_RE = /(?:^|[\s,|])@[A-Za-z0-9._-]+/g;
+export const EMAIL_RE = /[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}/g;
+export const PHONE_RE = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g;
+export const URL_RE = /\b(?:https?:\/\/|www\.|linkedin\.com\/|github\.com\/)[^\s,;]+/gi;
+export const HANDLE_RE = /(?:^|[\s,|])@[A-Za-z0-9._-]+/g;
 
 const MONTH = "(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)";
 const MONTH_TOKEN = `${MONTH}[a-z]*\\.?\\s+\\d{1,4}`;
@@ -134,6 +134,11 @@ function addContactFacts(line: string, add: AddFact): void {
   for (const m of stripped.matchAll(new RegExp(HANDLE_RE.source, "g"))) {
     add("contact", m[0].replace(/^[\s,|]+/, ""), 0.7);
   }
+  // Explicit header location ("Mumbai, India"): a City, Region / City, Country
+  // shape on a contact line is preserved verbatim as a contact fact. Nothing is
+  // inferred from prose elsewhere.
+  const loc = stripped.match(/\b[A-Z][a-zA-Z'’.\-]*(?:\s+[A-Z][a-zA-Z'’.\-]*)*,\s*[A-Z][a-zA-Z'’.\-]{2,}\b/);
+  if (loc) add("contact", loc[0], 0.7);
 }
 
 function addLinkFacts(line: string, add: AddFact): void {
