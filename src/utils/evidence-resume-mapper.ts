@@ -43,6 +43,7 @@ type SocialKey = "linkedin" | "github" | "website";
 /** Field names this overlay can change, for reporting/verification. */
 export type EvidenceOverlayFields =
   | "name"
+  | "title"
   | "email"
   | "phone"
   | "address"
@@ -122,6 +123,16 @@ export function mapEvidenceToResume(
     if (!current || !sameValue(current, person.value)) {
       resume.name = person.value;
       markChanged(changed, "name");
+    }
+  }
+
+  // title ← role fact from header / name / contact area
+  const headerRole = firstFact(facts, (f) => f.type === "role" && (f.provenance.section === "name" || f.provenance.section === "contact" || f.provenance.line < 5));
+  if (headerRole && headerRole.value.trim()) {
+    const current = String(resume.title ?? "").trim();
+    if (!current || !sameValue(current, headerRole.value)) {
+      resume.title = headerRole.value;
+      markChanged(changed, "title");
     }
   }
 

@@ -5,6 +5,7 @@
 
 export interface ParsedResume {
   name?: string;
+  title?: string;
   email?: string;
   phone?: string;
   address?: string;
@@ -41,6 +42,21 @@ export function parseRawResumeText(text: string): ParsedResume {
     const first = lines[0].trim().replace(/^["'\s]+|["'\s]+$/g, "");
     if (!EMAIL_RE.test(first) && !PHONE_RE.test(first) && first.length > 2) {
       result.name = first;
+    }
+  }
+
+  // Title: check lines right after name (before section headers, skipping email/phone/URL lines)
+  for (let i = 1; i < Math.min(lines.length, 5); i++) {
+    const trimmed = lines[i].trim();
+    if (SECTION_HEADERS.some(re => re.test(trimmed))) {
+      break;
+    }
+    if (EMAIL_RE.test(trimmed) || PHONE_RE.test(trimmed) || /^(?:https?:\/\/|www\.)/i.test(trimmed)) {
+      continue;
+    }
+    if (trimmed.length > 2 && trimmed.length < 100 && trimmed !== result.name && !/^[A-Z][a-zA-Z'’.\-]*(?:\s+[A-Z][a-zA-Z'’.\-]*)*,\s*[A-Z][a-zA-Z'’.\-]{2,}$/.test(trimmed)) {
+      result.title = trimmed;
+      break;
     }
   }
 
@@ -90,7 +106,7 @@ export function parseRawResumeText(text: string): ParsedResume {
     if (name === "header") {
       result.summary = section.lines.filter(l => {
         const t = l.trim();
-        return !EMAIL_RE.test(t) && !PHONE_RE.test(t) && t !== result.name;
+        return !EMAIL_RE.test(t) && !PHONE_RE.test(t) && t !== result.name && t !== result.title;
       }).join(" ").trim() || undefined;
     }
 
@@ -120,7 +136,7 @@ export function parseRawResumeText(text: string): ParsedResume {
 
 function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
   const items: ParsedResume["experience"] = [];
-  let current: any = null;
+  let current: { company: string; position: string; duration: string; location: string; description: string } | null = null;
   const bulletLines: string[] = [];
 
   for (const line of lines) {
@@ -219,7 +235,7 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
 
 function parseEducationSection(lines: string[]): ParsedResume["education"] {
   const items: ParsedResume["education"] = [];
-  let current: any = {};
+  let current: { school: string; degree: string; year: string; field: string } = { school: "", degree: "", year: "", field: "" };
 
   for (const line of lines) {
     const trimmed = line.trim();
@@ -367,7 +383,7 @@ export function rawToResume(text: string) {
   const parsed = parseRawResumeText(text);
   return {
     name: parsed.name || "",
-    title: "",
+    title: parsed.title || "",
     email: parsed.email || "",
     phone: parsed.phone || "",
     address: parsed.address || "",

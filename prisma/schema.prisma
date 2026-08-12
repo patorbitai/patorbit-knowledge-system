@@ -64,10 +64,15 @@ model VerificationToken {
 // ─── Professional Identity ────────────────────────────────────
 
 model ProfessionalIdentity {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  trustShareToken      String?  @unique
+  trustShareEnabled    Boolean  @default(false)
+  trustReportCache     String?  @db.Text
+  passportShareEnabled Boolean  @default(false)
+  passportDataCache    String?  @db.Text
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

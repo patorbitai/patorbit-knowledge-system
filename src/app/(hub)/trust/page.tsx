@@ -1,18 +1,20 @@
-import { ShieldCheck } from "lucide-react";
-import ComingSoon from "@/components/hub/ComingSoon";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import { TrustView } from "@/components/identity/TrustView";
+import { identityService } from "@/services/identity.service";
 
-export default function TrustPage() {
-  return (
-    <ComingSoon
-      title="Trust"
-      description="Understand and grow how trustworthy your professional profile is — backed by verifiable claims and evidence."
-      icon={ShieldCheck}
-      capabilities={[
-        "Trust Score",
-        "Credential Verification",
-        "Evidence Explorer",
-        "Trust Timeline",
-      ]}
-    />
-  );
+export default async function TrustPage() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    redirect("/login?callbackUrl=/trust");
+  }
+
+  try {
+    await identityService.ensureProfessionalIdentity(session.user.id);
+  } catch (err) {
+    console.error("Failed to ensure professional identity:", err);
+  }
+
+  return <TrustView />;
 }

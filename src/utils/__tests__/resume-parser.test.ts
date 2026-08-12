@@ -59,6 +59,34 @@ describe("rawToResume experience grouping (company / date)", () => {
     expect(resume.experience[0].position).toBe("Senior Engineer");
   });
 
+  it("extracts professional title from header when explicitly present", () => {
+    const resume = parseResumeJson(
+      rawToResume([
+        "Arvind Kumar",
+        "AI/ML Engineer and Data Engineer",
+        "arvind@example.com | (555) 0199 | San Francisco, CA",
+        "SUMMARY",
+        "Experienced engineer.",
+      ].join("\n")),
+    );
+    expect(resume.name).toBe("Arvind Kumar");
+    expect(resume.title).toBe("AI/ML Engineer and Data Engineer");
+  });
+
+  it("extracts professional title when contact info precedes title in header", () => {
+    const resume = parseResumeJson(
+      rawToResume([
+        "Arvind Kumar",
+        "arvind@example.com | (555) 0199 | San Francisco, CA",
+        "AI/ML Engineer and Data Engineer",
+        "SUMMARY",
+        "Experienced engineer.",
+      ].join("\n")),
+    );
+    expect(resume.name).toBe("Arvind Kumar");
+    expect(resume.title).toBe("AI/ML Engineer and Data Engineer");
+  });
+
   it("extracts contact and skills alongside experience", () => {
     const resume = parseResumeJson(
       rawToResume([

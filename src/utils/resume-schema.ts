@@ -117,6 +117,8 @@ export const ResumeSchema = z.object({
   careerStage: z.enum(["student", "recent-graduate", "working-professional", "manager", "freelancer"]).default("working-professional"),
   fontPreference: z.string().default("inter"),
   palettePreference: z.string().default("slate"),
+  exportFormat: z.string().default("pdf"),
+  pageSize: z.string().default("letter"),
   claims: z.array(ClaimSchema).default([]),
 });
 

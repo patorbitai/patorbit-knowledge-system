@@ -20,10 +20,54 @@ type ImportButtonProps = {
   variant?: "sidebar" | "hero";
 };
 
+const stages = [
+  { label: "Uploading resume", progress: 15 },
+  { label: "Reading document", progress: 30 },
+  { label: "Extracting text", progress: 55 },
+  { label: "Analyzing resume structure", progress: 75 },
+  { label: "Mapping resume fields", progress: 90 },
+  { label: "Preparing review", progress: 95 },
+  { label: "Import complete", progress: 100 },
+];
+
+function CircularProgress({ progress }: { progress: number }) {
+  const radius = 16;
+  const circumference = 2 * Math.PI * radius;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
+
+  return (
+    <div className="relative flex items-center justify-center w-8 h-8 shrink-0">
+      <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 36 36">
+        <path
+          className="text-white/10"
+          strokeWidth="3.5"
+          stroke="currentColor"
+          fill="none"
+          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+        <path
+          className="text-cyan-400 transition-all duration-300 ease-out"
+          strokeDasharray={circumference}
+          strokeDashoffset={strokeDashoffset}
+          strokeWidth="3.5"
+          strokeLinecap="round"
+          stroke="currentColor"
+          fill="none"
+          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+        />
+      </svg>
+      <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white">
+        {progress}%
+      </div>
+    </div>
+  );
+}
+
 export function ImportButton({ variant = "sidebar" }: ImportButtonProps) {
   const router = useRouter();
   const setResume = useResumeBuilder((s) => s.setResume);
   const [importing, setImporting] = useState(false);
+  const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingImport | null>(null);
 
@@ -31,19 +75,32 @@ export function ImportButton({ variant = "sidebar" }: ImportButtonProps) {
     const file = e.target.files?.[0];
     if (!file) return;
     setImporting(true);
+    setCurrentStageIndex(0);
     setError(null);
+
+    const interval = setInterval(() => {
+      setCurrentStageIndex((prev) => (prev < 4 ? prev + 1 : prev));
+    }, 400);
+
     try {
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch("/api/import", { method: "POST", body: formData });
+      clearInterval(interval);
       if (!res.ok) throw new Error((await res.json()).error || "Import failed");
+
+      setCurrentStageIndex(5); // Preparing review
       const data = await res.json();
-      // Show review screen instead of writing directly to store
+
+      setCurrentStageIndex(6); // Import complete
+      await new Promise((r) => setTimeout(r, 200));
+
       setPending({
         resume: data.resume ?? data,
         meta: data.meta ?? { path: "regex", truncated: false, charCount: 0, rawText: "" },
       });
     } catch (err: unknown) {
+      clearInterval(interval);
       setError(err instanceof Error ? err.message : "Import failed");
     } finally {
       setImporting(false);
@@ -57,37 +114,57 @@ export function ImportButton({ variant = "sidebar" }: ImportButtonProps) {
     router.push("/resume-builder");
   };
 
+  const currentStage = stages[currentStageIndex];
+
   return (
     <>
       <div>
         <label
           className={clsx(
-            "flex cursor-pointer items-center transition-all",
+            "flex items-center transition-all",
+            importing ? "cursor-wait opacity-90" : "cursor-pointer",
             variant === "hero"
               ? "w-full flex-col gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.06] px-5 py-6 text-center hover:border-cyan-400/50 hover:bg-cyan-500/[0.1]"
               : "gap-2 rounded-lg px-2.5 py-1.5 text-[10px] font-medium text-slate-500 hover:bg-white/[0.04] hover:text-slate-300"
           )}
         >
-          <span
-            className={clsx(
-              "flex items-center justify-center rounded-lg",
-              variant === "hero"
-                ? "h-10 w-10 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 text-white shadow-lg shadow-cyan-500/20"
-                : ""
-            )}
-          >
-            <Upload className={variant === "hero" ? "h-5 w-5" : "h-3 w-3"} />
-          </span>
-          <span
-            className={clsx(
-              variant === "hero"
-                ? "text-sm font-semibold text-white"
-                : "text-[10px] font-medium"
-            )}
-          >
-            {importing ? "Importing..." : "Import Resume"}
-          </span>
-          {variant === "hero" && (
+          {importing ? (
+            <>
+              <CircularProgress progress={currentStage.progress} />
+              <span
+                className={clsx(
+                  variant === "hero"
+                    ? "text-sm font-semibold text-white"
+                    : "text-[10px] font-medium"
+                )}
+              >
+                Importing your resume...
+              </span>
+            </>
+          ) : (
+            <>
+              <span
+                className={clsx(
+                  "flex items-center justify-center rounded-lg",
+                  variant === "hero"
+                    ? "h-10 w-10 bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 text-white shadow-lg shadow-cyan-500/20"
+                    : ""
+                )}
+              >
+                <Upload className={variant === "hero" ? "h-5 w-5" : "h-3 w-3"} />
+              </span>
+              <span
+                className={clsx(
+                  variant === "hero"
+                    ? "text-sm font-semibold text-white"
+                    : "text-[10px] font-medium"
+                )}
+              >
+                Import Resume
+              </span>
+            </>
+          )}
+          {variant === "hero" && !importing && (
             <span className="text-[11px] font-normal text-slate-400">
               Upload a PDF, DOCX, or JSON file to auto-fill your resume
             </span>
@@ -101,17 +178,18 @@ export function ImportButton({ variant = "sidebar" }: ImportButtonProps) {
           />
         </label>
         {error && (
-          <p
+          <div
             role="alert"
             className={clsx(
-              "text-red-400 leading-snug",
+              "flex items-center justify-between gap-2 text-red-400 leading-snug",
               variant === "hero"
-                ? "mt-2 text-center text-xs"
+                ? "mt-2 text-center text-xs justify-center"
                 : "mt-1 px-2.5 text-[10px]"
             )}
           >
-            {error}
-          </p>
+            <span>{error}</span>
+            <span className="underline cursor-pointer hover:text-white" onClick={() => setError(null)}>Clear</span>
+          </div>
         )}
       </div>
       <AnimatePresence>

@@ -42,7 +42,7 @@ export default function AppShell({
       {/* Main column */}
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Top bar */}
-        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] bg-[#070911]/95 px-4 backdrop-blur lg:px-6">
+        <header className="flex h-14 shrink-0 items-center justify-between gap-3 border-b border-white/[0.06] bg-[#070911]/95 px-4 backdrop-blur lg:px-6 overflow-visible">
           <div className="flex items-center gap-3">
             <button
               onClick={() => setSidebarOpen(true)}

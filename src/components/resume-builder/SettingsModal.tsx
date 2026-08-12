@@ -12,10 +12,14 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
   const updateField = useResumeBuilder((s) => s.updateField);
   const [font, setFont] = useState(resume.fontPreference || "inter");
   const [palette, setPalette] = useState(resume.palettePreference || "slate");
+  const [exportFormat, setExportFormat] = useState(resume.exportFormat || "pdf");
+  const [pageSize, setPageSize] = useState(resume.pageSize || "letter");
 
   const handleApply = () => {
     updateField("fontPreference", font);
     updateField("palettePreference", palette);
+    updateField("exportFormat", exportFormat);
+    updateField("pageSize", pageSize);
     onClose();
   };
 
@@ -98,7 +102,11 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                 <div className="flex gap-3">
                   <div className="flex-1">
                     <label className="text-[10px] text-slate-500 mb-1 block">Format</label>
-                    <select className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500/30">
+                    <select
+                      value={exportFormat}
+                      onChange={(e) => setExportFormat(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                    >
                       <option value="pdf">PDF</option>
                       <option value="docx">DOCX</option>
                       <option value="json">JSON</option>
@@ -106,7 +114,11 @@ export function SettingsModal({ open, onClose }: { open: boolean; onClose: () =>
                   </div>
                   <div className="flex-1">
                     <label className="text-[10px] text-slate-500 mb-1 block">Page Size</label>
-                    <select className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500/30">
+                    <select
+                      value={pageSize}
+                      onChange={(e) => setPageSize(e.target.value)}
+                      className="w-full px-3 py-2 rounded-lg bg-white/[0.04] border border-white/[0.06] text-xs text-slate-300 focus:outline-none focus:ring-1 focus:ring-blue-500/30"
+                    >
                       <option value="letter">Letter</option>
                       <option value="a4">A4</option>
                     </select>

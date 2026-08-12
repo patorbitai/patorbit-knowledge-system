@@ -1,4 +1,4 @@
-"use client";
+"use strict";
 
 import { useEffect, useCallback, useState } from "react";
 import Link from "next/link";
@@ -14,9 +14,8 @@ import { Eye, Settings, User, ArrowLeft, ChevronRight } from "lucide-react";
 import { debounce } from "@/lib/debounce";
 
 /* ── App Header ── */
-function AppHeader() {
+function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
-  const [showSettings, setShowSettings] = useState(false);
 
   return (
     <header className="sticky top-0 z-40 h-12 bg-[#070911]/90 backdrop-blur-xl border-b border-white/[0.06]">
@@ -70,8 +69,8 @@ function AppHeader() {
           </Link>
 
           <button
-            onClick={() => setShowSettings(true)}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+            onClick={onOpenSettings}
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
           >
             <Settings className="w-3.5 h-3.5" />
           </button>
@@ -81,7 +80,6 @@ function AppHeader() {
           </button>
         </div>
       </div>
-      <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
     </header>
   );
 }
@@ -95,6 +93,7 @@ export default function ResumeBuilderPage() {
   const saveStatus = useResumeBuilder((s) => s.saveStatus);
   const setSaveStatus = useResumeBuilder((s) => s.setSaveStatus);
   const setSuggestedClaims = useResumeBuilder((s) => s.setSuggestedClaims);
+  const [showSettings, setShowSettings] = useState(false);
 
   const debouncedAnalysis = useCallback(
     debounce(async (currentResume) => {
@@ -161,7 +160,7 @@ export default function ResumeBuilderPage() {
     <DndProvider backend={HTML5Backend}>
       <div className="h-screen w-full bg-[#070911] text-slate-300 font-sans antialiased flex flex-col overflow-hidden">
         {/* App header — no marketing links (Issue 1, 4, 7) */}
-        <AppHeader />
+        <AppHeader onOpenSettings={() => setShowSettings(true)} />
 
         {/* Full-height workspace with independent scrolling regions (Issue 3, 5, 6) */}
         <div className="flex-1 flex overflow-hidden">
@@ -186,6 +185,9 @@ export default function ResumeBuilderPage() {
 
         {/* Claims Review — non-blocking identity workflow surface */}
         <ClaimsReview />
+
+        {/* Settings Modal */}
+        <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
       </div>
     </DndProvider>
   );

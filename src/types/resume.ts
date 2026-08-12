@@ -144,6 +144,8 @@ export interface Resume {
   careerStage: CareerStage;
   fontPreference?: string;
   palettePreference?: string;
+  exportFormat?: string;
+  pageSize?: string;
   claims: Claim[];
 }
 

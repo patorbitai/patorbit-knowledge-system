@@ -35,6 +35,7 @@ export const defaultResume: Resume = {
   social: defaultSocial, experience: [], education: [], skills: [], projects: [], certifications: [],
   languages: [], interests: [], achievements: [], references: [], portfolio: [], templateId: "modern-clean",
   careerStage: "working-professional", fontPreference: "inter", palettePreference: "slate",
+  exportFormat: "pdf", pageSize: "letter",
   claims: [],
 };
 
