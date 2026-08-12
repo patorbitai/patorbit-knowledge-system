@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { usageService } from "@/services/usage.service";
 import { getAIProvider } from "@/lib/ai/provider";
 import { AIError } from "@/lib/ai/types";
 import type { ResumeScore, ScoreSuggestion } from "@/lib/ai/types";
@@ -94,7 +95,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 2. Rate limit
+  // 2. Rate limit & Usage metering
   const { allowed, retryAfter } = checkAIRateLimit(session.user.id);
   if (!allowed) {
     const r429 = NextResponse.json(
@@ -103,6 +104,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
     r429.headers.set("Retry-After", String(retryAfter));
     return r429;
+  }
+
+  const usageCheck = await usageService.checkAndIncrementUsage(session.user.id, "ai_generations");
+  if (!usageCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Monthly AI generation limit reached for Free tier. Upgrade to Professional for unlimited AI generations.", code: "USAGE_LIMIT_REACHED" },
+      { status: 429 },
+    );
   }
 
   // 3. Body size guard

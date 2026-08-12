@@ -19,8 +19,17 @@ describe("Multi-Resume Management Store (EPIC-03)", () => {
     const updatedState = useResumeBuilder.getState();
     expect(updatedState.resumes).toHaveLength(2);
     expect(updatedState.activeResumeId).toBe(newId);
+    expect(updatedState.resume.resumeId).toBe(newId);
     expect(updatedState.resume.resumeName).toBe("Tech Resume");
     expect(updatedState.resume.name).toBe("");
+  });
+
+  it("multiple resumes can coexist", () => {
+    const state = useResumeBuilder.getState();
+    state.createResume("Resume Two");
+    state.createResume("Resume Three");
+    expect(useResumeBuilder.getState().resumes).toHaveLength(3);
+    expect(useResumeBuilder.getState().resumes.map((r) => r.resumeName)).toEqual(["My Resume", "Resume Two", "Resume Three"]);
   });
 
   it("switches between resumes and isolates data", () => {
@@ -34,6 +43,18 @@ describe("Multi-Resume Management Store (EPIC-03)", () => {
     state.switchResume("r1");
     expect(useResumeBuilder.getState().resume.name).toBe("Jane Doe Original");
     expect(useResumeBuilder.getState().activeResumeId).toBe("r1");
+  });
+
+  it("active resume controls preview/export selection", () => {
+    const state = useResumeBuilder.getState();
+    state.updateField("title", "Frontend Architect");
+    const r2Id = state.createResume("Backend Resume");
+    state.updateField("title", "Backend Engineer");
+
+    expect(useResumeBuilder.getState().resume.title).toBe("Backend Engineer");
+
+    state.switchResume("r1");
+    expect(useResumeBuilder.getState().resume.title).toBe("Frontend Architect");
   });
 
   it("renames a resume", () => {
@@ -68,6 +89,14 @@ describe("Multi-Resume Management Store (EPIC-03)", () => {
     expect(updatedState.activeResumeId).toBe("r1");
   });
 
+  it("deleted resume cannot become active", () => {
+    const state = useResumeBuilder.getState();
+    const r2Id = state.createResume("Temp Resume");
+    state.deleteResume(r2Id);
+    state.switchResume(r2Id);
+    expect(useResumeBuilder.getState().activeResumeId).toBe("r1");
+  });
+
   it("migrates existing single-resume data correctly", () => {
     // Simulate rehydration with old format (single resume object)
     const oldState = {
@@ -99,5 +128,24 @@ describe("Multi-Resume Management Store (EPIC-03)", () => {
     expect(state.resumes[0].name).toBe("Legacy User");
     expect(state.resumes[0].email).toBe("legacy@example.com");
     expect(state.activeResumeId).toBe("migrated_1");
+  });
+
+  it("persistence and rehydration preserves multiple resumes and active state data isolation", () => {
+    const state = useResumeBuilder.getState();
+    state.createResume("Resume B");
+    state.updateField("name", "Bob Builder");
+    state.switchResume("r1");
+    state.updateField("name", "Alice Author");
+
+    const before = useResumeBuilder.getState();
+    expect(before.resumes).toHaveLength(2);
+
+    const storedResumes = before.resumes;
+    const activeId = before.activeResumeId;
+    const rehydratedResume = storedResumes.find((r) => r.resumeId === activeId) || storedResumes[0];
+
+    expect(rehydratedResume.name).toBe("Alice Author");
+    expect(storedResumes.find((r) => r.resumeId === "r1")?.name).toBe("Alice Author");
+    expect(storedResumes.find((r) => r.resumeName === "Resume B")?.name).toBe("Bob Builder");
   });
 });

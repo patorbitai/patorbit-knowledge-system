@@ -240,6 +240,40 @@ export default function PricingPage() {
     }
   };
 
+  const handleUpgrade = async (planName: string) => {
+    if (planName === "Starter") {
+      window.location.href = "/resume-builder";
+      return;
+    }
+    if (planName === "Enterprise") {
+      window.location.href = "/contact";
+      return;
+    }
+
+    try {
+      const res = await fetch("/api/stripe/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ plan: planName, interval: yearly ? "yearly" : "monthly" }),
+      });
+      if (res.status === 401) {
+        window.location.href = `/login?callbackUrl=/pricing`;
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Failed to start checkout");
+        return;
+      }
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch {
+      alert("Network error. Please try again.");
+    }
+  };
+
   return (
     <main className="min-h-screen bg-slate-950">
       {/* ── Hero ── */}
@@ -409,9 +443,10 @@ export default function PricingPage() {
                     ))}
                   </ul>
 
-                  <Link
-                    href={plan.href}
-                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all duration-150 hover:scale-[1.02] active:scale-100 ${focusRing} ${
+                  <button
+                    type="button"
+                    onClick={() => handleUpgrade(plan.name)}
+                    className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all duration-150 hover:scale-[1.02] active:scale-100 cursor-pointer ${focusRing} ${
                       isHighlighted
                         ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500"
                         : plan.monthly === 0
@@ -421,7 +456,7 @@ export default function PricingPage() {
                   >
                     {plan.cta}
                     <ArrowRight className="w-4 h-4" />
-                  </Link>
+                  </button>
                 </motion.div>
               );
             })}

@@ -32,7 +32,7 @@ interface EvidencePanelProps {
   onAddEvidence: () => void;
 }
 
-/** A small hook to hydrate a Blob from IndexedDB for a file-based evidence. */
+/** A small hook to hydrate a Blob from server storage or IndexedDB for file-based evidence. */
 function useFilePreview(evidence: Evidence) {
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,6 +43,19 @@ function useFilePreview(evidence: Evidence) {
     let url: string | null = null;
     (async () => {
       try {
+        // Try server fetch first
+        const res = await fetch(`/api/evidence/${evidence.id}`);
+        if (res.ok) {
+          const blob = await res.blob();
+          if (cancelled) return;
+          url = URL.createObjectURL(blob);
+          setBlobUrl(url);
+          setMissing(false);
+          setLoading(false);
+          return;
+        }
+
+        // Fallback to IndexedDB
         const blob = await retrieveEvidenceBlob(evidence.content);
         if (cancelled) return;
         if (blob) {
@@ -62,7 +75,7 @@ function useFilePreview(evidence: Evidence) {
       cancelled = true;
       if (url) URL.revokeObjectURL(url);
     };
-  }, [evidence.content]);
+  }, [evidence.id, evidence.content]);
 
   return { blobUrl, loading, missing };
 }
@@ -141,6 +154,7 @@ function EvidenceCard({ evidence }: { evidence: Evidence }) {
         <button
           onClick={async () => {
             if (evidence.evidenceType !== "link") {
+              await fetch(`/api/evidence/${evidence.id}`, { method: "DELETE" }).catch(() => {});
               await removeEvidenceBlob(evidence.content).catch(() => {});
             }
             removeEvidence(evidence.id);

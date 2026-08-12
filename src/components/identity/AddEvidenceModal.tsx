@@ -97,48 +97,74 @@ export function AddEvidenceModal({ claimId, claimAssertion, open, onClose }: Add
     setSaving(true);
 
     try {
-      // For file-based kinds, persist the blob to IndexedDB FIRST. The evidence
-      // record's `content` is the blob key, so the store stays lightweight.
-      const id = `evd_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
-      let content = link.trim();
-      let format = "link";
-      const metadata: Evidence["metadata"] = {};
+      let record: Evidence;
+      const isLink = transport === "link";
 
-      if (transport === "link") {
-        try {
-          metadata.linkTitle = link.trim().replace(/^https?:\/\//, "").split("/")[0] || link.trim();
-        } catch {
-          metadata.linkTitle = link.trim();
-        }
+      const formData = new FormData();
+      formData.append("claimId", claimId);
+      formData.append("evidenceKind", kind!);
+      formData.append("notes", notes.trim());
+      formData.append("consent", String(consent));
+      if (isLink) {
+        formData.append("link", link.trim());
       } else if (file) {
-        await storeEvidenceBlob(id, file);
-        content = id; // the IndexedDB key
-        format = file.type || "file";
-        metadata.fileName = file.name;
-        metadata.fileSize = file.size;
-        metadata.mimeType = file.type;
+        formData.append("file", file);
       }
 
-      const now = new Date().toISOString();
-      const record: Evidence = {
-        id,
-        claimId,
-        evidenceType: transport ?? "document",
-        evidenceKind: kind!,
-        content,
-        format,
-        metadata,
-        uploadedBy: "self", // Beta — no session id in the builder store.
-        createdAt: now,
-        updatedAt: now,
-        status: "evidence-added",
-        confidence: transport === "link" ? 0.7 : transport === "file" ? 0.8 : 0.9,
-        notes: notes.trim(),
-        visibility: "private",
-        consent: true,
-      };
+      let serverSuccess = false;
+      try {
+        const res = await fetch("/api/evidence", {
+          method: "POST",
+          body: formData,
+        });
+        if (res.ok) {
+          record = await res.json();
+          serverSuccess = true;
+        }
+      } catch {}
 
-      addEvidence(record);
+      if (!serverSuccess) {
+        const id = `evd_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+        let content = link.trim();
+        let format = "link";
+        const metadata: Evidence["metadata"] = {};
+
+        if (isLink) {
+          try {
+            metadata.linkTitle = link.trim().replace(/^https?:\/\//, "").split("/")[0] || link.trim();
+          } catch {
+            metadata.linkTitle = link.trim();
+          }
+        } else if (file) {
+          await storeEvidenceBlob(id, file);
+          content = id;
+          format = file.type || "file";
+          metadata.fileName = file.name;
+          metadata.fileSize = file.size;
+          metadata.mimeType = file.type;
+        }
+
+        const now = new Date().toISOString();
+        record = {
+          id,
+          claimId,
+          evidenceType: transport ?? "document",
+          evidenceKind: kind!,
+          content,
+          format,
+          metadata,
+          uploadedBy: "self",
+          createdAt: now,
+          updatedAt: now,
+          status: "evidence-added",
+          confidence: transport === "link" ? 0.7 : transport === "file" ? 0.8 : 0.9,
+          notes: notes.trim(),
+          visibility: "private",
+          consent: true,
+        };
+      }
+
+      addEvidence(record!);
       setSaving(false);
       setSaved(true);
     } catch (err: unknown) {

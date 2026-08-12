@@ -25,10 +25,24 @@ function ResumeSelector() {
 
   const activeResume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
 
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setIsOpen(false);
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [isOpen]);
+
   return (
     <div className="relative">
       <button
         onClick={() => setIsOpen(!isOpen)}
+        aria-label="Select resume"
+        aria-expanded={isOpen}
+        aria-haspopup="listbox"
         className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-all text-xs font-medium text-white cursor-pointer"
       >
         <span className="max-w-[120px] truncate">{activeResume?.resumeName || "My Resume"}</span>
@@ -38,54 +52,78 @@ function ResumeSelector() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-50" onClick={() => setIsOpen(false)} />
-          <div className="absolute left-0 mt-1.5 w-56 rounded-xl bg-[#0A0E1B] border border-white/[0.08] shadow-2xl py-1 z-50">
+          <div
+            role="listbox"
+            aria-label="My Resumes"
+            className="absolute left-0 mt-1.5 w-64 rounded-xl bg-[#0A0E1B] border border-white/[0.08] shadow-2xl py-1 z-50"
+          >
             <div className="px-3 py-1.5 border-b border-white/[0.06] text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
               My Resumes ({resumes.length})
             </div>
             <div className="max-h-48 overflow-y-auto py-1">
-              {resumes.map((r) => (
-                <div
-                  key={r.resumeId}
-                  className={`flex items-center justify-between px-3 py-1.5 text-xs hover:bg-white/[0.06] group cursor-pointer ${
-                    r.resumeId === activeResumeId ? "text-cyan-400 font-semibold bg-white/[0.04]" : "text-slate-300"
-                  }`}
-                  onClick={() => {
-                    if (r.resumeId) switchResume(r.resumeId);
-                    setIsOpen(false);
-                  }}
-                >
-                  <span className="truncate flex-1">{r.resumeName}</span>
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      title="Rename"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        const newName = prompt("Rename resume:", r.resumeName);
-                        if (newName?.trim() && r.resumeId) {
-                          renameResume(r.resumeId, newName.trim());
-                        }
-                      }}
-                      className="p-1 hover:text-white text-slate-400"
-                    >
-                      ✏️
-                    </button>
-                    {resumes.length > 1 && (
+              {resumes.map((r) => {
+                const isActive = r.resumeId === activeResumeId;
+                const templateName = r.templateId ? r.templateId.replace(/-/g, " ") : "modern clean";
+                const itemCount = (r.experience?.length || 0) + (r.skills?.length || 0) + (r.education?.length || 0);
+                return (
+                  <div
+                    key={r.resumeId}
+                    role="option"
+                    aria-selected={isActive}
+                    className={`flex items-center justify-between px-3 py-2 text-xs hover:bg-white/[0.06] group cursor-pointer ${
+                      isActive ? "text-cyan-400 font-semibold bg-white/[0.04]" : "text-slate-300"
+                    }`}
+                    onClick={() => {
+                      if (r.resumeId) switchResume(r.resumeId);
+                      setIsOpen(false);
+                    }}
+                  >
+                    <div className="flex flex-col truncate flex-1 pr-2">
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate font-medium">{r.resumeName || "Untitled Resume"}</span>
+                        {isActive && <span className="text-[10px] px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-normal">Active</span>}
+                      </div>
+                      <span className="text-[10px] text-slate-500 capitalize">
+                        {templateName} • {itemCount} items
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
-                        title="Delete"
+                        title="Rename resume"
+                        aria-label={`Rename ${r.resumeName}`}
                         onClick={(e) => {
                           e.stopPropagation();
-                          if (confirm(`Delete "${r.resumeName}"?`) && r.resumeId) {
-                            deleteResume(r.resumeId);
+                          const newName = prompt("Rename resume:", r.resumeName);
+                          if (newName !== null) {
+                            const trimmed = newName.trim();
+                            if (trimmed && r.resumeId) {
+                              renameResume(r.resumeId, trimmed);
+                            }
                           }
                         }}
-                        className="p-1 hover:text-red-400 text-slate-400"
+                        className="p-1 hover:text-white text-slate-400 rounded cursor-pointer"
                       >
-                        🗑️
+                        ✏️
                       </button>
-                    )}
+                      {resumes.length > 1 && (
+                        <button
+                          title="Delete resume"
+                          aria-label={`Delete ${r.resumeName}`}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete "${r.resumeName}"? This action cannot be undone.`) && r.resumeId) {
+                              deleteResume(r.resumeId);
+                            }
+                          }}
+                          className="p-1 hover:text-red-400 text-slate-400 rounded cursor-pointer"
+                        >
+                          🗑️
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
             <div className="p-1.5 border-t border-white/[0.06]">
               <button
@@ -96,6 +134,7 @@ function ResumeSelector() {
                     setIsOpen(false);
                   }
                 }}
+                aria-label="Create new resume"
                 className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-cyan-400 bg-cyan-500/[0.1] hover:bg-cyan-500/[0.2] transition-all cursor-pointer"
               >
                 + New Resume
