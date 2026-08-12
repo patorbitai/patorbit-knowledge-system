@@ -6,6 +6,10 @@ import { authOptions } from "@/lib/auth";
 import { stripe } from "@/services/stripe.service";
 import { prisma } from "@/lib/prisma";
 
+interface SubscriptionPeriodEnd {
+  current_period_end?: number;
+}
+
 export async function POST(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
@@ -28,7 +32,7 @@ export async function POST(req: NextRequest) {
     // Cancel at period end to preserve access until the end of the billing cycle
     const subscription = await stripe.subscriptions.update(user.stripeSubscriptionId, {
       cancel_at_period_end: true,
-    });
+    }) as unknown as SubscriptionPeriodEnd;
 
     await prisma.user.update({
       where: { id: user.id },

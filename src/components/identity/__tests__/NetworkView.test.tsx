@@ -10,7 +10,7 @@ describe("NetworkView Component", () => {
   it("renders empty state cleanly when no network data is present", () => {
     const emptyResume = createEmptyResume();
     const html = renderToString(<NetworkView resume={emptyResume} evidence={[]} />);
-    expect(html).toContain("No network data yet");
+    expect(html).toContain("No network graph data yet");
     expect(html).toContain("Professional Network");
   });
 
@@ -30,12 +30,40 @@ describe("NetworkView Component", () => {
 
   it("renders loading state correctly", () => {
     const html = renderToString(<NetworkView isLoading={true} />);
-    expect(html).toContain("Loading network graph...");
+    expect(html).toContain("Loading knowledge graph...");
   });
 
   it("renders error state correctly", () => {
     const html = renderToString(<NetworkView error="Database connection failed" />);
     expect(html).toContain("Failed to load network");
     expect(html).toContain("Database connection failed");
+  });
+
+  it("renders knowledge graph nodes and career journey timeline elements", () => {
+    const resume = createMinimalResume("Jordan Graph");
+    resume.experience = [
+      {
+        id: "exp_1",
+        company: "Acme Cloud",
+        position: "Staff Engineer",
+        location: "Remote",
+        employmentType: "Full-time",
+        industry: "Cloud",
+        startDate: "2023-01-01",
+        endDate: "",
+        current: true,
+        duration: "2 yrs",
+        description: "Leading cloud architecture.",
+        achievements: "",
+        techUsed: "Kubernetes, Go",
+        bulletPoints: [],
+      },
+    ];
+
+    const html = renderToString(<NetworkView resume={resume} />);
+    expect(html).toContain("Knowledge Graph");
+    expect(html).toContain("Career Journey");
+    expect(html).toContain("Acme Cloud");
+    expect(html).toContain("Staff Engineer");
   });
 });

@@ -25,11 +25,19 @@ export function SettingsClient({
   email,
   emailVerified,
   createdAt,
+  subscriptionTier,
+  subscriptionStatus,
+  currentPeriodEnd,
+  cancelAtPeriodEnd,
 }: {
   initialName: string;
   email: string;
   emailVerified: boolean;
   createdAt: string;
+  subscriptionTier: string;
+  subscriptionStatus: string;
+  currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
 }) {
   const [profileState, profileAction, profilePending] = useActionState(updateProfile, initialState);
   const [deleteState, deleteAction, deletePending] = useActionState(async (prev: SettingsState, fd: FormData) => {
@@ -44,6 +52,47 @@ export function SettingsClient({
   const [exportLoading, setExportLoading] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [exportSuccess, setExportSuccess] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
+  const [cancelLoading, setCancelLoading] = useState(false);
+  const [billingMessage, setBillingMessage] = useState<string | null>(null);
+
+  const handleOpenPortal = async () => {
+    setPortalLoading(true);
+    setBillingMessage(null);
+    try {
+      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to open billing portal");
+      }
+      const data = await res.json();
+      if (data.url) {
+        window.location.href = data.url;
+      }
+    } catch (err: unknown) {
+      setBillingMessage(err instanceof Error ? err.message : "Failed to open portal");
+    } finally {
+      setPortalLoading(false);
+    }
+  };
+
+  const handleCancelSubscription = async () => {
+    if (!confirm("Are you sure you want to cancel your subscription? You will retain access until the end of your billing period.")) return;
+    setCancelLoading(true);
+    setBillingMessage(null);
+    try {
+      const res = await fetch("/api/stripe/cancel", { method: "POST" });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to cancel subscription");
+      }
+      window.location.reload();
+    } catch (err: unknown) {
+      setBillingMessage(err instanceof Error ? err.message : "Failed to cancel subscription");
+    } finally {
+      setCancelLoading(false);
+    }
+  };
 
   const handleDownloadData = async () => {
     setExportLoading(true);
@@ -184,6 +233,146 @@ export function SettingsClient({
             Save Changes
           </button>
         </form>
+      </div>
+
+      {/* ── EXTERNAL VERIFICATION (LINKEDIN & GITHUB) ─────────────── */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-6">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] pb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-400">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">External Account Verification</h2>
+            <p className="text-xs text-slate-400">Connect LinkedIn and GitHub to verify your professional identity and activity.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* LinkedIn */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-slate-900/50 p-4">
+            <div>
+              <h3 className="text-sm font-medium text-white">LinkedIn Verification</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Verify your employment profile and identity claims via LinkedIn OAuth.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href="/api/auth/linkedin"
+                className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-xs font-semibold text-white transition-colors"
+              >
+                Connect LinkedIn
+              </a>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (confirm("Disconnect LinkedIn?")) {
+                    await fetch("/api/auth/linkedin/disconnect", { method: "DELETE" });
+                    window.location.reload();
+                  }
+                }}
+                className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+
+          {/* GitHub */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-slate-900/50 p-4">
+            <div>
+              <h3 className="text-sm font-medium text-white">GitHub Activity Sync & Verification</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Verify your technical contributions, repositories, and engineering skills.</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <a
+                href="/api/auth/github"
+                className="px-4 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-semibold text-white transition-colors"
+              >
+                Connect GitHub
+              </a>
+              <button
+                type="button"
+                onClick={async () => {
+                  if (confirm("Disconnect GitHub?")) {
+                    await fetch("/api/auth/github/disconnect", { method: "DELETE" });
+                    window.location.reload();
+                  }
+                }}
+                className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-slate-300 transition-colors cursor-pointer"
+              >
+                Disconnect
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── BILLING & SUBSCRIPTION SECTION ────────────────────────── */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-6">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] pb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400">
+            <ShieldCheck className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">Billing & Subscription</h2>
+            <p className="text-xs text-slate-400">Manage your subscription plan, billing details, and payments.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-slate-900/50 p-4">
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="text-sm font-medium text-white">Current Plan: <span className="text-cyan-400 font-semibold">{subscriptionTier}</span></h3>
+                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-semibold ${
+                  subscriptionStatus === "active" ? "bg-emerald-500/20 text-emerald-300" :
+                  subscriptionStatus === "past_due" ? "bg-amber-500/20 text-amber-300" : "bg-slate-800 text-slate-300"
+                }`}>
+                  {subscriptionStatus}
+                </span>
+              </div>
+              <p className="text-xs text-slate-400 mt-1">
+                {cancelAtPeriodEnd ? "Your subscription is set to cancel at the end of the billing period." :
+                 currentPeriodEnd ? `Renews on ${new Date(currentPeriodEnd).toLocaleDateString()}` : "Free tier access."}
+              </p>
+            </div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link
+                href="/pricing"
+                className="px-4 py-2 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-xs font-semibold text-white transition-colors"
+              >
+                {subscriptionTier === "Free" ? "Upgrade Plan" : "Change Plan"}
+              </Link>
+              {subscriptionTier !== "Free" && (
+                <>
+                  <button
+                    type="button"
+                    onClick={handleOpenPortal}
+                    disabled={portalLoading}
+                    className="px-4 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-white transition-colors disabled:opacity-50 cursor-pointer"
+                  >
+                    {portalLoading ? <Spinner /> : "Billing Portal"}
+                  </button>
+                  {!cancelAtPeriodEnd && (
+                    <button
+                      type="button"
+                      onClick={handleCancelSubscription}
+                      disabled={cancelLoading}
+                      className="px-4 py-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-xs font-medium text-rose-300 transition-colors disabled:opacity-50 cursor-pointer"
+                    >
+                      {cancelLoading ? <Spinner /> : "Cancel Subscription"}
+                    </button>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          {billingMessage && (
+            <p role="alert" className="text-xs p-3 rounded-lg border border-rose-500/20 bg-rose-500/10 text-rose-300">
+              {billingMessage}
+            </p>
+          )}
+        </div>
       </div>
 
       {/* ── SECURITY SECTION ──────────────────────────────────────── */}

@@ -43,10 +43,10 @@ const GROUPS: NavGroup[] = [
     href: "/trust",
     icon: ShieldCheck,
     children: [
-      { label: "Trust Score", href: "/trust", icon: Gauge, disabled: true },
-      { label: "Credential Verification", href: "/trust", icon: BadgeCheck, disabled: true },
-      { label: "Evidence Explorer", href: "/trust", icon: FileSearch, disabled: true },
-      { label: "Trust Timeline", href: "/trust", icon: History, disabled: true },
+      { label: "Trust Score", href: "/trust", icon: Gauge },
+      { label: "Credential Verification", href: "/trust", icon: BadgeCheck },
+      { label: "Evidence Explorer", href: "/trust", icon: FileSearch },
+      { label: "Trust Timeline", href: "/trust", icon: History },
     ],
   },
   {
@@ -65,8 +65,8 @@ const GROUPS: NavGroup[] = [
     href: "/network",
     icon: Network,
     children: [
-      { label: "Knowledge Graph", href: "/network", icon: Network, disabled: true },
-      { label: "Career Journey", href: "/network", icon: Map, disabled: true },
+      { label: "Knowledge Graph", href: "/network", icon: Network },
+      { label: "Career Journey", href: "/network", icon: Map },
       { label: "Applications", href: "/network", icon: Briefcase, disabled: true },
     ],
   },
@@ -141,21 +141,37 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
                 {group.label}
               </Link>
               <ul className="mt-1 space-y-1">
-                {group.children.map(({ label, icon: Icon, badge }) => (
+                {group.children.map(({ label, href, icon: Icon, badge, disabled }) => (
                   <li key={label}>
-                    <span className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 pl-10 text-[13px] text-slate-600">
-                      <Icon className="h-3.5 w-3.5 shrink-0" />
-                      <span className="flex-1">{label}</span>
-                      {badge ? (
-                        <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                          {badge}
-                        </span>
-                      ) : (
-                        <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                          Soon
-                        </span>
-                      )}
-                    </span>
+                    {disabled ? (
+                      <span className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 pl-10 text-[13px] text-slate-600">
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="flex-1">{label}</span>
+                        {badge ? (
+                          <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            {badge}
+                          </span>
+                        ) : (
+                          <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                            Soon
+                          </span>
+                        )}
+                      </span>
+                    ) : (
+                      <Link
+                        href={href || group.href}
+                        onClick={onNavigate}
+                        className={clsx(
+                          "flex items-center gap-2.5 rounded-lg px-3 py-2 pl-10 text-[13px] transition-colors",
+                          isActive(href || group.href)
+                            ? "bg-cyan-500/10 text-cyan-300 font-medium"
+                            : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
+                        )}
+                      >
+                        <Icon className="h-3.5 w-3.5 shrink-0" />
+                        <span className="flex-1">{label}</span>
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

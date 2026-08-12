@@ -29,6 +29,10 @@ export default async function SettingsPage() {
         email={user.email}
         emailVerified={!!user.emailVerified}
         createdAt={user.createdAt.toISOString()}
+        subscriptionTier={(user as any).subscriptionTier || "Free"}
+        subscriptionStatus={(user as any).subscriptionStatus || "inactive"}
+        currentPeriodEnd={(user as any).currentPeriodEnd ? (user as any).currentPeriodEnd.toISOString() : null}
+        cancelAtPeriodEnd={(user as any).cancelAtPeriodEnd || false}
       />
     </div>
   );
