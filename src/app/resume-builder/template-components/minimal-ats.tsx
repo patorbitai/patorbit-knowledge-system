@@ -25,6 +25,7 @@ const C = {
 function SectionHeading({ children }: { children: React.ReactNode }) {
   return (
     <h2
+      className="break-after-avoid"
       style={{
         fontSize: "0.625rem",
         fontWeight: 700,
@@ -107,10 +108,13 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
     resume.phone,
     resume.address,
     resume.nationality,
+    resume.pronouns,
     resume.social?.linkedin,
     resume.social?.github,
     resume.social?.website,
     resume.social?.portfolio,
+    resume.social?.twitter,
+    resume.social?.stackoverflow,
   ].filter(Boolean) as string[];
 
   return (
@@ -168,7 +172,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── SUMMARY ────────────────────────────────────────────────── */}
       {resume.summary && (
-        <section style={{ marginBottom: spacing[6] }}>
+        <section className="break-inside-avoid" style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Summary</SectionHeading>
           <div style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
@@ -188,6 +192,9 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
                   secondary={
                     <>
                       {exp.position}
+                      {exp.employmentType && (
+                        <span style={{ color: C.muted, fontWeight: 400 }}> · {exp.employmentType}</span>
+                      )}
                       {exp.location && (
                         <span style={{ color: C.muted, fontWeight: 400 }}> · {exp.location}</span>
                       )}
@@ -215,6 +222,65 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
                     ))}
                   </ul>
                 )}
+                {exp.techUsed && (
+                  <p style={{ ...typography.caption, color: C.muted, marginTop: spacing[1] }}>
+                    <strong style={{ fontWeight: 600, color: C.body }}>Tech: </strong>
+                    {exp.techUsed}
+                  </p>
+                )}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── PROJECTS ───────────────────────────────────────────────── */}
+      {resume.projects.length > 0 && (
+        <section style={{ marginBottom: spacing[6] }}>
+          <SectionHeading>Projects</SectionHeading>
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
+            {resume.projects.map((p) => (
+              <article key={p.id} className="break-inside-avoid">
+                <EntryHeader
+                  primary={p.name}
+                  secondary={
+                    <>
+                      {p.role}
+                      {p.status && <span style={{ color: C.muted, fontWeight: 400 }}> · {p.status}</span>}
+                    </>
+                  }
+                  date={p.startDate ? formatDuration(undefined, p.startDate, p.endDate) : (p.startDate || p.endDate ? `${p.startDate} - ${p.endDate}` : undefined)}
+                />
+                {p.tech && (
+                  <p style={{ ...typography.caption, color: C.muted, marginTop: 2 }}>
+                    {p.tech}
+                  </p>
+                )}
+                {p.description && (
+                  <div style={{ marginTop: spacing[2] }}>
+                    <FormattedDescription text={p.description} color={C.body} mutedColor={C.muted} />
+                  </div>
+                )}
+                {p.bulletPoints && p.bulletPoints.length > 0 && (
+                  <ul
+                    style={{
+                      margin: `${spacing[2]} 0 0 ${spacing[4]}`,
+                      padding: 0,
+                      listStyleType: "disc",
+                      ...typography.body,
+                      color: C.body,
+                    }}
+                  >
+                    {p.bulletPoints.map((bp, i) => (
+                      <li key={i} style={{ marginBottom: 2 }}>{bp}</li>
+                    ))}
+                  </ul>
+                )}
+                {p.link && (
+                  <p style={{ ...typography.caption, color: C.muted, marginTop: spacing[1] }}>
+                    {p.link}
+                  </p>
+                )}
               </article>
             ))}
           </div>
@@ -234,6 +300,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
                     <>
                       {edu.degree}{edu.field && ` in ${edu.field}`}
                       {edu.gpa && <span style={{ color: C.muted }}> · GPA {edu.gpa}</span>}
+                      {edu.location && <span style={{ color: C.muted }}> · {edu.location}</span>}
                     </>
                   }
                   date={edu.year}
@@ -243,33 +310,10 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
                     {edu.honors}
                   </p>
                 )}
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── PROJECTS ───────────────────────────────────────────────── */}
-      {resume.projects.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Projects</SectionHeading>
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
-            {resume.projects.map((p) => (
-              <article key={p.id} className="break-inside-avoid">
-                <EntryHeader
-                  primary={p.name}
-                  secondary={p.role}
-                  date={p.startDate ? formatDuration(undefined, p.startDate, p.endDate) : undefined}
-                />
-                {p.tech && (
+                {edu.activities && (
                   <p style={{ ...typography.caption, color: C.muted, marginTop: 2 }}>
-                    {p.tech}
+                    {edu.activities}
                   </p>
-                )}
-                {p.description && (
-                  <div style={{ marginTop: spacing[2] }}>
-                    <FormattedDescription text={p.description} color={C.body} mutedColor={C.muted} />
-                  </div>
                 )}
               </article>
             ))}
@@ -279,7 +323,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── SKILLS ─────────────────────────────────────────────────── */}
       {resume.skills.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
+        <section className="break-inside-avoid" style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Skills</SectionHeading>
           <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             {resume.skills.map((s) => s.name).join("  ·  ")}
@@ -293,11 +337,14 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
           <SectionHeading>Certifications</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.certifications.map((c) => (
-              <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: spacing[3] }}>
-                <span style={{ ...typography.body, fontWeight: 600, color: C.ink }}>{c.name}</span>
-                {(c.issuer || c.date) && (
+              <div key={c.id} className="break-inside-avoid" style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: spacing[3] }}>
+                <span style={{ ...typography.body, fontWeight: 600, color: C.ink }}>
+                  {c.name}
+                  {c.issuer && <span style={{ fontWeight: 400, color: C.body }}> (Issuer: {c.issuer})</span>}
+                </span>
+                {c.date && (
                   <span style={{ flexShrink: 0, ...typography.caption, color: C.muted }}>
-                    {[c.issuer, c.date].filter(Boolean).join(" · ")}
+                    {c.date}
                   </span>
                 )}
               </div>
@@ -308,7 +355,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
 
       {/* ── LANGUAGES ──────────────────────────────────────────────── */}
       {resume.languages.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
+        <section className="break-inside-avoid" style={{ marginBottom: spacing[6] }}>
           <SectionHeading>Languages</SectionHeading>
           <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
             {resume.languages.map((l) =>
@@ -324,18 +371,51 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
           <SectionHeading>Achievements</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
             {resume.achievements.map((a) => (
-              <p key={a.id} style={{ ...typography.body, color: C.body }}>
-                {a.title && <strong style={{ fontWeight: 700 }}>{a.title}{a.description ? " — " : ""}</strong>}
-                {a.description}
-              </p>
+              <div key={a.id} className="break-inside-avoid">
+                <p style={{ ...typography.body, color: C.body }}>
+                  {a.title && <strong style={{ fontWeight: 700 }}>{a.title}{a.description ? " — " : ""}</strong>}
+                  {a.description}
+                </p>
+                {a.date && <span style={{ ...typography.caption, color: C.muted }}>{a.date}</span>}
+              </div>
             ))}
           </div>
         </section>
       )}
 
+      {/* ── PORTFOLIO ──────────────────────────────────────────────── */}
+      {resume.portfolio && resume.portfolio.length > 0 && (
+        <section style={{ marginBottom: spacing[6] }}>
+          <SectionHeading>Portfolio</SectionHeading>
+          <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
+            {resume.portfolio.map((item) => (
+              <div key={item.id} className="break-inside-avoid">
+                <span style={{ ...typography.body, fontWeight: 700, color: C.ink }}>{item.title}</span>
+                {item.description && (
+                  <p style={{ ...typography.body, color: C.body, marginTop: 1 }}>{item.description}</p>
+                )}
+                {item.url && (
+                  <p style={{ ...typography.caption, color: C.muted, marginTop: 1 }}>{item.url}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── INTERESTS ──────────────────────────────────────────────── */}
+      {resume.interests && resume.interests.length > 0 && (
+        <section className="break-inside-avoid" style={{ marginBottom: spacing[6] }}>
+          <SectionHeading>Interests</SectionHeading>
+          <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
+            {resume.interests.map((i) => i.name).join("  ·  ")}
+          </p>
+        </section>
+      )}
+
       {/* ── REFERENCES ─────────────────────────────────────────────── */}
       {resume.references.length > 0 && (
-        <section>
+        <section className="break-inside-avoid">
           <SectionHeading>References</SectionHeading>
           <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
             {resume.references.map((r) => (
