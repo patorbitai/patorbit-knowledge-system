@@ -304,7 +304,13 @@ body {
 
 @page {
   size: A4 portrait;
-  margin: 0;
+  margin: 15mm 0mm;
+  @top-left { content: ""; }
+  @top-center { content: ""; }
+  @top-right { content: ""; }
+  @bottom-left { content: ""; }
+  @bottom-center { content: ""; }
+  @bottom-right { content: ""; }
 }
 
 @media print {
@@ -331,7 +337,8 @@ body {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 0 !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
     background: white !important;
   }
 
