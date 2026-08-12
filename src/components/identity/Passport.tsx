@@ -3,7 +3,6 @@
 import type { Resume, Claim, Evidence } from "@/types/resume";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { User, MapPin, Briefcase, ShieldCheck, Eye } from "lucide-react";
-import { clsx } from "clsx";
 
 /**
  * Helper: format an ISO date string or "YYYY-MM" into a readable label
@@ -30,9 +29,6 @@ function formatDate(value?: string): string {
 function deriveCareerFocus(resume: Resume): string | null {
   const exp = resume.experience ?? [];
   const industries = exp.map((e) => e.industry?.trim()).filter((v): v is string => !!v);
-  const roles = exp
-    .map((e) => e.position?.trim())
-    .filter((v): v is string => !!v && v.length > 0);
 
   // 1) Current role's industry, falling back to most frequent industry.
   const current = exp.find((e) => e.current);
@@ -329,10 +325,22 @@ function ProfessionalHighlights({ claims, evidence }: { claims: Claim[]; evidenc
  * Designed for a 30-second recruiter scan: who they are, what they do,
  * why they should be trusted, and the story their top claims tell.
  */
-export function Passport() {
-  const resume = useResumeBuilder((s) => s.resume);
-  const claims = useResumeBuilder((s) => s.resume.claims ?? []);
-  const evidence = useResumeBuilder((s) => s.evidence ?? []);
+export function Passport({
+  resumeProp,
+  claimsProp,
+  evidenceProp,
+}: {
+  resumeProp?: Resume;
+  claimsProp?: Claim[];
+  evidenceProp?: Evidence[];
+} = {}) {
+  const storeResume = useResumeBuilder((s) => s.resume);
+  const storeClaims = useResumeBuilder((s) => s.resume.claims ?? []);
+  const storeEvidence = useResumeBuilder((s) => s.evidence ?? []);
+
+  const resume = resumeProp ?? storeResume;
+  const claims = claimsProp ?? storeClaims;
+  const evidence = evidenceProp ?? storeEvidence;
 
   return (
     <div className="space-y-6">
