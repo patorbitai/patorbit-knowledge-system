@@ -1,4 +1,4 @@
-"use strict";
+"use client";
 
 import { useEffect, useCallback, useState } from "react";
 import Link from "next/link";
