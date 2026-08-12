@@ -13,6 +13,101 @@ import { SettingsModal } from "@/components/resume-builder/SettingsModal";
 import { Eye, Settings, User, ArrowLeft, ChevronRight } from "lucide-react";
 import { debounce } from "@/lib/debounce";
 
+/* ── Resume Selector Dropdown ── */
+function ResumeSelector() {
+  const resumes = useResumeBuilder((s) => s.resumes);
+  const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
+  const switchResume = useResumeBuilder((s) => s.switchResume);
+  const createResume = useResumeBuilder((s) => s.createResume);
+  const renameResume = useResumeBuilder((s) => s.renameResume);
+  const deleteResume = useResumeBuilder((s) => s.deleteResume);
+  const [isOpen, setIsOpen] = useState(false);
+
+  const activeResume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white/[0.04] border border-white/[0.06] hover:bg-white/[0.08] transition-all text-xs font-medium text-white cursor-pointer"
+      >
+        <span className="max-w-[120px] truncate">{activeResume?.resumeName || "My Resume"}</span>
+        <ChevronRight className={`w-3 h-3 transition-transform ${isOpen ? "rotate-90" : ""}`} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div className="fixed inset-0 z-50" onClick={() => setIsOpen(false)} />
+          <div className="absolute left-0 mt-1.5 w-56 rounded-xl bg-[#0A0E1B] border border-white/[0.08] shadow-2xl py-1 z-50">
+            <div className="px-3 py-1.5 border-b border-white/[0.06] text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
+              My Resumes ({resumes.length})
+            </div>
+            <div className="max-h-48 overflow-y-auto py-1">
+              {resumes.map((r) => (
+                <div
+                  key={r.resumeId}
+                  className={`flex items-center justify-between px-3 py-1.5 text-xs hover:bg-white/[0.06] group cursor-pointer ${
+                    r.resumeId === activeResumeId ? "text-cyan-400 font-semibold bg-white/[0.04]" : "text-slate-300"
+                  }`}
+                  onClick={() => {
+                    if (r.resumeId) switchResume(r.resumeId);
+                    setIsOpen(false);
+                  }}
+                >
+                  <span className="truncate flex-1">{r.resumeName}</span>
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      title="Rename"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        const newName = prompt("Rename resume:", r.resumeName);
+                        if (newName?.trim() && r.resumeId) {
+                          renameResume(r.resumeId, newName.trim());
+                        }
+                      }}
+                      className="p-1 hover:text-white text-slate-400"
+                    >
+                      ✏️
+                    </button>
+                    {resumes.length > 1 && (
+                      <button
+                        title="Delete"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete "${r.resumeName}"?`) && r.resumeId) {
+                            deleteResume(r.resumeId);
+                          }
+                        }}
+                        className="p-1 hover:text-red-400 text-slate-400"
+                      >
+                        🗑️
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="p-1.5 border-t border-white/[0.06]">
+              <button
+                onClick={() => {
+                  const name = prompt("New resume name:", `Resume ${resumes.length + 1}`);
+                  if (name !== null) {
+                    createResume(name.trim() || undefined);
+                    setIsOpen(false);
+                  }
+                }}
+                className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-cyan-400 bg-cyan-500/[0.1] hover:bg-cyan-500/[0.2] transition-all cursor-pointer"
+              >
+                + New Resume
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 /* ── App Header ── */
 function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
@@ -46,12 +141,10 @@ function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
           {/* Current context */}
           <span className="text-[11px] font-medium text-slate-300">Resume Builder</span>
 
-          {/* Resume name pill */}
-          {resume.name && (
-            <div className="hidden md:flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04] border border-white/[0.06]">
-              <span className="text-[11px] text-slate-500 max-w-[140px] truncate">{resume.name}</span>
-            </div>
-          )}
+          <div className="h-3 w-px bg-white/[0.08]" />
+
+          {/* Resume Selector */}
+          <ResumeSelector />
         </div>
 
         {/* Right: Actions */}

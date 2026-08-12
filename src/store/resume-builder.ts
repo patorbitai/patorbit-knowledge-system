@@ -30,7 +30,12 @@ import { TEMPLATES } from "@/app/resume-builder/templates";
 
 const defaultSocial = { linkedin: "", github: "", website: "", twitter: "", portfolio: "", stackoverflow: "" };
 
+let _idCounter = Date.now();
+function uid(): string { return `id_${++_idCounter}_${Math.random().toString(36).slice(2, 7)}`; }
+
 export const defaultResume: Resume = {
+  resumeId: "default_resume",
+  resumeName: "My Resume",
   name: "", title: "", email: "", phone: "", address: "", nationality: "", pronouns: "", summary: "",
   social: defaultSocial, experience: [], education: [], skills: [], projects: [], certifications: [],
   languages: [], interests: [], achievements: [], references: [], portfolio: [], templateId: "modern-clean",
@@ -39,65 +44,47 @@ export const defaultResume: Resume = {
   claims: [],
 };
 
-let _idCounter = Date.now();
-function uid(): string { return `id_${++_idCounter}_${Math.random().toString(36).slice(2, 7)}`; }
-
 /* ── Store types ── */
 
 export type SaveStatus = "saved" | "saving" | "unsaved" | "offline" | "sync-failed";
 
 export interface ResumeBuilderState {
-  resume: Resume; activeSection: SectionId; saveStatus: SaveStatus;
+  resume: Resume;
+  resumes: Resume[];
+  activeResumeId: string;
+  createResume: (name?: string) => string;
+  switchResume: (resumeId: string) => void;
+  renameResume: (resumeId: string, name: string) => void;
+  deleteResume: (resumeId: string) => void;
+
+  activeSection: SectionId; saveStatus: SaveStatus;
   analysis: ResumeAnalysis | null; analysisLoading: boolean;
   jobMatch: JobMatchResult | null; jobDescription: string;
   aiActions: Record<string, AIActionState>;
   isCopilotOpen: boolean; isJobMatchOpen: boolean;
   previewTab: "resume" | "passport" | "knowledge-graph" | "trust-timeline";
-  /** AI-suggested claims awaiting user review (Claims Review workflow). */
   suggestedClaims: SuggestedClaim[];
-  /** Evidence attached to accepted claims (Slice 2). */
   evidence: Evidence[];
-  /** Trust score snapshot, derived from the graph, for UI presentation. */
   trustScore: TrustSnapshot | null;
-  /** Set the trust score snapshot. Called by the coordinator. */
   setTrustScore: (score: TrustSnapshot | null) => void;
-  /** Rich trust report (snapshot + verification + coverage + weak claims), derived from the graph. */
   trustReport: TrustReport | null;
-  /** Set the rich trust report. Called by the coordinator. */
   setTrustReport: (report: TrustReport | null) => void;
-  /** Derived Career Profile (M1). Rebuilt deterministically from the resume. */
   careerProfile: CareerProfile | null;
-  /** Set the career profile snapshot. Called by the coordinator or directly. */
   setCareerProfile: (profile: CareerProfile | null) => void;
-  /** Rebuild the career profile from the current resume + claims + evidence. */
   rebuildCareerProfile: () => CareerProfile | null;
-  /** Derived Job Profile (M2). Rebuilt deterministically from the job description. */
   jobProfile: JobProfile | null;
-  /** Set the job profile snapshot. */
   setJobProfile: (profile: JobProfile | null) => void;
-  /** Rebuild the job profile from the current job description text. */
   rebuildJobProfile: () => JobProfile | null;
-  /** Derived Qualification Match (M3). Rebuilt deterministically from M1 + M2. */
   qualificationMatch: QualificationMatch | null;
-  /** Set the qualification match snapshot. */
   setQualificationMatch: (match: QualificationMatch | null) => void;
-  /** Rebuild M1/M2 and recompute the qualification match from them. */
   rebuildQualificationMatch: () => QualificationMatch | null;
-  /** Add a new evidence record to an accepted claim. */
   addEvidence: (evidence: Evidence) => void;
-  /** Update a persisted evidence record (e.g. status change, notes edit). */
   updateEvidence: (id: string, updates: Partial<Evidence>) => void;
-  /** Remove an evidence record from a claim. */
   removeEvidence: (id: string) => void;
-  /** Set a single evidence record's verification status. */
   setEvidenceStatus: (id: string, status: EvidenceStatus) => void;
-  /** Toggle explicit user consent for an evidence record. */
   setEvidenceConsent: (id: string, consent: boolean) => void;
-  /** Toggle an evidence record's visibility (public/private). */
   setEvidenceVisibility: (id: string, visibility: EvidenceVisibility) => void;
-  /** Mark all of a claim's evidence as ready for review. */
   markClaimReadyForReview: (claimId: string) => void;
-  /** Get all evidence for a claim id. */
   evidenceForClaim: (claimId: string) => Evidence[];
   setResume: (resume: Resume) => void;
   updateField: <K extends keyof Resume>(key: K, value: Resume[K]) => void;
@@ -107,15 +94,10 @@ export interface ResumeBuilderState {
   resetResume: () => void;
   applyTemplate: (templateId: string) => void;
   setSuggestedClaims: (claims: SuggestedClaim[]) => void;
-  /** Accept a suggested claim into the Professional Identity (never automatic). */
   acceptClaim: (suggestion: SuggestedClaim) => void;
-  /** Edit + accept a suggested claim. */
   acceptEditedClaim: (suggestion: SuggestedClaim, editedText: string) => void;
-  /** Remove a suggested claim from the review queue. */
   rejectClaim: (index: number) => void;
-  /** Persist an accepted claim back into the resume. */
   persistClaim: (claim: Claim) => void;
-  /** Update a persisted claim (e.g. edit after acceptance). */
   updateClaim: (id: string, updates: Partial<Claim>) => void;
   startAnalysis: () => Promise<void>;
   addExperience: () => void; updateExperience: (id: string, field: string, value: unknown) => void; removeExperience: (id: string) => void; moveExperience: (id: string, dir: -1 | 1) => void;
@@ -140,18 +122,40 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
       function makeArrayHelpers<K extends keyof Resume>(key: K, defaultItem: Partial<Resume[K] extends (infer U)[] ? U : never>) {
         return {
           add: () => set((s) => {
-            const arr = (s.resume[key] ?? []) as unknown as Record<string, unknown>[];
+            const current = s.resume;
+            const arr = (current[key] ?? []) as unknown as Record<string, unknown>[];
             const item = { ...(defaultItem as Record<string, unknown>), id: uid() } as Resume[K] extends (infer U)[] ? U : never;
-            return { resume: { ...s.resume, [key]: [...arr, item] } };
+            const updatedResume = { ...current, [key]: [...arr, item] };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return { resumes, resume: updatedResume, saveStatus: "unsaved" };
           }),
-          update: (id: string, field: string, value: unknown) => set((s) => ({ resume: { ...s.resume, [key]: ((s.resume[key] ?? []) as unknown as Record<string, unknown>[]).map((item) => item.id === id ? { ...item, [field]: value } : item) } })),
-          remove: (id: string) => set((s) => ({ resume: { ...s.resume, [key]: ((s.resume[key] ?? []) as unknown as Record<string, unknown>[]).filter((item) => item.id !== id) } })),
+          update: (id: string, field: string, value: unknown) => set((s) => {
+            const current = s.resume;
+            const updatedResume = {
+              ...current,
+              [key]: ((current[key] ?? []) as unknown as Record<string, unknown>[]).map((item) => item.id === id ? { ...item, [field]: value } : item)
+            };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return { resumes, resume: updatedResume, saveStatus: "unsaved" };
+          }),
+          remove: (id: string) => set((s) => {
+            const current = s.resume;
+            const updatedResume = {
+              ...current,
+              [key]: ((current[key] ?? []) as unknown as Record<string, unknown>[]).filter((item) => item.id !== id)
+            };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return { resumes, resume: updatedResume, saveStatus: "unsaved" };
+          }),
           move: (id: string, dir: -1 | 1) => set((s) => {
-            const arr = [...((s.resume[key] ?? []) as unknown as Record<string, unknown>[])];
+            const current = s.resume;
+            const arr = [...((current[key] ?? []) as unknown as Record<string, unknown>[])];
             const idx = arr.findIndex((item) => item.id === id); if (idx < 0) return s;
             const to = idx + dir; if (to < 0 || to >= arr.length) return s;
             const [moved] = arr.splice(idx, 1); arr.splice(to, 0, moved);
-            return { resume: { ...s.resume, [key]: arr } };
+            const updatedResume = { ...current, [key]: arr };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return { resumes, resume: updatedResume, saveStatus: "unsaved" };
           }),
         };
       }
@@ -167,8 +171,53 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
 
       const expH = makeArrayHelpers("experience", defaultExp); const eduH = makeArrayHelpers("education", defaultEdu); const skillH = makeArrayHelpers("skills", defaultSkill); const projH = makeArrayHelpers("projects", defaultProj); const certH = makeArrayHelpers("certifications", defaultCert); const achH = makeArrayHelpers("achievements", defaultAch); const langH = makeArrayHelpers("languages", defaultLang); const portH = makeArrayHelpers("portfolio", defaultPortfolio);
 
+      const initialId = uid();
+      const initialResume: Resume = { ...defaultResume, resumeId: initialId, resumeName: "My Resume" };
+
       return {
-        resume: defaultResume, analysis: null, activeSection: "personal", saveStatus: "unsaved",
+        resume: initialResume,
+        resumes: [initialResume],
+        activeResumeId: initialId,
+
+        createResume: (name?: string) => {
+          const id = uid();
+          const newName = name || `Resume ${get().resumes.length + 1}`;
+          const newResume: Resume = {
+            ...defaultResume,
+            resumeId: id,
+            resumeName: newName,
+          };
+          set((s) => {
+            const resumes = [...s.resumes, newResume];
+            return { resumes, activeResumeId: id, resume: newResume, saveStatus: "unsaved" };
+          });
+          return id;
+        },
+        switchResume: (resumeId: string) => {
+          set((s) => {
+            const found = s.resumes.find((r) => r.resumeId === resumeId);
+            if (!found) return s;
+            return { activeResumeId: resumeId, resume: found };
+          });
+        },
+        renameResume: (resumeId: string, name: string) => {
+          set((s) => {
+            const resumes = s.resumes.map((r) => r.resumeId === resumeId ? { ...r, resumeName: name } : r);
+            const resume = resumes.find((r) => r.resumeId === s.activeResumeId) || resumes[0];
+            return { resumes, resume, saveStatus: "unsaved" };
+          });
+        },
+        deleteResume: (resumeId: string) => {
+          set((s) => {
+            if (s.resumes.length <= 1) return s;
+            const resumes = s.resumes.filter((r) => r.resumeId !== resumeId);
+            const activeResumeId = s.activeResumeId === resumeId ? resumes[0].resumeId : s.activeResumeId;
+            const resume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
+            return { resumes, activeResumeId, resume, saveStatus: "unsaved" };
+          });
+        },
+
+        analysis: null, activeSection: "personal", saveStatus: "unsaved",
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
         qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
@@ -205,12 +254,35 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           set({ qualificationMatch: match });
           return match;
         },
-        setResume: (resume) => set({ resume, saveStatus: "unsaved" }),
-        updateField: (key, value) => set((s) => ({ resume: { ...s.resume, [key]: value }, saveStatus: "unsaved" })),
-        updateSocial: (key, value) => set((s) => ({ resume: { ...s.resume, social: { ...s.resume.social, [key]: value } }, saveStatus: "unsaved" })),
+        setResume: (newResume) => set((s) => {
+          const currentId = s.activeResumeId;
+          const updated = { ...newResume, resumeId: currentId, resumeName: s.resume.resumeName || newResume.name || "My Resume" };
+          const resumes = s.resumes.map((r) => r.resumeId === currentId ? updated : r);
+          return { resumes, resume: updated, saveStatus: "unsaved" };
+        }),
+        updateField: (key, value) => set((s) => {
+          const updatedResume = { ...s.resume, [key]: value };
+          const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+          return { resumes, resume: updatedResume, saveStatus: "unsaved" };
+        }),
+        updateSocial: (key, value) => set((s) => {
+          const updatedResume = { ...s.resume, social: { ...s.resume.social, [key]: value } };
+          const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+          return { resumes, resume: updatedResume, saveStatus: "unsaved" };
+        }),
         setActiveSection: (id) => set({ activeSection: id }),
-        setCareerStage: (stage) => set((s) => ({ resume: { ...s.resume, careerStage: stage }, saveStatus: "unsaved" })),
-        resetResume: () => set({ resume: defaultResume, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null }),
+        setCareerStage: (stage) => set((s) => {
+          const updatedResume = { ...s.resume, careerStage: stage };
+          const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+          return { resumes, resume: updatedResume, saveStatus: "unsaved" };
+        }),
+        resetResume: () => set((s) => {
+          const currentId = s.activeResumeId;
+          const currentName = s.resume.resumeName;
+          const resetR: Resume = { ...defaultResume, resumeId: currentId, resumeName: currentName };
+          const resumes = s.resumes.map((r) => r.resumeId === currentId ? resetR : r);
+          return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null };
+        }),
         setSaveStatus: (status) => set({ saveStatus: status }),
         setAnalysis: (analysis) => set({ analysis }), setAnalysisLoading: (loading) => set({ analysisLoading: loading }),
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),
@@ -219,14 +291,15 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         applyTemplate: (templateId) => {
           const template = TEMPLATES.find((t) => t.id === templateId);
           if (template) {
-            set((s) => ({
-              resume: {
+            set((s) => {
+              const updatedResume = {
                 ...s.resume,
                 templateId: template.id,
                 fontPreference: template.suggestedFont,
-              },
-              saveStatus: "unsaved",
-            }));
+              };
+              const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+              return { resumes, resume: updatedResume, saveStatus: "unsaved" };
+            });
           }
         },
         setSuggestedClaims: (claims) => set({ suggestedClaims: claims }),
@@ -244,8 +317,11 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
               accepted: true,
               createdAt: new Date().toISOString(),
             };
+            const updatedResume = { ...s.resume, claims: [...s.resume.claims, claim] };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
             return {
-              resume: { ...s.resume, claims: [...s.resume.claims, claim] },
+              resume: updatedResume,
+              resumes,
               suggestedClaims: s.suggestedClaims.filter((c) => c.assertionText !== suggestion.assertionText),
               saveStatus: "unsaved",
             };
@@ -264,8 +340,11 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
               accepted: true,
               createdAt: new Date().toISOString(),
             };
+            const updatedResume = { ...s.resume, claims: [...s.resume.claims, claim] };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
             return {
-              resume: { ...s.resume, claims: [...s.resume.claims, claim] },
+              resume: updatedResume,
+              resumes,
               suggestedClaims: s.suggestedClaims.filter((c) => c.assertionText !== suggestion.assertionText),
               saveStatus: "unsaved",
             };
@@ -275,37 +354,39 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             suggestedClaims: s.suggestedClaims.filter((_, i) => i !== index),
           })),
         persistClaim: (claim) =>
-          set((s) => ({
-            resume: {
+          set((s) => {
+            const updatedResume = {
               ...s.resume,
               claims: s.resume.claims.some((c) => c.id === claim.id)
                 ? s.resume.claims.map((c) => (c.id === claim.id ? claim : c))
                 : [...s.resume.claims, claim],
-            },
-            saveStatus: "unsaved",
-          })),
+            };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return { resume: updatedResume, resumes, saveStatus: "unsaved" };
+          }),
         updateClaim: (id, updates) =>
-          set((s) => ({
-            resume: {
+          set((s) => {
+            const updatedResume = {
               ...s.resume,
               claims: s.resume.claims.map((c) => (c.id === id ? { ...c, ...updates } : c)),
-            },
-            saveStatus: "unsaved",
-          })),
+            };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return { resume: updatedResume, resumes, saveStatus: "unsaved" };
+          }),
         addEvidence: (evidence) =>
           set((s) => {
-            // Evidence may only attach to accepted claims.
             const claim = s.resume.claims.find((c) => c.id === evidence.claimId);
             if (!claim) return s;
             const updated = [...s.evidence, evidence];
-            // Project claim status: accepted → evidence-added when first evidence lands.
             let claims = s.resume.claims;
             if (claim.accepted && claim.verificationStatus === "accepted") {
               claims = s.resume.claims.map((c) =>
                 c.id === claim.id ? { ...c, verificationStatus: "evidence-added" as const } : c,
               );
             }
-            return { resume: { ...s.resume, claims }, evidence: updated, saveStatus: "unsaved" };
+            const updatedResume = { ...s.resume, claims };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return { resume: updatedResume, resumes, evidence: updated, saveStatus: "unsaved" };
           }),
         updateEvidence: (id, updates) =>
           set((s) => ({
@@ -318,7 +399,6 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           set((s) => {
             const target = s.evidence.find((e) => e.id === id);
             const evidence = s.evidence.filter((e) => e.id !== id);
-            // If a claim lost its last evidence, revert its status to accepted.
             let claims = s.resume.claims;
             if (target && !evidence.some((e) => e.claimId === target.claimId)) {
               claims = s.resume.claims.map((c) =>
@@ -327,7 +407,9 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                   : c,
               );
             }
-            return { resume: { ...s.resume, claims }, evidence, saveStatus: "unsaved" };
+            const updatedResume = { ...s.resume, claims };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return { resume: updatedResume, resumes, evidence, saveStatus: "unsaved" };
           }),
         setEvidenceStatus: (id, status) =>
           set((s) => ({
@@ -351,23 +433,27 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             saveStatus: "unsaved",
           })),
         markClaimReadyForReview: (claimId) =>
-          set((s) => ({
-            resume: {
+          set((s) => {
+            const updatedResume = {
               ...s.resume,
               claims: s.resume.claims.map((c) =>
                 c.id === claimId && c.verificationStatus === "evidence-added"
                   ? { ...c, verificationStatus: "under-review" as const }
                   : c,
               ),
-            },
-            // Mark all of the claim's evidence as under-review too.
-            evidence: s.evidence.map((e) =>
-              e.claimId === claimId && e.status === "evidence-added"
-                ? { ...e, status: "under-review" as const, updatedAt: new Date().toISOString() }
-                : e,
-            ),
-            saveStatus: "unsaved",
-          })),
+            };
+            const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+            return {
+              resume: updatedResume,
+              resumes,
+              evidence: s.evidence.map((e) =>
+                e.claimId === claimId && e.status === "evidence-added"
+                  ? { ...e, status: "under-review" as const, updatedAt: new Date().toISOString() }
+                  : e,
+              ),
+              saveStatus: "unsaved",
+            };
+          }),
         evidenceForClaim: (claimId) => get().evidence.filter((e) => e.claimId === claimId),
         addExperience: expH.add, updateExperience: expH.update, removeExperience: expH.remove, moveExperience: expH.move,
         addEducation: eduH.add, updateEducation: eduH.update, removeEducation: eduH.remove, moveEducation: eduH.move,
@@ -416,10 +502,28 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     resumeStore,
     {
       name: "patorbit-resume-v2",
-      partialize: (state) => ({ resume: state.resume, evidence: state.evidence }),
+      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.resume = { ...defaultResume, ...state.resume };
+          let resumes = state.resumes;
+          if (!Array.isArray(resumes) || resumes.length === 0) {
+            const oldResume = (state as any).resume;
+            const base = oldResume ? { ...defaultResume, ...oldResume } : defaultResume;
+            resumes = [{
+              ...base,
+              resumeId: base.resumeId || uid(),
+              resumeName: base.resumeName || base.name || "My Resume",
+            }];
+          } else {
+            resumes = resumes.map((r) => ({ ...defaultResume, ...r, resumeId: r.resumeId || uid(), resumeName: r.resumeName || r.name || "My Resume" }));
+          }
+          const activeResumeId = state.activeResumeId && resumes.some((r) => r.resumeId === state.activeResumeId)
+            ? state.activeResumeId
+            : resumes[0].resumeId;
+          const resume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
+          state.resumes = resumes;
+          state.activeResumeId = activeResumeId!;
+          state.resume = resume;
           state.evidence = state.evidence ?? [];
           state.setSaveStatus("saved");
         }

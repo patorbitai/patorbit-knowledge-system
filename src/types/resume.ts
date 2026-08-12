@@ -121,6 +121,8 @@ export const CAREER_STAGES: { value: CareerStage; label: string; description: st
 ];
 
 export interface Resume {
+  resumeId?: string;
+  resumeName?: string;
   name: string;
   title: string;
   email: string;
