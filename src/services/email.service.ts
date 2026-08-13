@@ -57,10 +57,15 @@ export class EmailService {
       });
 
       if (response.error) {
+        console.error("[EmailService] Resend API error during verification email delivery:", {
+          error: response.error.message,
+          name: response.error.name,
+        });
         throw new Error(`Failed to send verification email: ${response.error.message}`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("[EmailService] Exception during verification email delivery:", { message });
       throw new Error(`Failed to send verification email: ${message}`);
     }
 
@@ -118,10 +123,15 @@ export class EmailService {
       });
 
       if (response.error) {
+        console.error("[EmailService] Resend API error during password reset email delivery:", {
+          error: response.error.message,
+          name: response.error.name,
+        });
         throw new Error(`Failed to send password reset email: ${response.error.message}`);
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
+      console.error("[EmailService] Exception during password reset email delivery:", { message });
       throw new Error(`Failed to send password reset email: ${message}`);
     }
 

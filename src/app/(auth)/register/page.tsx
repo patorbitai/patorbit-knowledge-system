@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useActionState, useEffect, useState, useId } from "react";
+import { useActionState, useState, useId } from "react";
 import { registerUser, type RegisterState } from "@/actions/auth/register";
 
 const initialState: RegisterState = { success: false, message: "" };
@@ -128,7 +127,6 @@ function PasswordStrengthBar({ password }: { password: string }) {
 }
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [state, formAction, isPending] = useActionState(registerUser, initialState);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -144,11 +142,6 @@ export default function RegisterPage() {
   const passwordId = useId();
   const confirmId = useId();
   const termsId = useId();
-
-  useEffect(() => {
-    if (!state.success) return;
-    router.push("/login?registered=1");
-  }, [state.success, router]);
 
   const handleSubmit = (e: React.BaseSyntheticEvent) => {
     let hasError = false;
@@ -178,209 +171,235 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      {/* Social providers */}
-      <div className="grid grid-cols-2 gap-2.5 mb-6">
-        {PROVIDERS.map((p) => (
-          <button
-            key={p.name}
-            type="button"
-            disabled
-            title="Coming soon"
-            aria-label={`Continue with ${p.name} — coming soon`}
-            className="flex items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-xs font-medium text-slate-400 transition cursor-not-allowed opacity-60 select-none"
-          >
-            {p.icon}
-            <span>{p.name}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="relative flex items-center gap-3 mb-6">
-        <div className="h-px flex-1 bg-white/[0.08]" />
-        <span className="text-xs text-slate-400 shrink-0">or continue with email</span>
-        <div className="h-px flex-1 bg-white/[0.08]" />
-      </div>
-
-      <form action={formAction} noValidate onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-1.5">
-          <label htmlFor={nameId} className="block text-sm font-medium text-slate-300">
-            Full name
-          </label>
-          <input
-            id={nameId}
-            name="name"
-            type="text"
-            required
-            autoComplete="name"
-            autoFocus
-            disabled={isPending}
-            placeholder="Alex Johnson"
-            className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-slate-600 transition-colors duration-150 outline-none focus-visible:border-cyan-500/60 focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor={emailId} className="block text-sm font-medium text-slate-300">
-            Email address
-          </label>
-          <input
-            id={emailId}
-            name="email"
-            type="email"
-            required
-            autoComplete="email"
-            disabled={isPending}
-            placeholder="you@example.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-slate-600 transition-colors duration-150 outline-none focus-visible:border-cyan-500/60 focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor={passwordId} className="block text-sm font-medium text-slate-300">
-            Password
-          </label>
-          <div className="relative">
-            <input
-              id={passwordId}
-              name="password"
-              type={showPassword ? "text" : "password"}
-              required
-              minLength={8}
-              autoComplete="new-password"
-              disabled={isPending}
-              placeholder="Min. 8 characters"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 pr-11 text-sm text-white placeholder:text-slate-600 transition-colors duration-150 outline-none focus-visible:border-cyan-500/60 focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword((v) => !v)}
-              disabled={isPending}
-              aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-400 disabled:cursor-not-allowed"
-            >
-              <EyeIcon open={showPassword} />
-            </button>
-          </div>
-          <PasswordStrengthBar password={password} />
-        </div>
-
-        <div className="space-y-1.5">
-          <label htmlFor={confirmId} className="block text-sm font-medium text-slate-300">
-            Confirm password
-          </label>
-          <div className="relative">
-            <input
-              id={confirmId}
-              name="confirmPassword"
-              type={showConfirm ? "text" : "password"}
-              required
-              minLength={8}
-              autoComplete="new-password"
-              disabled={isPending}
-              placeholder="••••••••"
-              value={confirm}
-              onChange={(e) => { setConfirm(e.target.value); if (confirmError) setConfirmError(""); }}
-              aria-describedby={confirmError ? "confirm-error" : undefined}
-              aria-invalid={!!confirmError}
-              className={`w-full rounded-lg border bg-white/[0.04] px-4 py-2.5 pr-11 text-sm text-white placeholder:text-slate-600 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed ${confirmError ? "border-rose-500/60 focus-visible:border-rose-500/60" : "border-white/[0.1] focus-visible:border-cyan-500/60"}`}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirm((v) => !v)}
-              disabled={isPending}
-              aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-400 disabled:cursor-not-allowed"
-            >
-              <EyeIcon open={showConfirm} />
-            </button>
-          </div>
-          {confirmError && (
-            <p id="confirm-error" role="alert" className="text-xs text-rose-400 flex items-center gap-1.5">
-              <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+      {state.success ? (
+        <div role="status" className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.06] px-4 py-5 space-y-4">
+          <div className="flex items-center gap-2.5">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/10 border border-cyan-500/20 shrink-0">
+              <svg width="14" height="11" viewBox="0 0 14 11" fill="none" aria-hidden="true">
+                <path d="M1 5.5L4.5 9L13 1" stroke="#22d3ee" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
-              {confirmError}
-            </p>
-          )}
-        </div>
-
-        <div className="flex items-start gap-3 pt-1">
-          <input
-            id={termsId}
-            type="checkbox"
-            checked={agreed}
-            onChange={(e) => { setAgreed(e.target.checked); if (termsError) setTermsError(false); }}
-            disabled={isPending}
-            className="mt-0.5 h-4 w-4 shrink-0 rounded border border-white/[0.15] bg-white/[0.04] accent-cyan-500 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:cursor-not-allowed"
-          />
-          <label htmlFor={termsId} className="text-xs text-slate-400 leading-relaxed cursor-pointer">
-            I agree to the{" "}
-            <Link href="/terms" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150">
-              Terms of Service
-            </Link>{" "}
-            and{" "}
-            <Link href="/privacy" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150">
-              Privacy Policy
+            </span>
+            <p className="text-sm font-medium text-white">Check your email</p>
+          </div>
+          <p className="text-sm text-slate-400 leading-relaxed pl-9">
+            {state.message || "We have sent a verification link to your email address. Please verify your account to get started."}
+          </p>
+          <div className="pl-9 pt-2">
+            <Link
+              href="/login"
+              className="inline-flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] px-4 py-2 text-xs font-medium text-cyan-400 transition-colors duration-150"
+            >
+              Return to Sign in
             </Link>
-          </label>
+          </div>
         </div>
-        {termsError && (
-          <p role="alert" className="text-xs text-rose-400 flex items-center gap-1.5">
-            <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            You must agree to the Terms of Service to continue.
-          </p>
-        )}
+      ) : (
+        <>
+          {/* Social providers */}
+          <div className="grid grid-cols-2 gap-2.5 mb-6">
+            {PROVIDERS.map((p) => (
+              <button
+                key={p.name}
+                type="button"
+                disabled
+                title="Coming soon"
+                aria-label={`Continue with ${p.name} — coming soon`}
+                className="flex items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-xs font-medium text-slate-400 transition cursor-not-allowed opacity-60 select-none"
+              >
+                {p.icon}
+                <span>{p.name}</span>
+              </button>
+            ))}
+          </div>
 
-        {state.message && (
-          <p
-            role="alert"
-            className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm ${
-              state.success
-                ? "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400"
-                : "border-rose-500/20 bg-rose-500/[0.08] text-rose-400"
-            }`}
-          >
-            {state.success ? (
-              <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
-              </svg>
-            ) : (
-              <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
+          <div className="relative flex items-center gap-3 mb-6">
+            <div className="h-px flex-1 bg-white/[0.08]" />
+            <span className="text-xs text-slate-400 shrink-0">or continue with email</span>
+            <div className="h-px flex-1 bg-white/[0.08]" />
+          </div>
+
+          <form action={formAction} noValidate onSubmit={handleSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <label htmlFor={nameId} className="block text-sm font-medium text-slate-300">
+                Full name
+              </label>
+              <input
+                id={nameId}
+                name="name"
+                type="text"
+                required
+                autoComplete="name"
+                autoFocus
+                disabled={isPending}
+                placeholder="Alex Johnson"
+                className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-slate-600 transition-colors duration-150 outline-none focus-visible:border-cyan-500/60 focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor={emailId} className="block text-sm font-medium text-slate-300">
+                Email address
+              </label>
+              <input
+                id={emailId}
+                name="email"
+                type="email"
+                required
+                autoComplete="email"
+                disabled={isPending}
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 text-sm text-white placeholder:text-slate-600 transition-colors duration-150 outline-none focus-visible:border-cyan-500/60 focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor={passwordId} className="block text-sm font-medium text-slate-300">
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id={passwordId}
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  placeholder="Min. 8 characters"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full rounded-lg border border-white/[0.1] bg-white/[0.04] px-4 py-2.5 pr-11 text-sm text-white placeholder:text-slate-600 transition-colors duration-150 outline-none focus-visible:border-cyan-500/60 focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  disabled={isPending}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-400 disabled:cursor-not-allowed"
+                >
+                  <EyeIcon open={showPassword} />
+                </button>
+              </div>
+              <PasswordStrengthBar password={password} />
+            </div>
+
+            <div className="space-y-1.5">
+              <label htmlFor={confirmId} className="block text-sm font-medium text-slate-300">
+                Confirm password
+              </label>
+              <div className="relative">
+                <input
+                  id={confirmId}
+                  name="confirmPassword"
+                  type={showConfirm ? "text" : "password"}
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  disabled={isPending}
+                  placeholder="••••••••"
+                  value={confirm}
+                  onChange={(e) => { setConfirm(e.target.value); if (confirmError) setConfirmError(""); }}
+                  aria-describedby={confirmError ? "confirm-error" : undefined}
+                  aria-invalid={!!confirmError}
+                  className={`w-full rounded-lg border bg-white/[0.04] px-4 py-2.5 pr-11 text-sm text-white placeholder:text-slate-600 transition-colors duration-150 outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/20 disabled:opacity-50 disabled:cursor-not-allowed ${confirmError ? "border-rose-500/60 focus-visible:border-rose-500/60" : "border-white/[0.1] focus-visible:border-cyan-500/60"}`}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirm((v) => !v)}
+                  disabled={isPending}
+                  aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-400 disabled:cursor-not-allowed"
+                >
+                  <EyeIcon open={showConfirm} />
+                </button>
+              </div>
+              {confirmError && (
+                <p id="confirm-error" role="alert" className="text-xs text-rose-400 flex items-center gap-1.5">
+                  <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                  {confirmError}
+                </p>
+              )}
+            </div>
+
+            <div className="flex items-start gap-3 pt-1">
+              <input
+                id={termsId}
+                type="checkbox"
+                checked={agreed}
+                onChange={(e) => { setAgreed(e.target.checked); if (termsError) setTermsError(false); }}
+                disabled={isPending}
+                className="mt-0.5 h-4 w-4 shrink-0 rounded border border-white/[0.15] bg-white/[0.04] accent-cyan-500 cursor-pointer focus-visible:ring-2 focus-visible:ring-cyan-500/40 disabled:cursor-not-allowed"
+              />
+              <label htmlFor={termsId} className="text-xs text-slate-400 leading-relaxed cursor-pointer">
+                I agree to the{" "}
+                <Link href="/terms" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150">
+                  Terms of Service
+                </Link>{" "}
+                and{" "}
+                <Link href="/privacy" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150">
+                  Privacy Policy
+                </Link>
+              </label>
+            </div>
+            {termsError && (
+              <p role="alert" className="text-xs text-rose-400 flex items-center gap-1.5">
+                <svg className="h-3 w-3 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                  <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                </svg>
+                You must agree to the Terms of Service to continue.
+              </p>
             )}
-            {state.message}
+
+            {state.message && (
+              <p
+                role="alert"
+                className={`flex items-start gap-2 rounded-lg border px-3 py-2.5 text-sm ${
+                  state.success
+                    ? "border-emerald-500/20 bg-emerald-500/[0.08] text-emerald-400"
+                    : "border-rose-500/20 bg-rose-500/[0.08] text-rose-400"
+                }`}
+              >
+                {state.success ? (
+                  <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
+                  </svg>
+                ) : (
+                  <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                  </svg>
+                )}
+                {state.message}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={isPending}
+              className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:shadow-cyan-400/30 hover:brightness-110 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:brightness-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
+            >
+              {isPending ? (
+                <>
+                  <Spinner />
+                  Creating your identity…
+                </>
+              ) : (
+                "Create my Professional Identity"
+              )}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Already have an account?{" "}
+            <Link href="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-300">
+              Sign in
+            </Link>
           </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={isPending}
-          className="mt-2 w-full flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:shadow-cyan-400/30 hover:brightness-110 active:scale-[0.99] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:brightness-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
-        >
-          {isPending ? (
-            <>
-              <Spinner />
-              Creating your identity…
-            </>
-          ) : (
-            "Create my Professional Identity"
-          )}
-        </button>
-      </form>
-
-      <p className="mt-6 text-center text-sm text-slate-500">
-        Already have an account?{" "}
-        <Link href="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-300">
-          Sign in
-        </Link>
-      </p>
+        </>
+      )}
     </div>
   );
 }
