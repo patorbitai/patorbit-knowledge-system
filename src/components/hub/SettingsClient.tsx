@@ -4,7 +4,8 @@ import { useActionState, useState } from "react";
 import { updateProfile, deleteAccount, type SettingsState } from "@/actions/settings";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { ShieldCheck, AlertTriangle, User, Lock, Trash2, Download } from "lucide-react";
+import { ShieldCheck, AlertTriangle, User, Lock, Trash2, Download, Sun, Moon, Check } from "lucide-react";
+import { useTheme } from "@/components/providers/ThemeProvider";
 import { keys, createStore } from "idb-keyval";
 
 const evidenceStore = createStore("patorbit-evidence-blobs", "evidence-files");
@@ -39,6 +40,7 @@ export function SettingsClient({
   currentPeriodEnd: string | null;
   cancelAtPeriodEnd: boolean;
 }) {
+  const { theme, setTheme } = useTheme();
   const [profileState, profileAction, profilePending] = useActionState(updateProfile, initialState);
   const [deleteState, deleteAction, deletePending] = useActionState(async (prev: SettingsState, fd: FormData) => {
     const res = await deleteAccount(prev, fd);
@@ -164,6 +166,59 @@ export function SettingsClient({
 
   return (
     <div className="space-y-6">
+      {/* ── APPEARANCE SECTION ─────────────────────────────────────── */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-6">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] pb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
+            <Sun className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">Appearance</h2>
+            <p className="text-xs text-slate-400">Choose your preferred application theme.</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <button
+            type="button"
+            onClick={() => setTheme("dark")}
+            className={`flex items-center justify-between p-4 rounded-xl border text-left transition-all cursor-pointer ${
+              theme === "dark"
+                ? "border-cyan-500 bg-cyan-500/10 text-white"
+                : "border-white/[0.08] bg-white/[0.02] text-slate-300 hover:border-white/[0.15]"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Moon className="w-5 h-5 text-cyan-400" />
+              <div>
+                <p className="text-sm font-medium">Dark</p>
+                <p className="text-xs text-slate-400">Premium dark SaaS mode</p>
+              </div>
+            </div>
+            {theme === "dark" && <Check className="w-4 h-4 text-cyan-400" />}
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setTheme("light")}
+            className={`flex items-center justify-between p-4 rounded-xl border text-left transition-all cursor-pointer ${
+              theme === "light"
+                ? "border-cyan-500 bg-cyan-500/10 text-white"
+                : "border-white/[0.08] bg-white/[0.02] text-slate-300 hover:border-white/[0.15]"
+            }`}
+          >
+            <div className="flex items-center gap-3">
+              <Sun className="w-5 h-5 text-amber-400" />
+              <div>
+                <p className="text-sm font-medium">Light</p>
+                <p className="text-xs text-slate-400">Clean professional light mode</p>
+              </div>
+            </div>
+            {theme === "light" && <Check className="w-4 h-4 text-cyan-400" />}
+          </button>
+        </div>
+      </div>
+
       {/* ── PROFILE SECTION ───────────────────────────────────────── */}
       <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-6">
         <div className="flex items-center gap-3 border-b border-white/[0.06] pb-4">

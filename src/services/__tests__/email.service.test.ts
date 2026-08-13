@@ -15,7 +15,7 @@ vi.mock("resend", () => {
   };
 });
 
-describe("EmailService (Resend)", () => {
+describe("EmailService (Resend & Premium Templates)", () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
@@ -47,22 +47,35 @@ describe("EmailService (Resend)", () => {
     }
   });
 
-  it("sends verification email successfully when RESEND_API_KEY is configured", async () => {
+  it("sends verification email successfully with premium template and correct attributes", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
     process.env.EMAIL_FROM = "Patorbit <test@resend.dev>";
     mockSend.mockResolvedValueOnce({ data: { id: "msg_123" }, error: null });
 
     const service = new EmailService();
     const token = "verify-token-xyz";
-    await service.sendVerificationEmail("user@example.com", token);
+    const url = await service.sendVerificationEmail("user@example.com", token);
 
     expect(mockSend).toHaveBeenCalledTimes(1);
     const callArg = mockSend.mock.calls[0][0] as { from: string; to: string[]; subject: string; html: string; text: string };
+    
+    // 1. Verification subject
+    expect(callArg.subject).toBe("Verify your Patorbit account");
+    // 3. Verification URL
+    expect(callArg.html).toContain(url);
+    expect(url).toContain("/verify-email?token=" + token);
+    // 5. Expiration info
+    expect(callArg.html).toContain("24 hours");
+    expect(callArg.text).toContain("24 hours");
+    // 6. Primary CTA text
+    expect(callArg.html).toContain("Verify My Email");
+    // 7. Security warning
+    expect(callArg.html).toContain("safely ignore this email");
+    // 8. Plain-text fallback
+    expect(callArg.text).toBeTruthy();
+    // 9. Recipient and sender
     expect(callArg.from).toBe("Patorbit <test@resend.dev>");
     expect(callArg.to).toEqual(["user@example.com"]);
-    expect(callArg.subject).toBe("Verify your Patorbit account");
-    expect(callArg.html).toContain(token);
-    expect(callArg.text).toContain(token);
   });
 
   it("uses default sender when EMAIL_FROM is missing", async () => {
@@ -78,22 +91,35 @@ describe("EmailService (Resend)", () => {
     expect(callArg.from).toBe("Patorbit <onboarding@resend.dev>");
   });
 
-  it("sends password reset email successfully when RESEND_API_KEY is configured", async () => {
+  it("sends password reset email successfully with premium template and correct attributes", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
     process.env.EMAIL_FROM = "Patorbit <test@resend.dev>";
     mockSend.mockResolvedValueOnce({ data: { id: "msg_456" }, error: null });
 
     const service = new EmailService();
     const token = "reset-token-xyz";
-    await service.sendPasswordResetEmail("user@example.com", token);
+    const url = await service.sendPasswordResetEmail("user@example.com", token);
 
     expect(mockSend).toHaveBeenCalledTimes(1);
     const callArg = mockSend.mock.calls[0][0] as { subject: string; html: string; text: string };
+    
+    // 2. Password reset subject
     expect(callArg.subject).toBe("Reset your Patorbit password");
-    expect(callArg.html).toContain(token);
-    expect(callArg.text).toContain(token);
+    // 4. Password reset URL
+    expect(callArg.html).toContain(url);
+    expect(url).toContain("/reset-password?token=" + token);
+    // 5. Expiration info
+    expect(callArg.html).toContain("1 hour");
+    expect(callArg.text).toContain("1 hour");
+    // 6. Primary CTA text
+    expect(callArg.html).toContain("Reset Password");
+    // 7. Security warning
+    expect(callArg.html).toContain("Didn't request a password reset?");
+    // 8. Plain-text fallback
+    expect(callArg.text).toBeTruthy();
   });
 
+  // 12. Existing Resend failure behavior remains unchanged
   it("throws controlled error when Resend API returns an error", async () => {
     process.env.RESEND_API_KEY = "re_test_key";
     mockSend.mockResolvedValueOnce({ data: null, error: { message: "Invalid API key" } });
@@ -104,8 +130,9 @@ describe("EmailService (Resend)", () => {
     );
   });
 
-  it("ensures token values are not written to logs", async () => {
-    process.env.RESEND_API_KEY = "re_test_key";
+  // 10 & 11. Tokens and API keys are never logged
+  it("ensures token values and API keys are never written to logs", async () => {
+    process.env.RESEND_API_KEY = "re_secret_api_key_123";
     const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
     const consoleErrorSpy = vi.spyOn(console, "error").mockImplementation(() => {});
     mockSend.mockResolvedValue({ data: { id: "1" }, error: null });
@@ -118,6 +145,7 @@ describe("EmailService (Resend)", () => {
     for (const call of [...consoleLogSpy.mock.calls, ...consoleErrorSpy.mock.calls]) {
       const logStr = call.join(" ");
       expect(logStr).not.toContain(sensitiveToken);
+      expect(logStr).not.toContain("re_secret_api_key_123");
     }
   });
 });

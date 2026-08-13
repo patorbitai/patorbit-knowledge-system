@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { useActionState, useState, useId } from "react";
 import { registerUser, type RegisterState } from "@/actions/auth/register";
+import { resendVerificationAction } from "@/actions/auth/verify";
 
 const initialState: RegisterState = { success: false, message: "" };
+const resendInitialState = { success: false, message: "" };
 
 const PROVIDERS = [
   {
@@ -128,6 +130,7 @@ function PasswordStrengthBar({ password }: { password: string }) {
 
 export default function RegisterPage() {
   const [state, formAction, isPending] = useActionState(registerUser, initialState);
+  const [resendState, resendAction, isResendPending] = useActionState(resendVerificationAction, resendInitialState);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
@@ -181,16 +184,38 @@ export default function RegisterPage() {
             </span>
             <p className="text-sm font-medium text-white">Check your email</p>
           </div>
-          <p className="text-sm text-slate-400 leading-relaxed pl-9">
-            {state.message || "We have sent a verification link to your email address. Please verify your account to get started."}
-          </p>
-          <div className="pl-9 pt-2">
-            <Link
-              href="/login"
-              className="inline-flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] px-4 py-2 text-xs font-medium text-cyan-400 transition-colors duration-150"
-            >
-              Return to Sign in
-            </Link>
+          <div className="space-y-1.5 pl-9 text-sm text-slate-400">
+            <p className="font-medium text-white">Account created successfully.</p>
+            <p>We sent a verification link to your email address ({email}).</p>
+            <p>The link expires in 24 hours.</p>
+          </div>
+
+          <div className="pl-9 pt-2 space-y-3">
+            <form action={resendAction} className="space-y-2">
+              <input type="hidden" name="email" value={email} />
+              <p className="text-xs text-slate-400">Didn&apos;t receive the email?</p>
+              <button
+                type="submit"
+                disabled={isResendPending}
+                className="inline-flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] px-4 py-2 text-xs font-medium text-cyan-400 transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+              >
+                {isResendPending ? "Resending..." : "Resend verification email"}
+              </button>
+              {resendState.message && (
+                <p className={`text-xs ${resendState.success ? "text-emerald-400" : "text-rose-400"}`}>
+                  {resendState.message}
+                </p>
+              )}
+            </form>
+
+            <div>
+              <Link
+                href="/login"
+                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors duration-150 underline"
+              >
+                Return to Sign in
+              </Link>
+            </div>
           </div>
         </div>
       ) : (

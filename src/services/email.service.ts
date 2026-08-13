@@ -1,5 +1,93 @@
 import { Resend } from "resend";
 
+function renderEmailLayout({
+  headline,
+  bodyContent,
+  ctaText,
+  ctaUrl,
+  supportingText,
+  securityText,
+  fallbackUrl,
+}: {
+  headline: string;
+  bodyContent: string;
+  ctaText: string;
+  ctaUrl: string;
+  supportingText: string;
+  securityText: string;
+  fallbackUrl: string;
+}): string {
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${headline}</title>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #1e293b;">
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background-color: #f4f6f8; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width: 600px; width: 100%;">
+          <!-- Brand Header -->
+          <tr>
+            <td align="center" style="padding-bottom: 32px;">
+              <span style="font-size: 20px; font-weight: 700; letter-spacing: -0.5px; color: #0f172a; text-decoration: none;">Patorbit</span>
+            </td>
+          </tr>
+          <!-- Main Card -->
+          <tr>
+            <td style="background-color: #ffffff; border-radius: 12px; border: 1px solid #e2e8f0; padding: 48px 40px; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.02), 0 2px 4px -2px rgba(0, 0, 0, 0.02);">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                <tr>
+                  <td>
+                    <h1 style="margin: 0 0 24px 0; font-size: 24px; font-weight: 600; line-height: 32px; color: #0f172a; letter-spacing: -0.5px;">${headline}</h1>
+                    <div style="font-size: 16px; line-height: 24px; color: #475569; margin-bottom: 32px;">
+                      ${bodyContent}
+                    </div>
+                    <!-- Primary CTA Button -->
+                    <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin-bottom: 32px;">
+                      <tr>
+                        <td align="center" style="border-radius: 8px; background-color: #0f172a;">
+                          <a href="${ctaUrl}" target="_blank" style="font-size: 15px; font-weight: 600; color: #ffffff; text-decoration: none; padding: 14px 28px; border-radius: 8px; border: 1px solid #0f172a; display: inline-block;">
+                            ${ctaText}
+                          </a>
+                        </td>
+                      </tr>
+                    </table>
+                    <p style="margin: 0 0 32px 0; font-size: 14px; line-height: 20px; color: #64748b;">
+                      ${supportingText}
+                    </p>
+                    <hr style="border: none; border-top: 1px solid #e2e8f0; margin: 32px 0;">
+                    <!-- Security / Ignore Section -->
+                    <p style="margin: 0 0 16px 0; font-size: 14px; line-height: 20px; color: #64748b;">
+                      ${securityText}
+                    </p>
+                    <!-- Fallback URL Section -->
+                    <p style="margin: 24px 0 0 0; font-size: 12px; line-height: 18px; color: #94a3b8;">
+                      If the button above doesn't work, copy and paste this link into your browser:<br>
+                      <span style="color: #64748b; word-break: break-all;">${fallbackUrl}</span>
+                    </p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="padding-top: 32px;">
+              <p style="margin: 0 0 8px 0; font-size: 13px; font-weight: 600; color: #0f172a;">Patorbit</p>
+              <p style="margin: 0; font-size: 12px; line-height: 16px; color: #64748b;">Your professional identity, built to last.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
+}
+
 export class EmailService {
   private getResendClient(): Resend | null {
     const apiKey = process.env.RESEND_API_KEY;
@@ -20,32 +108,17 @@ export class EmailService {
     }
 
     const from = process.env.EMAIL_FROM || "Patorbit <onboarding@resend.dev>";
+    const html = renderEmailLayout({
+      headline: "Verify your email address",
+      bodyContent: "Welcome to Patorbit.<br><br>You're one step away from building your verified professional identity.",
+      ctaText: "Verify My Email",
+      ctaUrl: verificationUrl,
+      supportingText: "This verification link expires in 24 hours.",
+      securityText: "If you didn't create a Patorbit account, you can safely ignore this email.",
+      fallbackUrl: verificationUrl,
+    });
 
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Verify your Patorbit account</title>
-</head>
-<body style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 20px; color: #333;">
-  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-    <h2 style="color: #4f46e5; margin-top: 0;">Patorbit</h2>
-    <h3>Verify your Patorbit account</h3>
-    <p>Hello,</p>
-    <p>Thank you for registering with Patorbit (${email}). Please verify your email address by clicking the button below:</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${verificationUrl}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Verify Email Address</a>
-    </div>
-    <p>Or copy and paste this link into your browser:</p>
-    <p style="word-break: break-all; color: #6b7280; font-size: 14px;">${verificationUrl}</p>
-    <p>This verification link will expire in 24 hours.</p>
-    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-    <p style="color: #9ca3af; font-size: 12px; text-align: center;">Patorbit Knowledge System. If you did not create an account, you can safely ignore this email.</p>
-  </div>
-</body>
-</html>`;
-
-    const text = `Verify your Patorbit account\n\nHello,\n\nThank you for registering with Patorbit (${email}). Please verify your email address by visiting the link below:\n\n${verificationUrl}\n\nThis verification link will expire in 24 hours.\n\nIf you did not create an account, you can safely ignore this email.\n\n— Patorbit Knowledge System`;
+    const text = `Verify your email address\n\nWelcome to Patorbit.\n\nYou're one step away from building your verified professional identity.\n\nVerify your email address by visiting the link below:\n${verificationUrl}\n\nThis verification link expires in 24 hours.\n\nIf you didn't create a Patorbit account, you can safely ignore this email.\n\n— Patorbit\nYour professional identity, built to last.`;
 
     try {
       const response = await resend.emails.send({
@@ -83,35 +156,17 @@ export class EmailService {
     }
 
     const from = process.env.EMAIL_FROM || "Patorbit <onboarding@resend.dev>";
+    const html = renderEmailLayout({
+      headline: "Reset your password",
+      bodyContent: "Hello,<br><br>We received a request to reset the password for your Patorbit account.",
+      ctaText: "Reset Password",
+      ctaUrl: resetUrl,
+      supportingText: "This secure link will expire in 1 hour.",
+      securityText: "Didn't request a password reset?<br><br>You can safely ignore this email. Your password will remain unchanged.",
+      fallbackUrl: resetUrl,
+    });
 
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="utf-8">
-  <title>Reset your Patorbit password</title>
-</head>
-<body style="font-family: Arial, sans-serif; background-color: #f6f9fc; padding: 20px; color: #333;">
-  <div style="max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 8px; padding: 40px; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-    <h2 style="color: #4f46e5; margin-top: 0;">Patorbit</h2>
-    <h3>Reset your Patorbit password</h3>
-    <p>Hello,</p>
-    <p>We received a request to reset the password for your Patorbit account. You can reset your password by clicking the button below:</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="${resetUrl}" style="background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">Reset Password</a>
-    </div>
-    <p>Or copy and paste this link into your browser:</p>
-    <p style="word-break: break-all; color: #6b7280; font-size: 14px;">${resetUrl}</p>
-    <p>This password reset link will expire in 1 hour.</p>
-    <div style="background-color: #fef2f2; border: 1px solid #fecaca; border-radius: 6px; padding: 15px; margin-top: 20px; color: #991b1b; font-size: 14px;">
-      <strong>Security Warning:</strong> If you did not request a password reset, please ignore this email. Your password will remain unchanged.
-    </div>
-    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 30px 0;">
-    <p style="color: #9ca3af; font-size: 12px; text-align: center;">Patorbit Knowledge System.</p>
-  </div>
-</body>
-</html>`;
-
-    const text = `Reset your Patorbit password\n\nHello,\n\nWe received a request to reset the password for your Patorbit account. You can reset your password by visiting the link below:\n\n${resetUrl}\n\nThis password reset link will expire in 1 hour.\n\nSECURITY WARNING: If you did not request a password reset, you can safely ignore this email. Your password will remain unchanged.\n\n— Patorbit Knowledge System`;
+    const text = `Reset your password\n\nHello,\n\nWe received a request to reset the password for your Patorbit account.\n\nReset your password by visiting the link below:\n${resetUrl}\n\nThis secure link will expire in 1 hour.\n\nDidn't request a password reset? You can safely ignore this email. Your password will remain unchanged.\n\n— Patorbit\nYour professional identity, built to last.`;
 
     try {
       const response = await resend.emails.send({

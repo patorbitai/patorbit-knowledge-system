@@ -77,6 +77,34 @@ export class AuthService {
     return { success: true, email };
   }
 
+  async requestEmailVerification(email: string) {
+    const user = await userRepository.findByEmail(email);
+    // Do not reveal whether email exists (silent return / email enumeration protection)
+    if (!user || user.emailVerified) {
+      return { success: true };
+    }
+
+    // Delete any existing verification tokens for this email (replacement)
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: `verify_${email}` },
+    }).catch(() => {});
+
+    const token = crypto.randomBytes(32).toString("hex");
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: `verify_${email}`,
+        token,
+        expires,
+      },
+    });
+
+    await emailService.sendVerificationEmail(email, token);
+
+    return { success: true };
+  }
+
   async requestPasswordReset(email: string) {
     const user = await userRepository.findByEmail(email);
     // Do not reveal whether email exists (silent return)

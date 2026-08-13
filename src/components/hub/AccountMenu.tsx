@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useSession, signOut } from "next-auth/react";
-import { ChevronDown, LogOut } from "lucide-react";
+import { ChevronDown, LogOut, Sun, Moon } from "lucide-react";
+import { useTheme } from "@/components/providers/ThemeProvider";
 
 export default function AccountMenu() {
   const { data: session } = useSession();
+  const { theme, toggleTheme } = useTheme();
   const [open, setOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +66,15 @@ export default function AccountMenu() {
             <p className="truncate text-sm font-semibold text-white">{name}</p>
             <p className="truncate text-[11px] text-slate-500">{email}</p>
           </div>
+          <button
+            type="button"
+            role="menuitem"
+            onClick={toggleTheme}
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.05]"
+          >
+            {theme === "dark" ? <Sun className="h-3.5 w-3.5 text-amber-400" /> : <Moon className="h-3.5 w-3.5 text-cyan-400" />}
+            {theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
+          </button>
           <button
             type="button"
             role="menuitem"

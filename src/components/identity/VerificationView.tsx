@@ -1,4 +1,4 @@
-"use strict";
+"use client";
 
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ClaimCard } from "@/components/identity/ClaimCard";

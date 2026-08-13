@@ -60,6 +60,11 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        if (!user.emailVerified) {
+          console.log("[auth] user email not verified");
+          throw new Error("Please verify your email address before signing in.");
+        }
+
         console.log("[auth] authorize() success, returning user id:", user.id);
         return {
           id: user.id,

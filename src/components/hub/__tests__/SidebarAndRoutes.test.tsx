@@ -12,12 +12,14 @@ import { TrustView } from "@/components/identity/TrustView";
 import { createEmptyResume, createMinimalResume } from "@/services/__tests__/fixtures";
 
 // Mock next/navigation usePathname
+const mockPathname = vi.fn(() => "/trust/verification");
 vi.mock("next/navigation", () => ({
-  usePathname: () => "/trust/verification",
+  usePathname: () => mockPathname(),
 }));
 
 describe("Sidebar and Feature Routes Sprint Tests", () => {
   it("1. Sidebar has correct hrefs for all 6 target features and removes disabled/soon states", () => {
+    mockPathname.mockReturnValue("/trust/verification");
     const html = renderToString(<SidebarNav />);
     expect(html).toContain('href="/trust"');
     expect(html).toContain('href="/trust/verification"');
@@ -88,5 +90,15 @@ describe("Sidebar and Feature Routes Sprint Tests", () => {
 
     const nHtml = renderToString(<NetworkView resume={emptyResume} evidence={[]} />);
     expect(nHtml).toContain("No network graph data yet");
+  });
+
+  it("9. Correct active sidebar state highlighting for Network graph vs journey without activating siblings", () => {
+    mockPathname.mockReturnValue("/network/graph");
+    const graphHtml = renderToString(<SidebarNav />);
+    expect(graphHtml).toContain("Knowledge Graph");
+
+    mockPathname.mockReturnValue("/network/journey");
+    const journeyHtml = renderToString(<SidebarNav />);
+    expect(journeyHtml).toContain("Career Journey");
   });
 });

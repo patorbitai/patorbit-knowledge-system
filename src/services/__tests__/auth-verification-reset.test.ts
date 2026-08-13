@@ -63,6 +63,36 @@ describe("Auth Verification & Password Reset Service", () => {
     await expect(verifyPromise).rejects.toThrow();
   });
 
+  it("resend verification email succeeds, replaces old token, and protects email enumeration", async () => {
+    // Non-existing email should succeed silently
+    const nonExistRes = await authService.requestEmailVerification("nonexistent-resend@example.com");
+    expect(nonExistRes.success).toBe(true);
+
+    // Existing unverified email
+    await authService.register(testName, testEmail, testPassword);
+    const token1Record = await prisma.verificationToken.findFirst({
+      where: { identifier: `verify_${testEmail}` },
+    });
+    expect(token1Record).toBeTruthy();
+
+    // Request resend verification
+    const resendRes = await authService.requestEmailVerification(testEmail);
+    expect(resendRes.success).toBe(true);
+
+    // Verify old token is replaced by a new token
+    const token2Record = await prisma.verificationToken.findFirst({
+      where: { identifier: `verify_${testEmail}` },
+    });
+    expect(token2Record).toBeTruthy();
+    expect(token2Record?.token).not.toBe(token1Record?.token);
+
+    // Old token should no longer exist (single replacement)
+    const oldTokenCheck = await prisma.verificationToken.findUnique({
+      where: { token: token1Record!.token },
+    });
+    expect(oldTokenCheck).toBeNull();
+  });
+
   it("password reset request behaves safely for non-existing and existing email", async () => {
     // Non-existing email should succeed silently without error
     const nonExistResult = await authService.requestPasswordReset("nonexistent@example.com");

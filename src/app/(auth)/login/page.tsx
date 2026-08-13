@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, Suspense, useId } from "react";
 import { signIn } from "next-auth/react";
+import { resendVerificationAction } from "@/actions/auth/verify";
 
 const PROVIDERS = [
   {
@@ -81,6 +82,8 @@ function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
 
   const emailId = useId();
   const passwordId = useId();
@@ -88,6 +91,7 @@ function LoginForm() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setError("");
+    setResendMessage("");
     setLoading(true);
 
     try {
@@ -101,7 +105,7 @@ function LoginForm() {
         if (result.error === "CredentialsSignin") {
           setError("No account found with this email, or the password is incorrect.");
         } else {
-          setError("Something went wrong. Please try again.");
+          setError(result.error);
         }
       } else {
         router.push(callbackUrl);
@@ -111,6 +115,22 @@ function LoginForm() {
       setError("Unable to connect. Check your connection and try again.");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (!email) return;
+    setResendLoading(true);
+    setResendMessage("");
+    try {
+      const formData = new FormData();
+      formData.append("email", email);
+      const res = await resendVerificationAction({ success: false, message: "" }, formData);
+      setResendMessage(res.message);
+    } catch {
+      setResendMessage("Failed to resend verification email.");
+    } finally {
+      setResendLoading(false);
     }
   };
 
@@ -222,16 +242,34 @@ function LoginForm() {
         </div>
 
         {error && (
-          <p
-            id="auth-error"
-            role="alert"
-            className="flex items-start gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.08] px-3 py-2.5 text-sm text-rose-400"
-          >
-            <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-            </svg>
-            {error}
-          </p>
+          <div className="space-y-3">
+            <p
+              id="auth-error"
+              role="alert"
+              className="flex items-start gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.08] px-3 py-2.5 text-sm text-rose-400"
+            >
+              <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+              </svg>
+              {error}
+            </p>
+            {error.includes("verify your email") && (
+              <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.06] p-3 space-y-2 text-center">
+                <p className="text-xs text-slate-300">Please verify your email address before signing in.</p>
+                <button
+                  type="button"
+                  disabled={resendLoading}
+                  onClick={handleResend}
+                  className="inline-flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] px-3 py-1.5 text-xs font-medium text-cyan-400 transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+                >
+                  {resendLoading ? "Sending..." : "Resend verification email"}
+                </button>
+                {resendMessage && (
+                  <p className="text-xs text-emerald-400">{resendMessage}</p>
+                )}
+              </div>
+            )}
+          </div>
         )}
 
         <button

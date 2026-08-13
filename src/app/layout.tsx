@@ -7,6 +7,7 @@ import {
   JetBrains_Mono,
 } from "next/font/google";
 import SessionProvider from "@/components/providers/SessionProvider";
+import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { DeploymentUpdateBanner } from "@/components/common/DeploymentUpdateBanner";
 import "./globals.css";
 
@@ -28,9 +29,25 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${inter.variable} ${plusJakartaSans.variable} ${playfairDisplay.variable} ${ebGaramond.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+    <html lang="en" suppressHydrationWarning className={`${inter.variable} ${plusJakartaSans.variable} ${playfairDisplay.variable} ${ebGaramond.variable} ${jetbrainsMono.variable} h-full antialiased`}>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              try {
+                const theme = localStorage.getItem("patorbit-theme") || "dark";
+                document.documentElement.classList.add(theme);
+              } catch (e) {
+                document.documentElement.classList.add("dark");
+              }
+            `,
+          }}
+        />
+      </head>
       <body className="min-h-full flex flex-col">
-        <SessionProvider>{children}</SessionProvider>
+        <ThemeProvider>
+          <SessionProvider>{children}</SessionProvider>
+        </ThemeProvider>
         <DeploymentUpdateBanner />
       </body>
     </html>
