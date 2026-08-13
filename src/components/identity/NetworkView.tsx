@@ -2,6 +2,7 @@
 "use strict";
 
 import { useState, useMemo } from "react";
+import Link from "next/link";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { Resume, Evidence } from "@/types/resume";
 import type { NodeId } from "@/types/knowledge-graph";
@@ -131,22 +132,43 @@ export function NetworkView({
     return matchesSearch && matchesFilter;
   });
 
+  const connectionSummary = useMemo(() => {
+    if (!selectedNodeId) return { skills: 0, organization: 0, projects: 0, education: 0 };
+    const allOutgoing = graphService.getEdges(selectedNodeId);
+    const allIncoming = graphService.getIncomingEdges(selectedNodeId);
+    let skills = 0, organization = 0, projects = 0, education = 0;
+    for (const e of [...allOutgoing, ...allIncoming]) {
+      const otherId = e.sourceNodeId === selectedNodeId ? e.targetNodeId : e.sourceNodeId;
+      const targetNode = graphService.getNode(otherId);
+      if (!targetNode) continue;
+      if (targetNode.type === "skill") skills++;
+      else if (targetNode.type === "organization") organization++;
+      else if (targetNode.type === "project") projects++;
+      else if (targetNode.type === "education") education++;
+    }
+    return { skills, organization, projects, education };
+  }, [selectedNodeId, graphService]);
+
+  const popularSkills = useMemo(() => {
+    return graphService.findSkills().slice(0, 8);
+  }, [graphService]);
+
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-8 space-y-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-8">
       {/* Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
         <div>
-          <h1 className="text-2xl font-bold text-white">Professional Network & Knowledge Graph</h1>
-          <p className="text-sm text-slate-400 mt-1">
+          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">Professional Network & Knowledge Graph</h1>
+          <p className="text-sm text-[#a9b9cf] font-light mt-1">
             Explore your connected professional profile, entities, and career journey.
           </p>
         </div>
-        <div className="flex items-center gap-1 rounded-xl border border-white/[0.08] bg-white/[0.03] p-1">
+        <div className="flex items-center gap-1 rounded-xl border border-[rgba(148,163,184,.15)] bg-[rgba(10,18,32,0.8)] p-1 backdrop-blur">
           <button
             type="button"
             onClick={() => setActiveTab("graph")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-              activeTab === "graph" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30" : "text-slate-400 hover:text-white"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === "graph" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-slate-400 hover:text-white"
             }`}
           >
             Knowledge Graph
@@ -154,8 +176,8 @@ export function NetworkView({
           <button
             type="button"
             onClick={() => setActiveTab("journey")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-              activeTab === "journey" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30" : "text-slate-400 hover:text-white"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === "journey" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-slate-400 hover:text-white"
             }`}
           >
             Career Journey
@@ -163,8 +185,8 @@ export function NetworkView({
           <button
             type="button"
             onClick={() => setActiveTab("overview")}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors cursor-pointer ${
-              activeTab === "overview" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30" : "text-slate-400 hover:text-white"
+            className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+              activeTab === "overview" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-slate-400 hover:text-white"
             }`}
           >
             Overview
@@ -172,232 +194,308 @@ export function NetworkView({
         </div>
       </div>
 
-      {/* Overview Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Organizations</div>
-          <div className="mt-2 text-2xl font-semibold text-white">{graphService.findOrganizations().length}</div>
-          <p className="mt-1 text-xs text-slate-400">Employers & schools</p>
+      {/* Summary Metrics */}
+      <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] overflow-hidden shadow-xl p-2">
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-y sm:divide-y-0 sm:divide-x divide-[rgba(148,163,184,.14)]">
+          <div className="flex items-center gap-3 py-4 px-5">
+            <div className="w-10 h-10 border border-[rgba(34,211,238,.30)] rounded-xl grid place-items-center text-[#22d3ee] bg-[#22d3ee]/5 shrink-0 text-sm font-bold">🏢</div>
+            <div>
+              <b className="text-2xl font-extrabold text-white font-mono">{graphService.findOrganizations().length}</b>
+              <span className="block text-[#9fb0c6] text-xs mt-0.5">Organizations</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 py-4 px-5">
+            <div className="w-10 h-10 border border-[rgba(34,211,238,.30)] rounded-xl grid place-items-center text-[#22d3ee] bg-[#22d3ee]/5 shrink-0 text-sm font-bold">💼</div>
+            <div>
+              <b className="text-2xl font-extrabold text-white font-mono">{overview.totalRoles}</b>
+              <span className="block text-[#9fb0c6] text-xs mt-0.5">Roles & Experience</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 py-4 px-5">
+            <div className="w-10 h-10 border border-[rgba(34,211,238,.30)] rounded-xl grid place-items-center text-[#22d3ee] bg-[#22d3ee]/5 shrink-0 text-sm font-bold">⚡</div>
+            <div>
+              <b className="text-2xl font-extrabold text-white font-mono">{overview.totalSkills}</b>
+              <span className="block text-[#9fb0c6] text-xs mt-0.5">Skills & Expertise</span>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 py-4 px-5">
+            <div className="w-10 h-10 border border-[rgba(34,211,238,.30)] rounded-xl grid place-items-center text-[#22d3ee] bg-[#22d3ee]/5 shrink-0 text-sm font-bold">🌐</div>
+            <div>
+              <b className="text-2xl font-extrabold text-white font-mono">{graphService.nodeCount()}</b>
+              <span className="block text-[#9fb0c6] text-xs mt-0.5">Graph Entities</span>
+            </div>
+          </div>
         </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Roles & Experience</div>
-          <div className="mt-2 text-2xl font-semibold text-white">{overview.totalRoles}</div>
-          <p className="mt-1 text-xs text-slate-400">{overview.totalYearsExperience} yrs experience</p>
-        </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Skills & Expertise</div>
-          <div className="mt-2 text-2xl font-semibold text-white">{overview.totalSkills}</div>
-          <p className="mt-1 text-xs text-slate-400">Connected nodes</p>
-        </div>
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Graph Entities</div>
-          <div className="mt-2 text-2xl font-semibold text-cyan-400">{graphService.nodeCount()}</div>
-          <p className="mt-1 text-xs text-slate-400">{graphService.edgeCount()} relationships</p>
-        </div>
-      </div>
+      </section>
 
       {/* Tab 1: Knowledge Graph */}
       {activeTab === "graph" && (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 rounded-2xl border border-white/[0.06] bg-slate-900/40 p-5 space-y-4 flex flex-col min-h-[500px]">
-            <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/[0.06]">
-              <div className="flex items-center gap-2 flex-1 min-w-[200px]">
-                <Search className="w-4 h-4 text-slate-500" />
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Search graph nodes..."
-                  aria-label="Search graph nodes"
-                  className="w-full bg-transparent text-xs text-white placeholder-slate-600 outline-none"
-                />
-              </div>
-              <div className="flex items-center gap-1.5">
-                <select
-                  value={filterType}
-                  onChange={(e) => setFilterType(e.target.value)}
-                  aria-label="Filter graph nodes by type"
-                  className="bg-slate-800 border border-white/[0.08] rounded-lg px-2.5 py-1 text-xs text-slate-300 outline-none cursor-pointer"
-                >
-                  <option value="all">All Types</option>
-                  <option value="profile">Profile</option>
-                  <option value="organization">Organization</option>
-                  <option value="role">Role</option>
-                  <option value="skill">Skill</option>
-                  <option value="project">Project</option>
-                  <option value="claim">Claim</option>
-                  <option value="evidence">Evidence</option>
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setZoomLevel((z) => Math.min(z + 0.15, 1.5))}
-                  title="Zoom In"
-                  className="p-1.5 rounded-lg bg-white/[0.04] text-slate-400 hover:text-white transition-colors cursor-pointer"
-                >
-                  <ZoomIn className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setZoomLevel((z) => Math.max(z - 0.15, 0.7))}
-                  title="Zoom Out"
-                  className="p-1.5 rounded-lg bg-white/[0.04] text-slate-400 hover:text-white transition-colors cursor-pointer"
-                >
-                  <ZoomOut className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => { setZoomLevel(1); setSearchTerm(""); setFilterType("all"); setSelectedNodeId(null); }}
-                  title="Reset View"
-                  className="p-1.5 rounded-lg bg-white/[0.04] text-slate-400 hover:text-white transition-colors cursor-pointer"
-                >
-                  <RotateCcw className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-
-            <div
-              className="flex-1 overflow-y-auto pr-1 transition-transform duration-200"
-              style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
-            >
-              {filteredNodes.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-64 text-center">
-                  <Network className="w-8 h-8 text-slate-600 mb-2" />
-                  <p className="text-xs text-slate-400">No nodes match your filter criteria.</p>
+        <div className="space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+            
+            {/* Left: Your Knowledge Graph */}
+            <div className="lg:col-span-2 rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 space-y-6 shadow-xl min-h-[580px] flex flex-col justify-between">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between border-b border-[rgba(148,163,184,.1)] pb-4">
+                  <h3 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
+                    <Network className="w-4 h-4 text-cyan-400" />
+                    YOUR KNOWLEDGE GRAPH
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-400 font-mono">{filteredNodes.length} nodes</span>
+                  </div>
                 </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 py-2">
-                  {filteredNodes.map((node) => {
-                    const isSelected = node.id === selectedNodeId;
-                    return (
-                      <div
-                        key={node.id}
-                        role="button"
-                        tabIndex={0}
-                        onClick={() => setSelectedNodeId(node.id)}
-                        onKeyDown={(e) => {
-                          if (e.key === "Enter" || e.key === " ") {
-                            e.preventDefault();
-                            setSelectedNodeId(node.id);
-                          }
-                        }}
-                        aria-pressed={isSelected}
-                        className={`p-3.5 rounded-xl border transition-all text-left group cursor-pointer ${
-                          isSelected
-                            ? "border-cyan-500 bg-cyan-500/10 shadow-lg shadow-cyan-500/10"
-                            : "border-white/[0.06] bg-white/[0.02] hover:border-white/[0.15] hover:bg-white/[0.05]"
-                        }`}
-                      >
-                        <div className="flex items-center justify-between mb-1.5">
-                          <span className="text-[10px] font-semibold uppercase tracking-wider text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/20">
-                            {node.type}
-                          </span>
-                          <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors" />
+
+                {/* Search, Filter & Zoom Controls */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-[#070d18] p-3 rounded-xl border border-[rgba(148,163,184,.12)]">
+                  <div className="flex items-center gap-2 flex-1 min-w-[200px]">
+                    <Search className="w-4 h-4 text-slate-400" />
+                    <input
+                      type="text"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      placeholder="Search graph nodes..."
+                      aria-label="Search graph nodes"
+                      className="w-full bg-transparent text-xs text-white placeholder-slate-500 outline-none font-medium"
+                    />
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <select
+                      value={filterType}
+                      onChange={(e) => setFilterType(e.target.value)}
+                      aria-label="Filter graph nodes by type"
+                      className="bg-[#0f172a] border border-[rgba(148,163,184,.2)] rounded-lg px-2.5 py-1.5 text-xs text-slate-200 outline-none cursor-pointer font-medium"
+                    >
+                      <option value="all">All Types</option>
+                      <option value="profile">Profile</option>
+                      <option value="organization">Organization</option>
+                      <option value="role">Role</option>
+                      <option value="skill">Skill</option>
+                      <option value="project">Project</option>
+                      <option value="claim">Claim</option>
+                      <option value="evidence">Evidence</option>
+                    </select>
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((z) => Math.min(z + 0.15, 1.5))}
+                      title="Zoom In"
+                      className="p-1.5 rounded-lg bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setZoomLevel((z) => Math.max(z - 0.15, 0.7))}
+                      title="Zoom Out"
+                      className="p-1.5 rounded-lg bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => { setZoomLevel(1); setSearchTerm(""); setFilterType("all"); setSelectedNodeId(null); }}
+                      title="Reset View"
+                      className="p-1.5 rounded-lg bg-white/[0.04] text-slate-300 hover:text-white hover:bg-white/[0.08] transition-colors cursor-pointer"
+                    >
+                      <RotateCcw className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Graph canvas / Nodes grid */}
+              <div
+                className="flex-1 overflow-y-auto pr-1 transition-transform duration-200 my-4"
+                style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
+              >
+                {filteredNodes.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-64 text-center">
+                    <Network className="w-8 h-8 text-slate-600 mb-2" />
+                    <p className="text-xs text-slate-400">No nodes match your filter criteria.</p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 py-2">
+                    {filteredNodes.map((node) => {
+                      const isSelected = node.id === selectedNodeId;
+                      let badgeColor = "text-cyan-400 bg-cyan-500/10 border-cyan-500/20";
+                      if (node.type === "role") badgeColor = "text-blue-400 bg-blue-500/10 border-blue-500/20";
+                      else if (node.type === "skill") badgeColor = "text-emerald-400 bg-emerald-500/10 border-emerald-500/20";
+                      else if (node.type === "project") badgeColor = "text-purple-400 bg-purple-500/10 border-purple-500/20";
+                      else if (node.type === "education") badgeColor = "text-amber-400 bg-amber-500/10 border-amber-500/20";
+
+                      return (
+                        <div
+                          key={node.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setSelectedNodeId(node.id)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter" || e.key === " ") {
+                              e.preventDefault();
+                              setSelectedNodeId(node.id);
+                            }
+                          }}
+                          aria-pressed={isSelected}
+                          className={`p-4 rounded-xl border transition-all text-left group cursor-pointer ${
+                            isSelected
+                              ? "border-cyan-500 bg-cyan-500/15 shadow-lg shadow-cyan-500/20 ring-1 ring-cyan-500"
+                              : "border-[rgba(148,163,184,.14)] bg-[#070d18]/60 hover:border-cyan-500/40 hover:bg-[#070d18]"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-0.5 rounded-md border ${badgeColor}`}>
+                              {node.type}
+                            </span>
+                            <ChevronRight className="w-3.5 h-3.5 text-slate-500 group-hover:text-white transition-colors" />
+                          </div>
+                          <p className="text-xs font-bold text-white truncate">{node.label || "Untitled Node"}</p>
+                          {"title" in node && node.title && node.title !== node.label && (
+                            <p className="text-[11px] text-[#94a3b8] truncate mt-1">{String(node.title)}</p>
+                          )}
                         </div>
-                        <p className="text-xs font-semibold text-white truncate">{node.label || "Untitled Node"}</p>
-                        {"title" in node && node.title && node.title !== node.label && (
-                          <p className="text-[11px] text-slate-400 truncate mt-0.5">{String(node.title)}</p>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="text-[11px] text-slate-500 text-center pt-2 border-t border-white/[0.06]">
-              Showing {filteredNodes.length} of {allNodes.length} knowledge graph nodes. Click any node to inspect relationships and details.
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-white/[0.06] bg-[#0A0E1B] p-5 space-y-4">
-            <div className="flex items-center justify-between border-b border-white/[0.06] pb-3">
-              <h3 className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Node Details</h3>
-              {selectedNodeId && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedNodeId(null)}
-                  className="p-1 text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
-                  title="Close Details"
-                >
-                  <X className="w-4 h-4" />
-                </button>
-              )}
-            </div>
-
-            {selectedNode ? (
-              <div className="space-y-4 text-xs">
-                <div>
-                  <span className="text-[10px] text-slate-500 uppercase">Type</span>
-                  <p className="text-sm font-bold text-cyan-400 capitalize mt-0.5">{selectedNode.type}</p>
-                </div>
-
-                <div>
-                  <span className="text-[10px] text-slate-500 uppercase">Label / Name</span>
-                  <p className="text-sm font-semibold text-white mt-0.5">{selectedNode.label}</p>
-                </div>
-
-                {"description" in selectedNode && selectedNode.description && (
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase">Description</span>
-                    <p className="text-slate-300 mt-0.5 leading-relaxed">{String(selectedNode.description)}</p>
+                      );
+                    })}
                   </div>
                 )}
+              </div>
 
-                {"assertion" in selectedNode && selectedNode.assertion && (
-                  <div>
-                    <span className="text-[10px] text-slate-500 uppercase">Claim Assertion</span>
-                    <p className="text-slate-300 mt-0.5 leading-relaxed">{String(selectedNode.assertion)}</p>
-                  </div>
+              <div className="text-[11px] text-slate-400 text-center pt-3 border-t border-[rgba(148,163,184,.1)]">
+                Showing {filteredNodes.length} of {allNodes.length} knowledge graph nodes. Click any node to inspect relationships and details.
+              </div>
+            </div>
+
+            {/* Right: Node Details */}
+            <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 space-y-5 shadow-xl">
+              <div className="flex items-center justify-between border-b border-[rgba(148,163,184,.1)] pb-3">
+                <h3 className="text-xs font-bold text-white uppercase tracking-wider">NODE DETAILS</h3>
+                {selectedNodeId && (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedNodeId(null)}
+                    className="p-1 text-slate-400 hover:text-white rounded transition-colors cursor-pointer"
+                    title="Close Details"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
                 )}
+              </div>
 
-                <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                  <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Relationships ({nodeEdges.length + incomingEdges.length})</span>
-                  {nodeEdges.length === 0 && incomingEdges.length === 0 ? (
-                    <p className="text-slate-500 italic">No direct edges connected.</p>
-                  ) : (
-                    <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                      {nodeEdges.map((e) => {
-                        const target = graphService.getNode(e.targetNodeId);
-                        return (
-                          <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            <span className="text-cyan-300 font-mono text-[10px]">{e.type} →</span>
-                            <span className="text-slate-200 truncate ml-2">{target?.label || e.targetNodeId}</span>
-                          </div>
-                        );
-                      })}
-                      {incomingEdges.map((e) => {
-                        const source = graphService.getNode(e.sourceNodeId);
-                        return (
-                          <div key={e.id} className="flex items-center justify-between p-2 rounded-lg bg-white/[0.02] border border-white/[0.04]">
-                            <span className="text-slate-400 font-mono text-[10px]">← {e.type}</span>
-                            <span className="text-slate-200 truncate ml-2">{source?.label || e.sourceNodeId}</span>
-                          </div>
-                        );
-                      })}
+              {selectedNode ? (
+                <div className="space-y-5 text-xs">
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">Type</span>
+                    <p className="text-sm font-bold text-cyan-400 capitalize">{selectedNode.type}</p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <span className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">Label / Name</span>
+                    <p className="text-base font-bold text-white">{selectedNode.label}</p>
+                  </div>
+
+                  {"description" in selectedNode && selectedNode.description && (
+                    <div className="space-y-1">
+                      <span className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">Description</span>
+                      <p className="text-[#cbd5e1] leading-relaxed font-light">{String(selectedNode.description)}</p>
                     </div>
                   )}
-                </div>
 
-                {selectedNode.type === "claim" && (
-                  <div className="space-y-2 pt-2 border-t border-white/[0.06]">
-                    <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Supporting Evidence</span>
-                    {graphService.findEvidenceForClaim(selectedNode.id).length === 0 ? (
-                      <p className="text-slate-500 italic">No evidence attached to this claim.</p>
+                  {/* Connection Summary Tiles */}
+                  <div className="space-y-2 pt-2 border-t border-[rgba(148,163,184,.1)]">
+                    <span className="text-[10px] font-bold text-[#71839b] uppercase tracking-wider">Connection Summary</span>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="p-2.5 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18]">
+                        <b className="text-sm font-extrabold text-white font-mono">{connectionSummary.skills}</b>
+                        <span className="block text-[11px] text-[#94a3b8]">Skills</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18]">
+                        <b className="text-sm font-extrabold text-white font-mono">{connectionSummary.organization}</b>
+                        <span className="block text-[11px] text-[#94a3b8]">Organization</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18]">
+                        <b className="text-sm font-extrabold text-white font-mono">{connectionSummary.projects}</b>
+                        <span className="block text-[11px] text-[#94a3b8]">Projects</span>
+                      </div>
+                      <div className="p-2.5 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18]">
+                        <b className="text-sm font-extrabold text-white font-mono">{connectionSummary.education}</b>
+                        <span className="block text-[11px] text-[#94a3b8]">Education</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2 pt-2 border-t border-[rgba(148,163,184,.1)]">
+                    <span className="text-[10px] font-bold text-[#71839b] uppercase tracking-wider">Relationships ({nodeEdges.length + incomingEdges.length})</span>
+                    {nodeEdges.length === 0 && incomingEdges.length === 0 ? (
+                      <p className="text-slate-500 italic">No direct edges connected.</p>
                     ) : (
-                      graphService.findEvidenceForClaim(selectedNode.id).map((ev) => (
-                        <div key={ev.id} className="p-2 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-300">
-                          <p className="font-medium">{ev.label}</p>
-                          <p className="text-[10px] text-slate-400 mt-0.5 uppercase">{ev.format}</p>
-                        </div>
-                      ))
+                      <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
+                        {nodeEdges.map((e) => {
+                          const target = graphService.getNode(e.targetNodeId);
+                          return (
+                            <div key={e.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#070d18] border border-[rgba(148,163,184,.1)]">
+                              <span className="text-cyan-300 font-mono text-[10px] font-bold">{e.type} →</span>
+                              <span className="text-slate-200 truncate ml-2 font-medium">{target?.label || e.targetNodeId}</span>
+                            </div>
+                          );
+                        })}
+                        {incomingEdges.map((e) => {
+                          const source = graphService.getNode(e.sourceNodeId);
+                          return (
+                            <div key={e.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#070d18] border border-[rgba(148,163,184,.1)]">
+                              <span className="text-slate-400 font-mono text-[10px] font-bold">← {e.type}</span>
+                              <span className="text-slate-200 truncate ml-2 font-medium">{source?.label || e.sourceNodeId}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
                     )}
                   </div>
-                )}
-              </div>
+
+                  <div className="pt-3 border-t border-[rgba(148,163,184,.1)]">
+                    <Link
+                      href="/resume-builder"
+                      className="inline-flex items-center gap-1.5 text-xs font-bold text-cyan-400 hover:text-cyan-300 transition-colors"
+                    >
+                      View Full Profile →
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center h-72 text-center space-y-3">
+                  <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-cyan-400">
+                    <Layers className="w-5 h-5" />
+                  </div>
+                  <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
+                    Select any node in the Knowledge Graph to inspect its properties and relationships.
+                  </p>
+                </div>
+              )}
+            </div>
+
+          </div>
+
+          {/* Bottom: Popular Skills */}
+          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 space-y-4 shadow-xl">
+            <div className="flex items-center justify-between border-b border-[rgba(148,163,184,.1)] pb-3">
+              <h3 className="text-xs font-bold text-white uppercase tracking-wider">POPULAR SKILLS</h3>
+              <Link href="/resume-builder" className="text-xs font-bold text-cyan-400 hover:underline">
+                View all skills →
+              </Link>
+            </div>
+            {popularSkills.length === 0 ? (
+              <p className="text-xs text-slate-500 italic">No skills recorded in the graph yet.</p>
             ) : (
-              <div className="flex flex-col items-center justify-center h-64 text-center">
-                <Layers className="w-8 h-8 text-slate-600 mb-2" />
-                <p className="text-xs text-slate-400">Select any node in the knowledge graph to inspect its properties and relationships.</p>
+              <div className="flex flex-wrap gap-2">
+                {popularSkills.map((skill) => (
+                  <span
+                    key={skill.id}
+                    className="inline-flex items-center gap-2 rounded-xl bg-[#070d18] border border-[rgba(148,163,184,.15)] px-3.5 py-2 text-xs text-slate-200 font-semibold shadow-sm"
+                  >
+                    <span className="text-white">{skill.label}</span>
+                    <span className="text-[10px] text-cyan-400 px-1.5 py-0.5 rounded bg-cyan-500/10 font-mono">
+                      {skill.proficiency || "Active"}
+                    </span>
+                  </span>
+                ))}
               </div>
             )}
           </div>
