@@ -175,7 +175,7 @@ export function TrustTimelineView() {
             }
 
             return (
-              <div key={event.nodeId + idx} className="grid grid-cols-1 sm:grid-cols-[100px_32px_minmax(0,1fr)] gap-2 sm:gap-4 items-start">
+              <div key={`${event.nodeId}-${event.type}-${idx}`} className="grid grid-cols-1 sm:grid-cols-[100px_32px_minmax(0,1fr)] gap-2 sm:gap-4 items-start">
                 {/* Left: Date */}
                 <div className="text-xs text-[#7f92aa] font-mono pt-4 sm:text-right hidden sm:block">
                   {dateDisplay}
