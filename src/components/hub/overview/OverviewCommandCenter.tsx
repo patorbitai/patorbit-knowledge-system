@@ -301,19 +301,15 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
             {hasActiveResume ? (
               <>
                 <span className="inline-block px-2.5 py-1 rounded-full bg-[#101b2c] text-[#cbd5e1] text-[10px] font-semibold">Completeness {actualCompleteness}%</span>
-                <div className="flex items-center gap-3">
-                  <span className="text-xs text-[#22d3ee] font-bold hover:underline">
-                    <ImportButton variant="sidebar" label="Import / Replace Resume →" />
-                  </span>
-                  <Link href="/resume-builder" className="text-[#22d3ee] text-xs font-bold hover:underline">Open Resume →</Link>
+                <div className="flex items-center gap-2.5 flex-wrap justify-end">
+                  <ImportButton variant="card" label="Import / Replace Resume" />
+                  <Link href="/resume-builder" className="text-[#22d3ee] text-xs font-bold hover:underline whitespace-nowrap">Open Resume →</Link>
                 </div>
               </>
             ) : (
               <>
                 <span className="inline-block px-2.5 py-1 rounded-full bg-[#101b2c] text-[#cbd5e1] text-[10px] font-semibold">No resume</span>
-                <span className="text-xs text-[#22d3ee] font-bold hover:underline">
-                  <ImportButton variant="sidebar" label="Import Resume →" />
-                </span>
+                <ImportButton variant="card" label="Import Resume" />
               </>
             )}
           </div>
