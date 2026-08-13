@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { Resume, Evidence } from "@/types/resume";
 import type { TrustReport } from "@/types/knowledge-graph";
-import { ShieldCheck, CheckCircle2, Clock, Globe, Share2, Award, FileText, Lock } from "lucide-react";
+import { ShieldCheck, CheckCircle2, Clock, Globe, Award, FileText, Sparkles, Users, Briefcase } from "lucide-react";
 import { clsx } from "clsx";
 import { GraphService } from "@/services/graph-service";
 import { TrustService } from "@/services/trust-service";
@@ -23,6 +23,40 @@ function getScoreStatus(score: number | null): string {
   if (score >= 60) return "Good";
   if (score >= 40) return "Fair";
   return "Poor";
+}
+
+function getFactorColor(label: string): { bg: string; text: string; gradient: string } {
+  const l = label.toLowerCase();
+  if (l.includes("cert") || l.includes("credential")) {
+    return { bg: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20", text: "text-emerald-400", gradient: "from-emerald-400 to-cyan-400" };
+  }
+  if (l.includes("claim") || l.includes("evidence")) {
+    return { bg: "bg-amber-500/10 text-amber-400 border-amber-500/20", text: "text-amber-400", gradient: "from-amber-400 to-yellow-500" };
+  }
+  if (l.includes("experience") || l.includes("work")) {
+    return { bg: "bg-blue-500/10 text-blue-400 border-blue-500/20", text: "text-blue-400", gradient: "from-blue-400 to-indigo-500" };
+  }
+  if (l.includes("portfolio") || l.includes("network")) {
+    return { bg: "bg-teal-500/10 text-teal-400 border-teal-500/20", text: "text-teal-400", gradient: "from-teal-400 to-cyan-400" };
+  }
+  if (l.includes("skill")) {
+    return { bg: "bg-purple-500/10 text-purple-400 border-purple-500/20", text: "text-purple-400", gradient: "from-purple-400 to-indigo-500" };
+  }
+  if (l.includes("identity") || l.includes("engagement") || l.includes("activity")) {
+    return { bg: "bg-pink-500/10 text-pink-400 border-pink-500/20", text: "text-pink-400", gradient: "from-pink-400 to-rose-500" };
+  }
+  return { bg: "bg-cyan-500/10 text-cyan-400 border-cyan-500/20", text: "text-cyan-400", gradient: "from-cyan-400 to-blue-500" };
+}
+
+function getFactorIcon(label: string) {
+  const l = label.toLowerCase();
+  if (l.includes("cert") || l.includes("credential")) return <Award className="w-4 h-4 text-emerald-400" />;
+  if (l.includes("claim") || l.includes("evidence")) return <FileText className="w-4 h-4 text-amber-400" />;
+  if (l.includes("experience") || l.includes("work")) return <Briefcase className="w-4 h-4 text-blue-400" />;
+  if (l.includes("portfolio") || l.includes("network")) return <Globe className="w-4 h-4 text-teal-400" />;
+  if (l.includes("skill")) return <Sparkles className="w-4 h-4 text-purple-400" />;
+  if (l.includes("reference")) return <Users className="w-4 h-4 text-teal-400" />;
+  return <ShieldCheck className="w-4 h-4 text-cyan-400" />;
 }
 
 function CircularScoreGauge({ score }: { score: number | null }) {
@@ -87,7 +121,6 @@ export function TrustView({
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
 
-  // Fallback computation if trustReport is not yet cached in store
   let report = trustReport;
   if (!report && resume) {
     try {
@@ -178,14 +211,16 @@ export function TrustView({
       </div>
 
       {/* ── MAIN TRUST HERO (SCORE & ANALYSIS & TREND) ── */}
-      <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-8 shadow-xl">
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_300px] gap-8 items-center">
-          {/* Score Gauge */}
+      <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-8 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/[0.03] rounded-full blur-3xl pointer-events-none" />
+        <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_300px] gap-8 items-center relative z-10">
+          
+          {/* Left: Trust Score Gauge */}
           <div className="flex justify-center border-b lg:border-b-0 lg:border-r border-[rgba(148,163,184,.14)] pb-6 lg:pb-0 lg:pr-8">
             <CircularScoreGauge score={snapshot.overall} />
           </div>
 
-          {/* Analysis description & counts */}
+          {/* Center: Evidence-Based Trust Analysis */}
           <div className="space-y-4">
             <div className="text-[11px] font-extrabold tracking-[0.15em] uppercase text-[#60a5fa]">EVIDENCE-BASED TRUST ANALYSIS</div>
             <h2 className="text-xl font-bold text-white tracking-tight">Profile Verification Breakdown</h2>
@@ -193,32 +228,33 @@ export function TrustView({
               Your trust score is derived from verification coverage across your professional identity, claims, experience, skills, and attached evidence.
             </p>
             {verification && (
-              <div className="flex flex-wrap items-center gap-4 pt-2 text-xs">
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-semibold">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> {verification.verified} Verified
+              <div className="flex flex-wrap items-center gap-3 pt-2 text-xs">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-semibold shadow-sm">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" /> {verification.verified} Verified
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold">
-                  <Clock className="w-3.5 h-3.5" /> {verification.pending} Pending
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20 font-semibold shadow-sm">
+                  <Clock className="w-3.5 h-3.5 text-amber-400" /> {verification.pending} Pending
                 </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/10 text-slate-300 border border-slate-500/20 font-semibold">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-500/10 text-slate-300 border border-slate-500/20 font-semibold shadow-sm">
                   <ShieldCheck className="w-3.5 h-3.5 text-slate-400" /> {verification.unverified} Unverified
                 </span>
               </div>
             )}
           </div>
 
-          {/* Score Trend Card */}
-          <div className="rounded-xl border border-[rgba(148,163,184,.14)] bg-[#070d18] p-5 space-y-3">
+          {/* Right: Score Trend */}
+          <div className="rounded-xl border border-[rgba(148,163,184,.14)] bg-[#070d18]/90 backdrop-blur p-5 space-y-3 shadow-inner">
             <div className="flex items-center justify-between border-b border-[rgba(148,163,184,.1)] pb-2">
               <span className="text-xs font-bold text-white uppercase tracking-wider">SCORE TREND</span>
-              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/20">90 Days</span>
+              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">90 Days</span>
             </div>
-            <div className="h-32 rounded-lg bg-[rgba(255,255,255,.02)] border border-[rgba(148,163,184,.08)] flex flex-col items-center justify-center text-center p-3">
-              <Clock className="w-6 h-6 text-slate-500 mb-1" />
-              <p className="text-xs font-medium text-white">No score history yet</p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Your trust score history will appear as your profile develops.</p>
+            <div className="h-32 rounded-lg bg-[rgba(255,255,255,.015)] border border-[rgba(148,163,184,.08)] flex flex-col items-center justify-center text-center p-3">
+              <Clock className="w-6 h-6 text-slate-500 mb-1.5 opacity-80" />
+              <p className="text-xs font-semibold text-white">No score history yet</p>
+              <p className="text-[10px] text-slate-400 mt-0.5 max-w-[200px]">Your trust score history will appear as your profile develops.</p>
             </div>
           </div>
+
         </div>
       </section>
 
@@ -230,7 +266,7 @@ export function TrustView({
               <Globe className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-base font-bold text-white">PUBLIC TRUST SHARE LINK</h3>
+              <h3 className="text-base font-bold text-white">Public Trust Share Link</h3>
               <p className="text-xs text-[#a9b9cf] mt-0.5">
                 Generate a secure, read-only public URL to share your verified professional trust report with employers or clients.
               </p>
@@ -247,7 +283,7 @@ export function TrustView({
                 : "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-blue-500/20 hover:brightness-110"
             )}
           >
-            {shareEnabled ? "Revoke / Disable Public Share" : "Enable Public Share →"}
+            {shareEnabled ? "Revoke / Disable Public Share" : "Enable Public Share"}
           </button>
           {shareEnabled && shareUrl && (
             <div className="flex items-center gap-2 w-full sm:w-auto">
@@ -271,18 +307,27 @@ export function TrustView({
       {/* ── TRUST METRICS (3 CARDS) ── */}
       {coverage && (
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2">
-            <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">EVIDENCE COVERAGE</div>
+          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">EVIDENCE COVERAGE</div>
+              <FileText className="w-4 h-4 text-cyan-400" />
+            </div>
             <div className="text-3xl font-extrabold text-white font-mono">{coverage.coveragePercent}%</div>
             <p className="text-xs text-[#a9b9cf]">{coverage.claimsWithEvidence} of {coverage.totalClaims} claims backed by evidence</p>
           </div>
-          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2">
-            <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">TOTAL EVIDENCE ITEMS</div>
+          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">TOTAL EVIDENCE ITEMS</div>
+              <Award className="w-4 h-4 text-amber-400" />
+            </div>
             <div className="text-3xl font-extrabold text-white font-mono">{evidence.length}</div>
             <p className="text-xs text-[#a9b9cf]">Attached artifacts & links</p>
           </div>
-          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2">
-            <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">VERIFICATION STATUS</div>
+          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2 relative overflow-hidden">
+            <div className="flex items-center justify-between">
+              <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">VERIFICATION STATUS</div>
+              <ShieldCheck className="w-4 h-4 text-purple-400" />
+            </div>
             <div className="text-3xl font-extrabold text-emerald-400 font-mono">{verification?.coverage ?? 0}%</div>
             <p className="text-xs text-[#a9b9cf]">Overall verification rate</p>
           </div>
@@ -303,13 +348,20 @@ export function TrustView({
               const compScore = comp.score ?? 0;
               const compMax = comp.maxScore ?? 100;
               const pct = Math.min(Math.round((compScore / compMax) * 100), 100);
+              const colorInfo = getFactorColor(comp.label);
+              const factorIcon = getFactorIcon(comp.label);
 
               return (
                 <div key={idx} className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-[#070d18] p-5 space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <h4 className="text-sm font-bold text-white">{comp.label}</h4>
-                      <span className="text-[10px] font-extrabold text-[#71839b] uppercase tracking-wider">Weight {comp.weight}%</span>
+                    <div className="flex items-center gap-2.5">
+                      <div className={clsx("w-8 h-8 rounded-xl border flex items-center justify-center shrink-0", colorInfo.bg)}>
+                        {factorIcon}
+                      </div>
+                      <div className="space-y-0.5">
+                        <h4 className="text-sm font-bold text-white">{comp.label}</h4>
+                        <span className="text-[10px] font-extrabold text-[#71839b] uppercase tracking-wider">Weight {comp.weight}%</span>
+                      </div>
                     </div>
                     <span className="text-xs font-bold text-white font-mono">
                       {comp.score !== null ? `${comp.score} / ${comp.maxScore}` : "0 / 100"}
@@ -321,13 +373,13 @@ export function TrustView({
                   <div className="space-y-1 pt-1">
                     <div className="relative h-2 rounded-full bg-white/[0.06] overflow-hidden">
                       <div
-                        className="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 transition-all duration-500"
+                        className={clsx("absolute inset-y-0 left-0 rounded-full bg-gradient-to-r transition-all duration-500", colorInfo.gradient)}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
                     <div className="flex justify-between text-[10px] text-slate-500 font-mono">
                       <span>{pct}%</span>
-                      {comp.improvementTip && <span className="text-cyan-400 truncate max-w-[180px]" title={comp.improvementTip}>Tip: {comp.improvementTip}</span>}
+                      {comp.improvementTip && <span className={clsx("truncate max-w-[180px]", colorInfo.text)} title={comp.improvementTip}>Tip: {comp.improvementTip}</span>}
                     </div>
                   </div>
                 </div>
