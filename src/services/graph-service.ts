@@ -473,11 +473,15 @@ export class GraphService {
     if (roles.length === 0) return 0;
     let totalMs = 0;
     for (const r of roles) {
+      if (!r.startDate) continue;
       const start = new Date(r.startDate).getTime();
+      if (isNaN(start)) continue;
       const end = r.isCurrent ? Date.now() : r.endDate ? new Date(r.endDate).getTime() : Date.now();
-      totalMs += end - start;
+      if (isNaN(end)) continue;
+      totalMs += Math.max(0, end - start);
     }
-    return Math.round(totalMs / (365.25 * 24 * 60 * 60 * 1000) * 10) / 10;
+    const years = Math.round(totalMs / (365.25 * 24 * 60 * 60 * 1000) * 10) / 10;
+    return isNaN(years) ? 0 : years;
   }
 }
 

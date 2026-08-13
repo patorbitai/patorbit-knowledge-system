@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import { GraphService } from "@/services/graph-service";
 import { resumeToGraph } from "@/services/graph-mapper";
+import { CareerJourneyView } from "./CareerJourneyView";
 
 export interface NetworkViewProps {
   resume?: Resume;
@@ -403,41 +404,8 @@ export function NetworkView({
         </div>
       )}
 
-      {/* Tab 2: Career Journey Timeline */}
-      {activeTab === "journey" && (
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-6">
-          <div className="flex items-center justify-between border-b border-white/[0.06] pb-4">
-            <h3 className="text-sm font-semibold text-white flex items-center gap-2">
-              <Map className="w-4 h-4 text-cyan-400" />
-              Career Journey & Progression Timeline ({timeline.length} milestones)
-            </h3>
-          </div>
-
-          {timeline.length === 0 ? (
-            <div className="py-12 text-center">
-              <Briefcase className="w-8 h-8 text-slate-600 mx-auto mb-2" />
-              <p className="text-xs text-slate-400">No career history or experience entries recorded yet.</p>
-            </div>
-          ) : (
-            <div className="relative pl-6 space-y-6 before:absolute before:left-2 before:top-2 before:bottom-2 before:w-0.5 before:bg-white/[0.08]">
-              {timeline.map((event, idx) => (
-                <div key={idx} className="relative flex items-start gap-4">
-                  <div className="absolute -left-6 mt-1 w-3 h-3 rounded-full bg-cyan-400 border-2 border-[#070911]" />
-                  <div className="flex-1 rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-white">{event.label}</span>
-                      <span className="text-[10px] font-mono text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10">
-                        {event.date.slice(0, 10)}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-400 capitalize">Milestone Type: {event.type.replace("-", " ")}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      {/* Tab 2: Career Journey */}
+      {activeTab === "journey" && <CareerJourneyView />}
 
       {/* Tab 3: Overview & Analytics */}
       {activeTab === "overview" && (
