@@ -241,36 +241,72 @@ function LoginForm() {
           </div>
         </div>
 
-        {error && (
-          <div className="space-y-3">
-            <p
-              id="auth-error"
-              role="alert"
-              className="flex items-start gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.08] px-3 py-2.5 text-sm text-rose-400"
-            >
-              <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-                <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
-              </svg>
-              {error}
-            </p>
-            {error.includes("verify your email") && (
-              <div className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.06] p-3 space-y-2 text-center">
-                <p className="text-xs text-slate-300">Please verify your email address before signing in.</p>
+        {error && error.includes("verify your email") ? (
+          <div className="relative overflow-hidden rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-slate-900/90 to-[#0A0E1B]/95 p-6 md:p-8 shadow-2xl space-y-6 my-4">
+            {/* Ambient glow behind icon */}
+            <div className="absolute -top-12 -left-12 h-32 w-32 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
+
+            <div className="flex flex-col items-center text-center space-y-4 relative z-10">
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-inner">
+                <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                  <polyline points="22,6 12,13 2,6"/>
+                </svg>
+              </div>
+
+              <div className="space-y-2">
+                <h2 className="text-lg font-semibold tracking-tight text-white">
+                  Verify your email
+                </h2>
+                <p className="text-sm text-slate-300 leading-relaxed max-w-sm">
+                  Please verify your email address before signing in to Patorbit.
+                </p>
+                <p className="text-xs text-slate-400">
+                  We&apos;ll send you a fresh verification link if you need one.
+                </p>
+              </div>
+
+              <div className="w-full pt-2 space-y-3" aria-live="polite">
                 <button
                   type="button"
                   disabled={resendLoading}
                   onClick={handleResend}
-                  className="inline-flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] px-3 py-1.5 text-xs font-medium text-cyan-400 transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+                  className="w-full inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:brightness-110 active:scale-[0.99] transition-all disabled:opacity-50 cursor-pointer"
                 >
-                  {resendLoading ? "Sending..." : "Resend verification email"}
+                  {resendLoading ? (
+                    <>
+                      <Spinner />
+                      <span className="ml-2">Sending...</span>
+                    </>
+                  ) : (
+                    "Resend verification email"
+                  )}
                 </button>
-                {resendMessage && (
-                  <p className="text-xs text-emerald-400">{resendMessage}</p>
+
+                {resendMessage ? (
+                  <p className="text-xs text-emerald-400 font-medium pt-1">
+                    {resendMessage}
+                  </p>
+                ) : (
+                  <p className="text-xs text-slate-500">
+                    If an account with this email exists, we&apos;ve sent a new verification link.
+                  </p>
                 )}
               </div>
-            )}
+            </div>
           </div>
-        )}
+        ) : error ? (
+          <p
+            id="auth-error"
+            role="alert"
+            className="flex items-start gap-2 rounded-lg border border-rose-500/20 bg-rose-500/[0.08] px-3 py-2.5 text-sm text-rose-400"
+          >
+            <svg className="mt-0.5 h-4 w-4 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+            </svg>
+            {error}
+          </p>
+        ) : null}
 
         <button
           type="submit"

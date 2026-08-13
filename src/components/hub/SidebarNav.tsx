@@ -54,10 +54,10 @@ const GROUPS: NavGroup[] = [
     href: "/ai",
     icon: Sparkles,
     children: [
-      { label: "Career Copilot", href: "/ai", icon: Bot, disabled: true },
-      { label: "Resume Analysis", href: "/ai", icon: FileText, disabled: true },
-      { label: "Job Match", href: "/ai", icon: Target, disabled: true },
-      { label: "Career Insights", href: "/ai", icon: Lightbulb, disabled: true },
+      { label: "Career Copilot", href: "/ai", icon: Bot, disabled: true, badge: "SOON" },
+      { label: "Resume Analysis", href: "/ai", icon: FileText, disabled: true, badge: "SOON" },
+      { label: "Job Match", href: "/ai", icon: Target, disabled: true, badge: "SOON" },
+      { label: "Career Insights", href: "/ai", icon: Lightbulb, disabled: true, badge: "SOON" },
     ],
   },
   {
@@ -67,7 +67,7 @@ const GROUPS: NavGroup[] = [
     children: [
       { label: "Knowledge Graph", href: "/network/graph", icon: Network },
       { label: "Career Journey", href: "/network/journey", icon: Map },
-      { label: "Applications", href: "/network", icon: Briefcase, disabled: true },
+      { label: "Applications", href: "/network", icon: Briefcase, disabled: true, badge: "SOON" },
     ],
   },
 ];
@@ -96,19 +96,26 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col bg-gradient-to-b from-[#07101e] to-[#050a13] text-[#a7bad3]">
       {/* Brand */}
-      <div className="flex items-center gap-2.5 px-4 py-4">
-        <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600">
-          <span className="text-sm font-bold text-white">P</span>
-        </div>
-        <span className="text-base font-semibold tracking-tight text-white">
-          Patorbit
-        </span>
+      <div className="flex items-center gap-3 px-4 py-5">
+        <Link
+          href="/"
+          onClick={onNavigate}
+          aria-label="Go to Patorbit home"
+          className="flex items-center gap-3 rounded-xl px-2 py-1 transition-all hover:bg-white/[0.04] group w-full"
+        >
+          <div className="h-[38px] w-[38px] rounded-[12px] bg-gradient-to-br from-[#08c9ee] to-[#7355ff] shadow-[0_8px_24px_rgba(59,130,246,.18)] flex items-center justify-center font-black text-white text-base transition-transform group-hover:scale-105 shrink-0">
+            P
+          </div>
+          <span className="text-[21px] font-extrabold tracking-tight text-white group-hover:text-cyan-300 transition-colors">
+            Patorbit
+          </span>
+        </Link>
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 space-y-5 overflow-y-auto px-3 py-2">
+      <nav className="flex-1 space-y-2 overflow-y-auto px-3 py-2 font-sans">
         {/* Single items */}
         <ul className="space-y-1">
           {SINGLE_ITEMS.map(({ label, href, icon: Icon }) => {
@@ -119,10 +126,10 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
                   href={href}
                   onClick={onNavigate}
                   className={clsx(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                    "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
                     active
-                      ? "bg-cyan-500/10 text-cyan-300"
-                      : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
+                      ? "bg-gradient-to-r from-[rgba(14,165,233,.18)] to-[rgba(59,130,246,.08)] text-white shadow-[inset_2px_0_#22d3ee]"
+                      : "text-[#a7bad3] hover:bg-[rgba(14,165,233,.10)] hover:text-[#f8fafc]"
                   )}
                 >
                   <Icon className="h-4 w-4 shrink-0" />
@@ -137,34 +144,20 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
         {GROUPS.map((group) => {
           const active = isGroupActive(group.href);
           return (
-            <div key={group.label}>
-              <Link
-                href={group.href}
-                onClick={onNavigate}
-                className={clsx(
-                  "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                  active
-                    ? "bg-cyan-500/10 text-cyan-300"
-                    : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
-                )}
-              >
-                <group.icon className="h-4 w-4 shrink-0" />
+            <div key={group.label} className="space-y-1 pt-3">
+              <div className="px-3 pb-1 text-[#dbeafe] text-[13px] font-bold tracking-wide">
                 {group.label}
-              </Link>
-              <ul className="mt-1 space-y-1">
+              </div>
+              <ul className="space-y-1">
                 {group.children.map(({ label, href, icon: Icon, badge, disabled }) => (
                   <li key={label}>
                     {disabled ? (
-                      <span className="flex cursor-not-allowed items-center gap-2.5 rounded-lg px-3 py-2 pl-10 text-[13px] text-slate-600">
+                      <span className="flex items-center gap-2.5 rounded-lg px-3 py-2 pl-4 text-[13px] text-slate-500 cursor-not-allowed">
                         <Icon className="h-3.5 w-3.5 shrink-0" />
                         <span className="flex-1">{label}</span>
-                        {badge ? (
-                          <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                        {badge && (
+                          <span className="rounded-md bg-[#182235] px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-[#94a3b8]">
                             {badge}
-                          </span>
-                        ) : (
-                          <span className="rounded-md bg-white/[0.06] px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                            Soon
                           </span>
                         )}
                       </span>
@@ -173,14 +166,19 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
                         href={href || group.href}
                         onClick={onNavigate}
                         className={clsx(
-                          "flex items-center gap-2.5 rounded-lg px-3 py-2 pl-10 text-[13px] transition-colors",
+                          "flex items-center gap-2.5 rounded-lg px-3 py-2.5 pl-4 text-[13px] font-medium transition-all",
                           isItemActive(href || group.href)
-                            ? "bg-cyan-500/10 text-cyan-300 font-medium"
-                            : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
+                            ? "bg-gradient-to-r from-[rgba(14,165,233,.18)] to-[rgba(59,130,246,.08)] text-white shadow-[inset_2px_0_#22d3ee]"
+                            : "text-[#a7bad3] hover:bg-[rgba(14,165,233,.10)] hover:text-[#f8fafc]"
                         )}
                       >
                         <Icon className="h-3.5 w-3.5 shrink-0" />
                         <span className="flex-1">{label}</span>
+                        {badge && (
+                          <span className="rounded-md bg-[#182235] px-1.5 py-0.5 text-[10px] font-extrabold uppercase text-[#94a3b8]">
+                            {badge}
+                          </span>
+                        )}
                       </Link>
                     )}
                   </li>
@@ -191,23 +189,28 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
         })}
 
         {/* Settings */}
-        <ul className="space-y-1">
-          <li>
-            <Link
-              href="/settings"
-              onClick={onNavigate}
-              className={clsx(
-                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                isActive("/settings")
-                  ? "bg-cyan-500/10 text-cyan-300"
-                  : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
-              )}
-            >
-              <Settings className="h-4 w-4 shrink-0" />
-              Settings
-            </Link>
-          </li>
-        </ul>
+        <div className="space-y-1 pt-3">
+          <div className="px-3 pb-1 text-[#dbeafe] text-[13px] font-bold tracking-wide">
+            Settings
+          </div>
+          <ul className="space-y-1">
+            <li>
+              <Link
+                href="/settings"
+                onClick={onNavigate}
+                className={clsx(
+                  "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                  isActive("/settings")
+                    ? "bg-gradient-to-r from-[rgba(14,165,233,.18)] to-[rgba(59,130,246,.08)] text-white shadow-[inset_2px_0_#22d3ee]"
+                    : "text-[#a7bad3] hover:bg-[rgba(14,165,233,.10)] hover:text-[#f8fafc]"
+                )}
+              >
+                <Settings className="h-4 w-4 shrink-0" />
+                Settings
+              </Link>
+            </li>
+          </ul>
+        </div>
       </nav>
     </div>
   );

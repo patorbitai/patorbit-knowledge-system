@@ -60,17 +60,17 @@ export default function AccountMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-50 mt-2 w-64 overflow-hidden rounded-xl border border-white/[0.06] bg-[#080C18] shadow-2xl"
+          className="absolute right-0 top-full z-[100] mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080C18] text-slate-900 dark:text-white shadow-2xl"
         >
-          <div className="border-b border-white/[0.06] px-4 py-3">
-            <p className="truncate text-sm font-semibold text-white">{name}</p>
+          <div className="border-b border-slate-200 dark:border-white/[0.06] px-4 py-3">
+            <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
             <p className="truncate text-[11px] text-slate-500">{email}</p>
           </div>
           <button
             type="button"
             role="menuitem"
             onClick={toggleTheme}
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-300 transition-colors hover:bg-white/[0.05]"
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-700 dark:text-slate-300 transition-colors hover:bg-slate-100 dark:hover:bg-white/[0.05]"
           >
             {theme === "dark" ? <Sun className="h-3.5 w-3.5 text-amber-400" /> : <Moon className="h-3.5 w-3.5 text-cyan-400" />}
             {theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
@@ -79,7 +79,7 @@ export default function AccountMenu() {
             type="button"
             role="menuitem"
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-400 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
+            className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
           >
             <LogOut className="h-3.5 w-3.5" />
             Sign out
