@@ -44,9 +44,9 @@ const GROUPS: NavGroup[] = [
     icon: ShieldCheck,
     children: [
       { label: "Trust Score", href: "/trust", icon: Gauge },
-      { label: "Credential Verification", href: "/trust", icon: BadgeCheck },
-      { label: "Evidence Explorer", href: "/trust", icon: FileSearch },
-      { label: "Trust Timeline", href: "/trust", icon: History },
+      { label: "Credential Verification", href: "/trust/verification", icon: BadgeCheck },
+      { label: "Evidence Explorer", href: "/trust/evidence", icon: FileSearch },
+      { label: "Trust Timeline", href: "/trust/timeline", icon: History },
     ],
   },
   {
@@ -65,8 +65,8 @@ const GROUPS: NavGroup[] = [
     href: "/network",
     icon: Network,
     children: [
-      { label: "Knowledge Graph", href: "/network", icon: Network },
-      { label: "Career Journey", href: "/network", icon: Map },
+      { label: "Knowledge Graph", href: "/network/graph", icon: Network },
+      { label: "Career Journey", href: "/network/journey", icon: Map },
       { label: "Applications", href: "/network", icon: Briefcase, disabled: true },
     ],
   },
@@ -83,6 +83,17 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
 
   const isActive = (href: string) =>
     pathname === href || pathname.startsWith(href + "/");
+
+  const isItemActive = (href: string) => {
+    if (href === "/trust") {
+      return pathname === "/trust";
+    }
+    return pathname === href || pathname.startsWith(href + "/");
+  };
+
+  const isGroupActive = (groupHref: string) => {
+    return pathname === groupHref || pathname.startsWith(groupHref + "/");
+  };
 
   return (
     <div className="flex h-full flex-col">
@@ -124,7 +135,7 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
 
         {/* Groups */}
         {GROUPS.map((group) => {
-          const active = isActive(group.href);
+          const active = isGroupActive(group.href);
           return (
             <div key={group.label}>
               <Link
@@ -163,7 +174,7 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
                         onClick={onNavigate}
                         className={clsx(
                           "flex items-center gap-2.5 rounded-lg px-3 py-2 pl-10 text-[13px] transition-colors",
-                          isActive(href || group.href)
+                          isItemActive(href || group.href)
                             ? "bg-cyan-500/10 text-cyan-300 font-medium"
                             : "text-slate-400 hover:bg-white/[0.05] hover:text-slate-200"
                         )}

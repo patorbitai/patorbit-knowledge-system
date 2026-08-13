@@ -1,4 +1,4 @@
-"use strict";
+"use client";
 
 import { useState } from "react";
 import { ShieldCheck, Clock, AlertTriangle, XCircle, HelpCircle } from "lucide-react";

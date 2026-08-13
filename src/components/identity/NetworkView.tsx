@@ -27,6 +27,7 @@ export interface NetworkViewProps {
   evidence?: Evidence[];
   isLoading?: boolean;
   error?: string | null;
+  initialTab?: "graph" | "journey" | "overview";
 }
 
 export function NetworkView({
@@ -34,6 +35,7 @@ export function NetworkView({
   evidence: propEvidence,
   isLoading = false,
   error = null,
+  initialTab = "graph",
 }: NetworkViewProps = {}) {
   const storeResume = useResumeBuilder((s) => s.resume);
   const storeEvidence = useResumeBuilder((s) => s.evidence ?? []);
@@ -41,7 +43,7 @@ export function NetworkView({
   const resume = propResume ?? storeResume;
   const evidence = propEvidence ?? storeEvidence;
 
-  const [activeTab, setActiveTab] = useState<"graph" | "journey" | "overview">("graph");
+  const [activeTab, setActiveTab] = useState<"graph" | "journey" | "overview">(initialTab);
   const [selectedNodeId, setSelectedNodeId] = useState<NodeId | null>(null);
   const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [searchTerm, setSearchTerm] = useState<string>("");
