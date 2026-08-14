@@ -69,30 +69,6 @@ interface Builder {
   detail: string[];
 }
 
-const ACTION_VERB_RE = /^(?:led|built|managed|designed|created|improved|optimized|spearheaded|delivered|architected|implemented|developed|scaled|increased|reduced|launched|owned|pioneered|transformed|executed|authored|maintained|tested|configured|orchestrated|automated)\b/i;
-
-/**
- * Check if a line is descriptive prose or a bullet point rather than a title/role.
- */
-function isDescriptiveProseOrBullet(line: string): boolean {
-  const t = line.trim();
-  if (!t) return true;
-  if (/^\s*[•·▪◦∙*\-\–—\d.)]/.test(t)) return true;
-  if (/[.!?]$/.test(t)) return true;
-  if (/\b\d{1,3}%\b/.test(t) || /\$\d/.test(t) || /\b\d+\+?\b/.test(t)) return true;
-  if (ACTION_VERB_RE.test(t)) return true;
-  if (t.split(/\s+/).length > 5) return true;
-  return false;
-}
-
-function addRole(current: Builder, value: string) {
-  if (isDescriptiveProseOrBullet(value)) {
-    current.detail.push(value);
-  } else {
-    current.roles.push(value);
-  }
-}
-
 /** Corporate suffixes that make a bare line read as a company name, not a role. */
 const COMPANY_SUFFIX_RE =
   /\b(?:corporation|incorporated|corp\.?|inc\.?|ltd\.?|llc|llp|gmbh|plc|co\.|company|companies|group|technologies?|systems|solutions|consulting|partners?|associates?|labs?|studios?|services|holdings?|ventures|industries?)\b/i;
@@ -173,7 +149,7 @@ export function groupExperienceEntries(facts: EvidenceFact[]): ExperienceGroupin
   const demotePending = () => {
     if (current) {
       for (const fact of pending) {
-        if (fact.type === "role") addRole(current, fact.value);
+        if (fact.type === "role") current.roles.push(fact.value);
         else unassigned.push(fact);
       }
     } else {
@@ -243,7 +219,7 @@ export function groupExperienceEntries(facts: EvidenceFact[]): ExperienceGroupin
           pending.push(fact);
         } else if (current.duration === "") {
           // Header phase — still collecting titles for the current company.
-          addRole(current, fact.value);
+          current.roles.push(fact.value);
         } else {
           // Entry already dated → this is a candidate for a NEW company.
           pending.push(fact);
@@ -270,7 +246,7 @@ export function groupExperienceEntries(facts: EvidenceFact[]): ExperienceGroupin
           if (companyIdx > 0) {
             for (const f of pending.slice(0, companyIdx)) {
               if (current) {
-                if (f.type === "role") addRole(current, f.value);
+                if (f.type === "role") current.roles.push(f.value);
                 else unassigned.push(f);
               } else {
                 unassigned.push(f);
@@ -321,7 +297,7 @@ export function groupExperienceEntries(facts: EvidenceFact[]): ExperienceGroupin
   if (pending.length > 0) {
     if (current) {
       for (const fact of pending) {
-        if (fact.type === "role") addRole(current, fact.value);
+        if (fact.type === "role") current.roles.push(fact.value);
         else unassigned.push(fact);
       }
     } else {
