@@ -315,7 +315,7 @@ export function NetworkView({
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 py-2">
-                    {filteredNodes.map((node) => {
+                    {filteredNodes.map((node, idx) => {
                       const isSelected = node.id === selectedNodeId;
                       let badgeColor = "text-cyan-400 bg-cyan-500/10 border-cyan-500/20";
                       if (node.type === "role") badgeColor = "text-blue-400 bg-blue-500/10 border-blue-500/20";
@@ -325,7 +325,7 @@ export function NetworkView({
 
                       return (
                         <div
-                          key={node.id}
+                          key={`${node.type}-${node.id}-${idx}`}
                           role="button"
                           tabIndex={0}
                           onClick={() => setSelectedNodeId(node.id)}
@@ -428,19 +428,19 @@ export function NetworkView({
                       <p className="text-slate-500 italic">No direct edges connected.</p>
                     ) : (
                       <div className="space-y-1.5 max-h-48 overflow-y-auto pr-1">
-                        {nodeEdges.map((e) => {
+                        {nodeEdges.map((e, idx) => {
                           const target = graphService.getNode(e.targetNodeId);
                           return (
-                            <div key={e.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#070d18] border border-[rgba(148,163,184,.1)]">
+                            <div key={`${e.id}-${idx}`} className="flex items-center justify-between p-2.5 rounded-xl bg-[#070d18] border border-[rgba(148,163,184,.1)]">
                               <span className="text-cyan-300 font-mono text-[10px] font-bold">{e.type} →</span>
                               <span className="text-slate-200 truncate ml-2 font-medium">{target?.label || e.targetNodeId}</span>
                             </div>
                           );
                         })}
-                        {incomingEdges.map((e) => {
+                        {incomingEdges.map((e, idx) => {
                           const source = graphService.getNode(e.sourceNodeId);
                           return (
-                            <div key={e.id} className="flex items-center justify-between p-2.5 rounded-xl bg-[#070d18] border border-[rgba(148,163,184,.1)]">
+                            <div key={`${e.id}-${idx}`} className="flex items-center justify-between p-2.5 rounded-xl bg-[#070d18] border border-[rgba(148,163,184,.1)]">
                               <span className="text-slate-400 font-mono text-[10px] font-bold">← {e.type}</span>
                               <span className="text-slate-200 truncate ml-2 font-medium">{source?.label || e.sourceNodeId}</span>
                             </div>
@@ -485,9 +485,9 @@ export function NetworkView({
               <p className="text-xs text-slate-500 italic">No skills recorded in the graph yet.</p>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {popularSkills.map((skill) => (
+                {popularSkills.map((skill, idx) => (
                   <span
-                    key={skill.id}
+                    key={`${skill.id}-${idx}`}
                     className="inline-flex items-center gap-2 rounded-xl bg-[#070d18] border border-[rgba(148,163,184,.15)] px-3.5 py-2 text-xs text-slate-200 font-semibold shadow-sm"
                   >
                     <span className="text-white">{skill.label}</span>
@@ -517,8 +517,8 @@ export function NetworkView({
               <p className="text-xs text-slate-500 italic">No organizations recorded.</p>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                {graphService.findOrganizations().map((org) => (
-                  <div key={org.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                {graphService.findOrganizations().map((org, idx) => (
+                  <div key={`${org.id}-${idx}`} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
                     <p className="text-sm font-medium text-white">{org.label}</p>
                     {org.industry && <p className="text-xs text-cyan-400">Industry: {org.industry}</p>}
                     {org.location && <p className="text-[11px] text-slate-400">Location: {org.location}</p>}
@@ -534,9 +534,9 @@ export function NetworkView({
               Skills & Expertise ({graphService.findSkills().length})
             </h3>
             <div className="flex flex-wrap gap-2">
-              {graphService.findSkills().map((skill) => (
+              {graphService.findSkills().map((skill, idx) => (
                 <span
-                  key={skill.id}
+                  key={`${skill.id}-${idx}`}
                   className="inline-flex items-center gap-1.5 rounded-lg bg-white/[0.04] border border-white/[0.06] px-3 py-1.5 text-xs text-slate-200"
                 >
                   <span className="font-medium text-white">{skill.label}</span>
@@ -552,8 +552,8 @@ export function NetworkView({
                 Professional References ({graphService.findReferences().length})
               </h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {graphService.findReferences().map((ref) => (
-                  <div key={ref.id} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
+                {graphService.findReferences().map((ref, idx) => (
+                  <div key={`${ref.id}-${idx}`} className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-1">
                     <p className="text-sm font-medium text-white">{ref.name}</p>
                     <p className="text-xs text-slate-400">{ref.position} {ref.organization ? `at ${ref.organization}` : ""}</p>
                   </div>

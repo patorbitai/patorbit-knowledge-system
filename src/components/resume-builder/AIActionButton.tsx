@@ -7,13 +7,13 @@ import { useState, useRef, useEffect } from "react";
 
 const variants = {
   primary:
-    "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-500 hover:to-indigo-500 shadow-lg shadow-blue-600/25 hover:shadow-blue-500/40 border border-white/[0.08] active:scale-[0.97]",
+    "bg-gradient-to-r from-[#0ea5e9] via-[#2563eb] to-[#9333ea] text-white shadow-xl shadow-blue-500/20 hover:brightness-110 active:scale-[0.99] border border-[rgba(34,211,238,0.3)]",
   secondary:
-    "bg-white/[0.06] text-slate-300 hover:bg-white/[0.1] hover:text-white border border-white/[0.08] hover:border-white/[0.12] active:scale-[0.97]",
+    "bg-white/[0.04] text-[#cbd5e1] hover:bg-white/[0.08] hover:text-white border border-[rgba(148,163,184,.15)] active:scale-[0.99]",
   ghost:
-    "text-slate-400 hover:text-white hover:bg-white/[0.06] border border-transparent active:scale-[0.97]",
+    "text-[#94a3b8] hover:text-white hover:bg-white/[0.06] border border-transparent active:scale-[0.99]",
   outline:
-    "bg-transparent text-blue-400 border border-blue-500/30 hover:bg-blue-500/10 hover:text-blue-300 hover:border-blue-500/50 active:scale-[0.97]",
+    "bg-transparent text-[#22d3ee] border border-[rgba(34,211,238,0.3)] hover:bg-cyan-500/10 hover:text-white active:scale-[0.99]",
 };
 
 const sizes = {

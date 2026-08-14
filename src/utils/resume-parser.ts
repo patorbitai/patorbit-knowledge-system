@@ -45,20 +45,7 @@ export function parseRawResumeText(text: string): ParsedResume {
     }
   }
 
-  // Title: check lines right after name (before section headers, skipping email/phone/URL lines)
-  for (let i = 1; i < Math.min(lines.length, 5); i++) {
-    const trimmed = lines[i].trim();
-    if (SECTION_HEADERS.some(re => re.test(trimmed))) {
-      break;
-    }
-    if (EMAIL_RE.test(trimmed) || PHONE_RE.test(trimmed) || /^(?:https?:\/\/|www\.)/i.test(trimmed)) {
-      continue;
-    }
-    if (trimmed.length > 2 && trimmed.length < 100 && trimmed !== result.name && !/^[A-Z][a-zA-Z'’.\-]*(?:\s+[A-Z][a-zA-Z'’.\-]*)*,\s*[A-Z][a-zA-Z'’.\-]{2,}$/.test(trimmed)) {
-      result.title = trimmed;
-      break;
-    }
-  }
+
 
   // Email
   for (const line of lines) {
@@ -98,16 +85,26 @@ export function parseRawResumeText(text: string): ParsedResume {
     sectionTexts.push({ name: currentSection, lines: currentLines, startLine: currentStart });
   }
 
+  const hasExplicitSummarySection = lines.some(l => SECTION_HEADERS[0].test(l.trim()) && l.trim().length < 50) || sectionTexts.some(s => /(?:summary|profile|objective|about\s*me)/i.test(s.name));
+
   // Parse each section
   for (const section of sectionTexts) {
     const name = section.name.toLowerCase();
     const body = section.lines.join("\n");
 
     if (name === "header") {
-      result.summary = section.lines.filter(l => {
+      const headerLines = section.lines.filter(l => {
         const t = l.trim();
-        return !EMAIL_RE.test(t) && !PHONE_RE.test(t) && t !== result.name && t !== result.title;
-      }).join(" ").trim() || undefined;
+        return !EMAIL_RE.test(t) && !PHONE_RE.test(t) && t !== result.name;
+      });
+      if (hasExplicitSummarySection && headerLines.length > 0) {
+        result.title = headerLines[0].trim();
+        if (headerLines.length > 1) {
+          result.summary = headerLines.slice(1).join(" ").trim();
+        }
+      } else {
+        result.summary = headerLines.join(" ").trim() || undefined;
+      }
     }
 
     if (/experience|work/i.test(name)) {

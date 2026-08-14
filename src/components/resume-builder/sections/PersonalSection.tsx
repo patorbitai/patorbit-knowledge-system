@@ -5,6 +5,7 @@ import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
 import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
+import { InternationalPhoneInput } from "../fields/InternationalPhoneInput";
 import { AIActionButton } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { ai } from "@/lib/ai/client";
@@ -114,14 +115,12 @@ export function PersonalSection() {
             error={getFieldError("personal", "email")}
             type="email"
           />
-          <FieldInput
+          <InternationalPhoneInput
             label="Phone"
-            placeholder="+1 (555) 123-4567"
             value={resume.phone}
             onChange={(v) => updateField("phone", v)}
             onBlur={() => touch("personal.phone")}
             error={getFieldError("personal", "phone")}
-            type="tel"
           />
           <FieldInput
             label="Location"

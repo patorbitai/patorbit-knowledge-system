@@ -152,7 +152,7 @@ function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
 
   return (
-    <header className="sticky top-0 z-40 h-12 bg-[#070911]/90 backdrop-blur-xl border-b border-white/[0.06]">
+    <header className="sticky top-0 z-40 h-12 bg-[#070d18]/90 backdrop-blur-xl border-b border-[rgba(148,163,184,.14)]">
       <div className="flex items-center justify-between h-full px-4">
         {/* Left: Logo + breadcrumb nav */}
         <div className="flex items-center gap-2.5">
@@ -290,24 +290,24 @@ export default function ResumeBuilderPage() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="h-screen w-full bg-[#070911] text-slate-300 font-sans antialiased flex flex-col overflow-hidden">
-        {/* App header — no marketing links (Issue 1, 4, 7) */}
+      <div className="h-screen w-full bg-[#070d18] text-[#f8fafc] font-sans antialiased flex flex-col overflow-hidden selection:bg-cyan-500/30">
+        {/* App header */}
         <AppHeader onOpenSettings={() => setShowSettings(true)} />
 
-        {/* Full-height workspace with independent scrolling regions (Issue 3, 5, 6) */}
+        {/* Full-height workspace with independent scrolling regions */}
         <div className="flex-1 flex overflow-hidden">
           {/* Left sidebar — 20% — scrollable */}
-          <div className="hidden md:block w-[20%] min-w-[240px] max-w-[300px] border-r border-white/[0.06] overflow-y-auto bg-[#080C18]">
+          <div className="hidden md:block w-[20%] min-w-[240px] max-w-[300px] border-r border-[rgba(148,163,184,.14)] overflow-y-auto bg-[#070d18]">
             <LeftSidebar />
           </div>
 
-          {/* Center workspace — 55% — scrollable (Issue 6) */}
-          <div className="flex-1 overflow-y-auto min-w-0">
+          {/* Center workspace — 55% — scrollable */}
+          <div className="flex-1 overflow-y-auto min-w-0 bg-[#070d18]">
             <CenterWorkspace />
           </div>
 
-          {/* Right copilot — 25% — sticky, never pushed (Issue 5) */}
-          <div className="hidden lg:block w-[25%] min-w-[300px] max-w-[380px] border-l border-white/[0.06] overflow-y-auto bg-[#080C18]">
+          {/* Right copilot — 25% — sticky, never pushed */}
+          <div className="hidden lg:block w-[25%] min-w-[300px] max-w-[380px] border-l border-[rgba(148,163,184,.14)] overflow-y-auto bg-[#070d18]">
             <RightCopilot />
           </div>
         </div>

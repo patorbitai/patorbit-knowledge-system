@@ -44,26 +44,26 @@ export function FieldInput({
   };
 
   const inputClasses = clsx(
-    "w-full bg-white/[0.04] border rounded-xl text-sm text-white",
+    "w-full bg-[#070d18] border rounded-xl text-sm text-[#f8fafc] font-medium",
     "focus:outline-none focus:ring-1 transition-all duration-200",
-    "placeholder:text-slate-500",
-    "hover:bg-white/[0.06]",
-    "focus:shadow-[0_0_20px_rgba(59,130,246,0.08)]",
+    "placeholder:text-[#64748b]",
+    "hover:border-[rgba(148,163,184,.35)]",
+    "focus:shadow-[0_0_25px_rgba(34,211,238,0.12)]",
     error
       ? "border-red-500/50 focus:border-red-500/80 focus:ring-red-500/20 hover:border-red-500/40"
-      : "border-white/[0.08] focus:border-blue-500/50 focus:ring-blue-500/20 hover:border-white/[0.12]",
-    disabled && "opacity-50 cursor-not-allowed hover:bg-white/[0.04]",
-    type === "textarea" ? "px-4 py-3 min-h-[80px] resize-y" : "px-3.5 py-2.5",
+      : "border-[rgba(148,163,184,.2)] focus:border-cyan-400 focus:ring-cyan-500/30",
+    disabled && "opacity-50 cursor-not-allowed",
+    type === "textarea" ? "px-4.5 py-3.5 min-h-[100px] resize-y" : "px-4 py-3",
   );
 
   return (
-    <div className="space-y-1.5">
+    <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-medium text-slate-400">{label}</label>
+        <label className="text-xs font-semibold text-[#94a3b8] tracking-wide">{label}</label>
         {maxLength && (
           <span className={clsx(
             "text-[10px] font-mono",
-            charCount > maxLength * 0.9 ? "text-red-400" : "text-slate-500",
+            charCount > maxLength * 0.9 ? "text-red-400" : "text-[#64748b]",
           )}>
             {charCount}/{maxLength}
           </span>

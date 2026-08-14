@@ -37,8 +37,8 @@ export function VerificationView() {
         </p>
       </div>
       <div className="space-y-4">
-        {claims.map((claim) => (
-          <ClaimCard key={claim.id} claim={claim} />
+        {claims.map((claim, idx) => (
+          <ClaimCard key={`${claim.id}-${idx}`} claim={claim} />
         ))}
       </div>
     </div>

@@ -93,6 +93,7 @@ function cleanCompany(text: string): string | undefined {
 function looksLikeRole(line: string): boolean {
   const t = line.trim();
   if (t.length > 60) return false;
+  if (!/\s/.test(t)) return false;
   if (/(corp|inc|ltd|llc|gmbh|co\.)/i.test(t)) return false;
   if (/[$%×\d]/.test(t)) return false;
   if (/^\s*[•·▪◦∙*\-\–—\d.)]/.test(t)) return false;

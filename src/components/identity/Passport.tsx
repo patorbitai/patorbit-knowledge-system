@@ -275,7 +275,7 @@ function ProfessionalHighlights({ claims, evidence }: { claims: Claim[]; evidenc
         </p>
       ) : (
         <div className="space-y-3">
-          {supported.map((claim) => {
+          {supported.map((claim, idx) => {
             const claimEvidence = evidenceFor(claim.id);
             const summary = claimEvidence
               .map((e) => e.metadata.linkTitle || e.metadata.fileName || e.evidenceKind)
@@ -284,7 +284,7 @@ function ProfessionalHighlights({ claims, evidence }: { claims: Claim[]; evidenc
               .join(", ");
             return (
               <div
-                key={claim.id}
+                key={`${claim.id}-${idx}`}
                 className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
               >
                 <div className="flex items-start justify-between gap-3">

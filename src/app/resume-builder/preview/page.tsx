@@ -29,19 +29,19 @@ export default function PreviewPage() {
   const template = getActiveTemplate(resume);
 
   return (
-    <main className="min-h-screen bg-[#070911]">
-      <div className="sticky top-0 z-30 bg-[#070911]/80 backdrop-blur-xl border-b border-white/[0.06]">
+    <main className="min-h-screen bg-[#070d18] text-[#f8fafc] font-sans antialiased selection:bg-cyan-500/30">
+      <div className="sticky top-0 z-30 bg-[#070d18]/90 backdrop-blur-xl border-b border-[rgba(148,163,184,.14)]">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
+          <div className="flex items-center justify-between h-16">
             <div className="flex items-center gap-4">
-              <Link href="/resume-builder" className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition-colors">
-                <ArrowLeft className="w-3.5 h-3.5" />
+              <Link href="/resume-builder" className="flex items-center gap-1.5 text-xs font-semibold text-[#94a3b8] hover:text-white transition-colors">
+                <ArrowLeft className="w-4 h-4" />
                 Back to Builder
               </Link>
-              <div className="h-4 w-px bg-white/[0.06]" />
-              <h1 className="text-sm font-semibold text-white">Preview</h1>
-              <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-white/[0.04]">
-                <span className="text-[10px] text-slate-400">{resume.name || "Untitled"}</span>
+              <div className="h-4 w-px bg-[rgba(148,163,184,.2)]" />
+              <h1 className="text-sm font-bold text-white tracking-tight">Professional Preview</h1>
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[rgba(15,23,42,0.8)] border border-[rgba(148,163,184,.14)]">
+                <span className="text-[11px] font-medium text-cyan-400">{resume.name || "Untitled Resume"}</span>
               </div>
             </div>
             <div className="flex items-center gap-3">
@@ -51,49 +51,57 @@ export default function PreviewPage() {
                 onClick={() => setShowExport(true)}
                 aria-haspopup="dialog"
                 aria-expanded={showExport}
-                className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#0ea5e9] via-[#2563eb] to-[#9333ea] text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-[0.99] transition-all cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Export</span>
+                <span>Export PDF / Docx</span>
               </button>
 
               <div className="relative">
                 <button
                   onClick={() => setShowTemplatePicker(!showTemplatePicker)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-[rgba(148,163,184,.2)] hover:bg-white/[0.08] text-xs font-semibold text-white transition-all cursor-pointer"
                 >
-                  <Layout className="w-3.5 h-3.5" />
+                  <Layout className="w-3.5 h-3.5 text-cyan-400" />
                   <span>{template.name}</span>
                 </button>
                 {showTemplatePicker && (
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-[#1A1F35] border border-white/[0.08] rounded-lg shadow-2xl z-10 p-1">
-                    {TEMPLATES.map(t => (
-                      <button
-                        key={t.id}
-                        onClick={() => { applyTemplate(t.id); setShowTemplatePicker(false); }}
-                        className={clsx(
-                          "w-full text-left flex items-center justify-between px-2 py-1.5 rounded-md text-xs transition-colors",
-                          t.id === resume.templateId ? "bg-blue-500/10 text-white" : "text-slate-400 hover:bg-white/[0.04]"
-                        )}
-                      >
-                        <span>{t.name}</span>
-                        {t.id === resume.templateId && <Check className="w-3.5 h-3.5" />}
-                      </button>
-                    ))}
-                  </div>
+                  <>
+                    <div className="fixed inset-0 z-40" onClick={() => setShowTemplatePicker(false)} />
+                    <div className="absolute top-full right-0 mt-2 w-56 bg-[#070d18] border border-[rgba(148,163,184,.2)] rounded-2xl shadow-2xl z-50 p-1.5 max-h-72 overflow-y-auto">
+                      <div className="px-3 py-2 border-b border-[rgba(148,163,184,.14)] text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">
+                        Select Template ({TEMPLATES.length})
+                      </div>
+                      <div className="py-1 space-y-0.5">
+                        {TEMPLATES.map(t => (
+                          <button
+                            key={t.id}
+                            onClick={() => { applyTemplate(t.id); setShowTemplatePicker(false); }}
+                            className={clsx(
+                              "w-full text-left flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer",
+                              t.id === resume.templateId ? "bg-gradient-to-r from-cyan-500/15 to-blue-500/15 border border-cyan-500/30 text-white font-semibold" : "text-[#94a3b8] hover:bg-white/[0.04] hover:text-white"
+                            )}
+                          >
+                            <span>{t.name}</span>
+                            {t.id === resume.templateId && <Check className="w-3.5 h-3.5 text-cyan-400" />}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </>
                 )}
               </div>
             </div>
           </div>
-          <div className="flex gap-1 pb-2">
+          <div className="flex gap-2 pb-3 pt-1">
             {tabs.map((tab) => {
               const Icon = tab.icon;
               return (
                 <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={clsx("flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-medium transition-all",
-                    activeTab === tab.id ? "bg-blue-500/15 text-blue-300 border border-blue-500/25" : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent")}
+                  className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer",
+                    activeTab === tab.id ? "bg-gradient-to-r from-[rgba(14,165,233,0.2)] to-[rgba(59,130,246,0.2)] text-cyan-300 border border-[rgba(34,211,238,0.4)] shadow-sm" : "text-[#94a3b8] hover:text-white hover:bg-white/[0.04] border border-[rgba(148,163,184,.14)]")}
                 >
-                  <Icon className="w-3 h-3" />{tab.label}
+                  <Icon className="w-3.5 h-3.5" />{tab.label}
                 </button>
               );
             })}
@@ -116,7 +124,7 @@ export default function PreviewPage() {
 }
 
 function PreviewPanel({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6">{children}</div>;
+  return <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] shadow-2xl p-8 backdrop-blur-xl">{children}</div>;
 }
 
 function Placeholder({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {

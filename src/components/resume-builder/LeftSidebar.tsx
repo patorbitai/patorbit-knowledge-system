@@ -43,22 +43,22 @@ export function LeftSidebar() {
   return (
     <aside className="flex flex-col h-full overflow-hidden">
       {/* Progress summary */}
-      <div className="px-4 py-4 border-b border-white/[0.06] space-y-3">
+      <div className="px-4 py-4 border-b border-[rgba(148,163,184,.14)] space-y-3">
         <ProgressIndicator
           title="Resume Completion"
           value={hydrated ? progress() : 0}
           color="#22d3ee"
         />
         <div className="flex items-center justify-between text-[10px]">
-          <span className="text-slate-500">Sections complete</span>
-          <span className="text-slate-300 font-medium">
+          <span className="text-[#94a3b8]">Sections complete</span>
+          <span className="text-[#f8fafc] font-medium">
             {hydrated ? sections.filter((s) => s.id !== "review" && sectionComplete(s.id)).length : 0} / 9
           </span>
         </div>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 py-2 px-2 space-y-0.5 overflow-y-auto">
+      <nav className="flex-1 py-2 px-2 space-y-1 overflow-y-auto">
         {sections.map(({ id, label, Icon, color }) => {
           const isActive = activeSection === id;
           const isComplete = id !== "review" && sectionComplete(id as Exclude<SectionId, "review">);
@@ -68,27 +68,27 @@ export function LeftSidebar() {
               key={id}
               onClick={() => setActiveSection(id)}
               className={clsx(
-                "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 text-left group",
-                "focus:outline-none focus:ring-1 focus:ring-blue-500/30",
+                "w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-xs font-medium transition-all duration-200 text-left group cursor-pointer",
+                "focus:outline-none focus:ring-1 focus:ring-cyan-500/30",
                 isActive
-                  ? "bg-blue-500/10 text-white shadow-sm border border-blue-500/15"
-                  : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent",
+                  ? "bg-gradient-to-r from-[rgba(14,165,233,0.15)] to-[rgba(59,130,246,0.15)] text-white shadow-sm border border-[rgba(34,211,238,0.3)]"
+                  : "text-[#94a3b8] hover:text-[#f8fafc] hover:bg-white/[0.04] border border-transparent",
               )}
             >
               <div className={clsx(
                 "relative flex h-7 w-7 items-center justify-center rounded-lg transition-all duration-200",
-                isActive ? "bg-blue-500/15" : "bg-white/[0.04] group-hover:bg-white/[0.08]",
+                isActive ? "bg-cyan-500/20 text-[#22d3ee]" : "bg-white/[0.04] group-hover:bg-white/[0.08]",
               )} >
-                <Icon className={clsx("w-3.5 h-3.5", isActive ? "text-white" : "text-slate-500")} />
+                <Icon className={clsx("w-3.5 h-3.5", isActive ? "text-[#22d3ee]" : "text-[#94a3b8]")} />
                 {hydrated && isComplete && (
                   <div
-                    className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#080C18]"
+                    className="absolute -top-0.5 -right-0.5 h-2.5 w-2.5 rounded-full border-2 border-[#070d18]"
                     style={{ backgroundColor: color }}
                   />
                 )}
               </div>
               <span className="flex-1">{label}</span>
-              {isActive && <ChevronRight className="w-3 h-3 text-blue-400" />}
+              {isActive && <ChevronRight className="w-3 h-3 text-[#22d3ee]" />}
               {hydrated && isComplete && (
                 <span
                   className="w-1.5 h-1.5 rounded-full"
@@ -101,9 +101,9 @@ export function LeftSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-white/[0.06]">
-        <div className="flex items-center gap-2 text-[10px] text-slate-600">
-          <div className="h-1 w-1 rounded-full bg-emerald-500 shadow-[0_0_4px] shadow-emerald-500/50" />
+      <div className="px-4 py-3 border-t border-[rgba(148,163,184,.14)]">
+        <div className="flex items-center gap-2 text-[10px] text-[#94a3b8]">
+          <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
           Auto-saving enabled
         </div>
       </div>

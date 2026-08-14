@@ -30,12 +30,12 @@ export function CareerJourneyView() {
     if (!exp.startDate) continue;
     const start = parseTimelineDate(exp.startDate);
     const end = exp.current ? Date.now() : exp.endDate ? parseTimelineDate(exp.endDate) : Date.now();
-    if (!isNaN(start) && !isNaN(end)) {
+    if (!isNaN(start) && !isNaN(end) && start > 0 && end > start) {
       totalMs += Math.max(0, end - start);
     }
   }
-  const totalYears = Math.round(totalMs / (365.25 * 24 * 60 * 60 * 1000) * 10) / 10;
-  const experienceDisplay = totalYears > 0 ? `${totalYears}+` : "0";
+  const totalYears = isFinite(totalMs) && totalMs > 0 ? Math.round((totalMs / (365.25 * 24 * 60 * 60 * 1000)) * 10) / 10 : 0;
+  const experienceDisplay = totalYears > 0 ? `${totalYears}+` : (sortedExperience.length > 0 ? "1+" : "0");
 
   // Career Start
   const careerStart = sortedExperience.length > 0 && sortedExperience[0].startDate ? sortedExperience[0].startDate : "Not available";
@@ -135,7 +135,7 @@ export function CareerJourneyView() {
             const durationText = `${exp.startDate || ""} — ${exp.current ? "Present" : (exp.endDate || "")}`;
 
             return (
-              <div key={exp.id || idx} className="relative pl-0 sm:pl-16">
+              <div key={`${exp.id || "exp"}-${idx}`} className="relative pl-0 sm:pl-16">
                 {/* Node marker on timeline */}
                 <div className="absolute left-6 sm:left-7 top-6 hidden sm:flex items-center justify-center">
                   <div className={`w-3.5 h-3.5 rounded-full ${isCurrent ? "bg-[#a855f7] shadow-[0_0_15px_rgba(168,85,247,.8)]" : "bg-[#22d3ee] shadow-[0_0_10px_rgba(34,211,238,.6)]"} border-2 border-[#070d18] z-10`} />
