@@ -4,11 +4,13 @@ import { useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { Passport } from "@/components/identity/Passport";
+import { NetworkView } from "@/components/identity/NetworkView";
+import { TrustTimelineView } from "@/components/identity/TrustTimelineView";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
 import { TemplateGallery } from "@/components/resume-builder/TemplateGallery";
 import { CustomizePanel } from "@/components/resume-builder/CustomizePanel";
 import { LiveStylePreview } from "@/components/resume-builder/LiveStylePreview";
-import { ArrowLeft, FileText, IdCard, Share2, Shield, TrendingUp, Layout, Download, SlidersHorizontal, type LucideIcon } from "lucide-react";
+import { ArrowLeft, FileText, IdCard, Share2, Shield, Layout, Download, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { clsx } from "clsx";
 
@@ -136,8 +138,8 @@ export default function PreviewPage() {
         ) : (
           <div className="h-full overflow-y-auto flex items-start justify-center px-4 sm:px-8 py-8">
             {activeTab === "passport" && <Passport />}
-            {activeTab === "knowledge-graph" && <Placeholder icon={Share2} title="Knowledge Graph" desc="Visualize your skills, experience, and professional connections as an interactive graph." />}
-            {activeTab === "trust-timeline" && <Placeholder icon={TrendingUp} title="Trust Timeline" desc="Track how your trust score evolves as you verify credentials and add evidence." />}
+            {activeTab === "knowledge-graph" && <NetworkView initialTab="graph" embedded />}
+            {activeTab === "trust-timeline" && <TrustTimelineView embedded />}
           </div>
         )}
       </div>
@@ -147,15 +149,5 @@ export default function PreviewPage() {
       <ExportModal open={showExport} onClose={() => setShowExport(false)} />
       <CustomizePanel open={showCustomize} onClose={() => setShowCustomize(false)} />
     </main>
-  );
-}
-
-function Placeholder({ icon: Icon, title, desc }: { icon: LucideIcon; title: string; desc: string }) {
-  return (
-    <div className="flex flex-col items-center justify-center py-16 text-center">
-      <Icon className="w-12 h-12 text-slate-600 mb-4" />
-      <h2 className="text-lg font-semibold text-white mb-1">{title}</h2>
-      <p className="text-sm text-slate-400 max-w-md">{desc}</p>
-    </div>
   );
 }

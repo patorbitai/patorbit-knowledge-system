@@ -1,7 +1,81 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeEach } from "vitest";
 import { renderToString } from "react-dom/server";
 import { CareerJourneyView } from "../CareerJourneyView";
 import { GraphService } from "@/services/graph-service";
+import { useResumeBuilder } from "@/store/resume-builder";
+import { createEmptyResume } from "@/services/__tests__/fixtures";
+import {
+  renderToContainer,
+  installObserverStubs,
+} from "@/components/resume-builder/__tests__/gallery-test-utils";
+import type { Resume, Claim, Evidence } from "@/types/resume";
+
+const ASSERTION_TEXT =
+  "Led a cross-functional team that delivered a 40% efficiency improvement.";
+
+function makeClaim(overrides: Partial<Claim> = {}): Claim {
+  return {
+    id: "c1",
+    assertionText: ASSERTION_TEXT,
+    claimType: "Employment",
+    sourceActivityId: "e1",
+    confidence: 0.85,
+    reasoning: "Supported by the role description and an experience letter.",
+    verificationStatus: "verified",
+    reviewed: true,
+    accepted: true,
+    createdAt: "2026-01-01T00:00:00.000Z",
+    ...overrides,
+  };
+}
+
+function makeEvidence(overrides: Partial<Evidence> = {}): Evidence {
+  return {
+    id: "ev1",
+    claimId: "c1",
+    evidenceType: "document",
+    evidenceKind: "Experience Letter",
+    content: "indexeddb://ev1",
+    format: "PDF",
+    metadata: { fileName: "experience-letter.pdf", mimeType: "application/pdf" },
+    uploadedBy: "self",
+    createdAt: "2026-01-02T00:00:00.000Z",
+    updatedAt: "2026-01-02T00:00:00.000Z",
+    status: "verified",
+    confidence: 0.9,
+    notes: "",
+    visibility: "private",
+    consent: true,
+    ...overrides,
+  };
+}
+
+/** A resume with one real role (id "e1") plus an accepted, evidence-backed claim. */
+function resumeWithNarrative(claim?: Claim | null): Resume {
+  const r = createEmptyResume();
+  r.name = "Narrative User";
+  r.title = "Senior Developer";
+  r.experience = [
+    {
+      id: "e1",
+      company: "Tech Corp",
+      position: "Senior Developer",
+      location: "San Francisco, CA",
+      employmentType: "Full-time",
+      industry: "Technology",
+      startDate: "2020-05-01",
+      endDate: "2022-04-30",
+      current: false,
+      duration: "",
+      description: "Led development of key initiatives.",
+      achievements: "",
+      techUsed: "React, TypeScript",
+      bulletPoints: [],
+    },
+  ];
+  r.claims = claim ? [claim] : [];
+  return r;
+}
 
 describe("Career Journey Redesign & Sorting", () => {
   it("renders empty state correctly when no experience entries exist", () => {
@@ -21,5 +95,157 @@ describe("Career Journey Redesign & Sorting", () => {
     const years = gs["calcTotalYearsExp"](roles);
     expect(years).toBeGreaterThan(0);
     expect(isNaN(years)).toBe(false);
+  });
+});
+
+describe("CareerJourneyView — evidence-backed career narrative (Phase 6F)", () => {
+  beforeEach(() => {
+    installObserverStubs();
+    useResumeBuilder.getState().resetResume();
+    document.body.innerHTML = "";
+  });
+
+  it("renders strongest proof, chapter statements, and claim/evidence traceability", () => {
+    useResumeBuilder.setState({
+      resume: resumeWithNarrative(makeClaim()),
+      evidence: [makeEvidence()],
+    });
+
+    const { unmount, container } = renderToContainer(<CareerJourneyView />);
+    const text = container.textContent ?? "";
+
+    // Strongest proof + narrative statement text come from the real assertion.
+    expect(text).toContain("Strongest Proof");
+    expect(text).toContain(ASSERTION_TEXT);
+    // Chapter title is the real position.
+    expect(text).toContain("Senior Developer");
+    // Confidence derived from the claim's own confidence.
+    expect(text).toContain("85% confidence");
+    // Traceability: claim type + verification status.
+    expect(text).toContain("Employment");
+    expect(text).toContain("verified");
+    // Evidence traceability: real Evidence fields.
+    expect(text).toContain("Experience Letter");
+    expect(text).toContain("PDF");
+    expect(text).toContain("experience-letter.pdf");
+    unmount();
+  });
+
+  it("renders provenance with only real source information", () => {
+    useResumeBuilder.setState({
+      resume: resumeWithNarrative(makeClaim()),
+      evidence: [makeEvidence()],
+    });
+
+    const { unmount, container } = renderToContainer(<CareerJourneyView />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("Data Sources");
+    expect(text).toContain("1 work experience entry");
+    expect(text).toContain("User-provided resume data");
+    // Impact factors: resume = 1.0 → 100%, experience = 0.6 → 60%.
+    expect(text).toContain("100%");
+    expect(text).toContain("60%");
+    unmount();
+  });
+
+  it("renders the Draft lifecycle chip from journey.status", () => {
+    useResumeBuilder.setState({
+      resume: resumeWithNarrative(makeClaim()),
+      evidence: [makeEvidence()],
+    });
+
+    const { unmount, container } = renderToContainer(<CareerJourneyView />);
+    expect(container.textContent ?? "").toContain("Draft");
+    unmount();
+  });
+
+  it("renders the honest narrative empty state and keeps the timeline when no claims/evidence exist", () => {
+    useResumeBuilder.setState({
+      resume: resumeWithNarrative(null),
+      evidence: [],
+    });
+
+    const { unmount, container } = renderToContainer(<CareerJourneyView />);
+    const text = container.textContent ?? "";
+
+    // Honest empty narrative — no fabricated story.
+    expect(text).toContain(
+      "Your career narrative will appear as claims become supported by evidence.",
+    );
+    expect(text).not.toContain("Strongest Proof");
+    // Existing chronological timeline still renders.
+    expect(text).toContain("Senior Developer");
+    expect(text).toContain("Tech Corp");
+    unmount();
+  });
+
+  it("does not invent dates, employers, skills, or achievements in the narrative", () => {
+    useResumeBuilder.setState({
+      resume: resumeWithNarrative(makeClaim()),
+      evidence: [makeEvidence()],
+    });
+
+    const { unmount, container } = renderToContainer(<CareerJourneyView />);
+    const text = container.textContent ?? "";
+
+    // Only supplied assertionText/source data may appear in the narrative.
+    expect(text).toContain(ASSERTION_TEXT);
+    expect(text).not.toContain("FakeCorp");
+    expect(text).not.toContain("Enterprise GenAI");
+    expect(text).not.toContain("2026"); // fixture dates are 2020-2022 only
+    unmount();
+  });
+
+  it("keeps the existing chronological timeline, roles, dates, and metrics (regression)", () => {
+    const r = createEmptyResume();
+    r.name = "Regression User";
+    r.experience = [
+      {
+        id: "e1",
+        company: "Tech Corp",
+        position: "Senior Developer",
+        location: "",
+        employmentType: "Full-time",
+        industry: "Technology",
+        startDate: "2020-05-01",
+        endDate: "2022-04-30",
+        current: false,
+        duration: "",
+        description: "",
+        achievements: "",
+        techUsed: "",
+        bulletPoints: [],
+      },
+      {
+        id: "e2",
+        company: "Cloud Inc",
+        position: "Staff Engineer",
+        location: "",
+        employmentType: "Full-time",
+        industry: "Cloud",
+        startDate: "2023-01-15",
+        endDate: "",
+        current: true,
+        duration: "",
+        description: "",
+        achievements: "",
+        techUsed: "",
+        bulletPoints: [],
+      },
+    ];
+    useResumeBuilder.setState({ resume: r, evidence: [] });
+
+    const { unmount, container } = renderToContainer(<CareerJourneyView />);
+    const text = container.textContent ?? "";
+
+    expect(text).toContain("Senior Developer");
+    expect(text).toContain("Staff Engineer");
+    expect(text).toContain("Tech Corp");
+    expect(text).toContain("Cloud Inc");
+    expect(text).toContain("2020-05-01"); // real role dates
+    expect(text).toContain("YRS"); // summary metrics
+    expect(text).toContain("Career Roles");
+    unmount();
   });
 });

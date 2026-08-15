@@ -1,15 +1,28 @@
 "use client";
 
-import React from "react";
+import React, { useMemo } from "react";
 import Link from "next/link";
-import { Briefcase, ArrowRight, Building2, Calendar, CheckCircle2 } from "lucide-react";
+import { Briefcase, ArrowRight, Building2, Calendar, CheckCircle2, Sparkles, ShieldCheck, FileCheck2 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { parseTimelineDate } from "@/utils/timeline-sort";
+import { synthesizeCareerJourney, buildJourneyProvenance } from "@/services/journey-service";
 import type { Experience } from "@/types/resume";
 
 export function CareerJourneyView() {
   const resume = useResumeBuilder((s) => s.resume);
+  const evidence = useResumeBuilder((s) => s.evidence);
   const experience: Experience[] = resume?.experience ?? [];
+
+  // Evidence-backed career narrative (ADR-006), derived from the trusted
+  // identity: resume → claims → evidence. Deterministic, no store writes.
+  const journey = useMemo(
+    () => synthesizeCareerJourney(resume, resume?.claims ?? [], evidence),
+    [resume, evidence],
+  );
+  const provenance = useMemo(() => buildJourneyProvenance(resume), [resume]);
+
+  const narrativeStatements = journey.chapters.flatMap((c) => c.statements);
+  const hasNarrative = narrativeStatements.length > 0;
 
   // Sort experience entries oldest -> newest
   const sortedExperience = [...experience].sort((a, b) => {
@@ -115,6 +128,113 @@ export function CareerJourneyView() {
             <div>
               <b className="text-lg font-bold text-white font-mono truncate max-w-[130px] block">{careerStart}</b>
               <span className="block text-[#9fb0c6] text-xs mt-0.5">Career Start</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ── CAREER NARRATIVE (ADR-006 evidence-backed synthesis) ── */}
+      <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] overflow-hidden shadow-xl">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-6 pt-6 pb-1">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl border border-[rgba(34,211,238,.30)] bg-[#22d3ee]/5 grid place-items-center text-[#22d3ee] shrink-0">
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-base font-bold text-white tracking-tight">Career Narrative</h2>
+              <p className="text-xs text-[#9fb0c6] font-light">Evidence-backed synthesis of your professional story</p>
+            </div>
+          </div>
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider border bg-amber-500/10 text-amber-300 border-amber-500/30">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-400" />
+            {journey.status.charAt(0).toUpperCase() + journey.status.slice(1)}
+          </span>
+        </div>
+
+        <div className="px-6 py-4 space-y-4">
+          {hasNarrative ? (
+            <>
+              {journey.strongestProof && (
+                <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-4">
+                  <div className="flex items-center gap-2 text-emerald-300 text-[11px] font-extrabold uppercase tracking-widest mb-2">
+                    <ShieldCheck className="w-4 h-4" />
+                    Strongest Proof
+                  </div>
+                  <p className="text-sm text-[#cbd5e1] font-light leading-relaxed">
+                    {journey.strongestProof.statement}
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-1.5">
+                    <span className="px-2 py-0.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 text-emerald-300 text-[10px] font-bold">
+                      {Math.round(journey.strongestProof.confidence * 100)}% confidence
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md border border-[rgba(148,163,184,.15)] bg-[#0f172a]/70 text-[#94a3b8] text-[10px] font-bold">
+                      {journey.strongestProof.evidence.length} evidence item{journey.strongestProof.evidence.length === 1 ? "" : "s"}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {journey.chapters.filter((c) => c.statements.length > 0).map((chapter) => (
+                <div key={chapter.id} className="rounded-xl border border-[rgba(148,163,184,.1)] bg-[#070d18]/60 p-4">
+                  <div className="flex items-center gap-2.5 mb-3">
+                    <span className="w-6 h-6 rounded-lg border border-[rgba(34,211,238,.3)] bg-[#22d3ee]/5 grid place-items-center text-[#22d3ee] text-[10px] font-extrabold shrink-0">
+                      {chapter.sequence}
+                    </span>
+                    <h3 className="text-sm font-bold text-white tracking-tight">{chapter.title}</h3>
+                  </div>
+                  <div className="space-y-3">
+                    {chapter.statements.map((stmt) => (
+                      <div key={stmt.id} className="rounded-lg border border-[rgba(148,163,184,.08)] bg-[#0b1220]/80 p-3">
+                        <p className="text-sm text-[#e2e8f0] font-normal leading-relaxed">{stmt.statement}</p>
+                        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#94a3b8]">
+                          <span className="font-mono">{Math.round(stmt.confidence * 100)}% confidence</span>
+                          <span>{stmt.claims.length} claim{stmt.claims.length === 1 ? "" : "s"}</span>
+                          <span>{stmt.evidence.length} evidence item{stmt.evidence.length === 1 ? "" : "s"}</span>
+                        </div>
+                        <div className="mt-2 pt-2 border-t border-[rgba(148,163,184,.08)] space-y-1">
+                          {stmt.claims.map((c) => (
+                            <div key={c.id} className="flex flex-wrap items-center gap-2 text-[10px]">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded border border-blue-500/25 bg-blue-500/10 text-blue-300 font-semibold">
+                                <FileCheck2 className="w-3 h-3" />
+                                {c.claimType}
+                              </span>
+                              <span className="text-[#94a3b8]">{c.verificationStatus}</span>
+                            </div>
+                          ))}
+                          {stmt.evidence.map((e) => (
+                            <div key={e.id} className="flex flex-wrap items-center gap-2 text-[10px]">
+                              <span className="px-1.5 py-0.5 rounded border border-cyan-500/25 bg-cyan-500/10 text-cyan-300 font-semibold">
+                                {e.evidenceKind}
+                              </span>
+                              <span className="text-[#94a3b8]">{e.format}{e.metadata?.fileName ? ` · ${e.metadata.fileName}` : ""} · {e.status}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <div className="rounded-xl border border-[rgba(148,163,184,.1)] bg-[#070d18]/60 p-6 text-center">
+              <p className="text-sm text-[#9fb0c6] font-light leading-relaxed">
+                Your career narrative will appear as claims become supported by evidence.
+              </p>
+            </div>
+          )}
+
+          {/* ── Provenance (ADR-006 traceability) ── */}
+          <div className="rounded-xl border border-[rgba(148,163,184,.1)] bg-[#070d18]/60 p-4">
+            <h3 className="text-[11px] font-extrabold uppercase tracking-widest text-[#60a5fa] mb-3">Data Sources</h3>
+            <div className="space-y-1.5">
+              {provenance.sources.map((src, idx) => (
+                <div key={`${src.type}-${idx}`} className="flex items-center gap-3 text-xs">
+                  <span className="w-24 shrink-0 capitalize text-[#cbd5e1] font-semibold">{src.type}</span>
+                  <span className="flex-1 text-[#94a3b8] truncate text-right">{src.description}</span>
+                  <span className="font-mono text-[#22d3ee] shrink-0">{Math.round(src.impactFactor * 100)}%</span>
+                </div>
+              ))}
             </div>
           </div>
         </div>

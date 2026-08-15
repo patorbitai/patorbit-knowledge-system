@@ -28,6 +28,19 @@ describe("NetworkView Component", () => {
     expect(html).toContain("TypeScript");
   });
 
+  it("renders CareerJourneyView on the journey tab even when the graph has no data", () => {
+    const emptyResume = createEmptyResume();
+    const html = renderToString(
+      <NetworkView resume={emptyResume} evidence={[]} initialTab="journey" />,
+    );
+    // The graph empty state must NOT suppress the Career Journey tab.
+    expect(html).not.toContain("No network graph data yet");
+    // CareerJourneyView's own (honest) empty state renders instead.
+    expect(html).toContain("Your career journey starts here");
+    // The tab shell is preserved so users can still reach the graph.
+    expect(html).toContain("Knowledge Graph");
+  });
+
   it("renders loading state correctly", () => {
     const html = renderToString(<NetworkView isLoading={true} />);
     expect(html).toContain("Loading knowledge graph...");

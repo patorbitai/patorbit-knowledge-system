@@ -30,6 +30,8 @@ export interface NetworkViewProps {
   isLoading?: boolean;
   error?: string | null;
   initialTab?: "graph" | "journey" | "overview";
+  /** Compact, headerless variant for embedding inside a workspace (e.g. Professional Preview). */
+  embedded?: boolean;
 }
 
 export function NetworkView({
@@ -38,6 +40,7 @@ export function NetworkView({
   isLoading = false,
   error = null,
   initialTab = "graph",
+  embedded = false,
 }: NetworkViewProps = {}) {
   const storeResume = useResumeBuilder((s) => s.resume);
   const storeEvidence = useResumeBuilder((s) => s.evidence ?? []);
@@ -93,11 +96,13 @@ export function NetworkView({
 
   if (isLoading) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Professional Network & Knowledge Graph</h1>
-          <p className="text-sm text-slate-400 mt-1">Interactive professional entity graph and career progression.</p>
-        </div>
+      <div className={`${embedded ? "max-w-5xl px-4 py-6 space-y-6" : "mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-6"}`}>
+        {!embedded && (
+          <div>
+            <h1 className="text-2xl font-bold text-white">Professional Network & Knowledge Graph</h1>
+            <p className="text-sm text-slate-400 mt-1">Interactive professional entity graph and career progression.</p>
+          </div>
+        )}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-12 text-center space-y-3">
           <Network className="w-10 h-10 text-cyan-400 mx-auto animate-pulse" />
           <h3 className="text-sm font-medium text-white">Loading knowledge graph...</h3>
@@ -108,7 +113,7 @@ export function NetworkView({
 
   if (error) {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-6">
+      <div className={`${embedded ? "max-w-5xl px-4 py-6 space-y-6" : "mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-6"}`}>
         <div className="rounded-2xl border border-red-500/20 bg-red-500/5 p-8 text-center space-y-3">
           <h3 className="text-sm font-medium text-red-400">Failed to load network graph</h3>
           <p className="text-xs text-slate-400">{error}</p>
@@ -124,13 +129,19 @@ export function NetworkView({
       (resume.experience ?? []).length === 0 &&
       (resume.skills ?? []).length === 0);
 
-  if (isEmpty || !graph) {
+  // The Career Journey tab renders independently of graph data (it derives
+  // directly from the user's real resume via CareerJourneyView), so the
+  // graph empty state must NOT suppress it. Only graph-dependent tabs
+  // (Knowledge Graph, Overview) fall through to the empty-graph card.
+  if ((isEmpty || !graph) && activeTab !== "journey") {
     return (
-      <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-white">Professional Network & Knowledge Graph</h1>
-          <p className="text-sm text-slate-400 mt-1">Interactive professional entity graph and career progression.</p>
-        </div>
+      <div className={`${embedded ? "max-w-5xl px-4 py-6 space-y-6" : "mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-6"}`}>
+        {!embedded && (
+          <div>
+            <h1 className="text-2xl font-bold text-white">Professional Network & Knowledge Graph</h1>
+            <p className="text-sm text-slate-400 mt-1">Interactive professional entity graph and career progression.</p>
+          </div>
+        )}
         <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-12 text-center space-y-3">
           <Network className="w-10 h-10 text-slate-500 mx-auto" />
           <h3 className="text-sm font-medium text-white">No network graph data yet</h3>
@@ -158,15 +169,17 @@ export function NetworkView({
   });
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-8">
-      {/* Header & Tabs */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2">
-        <div>
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">Professional Network & Knowledge Graph</h1>
-          <p className="text-sm text-[#a9b9cf] font-light mt-1">
-            Explore your connected professional profile, entities, and career journey.
-          </p>
-        </div>
+    <div className={`${embedded ? "max-w-6xl px-4 sm:px-6 py-6 lg:px-8" : "mx-auto max-w-6xl px-4 py-8 lg:px-12"} text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-8`}>
+      {/* Header & Tabs (title hidden when embedded — the host workspace provides it) */}
+      <div className={`flex flex-col sm:flex-row sm:items-center gap-4 pb-2 ${embedded ? "sm:justify-end" : "sm:justify-between"}`}>
+        {!embedded && (
+          <div>
+            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">Professional Network & Knowledge Graph</h1>
+            <p className="text-sm text-[#a9b9cf] font-light mt-1">
+              Explore your connected professional profile, entities, and career journey.
+            </p>
+          </div>
+        )}
         <div className="flex items-center gap-1 rounded-xl border border-[rgba(148,163,184,.15)] bg-[rgba(10,18,32,0.8)] p-1 backdrop-blur">
           <button
             type="button"
