@@ -1,16 +1,19 @@
 import { ExecutivePreview, ExecutiveProPreview, MinimalAtsPreview, EngineeringCleanPreview, ModernCleanPreview, PatorbitModernPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview, SidebarElegancePreview, GradientFlowPreview, AcademicFormalPreview, StartupVibePreview, DarkElegancePreview, TimelineProPreview, PremiumSlatePreview, NatureGreenPreview, LuxuryGoldPreview, SwissDesignPreview, ScientificPreview, CreativePortfolioPreview, ConsultingElitePreview, ProductManagerPreview, CreativeProfessionalPreview, AcademicCvPreview } from "@/app/resume-builder/template-components";
 import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
+import type { ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+import { StyleScope } from "@/components/resume/StyleScope";
 
 export function getActiveTemplate(resume: Resume): ResumeTemplate {
   return TEMPLATES.find(t => t.id === resume.templateId) || TEMPLATES[0];
 }
 
-export function ResumePreview({ resume, template }: { resume: Resume; template: ResumeTemplate }) {
+export function ResumePreview({ resume, template, styleConfig }: { resume: Resume; template: ResumeTemplate; styleConfig?: Partial<ResumeStyleConfig> }) {
   const empty = !resume.name && !resume.title && !resume.email && !resume.summary;
 
-  if (empty) {
-    return (
+  const sheet = (() => {
+    if (empty) {
+      return (
       <div className="bg-white text-black rounded-lg shadow-[0_4px_24px_rgba(0,0,0,0.18),0_0_0_1px_rgba(0,0,0,0.06)] overflow-hidden min-h-[735px]">
         <div className="flex flex-col items-center justify-center py-14 text-center">
           <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
@@ -20,10 +23,10 @@ export function ResumePreview({ resume, template }: { resume: Resume; template: 
           <p className="text-[10px] text-slate-300 mt-1">Add details to populate</p>
         </div>
       </div>
-    );
-  }
+      );
+    }
 
-  switch (template.id) {
+    switch (template.id) {
     case "executive": return <ExecutivePreview resume={resume} />;
     case "executive-pro": return <ExecutiveProPreview resume={resume} />;
     case "minimal-ats": return <MinimalAtsPreview resume={resume} />;
@@ -54,5 +57,12 @@ export function ResumePreview({ resume, template }: { resume: Resume; template: 
     case "creative-professional": return <CreativeProfessionalPreview resume={resume} />;
     case "academic-cv": return <AcademicCvPreview resume={resume} />;
     default: return <ModernCleanPreview resume={resume} />;
-  }
+    }
+  })();
+
+  return (
+    <StyleScope config={styleConfig} templateId={template.id}>
+      {sheet}
+    </StyleScope>
+  );
 }

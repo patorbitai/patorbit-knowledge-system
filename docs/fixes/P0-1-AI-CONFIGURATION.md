@@ -344,3 +344,9 @@ This fix does NOT address:
 ---
 
 *Fix completed 2026-08-08. Ready for P0-2 auth fix.*
+
+---
+
+## Follow-up (2026-08-15)
+
+**P0-2 (AUTH_SECRET vs NEXTAUTH_SECRET) is now FIXED and verified** — `src/middleware.ts` and `src/lib/auth.ts` both read `process.env.AUTH_SECRET`, and the live validation confirmed session, redirect, and protected-API behavior. This fix remains accurate as documented above; the release is no longer blocked by the auth mismatch. The production deployment still requires a real `OPENAI_API_KEY` in the environment (operator-provided, never committed).

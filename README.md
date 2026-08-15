@@ -6,6 +6,8 @@ Patorbit is a Next.js-based application that builds infrastructure for trustwort
 
 ## Main Features
 
+- **Resume Builder**: 29 professional resume templates (8 flagship), visual Template Gallery with full multi-page preview, live customization (fonts, colors, headings, bullets, spacing), and a dedicated Professional Preview workspace
+- **Export**: PDF via browser print (A4 geometry parity with the preview) and DOCX via a server-side generator that honors the selected template and style configuration
 - **Knowledge Graph Infrastructure**: Building a unified system for representing knowledge, claims, and evidence
 - **Trust-Based Platform**: Designing systems that prioritize evidence-based trust over traditional document-based verification
 - **Career Development Tools**: Creating the "Career Passport" and related professional identity management
@@ -96,7 +98,9 @@ Based on the Patorbit Knowledge System (PKS) philosophy:
 ### User Pages
 - `/login` - User authentication
 - `/register` - User registration
-- `/dashboard` - User dashboard
+- `/overview` - User dashboard
+- `/resume-builder` - Resume Builder (editor)
+- `/resume-builder/preview` - Professional Preview workspace
 
 ## Development and Deployment
 
@@ -115,6 +119,8 @@ Based on the Patorbit Knowledge System (PKS) philosophy:
    - `DATABASE_URL` - PostgreSQL connection string
    - `AUTH_SECRET` - Secret for JWT signing (generate with `openssl rand -hex 32`)
    - `NEXTAUTH_URL` - Application URL (default: `http://localhost:3000`)
+
+   ⚠️ `AUTH_SECRET` is the active variable — do not use the legacy `NEXTAUTH_SECRET` name.
    
    ⚠️ **Critical:** Without `OPENAI_API_KEY`, all AI features will fail with 503 errors:
    - Resume Score Analysis

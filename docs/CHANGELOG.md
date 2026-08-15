@@ -8,7 +8,36 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Changes staged for Sprint 5.
+Changes staged for the next commit (resume-builder release-readiness work).
+
+### Added
+- **Visual Template Gallery** — replaced the template dropdown as the primary selection experience with a professional card grid (category sections: Recommended, ATS & Professional, Engineering, Business & Consulting, Executive, Academic, Creative, More Templates). Cards render the actual template components with a shared realistic gallery sample resume — no fake screenshots.
+- **Full-template preview modal** — full-screen overlay rendering the real multi-page resume with page navigation, previous/next controls, 50–150% zoom (`+`/`=`/`-`/`0` keyboard shortcuts, Reset/Fit), and "Use This Template" (preserves the user's existing resume data).
+- **Template customization system** (`ResumeStyleConfig`) — font family, font size, line height, accent/heading/body colors, heading style & weight, bullet style & size, density, section spacing, entry spacing, and page margins. Curated options only; per-template supported options; "Reset to Template Defaults".
+- **Live customization workspace** — split-screen Customize panel with an always-live preview of the user's actual resume (never gallery sample data), independent scrolling, preview zoom and page navigation.
+- **Professional Preview workspace** (`/resume-builder/preview`) — single-header redesign; resume is the visual hero; Templates, Customize, and Export PDF/DOCX are secondary controls; compact tab row keeps Passport/Knowledge Graph/Trust Timeline accessible; quiet save-status indicator; contain-fit auto-scaling.
+- **A4 geometry parity module** (`src/lib/resume-design-system/geometry.ts`) — single source of truth for A4 dimensions shared by preview, gallery, and print; `@page { size: A4; margin: 0 }` and `print-color-adjust: exact` so browser Print → Save as PDF matches the preview.
+- **DOCX export rebuild** — server-safe `src/lib/export-docx.ts` + rewritten `/api/export-docx` that receives `templateId` and the resolved `ResumeStyleConfig` (fonts, colors, heading style, bullet glyph, spacing, margins) and emits LinkedIn/GitHub as real hyperlinks.
+- **Application theme switching** — "Switch to Light/Dark Mode" in the profile menu now re-themes the whole app (Tailwind `dark:` variant wired, extended `.light` CSS layer), persisted in `localStorage`; resume template styling is isolated from the app theme.
+- **LinkedIn/GitHub hyperlinks** — all templates render real `<a href>` links (normalized URLs, `target="_blank"`, `rel="noopener noreferrer"`) through a shared helper.
+- **Regression tests** — preview/export consistency, print geometry, DOCX route, theme layer, and gallery structure suites.
+
+### Fixed
+- **DOCX export failure** — removed the unnecessary `"use client"` directive from `style-config.ts`; the route was throwing a server/client boundary error under Turbopack (`Attempted to call resolveStyleConfig() from the server`), surfacing as "Failed to generate DOCX". Now verified end-to-end with a real authenticated request (HTTP 200, valid OOXML).
+- **Print/export mismatch** — print CSS dropped all background colors unless "Background graphics" was checked; `@page` margin and `break-inside: avoid` shifted page breaks vs. the preview. Print block now pins exact A4 geometry with zero browser margins.
+- **Preview vs export styling divergence** — DOCX route hardcoded Calibri/navy/fixed margins; now resolves the same `ResumeStyleConfig` as the preview via `resolveHeadingHex`.
+- **Template Gallery React key warning** — missing `key` on the sidebar section fragment.
+- **Dead settings button** — removed the gear button and orphaned `SettingsModal.tsx` (its four written fields had zero consumers); the header now shows Saved · Preview · Profile, with the real `AccountMenu`.
+- **React hooks/static-components lint issues** in the flagship templates (components hoisted to module scope).
+- **Conditional hook in `NetworkView`** — refactored so every hook is called unconditionally.
+- **Vitest Windows worker-pool flakiness** — stabilized thread-pool config; suite runs green repeatedly.
+
+### Changed
+- **Resume Builder header** — `Templates` / `Customize` moved out of the primary header; `Preview` is the primary presentation action and hosts Templates, Customize, and Export.
+- **ExportModal** — mounts the print-target `ResumePreview` only while printing (conditional mount), awaits `document.fonts.ready` before printing, and passes the resolved style config to DOCX.
+- **`@page` / print block** — explicit A4, margin 0, no width/scale/font overrides; `border-radius`/shadow stripping removed.
+- **Legacy `NEXTAUTH_SECRET` references** — middleware and auth config now consistently use `AUTH_SECRET`.
+- **`Placeholder` component typing** in the preview page (`any` → `LucideIcon`).
 
 ---
 

@@ -1,36 +1,41 @@
 "use client";
 
-import { useMemo, useRef, useState } from "react";
+import { Fragment, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
-import { X, Check, Shield, Layers, AlertTriangle, Sparkles, Search } from "lucide-react";
+import { X, Check, Eye, Shield, Layers, AlertTriangle, Sparkles, Search } from "lucide-react";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
+import { FullTemplatePreview } from "@/components/resume-builder/FullTemplatePreview";
 import { filterTemplates } from "@/lib/template-search";
 
 const SIDEBAR_SECTIONS = [
   { id: "Recommended", label: "Recommended", emoji: "⭐" },
-  { id: "Professional", label: "Professional", emoji: "💼" },
+  { id: "ATS & Professional", label: "ATS & Professional", emoji: "📄" },
   { id: "Engineering",  label: "Engineering",  emoji: "💻" },
-  { id: "Consulting",   label: "Consulting",   emoji: "📊" },
-  { id: "Product",      label: "Product",      emoji: "📦" },
-  { id: "Creative",     label: "Creative",     emoji: "🎨" },
+  { id: "Business & Consulting", label: "Business & Consulting", emoji: "📊" },
+  { id: "Executive", label: "Executive", emoji: "🏛️" },
   { id: "Academic",     label: "Academic",     emoji: "🎓" },
-  { id: "Legacy",       label: "Legacy",       emoji: "📚" },
+  { id: "Creative",     label: "Creative",     emoji: "🎨" },
+  { id: "More Templates", label: "More Templates", emoji: "📚" },
 ];
 
 const PREMIUM_IDS = new Set(["patorbit-modern", "executive-pro", "minimal-ats", "engineering-clean"]);
 
 const SECTION_IDS: Record<string, string[]> = {
   Recommended: ["patorbit-modern", "executive-pro", "minimal-ats", "engineering-clean"],
-  Professional: ["executive-pro", "executive", "patorbit-modern", "corporate-blue", "premium-slate", "luxury-gold", "classic-serif", "modern-clean"],
-  Engineering:  ["engineering-clean", "minimal-ats", "patorbit-modern", "tech-mono", "compact-pro", "minimal-edge", "gradient-flow", "timeline-pro", "swiss-design"],
-  Consulting:   ["executive-pro", "executive", "corporate-blue", "patorbit-modern", "classic-serif", "premium-slate"],
-  Product:      ["premium-slate", "luxury-gold", "executive", "corporate-blue", "startup-vibe"],
-  Creative:     ["creative-burst", "sidebar-elegance", "creative-portfolio", "gradient-flow", "startup-vibe"],
-  Academic:     ["academic-formal", "scientific", "classic-serif", "nature-green"],
+  "ATS & Professional": ["minimal-ats", "modern-clean", "corporate-blue", "premium-slate", "swiss-design"],
+  Engineering:  ["engineering-clean", "tech-mono", "compact-pro", "minimal-edge", "gradient-flow", "timeline-pro"],
+  "Business & Consulting": ["consulting-elite", "product-manager", "executive", "corporate-blue", "classic-serif"],
+  Executive: ["executive-pro", "executive", "luxury-gold", "dark-elegance"],
+  Academic:     ["academic-cv", "academic-formal", "scientific", "classic-serif"],
+  Creative:     ["creative-professional", "creative-burst", "creative-portfolio", "sidebar-elegance", "gradient-flow"],
 };
+
+// Templates not explicitly filed under a topical section — the "More
+// Templates" catch-all. Every one of the 29 templates stays reachable.
+const TOPICAL_IDS = new Set(Object.values(SECTION_IDS).flat());
 
 function AtsBadge({ score }: { score: number }) {
   const { dot, style } =
@@ -79,9 +84,12 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
 
   const handleSelect = (id: string) => {
     if (hasResumeData(resume)) {
+      // Close the full preview so the overwrite confirm dialog stays visible.
+      setPreviewing(null);
       setConfirmOverwrite(id);
     } else {
       applyTemplate(id);
+      setPreviewing(null);
       onClose();
     }
   };
@@ -95,11 +103,12 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
   };
 
   const filteredTemplates = useMemo(() => {
-    const bySection = activeCategory === "Legacy"
-      ? TEMPLATES.filter((t) => !PREMIUM_IDS.has(t.id))
-      : activeCategory in SECTION_IDS
-        ? TEMPLATES.filter((t) => SECTION_IDS[activeCategory].includes(t.id))
-        : TEMPLATES;
+    const bySection =
+      activeCategory === "More Templates"
+        ? TEMPLATES.filter((t) => !TOPICAL_IDS.has(t.id))
+        : activeCategory in SECTION_IDS
+          ? TEMPLATES.filter((t) => SECTION_IDS[activeCategory].includes(t.id))
+          : TEMPLATES;
     const ordered = activeCategory in SECTION_IDS
       ? SECTION_IDS[activeCategory]
           .map((id) => bySection.find((t) => t.id === id))
@@ -135,7 +144,7 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                   <Sparkles className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div className="hidden sm:block">
-                  <h2 className="text-base font-semibold text-white tracking-tight">Choose a Template</h2>
+                  <h2 className="text-base font-semibold text-white tracking-tight">Choose a Resume Template</h2>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     {filteredTemplates.length} template{filteredTemplates.length !== 1 ? "s" : ""} available
                   </p>
@@ -181,12 +190,11 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
               <div className="w-44 shrink-0 border-r border-white/[0.05] overflow-y-auto p-3 space-y-0.5">
                 <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600 px-3 pt-1 pb-2">Browse</p>
                 {SIDEBAR_SECTIONS.map((section, i) => (
-                  <>
+                  <Fragment key={section.id}>
                     {i === SIDEBAR_SECTIONS.length - 1 && (
-                      <div key="divider" className="my-2 border-t border-white/[0.05]" />
+                      <div className="my-2 border-t border-white/[0.05]" />
                     )}
                     <button
-                      key={section.id}
                       onClick={() => setActiveCategory(section.id)}
                       className={clsx(
                         "w-full text-left px-3 py-2 rounded-lg text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50 flex items-center gap-2",
@@ -198,7 +206,7 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                       <span>{section.emoji}</span>
                       <span>{section.label}</span>
                     </button>
-                  </>
+                  </Fragment>
                 ))}
               </div>
 
@@ -219,12 +227,13 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                     </button>
                   </div>
                 ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5">
                   {filteredTemplates.map((t) => {
                     const isActive = resume.templateId === t.id;
                     return (
                       <motion.div
                         key={t.id}
+                        data-template-id={t.id}
                         layout
                         initial={{ opacity: 0, y: 8 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -256,10 +265,16 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                           </div>
                         )}
 
-                        {/* Live miniature preview */}
-                        <div className="p-3 pb-0">
+                        {/* Live miniature preview — clicking it opens the full resume preview */}
+                        <button
+                          type="button"
+                          onClick={() => setPreviewing(t.id)}
+                          title={`Preview ${t.name}`}
+                          aria-label={`Preview ${t.name} — open full resume preview`}
+                          className="p-3 pb-0 block w-full text-left cursor-pointer"
+                        >
                           <MiniaturePreview templateId={t.id} />
-                        </div>
+                        </button>
 
                         {/* Card body */}
                         <div className="flex flex-col flex-1 p-3 pt-2.5">
@@ -306,24 +321,31 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                             </motion.div>
                           )}
 
-                          {/* Actions */}
-                          <div className="flex items-center gap-2 mt-3">
+                          {/* Action area — always visible, primary action first */}
+                          <div className="flex flex-col sm:flex-row gap-2 mt-3">
+                            {isActive ? (
+                              <div
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-emerald-300 bg-emerald-500/10 border border-emerald-500/30"
+                                role="status"
+                              >
+                                <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                                Current Template
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() => handleSelect(t.id)}
+                                className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-white bg-gradient-to-r from-cyan-500 to-violet-500 hover:from-cyan-400 hover:to-violet-400 shadow-[0_4px_14px_rgba(6,182,212,0.2)] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/60 cursor-pointer"
+                              >
+                                <Check className="w-3.5 h-3.5" strokeWidth={2.5} />
+                                Use This Template
+                              </button>
+                            )}
                             <button
                               onClick={() => setPreviewing(t.id)}
-                              className="flex-1 px-2 py-1.5 rounded-lg text-[11px] font-medium bg-white/[0.04] text-slate-400 hover:bg-white/[0.08] hover:text-slate-200 transition-all border border-white/[0.06] hover:border-white/[0.12] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30"
+                              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-[11px] font-semibold text-slate-300 bg-white/[0.04] border border-white/[0.08] hover:bg-white/[0.08] hover:text-white transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 cursor-pointer"
                             >
-                              Preview
-                            </button>
-                            <button
-                              onClick={() => handleSelect(t.id)}
-                              className={clsx(
-                                "flex-1 px-2 py-1.5 rounded-lg text-[11px] font-semibold transition-all focus-visible:outline-none focus-visible:ring-1",
-                                isActive
-                                  ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 hover:bg-cyan-500/30 focus-visible:ring-cyan-500/50"
-                                  : "bg-gradient-to-r from-cyan-500/15 to-violet-500/15 text-slate-200 border border-white/[0.08] hover:from-cyan-500/25 hover:to-violet-500/25 hover:border-white/[0.14] focus-visible:ring-cyan-500/40"
-                              )}
-                            >
-                              {isActive ? "Selected" : "Use"}
+                              <Eye className="w-3.5 h-3.5" />
+                              Preview Full Resume
                             </button>
                           </div>
                         </div>
@@ -335,31 +357,18 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
               </div>
             </div>
 
-            {/* Preview Modal */}
-            <AnimatePresence>
-              {previewing && !confirmOverwrite && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="absolute inset-0 z-10 bg-black/70 backdrop-blur-sm flex items-center justify-center p-6"
-                  onClick={() => setPreviewing(null)}
-                >
-                  <motion.div
-                    initial={{ scale: 0.92, y: 8 }}
-                    animate={{ scale: 1, y: 0 }}
-                    exit={{ scale: 0.92, y: 8 }}
-                    transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-                    className="w-full max-w-3xl aspect-[1/1.414] bg-white rounded-xl shadow-2xl overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <p className="text-black/40 text-sm text-center pt-20">
-                      Full preview coming soon.
-                    </p>
-                  </motion.div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {/* Full resume preview — full-screen modal rendered via portal.
+                No AnimatePresence here: the preview unmounts immediately on
+                close so state transitions stay deterministic. */}
+            {previewing && !confirmOverwrite && (
+              <FullTemplatePreview
+                key={previewing}
+                templateId={previewing}
+                templates={filteredTemplates}
+                onClose={() => setPreviewing(null)}
+                onUseTemplate={handleSelect}
+              />
+            )}
 
             {/* Confirm Overwrite Dialog */}
             <AnimatePresence>

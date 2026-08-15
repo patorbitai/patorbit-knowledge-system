@@ -25,6 +25,7 @@ import { buildQualificationMatch } from "@/lib/qualification-match";
 import { hasSufficientData } from "@/types/resume";
 import { ai } from "@/lib/ai/client";
 import { TEMPLATES } from "@/app/resume-builder/templates";
+import { DEFAULT_STYLE_CONFIG, resolveStyleConfig, type ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
 
 /* ── Defaults ── */
 
@@ -111,8 +112,12 @@ export interface ResumeBuilderState {
   setAnalysis: (analysis: ResumeAnalysis | null) => void; setAnalysisLoading: (loading: boolean) => void;
   setJobMatch: (match: JobMatchResult | null) => void; setJobDescription: (desc: string) => void;
   setAIAction: (key: string, state: Partial<AIActionState>) => void; setCopilotOpen: (open: boolean) => void;
-  setJobMatchOpen: (open: boolean) => void; setPreviewTab: (tab: "resume" | "passport" | "knowledge-graph" | "trust-timeline") => void;
+  setJobMatchOpen: (open: boolean) => void;  setPreviewTab: (tab: "resume" | "passport" | "knowledge-graph" | "trust-timeline") => void;
   setSaveStatus: (status: SaveStatus) => void;
+  /** Visual customization per resume, stored separately from resume content. */
+  styleConfigs: Record<string, ResumeStyleConfig>;
+  setStyleConfig: (resumeId: string, patch: Partial<ResumeStyleConfig>) => void;
+  resetStyleConfig: (resumeId: string) => void;
   progress: () => number; resumeScore: () => number | null; sectionComplete: (section: SectionId) => boolean; getSaveStatus: () => SaveStatus;
 }
 
@@ -221,6 +226,17 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
         qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
+        styleConfigs: {},
+        setStyleConfig: (resumeId, patch) => set((s) => {
+          const current = s.styleConfigs[resumeId] ? resolveStyleConfig(s.styleConfigs[resumeId]) : DEFAULT_STYLE_CONFIG;
+          const next = resolveStyleConfig({ ...current, ...patch });
+          return { styleConfigs: { ...s.styleConfigs, [resumeId]: next } };
+        }),
+        resetStyleConfig: (resumeId) => set((s) => {
+          const styleConfigs = { ...s.styleConfigs };
+          delete styleConfigs[resumeId];
+          return { styleConfigs };
+        }),
         suggestedClaims: [],
         evidence: [],
         trustScore: null,
@@ -502,7 +518,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     resumeStore,
     {
       name: "patorbit-resume-v2",
-      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence }),
+      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           let resumes = state.resumes;
@@ -525,6 +541,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
           state.activeResumeId = activeResumeId!;
           state.resume = resume;
           state.evidence = state.evidence ?? [];
+          state.styleConfigs = state.styleConfigs ?? {};
           state.setSaveStatus("saved");
         }
       },

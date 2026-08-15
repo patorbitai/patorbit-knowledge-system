@@ -9,8 +9,8 @@ import { ai } from "@/lib/ai/client";
 import { LeftSidebar, CenterWorkspace, RightCopilot, ClaimsReview } from "@/components/resume-builder";
 import MobileSectionNav from "@/components/resume-builder/MobileSectionNav";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
-import { SettingsModal } from "@/components/resume-builder/SettingsModal";
-import { Eye, Settings, User, ArrowLeft, ChevronRight } from "lucide-react";
+import AccountMenu from "@/components/hub/AccountMenu";
+import { Eye, ArrowLeft, ChevronRight } from "lucide-react";
 import { debounce } from "@/lib/debounce";
 
 /* ── Resume Selector Dropdown ── */
@@ -148,9 +148,7 @@ function ResumeSelector() {
 }
 
 /* ── App Header ── */
-function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
-  const resume = useResumeBuilder((s) => s.resume);
-
+function AppHeader() {
   return (
     <header className="sticky top-0 z-40 h-12 bg-[#070d18]/90 backdrop-blur-xl border-b border-[rgba(148,163,184,.14)]">
       <div className="flex items-center justify-between h-full px-4">
@@ -192,24 +190,17 @@ function AppHeader({ onOpenSettings }: { onOpenSettings: () => void }) {
 
           <div className="h-3 w-px bg-white/[0.08]" />
 
+          {/* Primary presentation action — the dedicated finalization workspace */}
           <Link
             href="/resume-builder/preview"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-cyan-300 border border-cyan-500/30 bg-cyan-500/[0.08] hover:bg-cyan-500/[0.16] hover:border-cyan-500/50 transition-all"
           >
             <Eye className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Preview</span>
           </Link>
 
-          <button
-            onClick={onOpenSettings}
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
-          >
-            <Settings className="w-3.5 h-3.5" />
-          </button>
-
-          <button className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all">
-            <User className="w-3.5 h-3.5" />
-          </button>
+          {/* Profile menu — name, email, theme toggle, sign out */}
+          <AccountMenu />
         </div>
       </div>
     </header>
@@ -225,7 +216,6 @@ export default function ResumeBuilderPage() {
   const saveStatus = useResumeBuilder((s) => s.saveStatus);
   const setSaveStatus = useResumeBuilder((s) => s.setSaveStatus);
   const setSuggestedClaims = useResumeBuilder((s) => s.setSuggestedClaims);
-  const [showSettings, setShowSettings] = useState(false);
 
   const debouncedAnalysis = useCallback(
     debounce(async (currentResume) => {
@@ -292,7 +282,7 @@ export default function ResumeBuilderPage() {
     <DndProvider backend={HTML5Backend}>
       <div className="h-screen w-full bg-[#070d18] text-[#f8fafc] font-sans antialiased flex flex-col overflow-hidden selection:bg-cyan-500/30">
         {/* App header */}
-        <AppHeader onOpenSettings={() => setShowSettings(true)} />
+        <AppHeader />
 
         {/* Full-height workspace with independent scrolling regions */}
         <div className="flex-1 flex overflow-hidden">
@@ -317,9 +307,6 @@ export default function ResumeBuilderPage() {
 
         {/* Claims Review — non-blocking identity workflow surface */}
         <ClaimsReview />
-
-        {/* Settings Modal */}
-        <SettingsModal open={showSettings} onClose={() => setShowSettings(false)} />
       </div>
     </DndProvider>
   );

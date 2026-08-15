@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Resume, FormattedDescription } from "./shared";
+import { Resume, FormattedDescription, ContactRow } from "./shared";
 import {
   fontFamilies,
   typography,
@@ -65,6 +65,7 @@ export function CreativeProfessionalPreview({ resume }: { resume: Resume }) {
     resume.phone,
     resume.address,
     resume.social?.linkedin,
+    resume.social?.github,
     resume.social?.portfolio || resume.social?.website,
   ].filter(Boolean) as string[];
 
@@ -85,7 +86,7 @@ export function CreativeProfessionalPreview({ resume }: { resume: Resume }) {
         )}
         {contactParts.length > 0 && (
           <p style={{ ...typography.caption, color: C.muted, marginTop: spacing[2], lineHeight: 1.8 }}>
-            {contactParts.join("  ·  ")}
+            <ContactRow parts={contactParts} linkedin={resume.social?.linkedin} github={resume.social?.github} />
           </p>
         )}
       </header>

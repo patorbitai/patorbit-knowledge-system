@@ -7,6 +7,35 @@
 
 ---
 
+# Resolution Status Addendum — 2026-08-15
+
+Status of each finding verified against the current code:
+
+| ID | Issue | Status |
+|---|---|---|
+| C-1 | Production credentials committed | 🔶 **MITIGATED (working tree)** — `.env*` is gitignored (`.gitignore:38`) and no `.env` files are tracked or present in the working diff. **Operator action still required:** rotate any credential that ever entered git history. |
+| C-2 | `AUTH_SECRET` vs `NEXTAUTH_SECRET` mismatch | ✅ **FIXED/VERIFIED** — `src/middleware.ts:13` and `src/lib/auth.ts:7` both read `process.env.AUTH_SECRET`. Live checks: unauth session `{}`, protected routes 307 → `/login`, protected APIs 401. |
+| H-1 | No rate limiting on 5 AI endpoints | 🔶 **OPEN** — backlog. |
+| H-2 | Body size limit bypassed without `Content-Length` | 🔶 **OPEN** — not yet converted to a streaming size guard. |
+| H-3 | Prompt injection via unsanitized content | 🔶 **OPEN** — not yet addressed. |
+| H-4 | No HTTP security headers | 🔶 **OPEN** — `next.config.ts` still has no `headers()`. |
+| H-5 | Export route unauthenticated | ✅ **FIXED/VERIFIED** — `/api/export-docx` calls `getServerSession` and returns 401 for unauthenticated requests (covered by route tests). |
+| M-1 | Mammoth HTML unsanitized | 🔶 **OPEN** — verify the review screen does not use `dangerouslySetInnerHTML` with mammoth output. |
+| M-2 | `jobDescription` length not validated server-side | 🔶 **OPEN**. |
+| M-3 | File type validation via client MIME | 🔶 **OPEN**. |
+| M-4 | `OPENAI_API_KEY` no null/placeholder guard | ✅ **FIXED** — `openai.ts` detects missing and placeholder keys with actionable diagnostics (`docs/fixes/P0-1-AI-CONFIGURATION.md`). |
+| M-5 | In-memory rate limiter reset on cold start | 🔶 **OPEN**. |
+| M-6 | CSRF on Server Actions | 🔶 **OPEN** (Next.js ≥14 provides Origin-header protection by default). |
+| L-1…L-4 | Low-severity items | 🔶 **OPEN** — unchanged; none block release. |
+
+**Secrets hygiene (verified 2026-08-15):** no real secret values in the working tree — no `OPENAI_API_KEY`, `AUTH_SECRET`, database, Stripe, or Resend values; no `sk-` secrets in tracked or untracked source. Only placeholder strings (e.g., `sk-your-actual-key-here`) appear in documentation and error messages.
+
+---
+
+# Original Audit (2026-08-08)
+
+---
+
 ## Executive Summary
 
 Two Critical issues require immediate action before any further deployment. The most severe is a real production database password and authentication secret committed to the repository. The second is an environment variable name mismatch that causes JWT verification to silently fail. Together these two issues expose the production database and all user accounts.

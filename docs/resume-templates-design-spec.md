@@ -1,7 +1,8 @@
-# Resume Template Design Specification — 22 Premium Templates
+# Resume Template Design Specification
 
-> **Status:** Design Proposal — awaiting approval before implementation
-> **Design Goal:** 22 visually distinct, production-ready resume templates inspired by Novorésumé, Enhancv, Resume.io, FlowCV, Kickresume, Canva, and Reactive Resume. Each design is original.
+> **Status:** Implemented (29 templates registered in `src/app/resume-builder/templates.ts`)
+> **Note (2026-08-15):** this document originated as a design proposal for 22 templates. The library has since grown to **29 registered templates** — 8 flagship (Patorbit Modern, Minimal ATS, Executive Pro, Engineering Clean, Consulting Elite, Product Manager, Academic CV, Creative Professional) plus 21 legacy. The per-template specifications below remain the reference for the original 22 designs. All registered templates render through the `templateId → component` mapping, appear in the visual Template Gallery, and support the shared `ResumeStyleConfig` customization.
+> **Design Goal:** 29 visually distinct, production-ready resume templates inspired by Novorésumé, Enhancv, Resume.io, FlowCV, Kickresume, Canva, and Reactive Resume. Each design is original.
 
 ---
 

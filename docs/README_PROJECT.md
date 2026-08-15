@@ -1,8 +1,8 @@
 # Patorbit — Professional Identity Platform
 
-**Version:** 0.1.0  
-**Last Updated:** 2026-08-07  
-**Stack:** Next.js 16.2.12 · React 19 · PostgreSQL · Prisma · Zustand · OpenAI
+**Version:** 0.1.0 (resume-builder release-readiness work staged)
+**Last Updated:** 2026-08-15
+**Stack:** Next.js 16.3.0 · React 19 · PostgreSQL · Prisma · Zustand · OpenAI
 
 ---
 
@@ -11,10 +11,26 @@
 Patorbit is a **Professional Identity Platform** that transforms resumes into verified, AI-enhanced career documents backed by evidence and trust scoring.
 
 **Core Features:**
-- **Resume Builder** — 22 professional templates, AI-powered content improvement, ATS optimization
+- **Resume Builder** — 29 professional templates (8 flagship), AI-powered content improvement, ATS optimization
+- **Template Gallery** — visual card grid with real template rendering, full multi-page preview, zoom
+- **Professional Preview** — dedicated finalization workspace with live customization and export
+- **Customization** — font, colors, headings, bullets, and spacing via a shared `ResumeStyleConfig`
 - **Professional Passport** — verified career identity with evidence-backed claims
 - **Trust Score** — credibility metric based on claim verification coverage
 - **Knowledge Graph** — visual representation of skills, experience, and career progression
+
+---
+
+## Resume Builder — Current State
+
+The resume product now covers the full selection → customize → preview → export loop:
+
+- **Template Gallery** (`TemplateGallery`, `MiniaturePreview`, `FullTemplatePreview`) — visual grid with category sections, real template components rendered with a shared gallery sample resume (`gallery-sample-resume.ts`), full-screen multi-page preview with 50–150% zoom, page navigation, and "Use This Template". Gallery sample data is never written into the user's resume.
+- **Customization** (`ResumeStyleConfig` in `src/lib/resume-design-system/style-config.ts`, `CustomizePanel`, `LiveStylePreview`) — font family/size/line-height, accent/heading/body colors, heading style & weight, bullet style & size, density, section/entry spacing, and page margins. Every control updates the live preview immediately; per-template defaults and "Reset to Template Defaults" are supported. Content and style are separate concerns — customization never modifies resume data, and the application light/dark theme never alters a resume's own template styling.
+- **Professional Preview** (`/resume-builder/preview`) — the resume is the hero; Templates, Customize, and Export PDF/DOCX are reached from here. Same renderer, same `templateId`, same data, same `ResumeStyleConfig` as export.
+- **Export** — PDF via browser print with A4 geometry parity (`src/lib/resume-design-system/geometry.ts`, `@page { size: A4; margin: 0 }`, print-color-adjust exact); DOCX via `/api/export-docx` + `src/lib/export-docx.ts` honoring the selected style config, with LinkedIn/GitHub as real hyperlinks.
+
+See `docs/CHANGELOG.md` (Unreleased) and `docs/RELEASE_QA_REPORT.md` for the full change record and QA status.
 
 ---
 
@@ -54,7 +70,8 @@ npm install
 
 # Set up environment variables
 cp .env.example .env.local
-# Edit .env.local with your DATABASE_URL, NEXTAUTH_SECRET, OPENAI_API_KEY
+# Edit .env.local with your DATABASE_URL, AUTH_SECRET, OPENAI_API_KEY
+# (AUTH_SECRET is the active variable — see docs/SECURITY_AUDIT.md)
 
 # Run database migrations
 npx prisma migrate dev
@@ -127,23 +144,30 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed folder breakdown.
 ## Current Status
 
 **Latest Release:** 0.1.0 (Sprint 4 Polish) — 2026-08-07
+**Pending:** resume-builder release-readiness work staged for the next commit
 
 **What's Working:**
-- ✅ Resume Builder with 22 templates, auto-save, AI assistance
-- ✅ PDF/DOCX export
-- ✅ Authentication (register, login, session management)
+- ✅ Resume Builder with 29 templates (8 flagship), auto-save, AI assistance
+- ✅ **Template Gallery** — visual grid, real template rendering, categories, full multi-page preview with zoom and page navigation
+- ✅ **Customization** — live `ResumeStyleConfig` (fonts, colors, headings, bullets, density, spacing) applied instantly to the real preview, with per-template defaults and reset
+- ✅ **Professional Preview** — dedicated finalization workspace; Templates, Customize, and Export PDF/DOCX all reachable from it
+- ✅ PDF export via browser print — shared renderer with the preview, A4 geometry parity (`@page` A4, zero browser margins, print-color-adjust exact)
+- ✅ DOCX export — server-side generator honoring the selected template and `ResumeStyleConfig` (fonts, colors, bullets, margins), LinkedIn/GitHub as real hyperlinks
+- ✅ Authentication (register, login, session management) — `AUTH_SECRET` used consistently across middleware and auth config
+- ✅ Application light/dark theme switching (persisted, does not affect the resume document)
 - ✅ Marketing site (pricing, features, platform pages)
 - ✅ Trust Score backend pipeline (services, graph, coordinator)
 - ✅ Dashboard Overview redesign
 - ✅ Deployment version detection + update banner
+- ✅ Performance pass: conditional preview mounting, no AI request on hydration, abort cleanup, granular store selectors, lint-noise cleanup
 
 **Known Limitations:**
-- ⚠️ PDF export does not respect page breaks (use browser print instead)
+- ⚠️ On some multi-page templates with full-height sidebars/background panels, a partially filled later page may not extend the sidebar/background to the bottom of the A4 page (deferred)
 - ⚠️ Trust Score backend complete but not wired to UI
 - ⚠️ Evidence attachment upload not implemented
 - ⚠️ No email verification or password reset yet
 - ⚠️ Resume data in localStorage only (no multi-device sync)
-- ⚠️ Not mobile-responsive
+- ⚠️ Resume Builder editor remains desktop-focused (gallery, preview, and customize are responsive)
 
 See [KNOWN_ISSUES.md](./KNOWN_ISSUES.md) for full list.
 
@@ -183,7 +207,7 @@ From `AGENTS.md`:
 | **Backend** | Next.js API Routes, PostgreSQL, Prisma ORM |
 | **Auth** | NextAuth.js v4 (credentials provider, JWT sessions) |
 | **AI** | OpenAI SDK 6.49 (GPT-4) |
-| **Export** | html2canvas + jsPDF (PDF), `docx` npm (DOCX) |
+| **Export** | Browser print → Save as PDF (A4), server-side `docx` builder (DOCX) |
 | **Deployment** | Vercel (auto-deploy on push to `main`) |
 
 ---

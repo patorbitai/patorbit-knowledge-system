@@ -112,7 +112,7 @@ The application codebase is present in this repository (Resume Builder, import p
 | Resume import | Deployed (import pipeline in codebase) |
 | AI resume extraction | Deployed (AI optimization / extraction system) |
 | Import review | Implemented |
-| Resume builder | Deployed (22 templates, section editors) |
+| Resume builder | Deployed (29 templates, section editors, visual gallery, live customization, Professional Preview) |
 | Premium template library | Deployed (expanded template library) |
 | PDF/DOCX export | Implemented (print-based export) |
 | AI optimization | Deployed (AI optimization system) |

@@ -47,10 +47,10 @@ Items are ordered by priority within each epic. Estimates are story points (1 = 
 | ID | Title | Priority | Estimate | Status |
 |---|---|---|---|---|
 | R-01 | Multi-resume support: resume list, switch/create/delete | P1 | 8 | Backlog |
-| R-02 | Template color picker UI (select palette in builder, not code) | P1 | 5 | Backlog |
-| R-03 | Template font picker UI (select from 14 fonts in builder) | P1 | 3 | Backlog |
+| R-02 | Template color picker UI (select palette in builder, not code) | P1 | 5 | ✅ Done (2026-08) — `ResumeStyleConfig` accent/heading/body color presets |
+| R-03 | Template font picker UI (select from 14 fonts in builder) | P1 | 3 | ✅ Done (2026-08) — curated font family/size/line-height controls |
 | R-04 | Resume version history (snapshot on export) | P2 | 5 | Backlog |
-| R-05 | Replace html2canvas PDF export with layout-aware renderer | P1 | 13 | Backlog |
+| R-05 | Replace html2canvas PDF export with layout-aware renderer | P1 | 13 | ✅ Done (2026-08) — replaced by browser-print export with A4 geometry parity; `html2canvas` now unused |
 | R-06 | Drag-and-drop section reordering | P2 | 5 | Backlog |
 | R-07 | Collaborative share link (view feedback, not real-time edit) | P3 | 8 | Backlog |
 | R-08 | Resume analytics: track views/downloads when passport is shared | P3 | 5 | Backlog |
@@ -130,7 +130,7 @@ See `SPRINT_HISTORY.md` for full details.
 **Summary of shipped items:**
 - ✅ Authentication (register, login, session, middleware)
 - ✅ Marketing site (homepage, pricing, features, legal)
-- ✅ Resume Builder core (22 templates, all section editors, auto-save)
+- ✅ Resume Builder core (29 templates — 8 flagship — all section editors, auto-save, visual Template Gallery, live customization, Professional Preview)
 - ✅ AI integration (13 action types via `/api/ai`)
 - ✅ PDF + DOCX export
 - ✅ Trust Score backend pipeline (services, graph, coordinator)

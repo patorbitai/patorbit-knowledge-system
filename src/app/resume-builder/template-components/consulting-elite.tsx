@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Resume, FormattedDescription } from "./shared";
+import { Resume, FormattedDescription, ContactRow } from "./shared";
 import {
   fontFamilies,
   typography,
@@ -156,7 +156,7 @@ export function ConsultingElitePreview({ resume }: { resume: Resume }) {
 
         {contactParts.length > 0 && (
           <p style={{ ...typography.caption, color: C.muted, lineHeight: 1.7 }}>
-            {contactParts.join("  ·  ")}
+            <ContactRow parts={contactParts} linkedin={resume.social?.linkedin} github={resume.social?.github} />
           </p>
         )}
       </header>

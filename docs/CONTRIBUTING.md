@@ -56,7 +56,7 @@ Create `.env.local` in the project root:
 DATABASE_URL="postgresql://postgres:password@localhost:5432/patorbit"
 
 # NextAuth
-NEXTAUTH_SECRET="generate-a-random-32-char-string-here"
+AUTH_SECRET="generate-a-random-32-char-string-here"
 NEXTAUTH_URL="http://localhost:3000"
 
 # OpenAI
@@ -66,7 +66,7 @@ OPENAI_API_KEY="sk-..."
 NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA="local-dev"
 ```
 
-**Generate NEXTAUTH_SECRET:**
+**Generate AUTH_SECRET:**
 ```bash
 openssl rand -base64 32
 ```

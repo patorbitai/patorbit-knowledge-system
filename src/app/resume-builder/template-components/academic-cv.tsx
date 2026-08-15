@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Resume, FormattedDescription } from "./shared";
+import { Resume, FormattedDescription, ContactRow } from "./shared";
 import {
   fontFamilies,
   typography,
@@ -86,6 +86,7 @@ export function AcademicCvPreview({ resume }: { resume: Resume }) {
     resume.phone,
     resume.address,
     resume.social?.linkedin,
+    resume.social?.github,
     resume.social?.website,
     resume.social?.portfolio,
   ].filter(Boolean) as string[];
@@ -131,7 +132,7 @@ export function AcademicCvPreview({ resume }: { resume: Resume }) {
 
         {contactParts.length > 0 && (
           <p style={{ ...typography.caption, color: C.muted, marginTop: spacing[2], lineHeight: 1.8 }}>
-            {contactParts.join("  ·  ")}
+            <ContactRow parts={contactParts} linkedin={resume.social?.linkedin} github={resume.social?.github} />
           </p>
         )}
 

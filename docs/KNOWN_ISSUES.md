@@ -1,6 +1,6 @@
 # Known Issues
 
-**Last Updated:** 2026-08-07  
+**Last Updated:** 2026-08-15
 **Status:** Active tracking of production bugs, limitations, and technical debt
 
 Issues are ordered by severity: **Critical** → **High** → **Medium** → **Low**
@@ -15,25 +15,16 @@ None at this time.
 
 ## High (Impacts Core Workflows)
 
-### H-01: PDF Export Does Not Respect Page Breaks
+### H-01: PDF Export Page Breaks — Resolved via Browser Print
 
-**Status:** Known Limitation  
+**Status:** ✅ Resolved (2026-08)
 **Affected:** Resume Builder PDF export  
-**Impact:** Experience/Education entries may split mid-item across pages, causing awkward visual breaks
 
-**Root Cause:**  
-`exportToPdf` uses `html2canvas` (pixel-based screenshot) + `jsPDF`. CSS `break-inside: avoid` rules have no effect because html2canvas captures pixels, not layout boxes. The print CSS added in Sprint 4.8 only benefits browser Ctrl+P / Save as PDF, not the Export button.
+**Resolution:** The Export button now opens the browser print dialog (`window.print()`), so page breaks are driven by the same CSS layout as the on-screen resume. The print block pins exact A4 geometry (`@page { size: A4; margin: 0 }`, `print-color-adjust: exact`) and shares the `A4` constants with the preview, so Print → Save as PDF matches the Professional Preview.
 
-**Workaround:**  
-Users can use browser print (Ctrl+P / Cmd+P → Save as PDF) for better page-break control.
+**Remaining:** `html2canvas` / `jspdf` remain in `package.json` but have no imports in `src/` — candidates for removal in a dependency cleanup pass.
 
-**Long-term Fix:**  
-Replace html2canvas with layout-aware PDF renderer:
-- Option A: Puppeteer server-side (needs /api/export-pdf endpoint, higher infra cost)
-- Option B: `@react-pdf/renderer` (requires rewriting all templates to React-PDF primitives)
-- Option C: wkhtmltopdf or similar headless browser on server
-
-**Backlog Item:** R-05
+**Deferred layout caveat:** on some multi-page templates with full-height sidebars/background panels, a partially filled later page may not visually extend the sidebar/background to the bottom of the A4 page (see M-06).
 
 ---
 
@@ -147,14 +138,13 @@ Sprint 2 chose localStorage for speed and offline capability. Database sync was 
 
 ---
 
-### M-05: No Mobile Responsiveness in Resume Builder
+### M-05: Resume Builder Editor Not Fully Mobile-Responsive
 
-**Status:** Not Implemented  
-**Affected:** Resume Builder 3-column layout  
-**Impact:** Builder is unusable on mobile/tablet (layout breaks, sections overlap)
+**Status:** Partially Implemented
+**Affected:** Resume Builder 3-column editor layout
+**Impact:** The editor itself is desktop-focused (sections may overlap on small screens)
 
-**Root Cause:**  
-Sprint 2 prioritized desktop experience. Tailwind breakpoints not applied to `LeftSidebar` / `CenterWorkspace` / `RightCopilot`.
+**Current state:** The Template Gallery, FullTemplatePreview, Professional Preview, and Customize workspace are responsive (stack on mobile, no horizontal overflow). The core editor columns (`LeftSidebar` / `CenterWorkspace` / `RightCopilot`) remain desktop-first.
 
 **Next Steps:**
 1. Collapse sidebar + copilot on `md` breakpoint
@@ -162,6 +152,16 @@ Sprint 2 prioritized desktop experience. Tailwind breakpoints not applied to `Le
 3. Test on iOS Safari + Android Chrome
 
 **Backlog Item:** I-07
+
+---
+
+### M-06: Multi-Page Sidebar / Background Height (DEFERRED)
+
+**Status:** ⏸️ Deferred — intentional, do not modify during release validation
+**Affected:** Multi-page templates with full-height sidebars or background panels (e.g., sidebar/band templates)
+**Impact:** On a partially filled later page, the sidebar/background may stop before the bottom of the A4 page instead of extending to the sheet edge
+
+**Note:** This is a known, intentional layout deferral. It does not crash the app and does not invalidate PDF generation. A dedicated layout pass is planned.
 
 ---
 
@@ -284,6 +284,48 @@ Switch to SSE (Server-Sent Events) or WebSocket for push-based updates instead o
 
 **Fixed In:** v0.1.0 (Sprint 4.7)  
 **Solution:** Deleted orphaned `loadResume()` function; single key `"patorbit-resume-v2"`
+
+---
+
+### ✅ F-08: DOCX Export Failed With "Failed to generate DOCX"
+
+**Fixed In:** staged work (2026-08)
+**Solution:** Removed the `"use client"` directive from `src/lib/resume-design-system/style-config.ts`. The route imported a client-module function, which Turbopack rejected at runtime (`Attempted to call resolveStyleConfig() from the server`). Verified end-to-end with a real authenticated request returning a valid DOCX.
+
+---
+
+### ✅ F-09: Print/PDF Did Not Match the Professional Preview
+
+**Fixed In:** staged work (2026-08)
+**Solution:** Print CSS now pins exact A4 geometry (`@page { size: A4; margin: 0 }`, `width: 210mm; min-height: 297mm; box-sizing: border-box`), keeps `print-color-adjust: exact` so backgrounds print, and removes width/scale/font/break-avoiding overrides. Preview, gallery, and print share one A4 constants module.
+
+---
+
+### ✅ F-10: "Switch to Light Mode" Did Not Theme the Application
+
+**Fixed In:** staged work (2026-08)
+**Solution:** Wired Tailwind's `dark:` variant to the manual `.dark` class, extended the `.light` CSS layer to cover Builder/Preview chrome classes, and mounted the real `AccountMenu` in the Builder header (the old Account button had no dropdown). Persisted via `localStorage["patorbit-theme"]`; resume template styling is isolated from the app theme.
+
+---
+
+### ✅ F-11: Template Gallery React "unique key" Warning
+
+**Fixed In:** staged work (2026-08)
+**Solution:** Added a `key` to the sidebar section fragment in `TemplateGallery`.
+
+---
+
+### ✅ F-12: Dead Settings Gear Button
+
+**Fixed In:** staged work (2026-08)
+**Solution:** Removed the gear button and deleted the orphaned `SettingsModal.tsx` — the four settings fields it wrote had zero consumers. Builder header is now Saved · Preview · Profile.
+
+---
+
+### ✅ F-13: React Hooks / Static-Components Lint Issues
+
+**Fixed In:** staged work (2026-08)
+**Solution:** Hoisted render-time component definitions to module scope in the 8 flagship templates; refactored the conditional `useMemo` in `NetworkView` so hooks run unconditionally; stabilized the Vitest thread pool on Windows.
 
 ---
 

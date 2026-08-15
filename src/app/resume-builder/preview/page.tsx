@@ -2,14 +2,15 @@
 
 import { useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
-import { ResumePreview, getActiveTemplate } from "@/components/resume/ResumePreview";
+import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { Passport } from "@/components/identity/Passport";
-import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
-import { ArrowLeft, FileText, IdCard, Share2, Shield, TrendingUp, Layout, Check, Download } from "lucide-react";
+import { TemplateGallery } from "@/components/resume-builder/TemplateGallery";
+import { CustomizePanel } from "@/components/resume-builder/CustomizePanel";
+import { LiveStylePreview } from "@/components/resume-builder/LiveStylePreview";
+import { ArrowLeft, FileText, IdCard, Share2, Shield, TrendingUp, Layout, Download, SlidersHorizontal, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { clsx } from "clsx";
-import { TEMPLATES } from "@/app/resume-builder/templates";
 
 const tabs = [
   { id: "resume" as const, label: "Resume", icon: FileText },
@@ -18,116 +19,138 @@ const tabs = [
   { id: "trust-timeline" as const, label: "Trust Timeline", icon: Shield },
 ];
 
+/** Subtle, unobtrusive save indicator (dot + small text). */
+const SAVE_STATUS: Record<string, { label: string; dot: string }> = {
+  saved: { label: "Saved", dot: "bg-emerald-400" },
+  saving: { label: "Saving…", dot: "bg-amber-400 animate-pulse" },
+  unsaved: { label: "Unsaved changes", dot: "bg-amber-400" },
+  offline: { label: "Offline", dot: "bg-slate-500" },
+  "sync-failed": { label: "Save failed", dot: "bg-rose-400" },
+};
+
 export default function PreviewPage() {
   const resume = useResumeBuilder((s) => s.resume);
-  const applyTemplate = useResumeBuilder((s) => s.applyTemplate);
-  const analysis = useResumeBuilder((s) => s.analysis);
-  const resumeScore = useResumeBuilder((s) => s.resumeScore);
+  const saveStatus = useResumeBuilder((s) => s.saveStatus);
   const [activeTab, setActiveTab] = useState<typeof tabs[number]["id"]>("resume");
-  const [showTemplatePicker, setShowTemplatePicker] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [showExport, setShowExport] = useState(false);
+  const [showCustomize, setShowCustomize] = useState(false);
   const template = getActiveTemplate(resume);
+  const status = SAVE_STATUS[saveStatus] ?? SAVE_STATUS.saved;
 
   return (
-    <main className="min-h-screen bg-[#070d18] text-[#f8fafc] font-sans antialiased selection:bg-cyan-500/30">
-      <div className="sticky top-0 z-30 bg-[#070d18]/90 backdrop-blur-xl border-b border-[rgba(148,163,184,.14)]">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center gap-4">
-              <Link href="/resume-builder" className="flex items-center gap-1.5 text-xs font-semibold text-[#94a3b8] hover:text-white transition-colors">
-                <ArrowLeft className="w-4 h-4" />
-                Back to Builder
-              </Link>
-              <div className="h-4 w-px bg-[rgba(148,163,184,.2)]" />
-              <h1 className="text-sm font-bold text-white tracking-tight">Professional Preview</h1>
-              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[rgba(15,23,42,0.8)] border border-[rgba(148,163,184,.14)]">
-                <span className="text-[11px] font-medium text-cyan-400">{resume.name || "Untitled Resume"}</span>
-              </div>
-            </div>
-            <div className="flex items-center gap-3">
-              <SaveStatusIndicator />
-
-              <button
-                onClick={() => setShowExport(true)}
-                aria-haspopup="dialog"
-                aria-expanded={showExport}
-                className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-[#0ea5e9] via-[#2563eb] to-[#9333ea] text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-[0.99] transition-all cursor-pointer"
-              >
-                <Download className="w-3.5 h-3.5" />
-                <span>Export PDF / Docx</span>
-              </button>
-
-              <div className="relative">
-                <button
-                  onClick={() => setShowTemplatePicker(!showTemplatePicker)}
-                  className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/[0.04] border border-[rgba(148,163,184,.2)] hover:bg-white/[0.08] text-xs font-semibold text-white transition-all cursor-pointer"
-                >
-                  <Layout className="w-3.5 h-3.5 text-cyan-400" />
-                  <span>{template.name}</span>
-                </button>
-                {showTemplatePicker && (
-                  <>
-                    <div className="fixed inset-0 z-40" onClick={() => setShowTemplatePicker(false)} />
-                    <div className="absolute top-full right-0 mt-2 w-56 bg-[#070d18] border border-[rgba(148,163,184,.2)] rounded-2xl shadow-2xl z-50 p-1.5 max-h-72 overflow-y-auto">
-                      <div className="px-3 py-2 border-b border-[rgba(148,163,184,.14)] text-[10px] font-bold text-[#94a3b8] uppercase tracking-wider">
-                        Select Template ({TEMPLATES.length})
-                      </div>
-                      <div className="py-1 space-y-0.5">
-                        {TEMPLATES.map(t => (
-                          <button
-                            key={t.id}
-                            onClick={() => { applyTemplate(t.id); setShowTemplatePicker(false); }}
-                            className={clsx(
-                              "w-full text-left flex items-center justify-between px-3 py-2 rounded-xl text-xs font-medium transition-colors cursor-pointer",
-                              t.id === resume.templateId ? "bg-gradient-to-r from-cyan-500/15 to-blue-500/15 border border-cyan-500/30 text-white font-semibold" : "text-[#94a3b8] hover:bg-white/[0.04] hover:text-white"
-                            )}
-                          >
-                            <span>{t.name}</span>
-                            {t.id === resume.templateId && <Check className="w-3.5 h-3.5 text-cyan-400" />}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
+    <main className="h-[100dvh] flex flex-col bg-[#070d18] text-[#f8fafc] font-sans antialiased selection:bg-cyan-500/30 overflow-hidden">
+      {/* Header — single row, clear action hierarchy */}
+      <header className="shrink-0 border-b border-[rgba(148,163,184,.12)] bg-[#070d18]/95 backdrop-blur-xl">
+        <div className="flex items-center justify-between gap-2 sm:gap-3 h-14 px-3 sm:px-6">
+          {/* Left: back + title */}
+          <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+            <Link
+              href="/resume-builder"
+              aria-label="Back to Resume Builder"
+              className="flex items-center gap-1.5 text-[11px] font-semibold text-[#94a3b8] hover:text-white transition-colors shrink-0"
+            >
+              <ArrowLeft className="w-3.5 h-3.5" />
+              <span className="hidden md:inline">Back to Builder</span>
+            </Link>
+            <div className="h-4 w-px bg-white/[0.08] shrink-0 hidden sm:block" />
+            <h1 className="text-[13px] font-semibold text-white tracking-tight truncate hidden sm:block">Professional Preview</h1>
+            {resume.resumeName && (
+              <span className="text-[11px] text-slate-500 truncate hidden xl:inline">· {resume.resumeName}</span>
+            )}
           </div>
-          <div className="flex gap-2 pb-3 pt-1">
-            {tabs.map((tab) => {
-              const Icon = tab.icon;
-              return (
-                <button key={tab.id} onClick={() => setActiveTab(tab.id)}
-                  className={clsx("flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer",
-                    activeTab === tab.id ? "bg-gradient-to-r from-[rgba(14,165,233,0.2)] to-[rgba(59,130,246,0.2)] text-cyan-300 border border-[rgba(34,211,238,0.4)] shadow-sm" : "text-[#94a3b8] hover:text-white hover:bg-white/[0.04] border border-[rgba(148,163,184,.14)]")}
-                >
-                  <Icon className="w-3.5 h-3.5" />{tab.label}
-                </button>
-              );
-            })}
+
+          {/* Center: subtle save status */}
+          <div className="hidden lg:flex items-center gap-1.5 shrink-0">
+            <span className={clsx("h-1.5 w-1.5 rounded-full", status.dot)} />
+            <span className="text-[11px] text-slate-500">{status.label}</span>
+          </div>
+
+          {/* Right: actions — Export is the only primary action */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            <button
+              onClick={() => setShowTemplates(true)}
+              aria-haspopup="dialog"
+              aria-expanded={showTemplates}
+              className="flex items-center gap-1.5 pl-2.5 pr-2.5 sm:pr-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-300 bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.07] hover:border-white/[0.16] hover:text-white transition-all cursor-pointer"
+            >
+              <Layout className="w-3.5 h-3.5 text-cyan-400" />
+              <span className="hidden sm:flex flex-col items-start leading-tight">
+                <span>Templates</span>
+                <span className="text-[9px] text-slate-500">Current: {template.name}</span>
+              </span>
+              <span className="sm:hidden">Templates</span>
+            </button>
+
+            <button
+              onClick={() => setShowCustomize(true)}
+              aria-haspopup="dialog"
+              aria-expanded={showCustomize}
+              className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-medium text-slate-300 bg-white/[0.03] border border-white/[0.08] hover:bg-white/[0.07] hover:border-white/[0.16] hover:text-white transition-all cursor-pointer"
+            >
+              <SlidersHorizontal className="w-3.5 h-3.5 text-cyan-400" />
+              Customize
+            </button>
+
+            <button
+              onClick={() => setShowExport(true)}
+              aria-haspopup="dialog"
+              aria-expanded={showExport}
+              className="flex items-center gap-1.5 px-3 sm:px-3.5 py-2 rounded-lg bg-gradient-to-r from-[#0ea5e9] via-[#2563eb] to-[#9333ea] text-xs font-semibold text-white shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-[0.99] transition-all cursor-pointer"
+            >
+              <Download className="w-3.5 h-3.5" />
+              <span>Export</span>
+              <span className="hidden md:inline text-[10px] font-medium text-white/80">PDF / DOCX</span>
+            </button>
           </div>
         </div>
-      </div>
-      <ExportModal open={showExport} onClose={() => setShowExport(false)} />
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {activeTab === "resume" && <PreviewPanel><ResumePreview resume={resume} template={template} /></PreviewPanel>}
-        {activeTab === "passport" && (
-          <PreviewPanel>
-            <Passport />
-          </PreviewPanel>
+      </header>
+
+      {/* Secondary navigation — compact, quiet */}
+      <nav aria-label="Preview sections" className="shrink-0 flex items-center gap-0.5 px-3 sm:px-6 py-1.5 border-b border-[rgba(148,163,184,.08)] overflow-x-auto">
+        {tabs.map((tab) => {
+          const Icon = tab.icon;
+          const active = activeTab === tab.id;
+          return (
+            <button
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
+              aria-current={active ? "page" : undefined}
+              className={clsx(
+                "relative flex items-center gap-1.5 px-3 py-1.5 rounded-md text-[11px] font-medium transition-colors whitespace-nowrap cursor-pointer focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50",
+                active ? "text-cyan-300" : "text-slate-500 hover:text-slate-300",
+              )}
+            >
+              <Icon className="w-3 h-3" />
+              {tab.label}
+              {active && <span className="absolute inset-x-2 -bottom-[7px] h-0.5 rounded-full bg-cyan-400/70" aria-hidden="true" />}
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Content — the resume is the hero */}
+      <div className="flex-1 min-h-0">
+        {activeTab === "resume" ? (
+          <LiveStylePreview fitMode="contain" maxFit={1.5} />
+        ) : (
+          <div className="h-full overflow-y-auto flex items-start justify-center px-4 sm:px-8 py-8">
+            {activeTab === "passport" && <Passport />}
+            {activeTab === "knowledge-graph" && <Placeholder icon={Share2} title="Knowledge Graph" desc="Visualize your skills, experience, and professional connections as an interactive graph." />}
+            {activeTab === "trust-timeline" && <Placeholder icon={TrendingUp} title="Trust Timeline" desc="Track how your trust score evolves as you verify credentials and add evidence." />}
+          </div>
         )}
-        {activeTab === "knowledge-graph" && <PreviewPanel><Placeholder icon={Share2} title="Knowledge Graph" desc="Visualize your skills, experience, and professional connections as an interactive graph." /></PreviewPanel>}
-        {activeTab === "trust-timeline" && <PreviewPanel><Placeholder icon={TrendingUp} title="Trust Timeline" desc="Track how your trust score evolves as you verify credentials and add evidence." /></PreviewPanel>}
       </div>
+
+      {/* Modals — existing behavior, unchanged */}
+      <TemplateGallery open={showTemplates} onClose={() => setShowTemplates(false)} />
+      <ExportModal open={showExport} onClose={() => setShowExport(false)} />
+      <CustomizePanel open={showCustomize} onClose={() => setShowCustomize(false)} />
     </main>
   );
 }
 
-function PreviewPanel({ children }: { children: React.ReactNode }) {
-  return <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] shadow-2xl p-8 backdrop-blur-xl">{children}</div>;
-}
-
-function Placeholder({ icon: Icon, title, desc }: { icon: any; title: string; desc: string }) {
+function Placeholder({ icon: Icon, title, desc }: { icon: LucideIcon; title: string; desc: string }) {
   return (
     <div className="flex flex-col items-center justify-center py-16 text-center">
       <Icon className="w-12 h-12 text-slate-600 mb-4" />
@@ -136,4 +159,3 @@ function Placeholder({ icon: Icon, title, desc }: { icon: any; title: string; de
     </div>
   );
 }
-

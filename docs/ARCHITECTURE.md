@@ -435,14 +435,16 @@ flowchart TD
 
 ## Export Flow
 
-### PDF Export (client-side)
+### PDF Export (browser print)
 ```
 User clicks Export PDF
-  → html2canvas captures #pdf-export-target div (off-screen, 210mm width)
-  → jsPDF creates A4 document
-  → Multi-page: canvas sliced into A4-height segments
-  → pdf.save("resume.pdf")
+  → ExportModal mounts #pdf-export-target only while printing (conditional mount)
+  → ResumePreview + StyleScope render with the active templateId and ResumeStyleConfig
+  → Print target carries exact A4 geometry (210mm × 297mm, box-sizing: border-box, margin 0)
+  → window.print() opens the browser dialog; @media print hides app chrome
+  → @page { size: A4; margin: 0 } + print-color-adjust: exact → Save as PDF matches the preview
 ```
+Page-break math shares the A4 constants module (`src/lib/resume-design-system/geometry.ts`) with the preview and gallery.
 
 ### DOCX Export (server-side)
 ```
@@ -486,7 +488,7 @@ Vercel CI/CD
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
-| `NEXTAUTH_SECRET` | JWT signing secret |
+| `AUTH_SECRET` | JWT signing secret (active variable; legacy `NEXTAUTH_SECRET` name is obsolete) |
 | `NEXTAUTH_URL` | Canonical auth URL |
 | `OPENAI_API_KEY` | OpenAI GPT-4 access |
 | `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` | Baked-in build SHA (client) |
@@ -500,7 +502,7 @@ Vercel CI/CD
 |---|---|---|
 | State management | Zustand + persist | Lightweight, no boilerplate, works offline |
 | Auth | NextAuth.js v4 + Credentials | No OAuth dependency needed for MVP |
-| PDF export | html2canvas client-side | Zero server cost; acceptable quality for MVP |
+| PDF export | Browser print → Save as PDF (A4) | Matches the on-screen resume; zero server cost; browser-consistent |
 | Evidence storage | IndexedDB (idb-keyval) | Files too large for localStorage; no S3 cost |
 | AI routing | Single `/api/ai` endpoint | Simpler than multiple endpoints; action dispatch pattern |
 | Resume persistence | localStorage only | Fast, offline-capable; DB sync is a future sprint |

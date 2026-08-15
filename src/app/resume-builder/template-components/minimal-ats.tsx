@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Resume, FormattedDescription } from "./shared";
+import { Resume, FormattedDescription, ContactRow } from "./shared";
 import {
   fontFamilies,
   typography,
@@ -165,7 +165,7 @@ export function MinimalAtsPreview({ resume }: { resume: Resume }) {
               lineHeight: 1.6,
             }}
           >
-            {contactParts.join("  ·  ")}
+            <ContactRow parts={contactParts} linkedin={resume.social?.linkedin} github={resume.social?.github} />
           </p>
         )}
       </header>

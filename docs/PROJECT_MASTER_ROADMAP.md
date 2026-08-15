@@ -29,7 +29,7 @@ Enable professionals to **own, verify, and leverage their career data** through:
 
 A **three-layer platform**:
 
-1. **Resume Builder** (MVP) — AI-powered resume creation with 22 professional templates
+1. **Resume Builder** (MVP) — AI-powered resume creation with 29 professional templates (8 flagship)
 2. **Professional Passport** — Verified credential aggregation with Trust Score
 3. **Career Intelligence** — Knowledge graphs, AI insights, and career progression tracking
 
@@ -52,7 +52,7 @@ A **three-layer platform**:
 |---|---|---|---|
 | **Authentication** | ✅ Deployed | 100% | Email/password, session management, protected routes |
 | **Landing Website** | ✅ Deployed | 95% | Homepage, pricing, platform, features, legal pages |
-| **Resume Builder** | ✅ Deployed | 90% | 22 templates, AI assistance, export (PDF/DOCX) |
+| **Resume Builder** | ✅ Deployed | 90% | 29 templates, visual gallery, live customization, Professional Preview, export (PDF/DOCX) |
 | **Dashboard (Overview)** | ✅ Deployed | 85% | Professional Identity hub, widget system |
 | **Pricing** | ✅ Deployed | 100% | 3-tier model (Starter free, Professional $29/mo, Enterprise) |
 | **Career Passport** | 🚧 In Progress | 40% | UI complete, verification pipeline WIP |
@@ -109,10 +109,13 @@ A **three-layer platform**:
 #### 2. Resume Builder
 - **Status:** ✅ Core complete, polish ongoing
 - **Features:**
-  - 22 professional templates (Executive, Modern Clean, Creative, ATS-optimized)
+  - 29 professional templates (8 flagship: Patorbit Modern, Minimal ATS, Executive Pro, Engineering Clean, Consulting Elite, Product Manager, Academic CV, Creative Professional)
+  - Visual Template Gallery with real template rendering and full multi-page preview (zoom + page navigation)
+  - Live customization via `ResumeStyleConfig` (fonts, colors, headings, bullets, density, spacing)
+  - Professional Preview workspace (Templates / Customize / Export)
   - Real-time editor with sections: Experience, Education, Skills, Projects, Certifications, Languages, Achievements
   - AI assistance: summary generation, bullet point improvement, ATS optimization
-  - Export: PDF (html2canvas), DOCX (server-side via `/api/export-docx`)
+  - Export: PDF (browser print, A4), DOCX (server-side via `/api/export-docx` honoring the selected style)
   - Zustand state with localStorage persistence (`patorbit-resume-v2`)
   - Auto-save (2s debounce)
   - Live preview with template switcher
@@ -303,10 +306,9 @@ A **three-layer platform**:
 
 ### Known Limitations
 
-1. **PDF Export Quality**
-   - Uses html2canvas (pixel-based) — produces large files, poor text selection
-   - **Fix:** Replace with layout-aware PDF renderer (pdfmake, Puppeteer)
-   - **Priority:** P1
+1. **PDF Export**
+   - **Resolved (2026-08):** Export now opens the browser print dialog (Save as PDF) with A4 geometry parity (`@page { size: A4; margin: 0 }`, `print-color-adjust: exact`), matching the Professional Preview.
+   - **Remaining:** `html2canvas` remains declared in `package.json` with no imports — remove in a dependency cleanup. Pixel-perfect cross-browser parity still wants an eyeball pass.
 
 2. **No Multi-Resume Support**
    - Users can only have one resume (localStorage key conflict)

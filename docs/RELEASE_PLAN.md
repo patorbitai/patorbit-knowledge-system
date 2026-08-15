@@ -67,21 +67,23 @@ Until 1.0, minor versions can include breaking internal changes (store shape, AP
 **Target:** Sprint 6 (~2026-10)  
 **Theme:** Power user resume management
 
+> **Note (2026-08-15):** the template customization half of this milestone shipped early as part of the resume-builder release-readiness work (R-02 / R-03 below).
+
 **Scope:**
 
-| Item | Backlog ID | Priority |
-|---|---|---|
-| Multi-resume support | R-01 | P1 |
-| Template color picker UI | R-02 | P1 |
-| Template font picker UI | R-03 | P1 |
-| Passport QR code + public URL | P-03, P-04 | P1 |
-| Resume version history | R-04 | P2 |
-| Error monitoring (Sentry) | I-04 | P1 |
-| API rate limiting on `/api/ai` | I-03 | P1 |
+| Item | Backlog ID | Priority | Status |
+|---|---|---|---|
+| Multi-resume support | R-01 | P1 | Store-level infrastructure exists (`resumes` + `activeResumeId`); full UI polish pending |
+| Template color picker UI | R-02 | P1 | ✅ **Completed early** — `ResumeStyleConfig` colors (accent/heading/body presets) |
+| Template font picker UI | R-03 | P1 | ✅ **Completed early** — curated font family/size/line-height controls |
+| Passport QR code + public URL | P-03, P-04 | P1 | Pending |
+| Resume version history | R-04 | P2 | Pending |
+| Error monitoring (Sentry) | I-04 | P1 | Pending |
+| API rate limiting on `/api/ai` | I-03 | P1 | Pending (open finding in `docs/SECURITY_AUDIT.md` H-1) |
 
 **Go/No-Go Criteria:**
 - [ ] Users can create and switch between multiple resumes
-- [ ] Template color + font selectable in UI without code changes
+- [x] Template color + font selectable in UI without code changes (done)
 - [ ] Passport shareable via public link
 
 ---

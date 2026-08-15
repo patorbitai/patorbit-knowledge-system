@@ -1,4 +1,5 @@
 import { saveAs } from "file-saver";
+import type { Resume } from "@/types/resume";
 
 // --- PDF Export ---
 // Uses the browser's native print system. Print CSS in globals.css handles
@@ -17,12 +18,26 @@ export const exportToPdf = (_elementId: string, fileName: string) => {
 };
 
 // --- DOCX Export ---
-export const exportToDocx = async (resumeData: any, fileName: string) => {
+/**
+ * Export a resume to DOCX. Sends the SAME templateId and resolved
+ * ResumeStyleConfig the user sees in Professional Preview, so the generated
+ * Word document carries the selected font, colors, heading style, bullet
+ * style, spacing, and page margins instead of a hardcoded template.
+ */
+export const exportToDocx = async (
+  resumeData: Resume,
+  fileName: string,
+  options?: { templateId?: string; styleConfig?: Record<string, unknown> }
+) => {
   try {
     const response = await fetch("/api/export-docx", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(resumeData),
+      body: JSON.stringify({
+        resume: resumeData,
+        templateId: options?.templateId,
+        styleConfig: options?.styleConfig,
+      }),
     });
 
     if (!response.ok) {

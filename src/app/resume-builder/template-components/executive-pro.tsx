@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Resume, FormattedDescription } from "./shared";
+import { Resume, FormattedDescription, SocialLink } from "./shared";
 import {
   fontFamilies,
   typography,
@@ -172,8 +172,8 @@ export function ExecutiveProPreview({ resume }: { resume: Resume }) {
             </address>
             {resume.social && (resume.social.linkedin || resume.social.github || resume.social.website || resume.social.portfolio) && (
               <div style={{ marginTop: spacing[2], fontSize: "0.625rem", color: C.sidebarMuted, lineHeight: 1.7, wordBreak: "break-all" }}>
-                {resume.social.linkedin && <div>{resume.social.linkedin.replace(/^https?:\/\//, "")}</div>}
-                {resume.social.github && <div>{resume.social.github.replace(/^https?:\/\//, "")}</div>}
+                {resume.social.linkedin && <div><SocialLink href={resume.social.linkedin} /></div>}
+                {resume.social.github && <div><SocialLink href={resume.social.github} /></div>}
                 {resume.social.website && <div>{resume.social.website.replace(/^https?:\/\//, "")}</div>}
                 {resume.social.portfolio && <div>{resume.social.portfolio.replace(/^https?:\/\//, "")}</div>}
               </div>

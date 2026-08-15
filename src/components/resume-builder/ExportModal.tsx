@@ -1,22 +1,39 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { useEffect, useRef, useCallback, useState } from "react";
+import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { X, FileText, Download, AlertCircle, Printer } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ResumePreview, getActiveTemplate } from "@/components/resume/ResumePreview";
 import { exportToDocx } from "@/utils/export";
+import { resolveStyleConfig, resolveHeadingHex } from "@/lib/resume-design-system/style-config";
 
 export function ExportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
+  const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
   const template = getActiveTemplate(resume);
+
+  // The SAME resolved config the preview renders with. The heading sentinel
+  // ("accent"/"ink") is resolved to its real hex so DOCX gets concrete colors.
+  const resolvedStyle = useMemo(() => resolveStyleConfig(styleConfig), [styleConfig]);
+  const exportStyle = useMemo(
+    () => ({ ...resolvedStyle, headingColor: resolveHeadingHex(resolvedStyle) }),
+    [resolvedStyle],
+  );
   const optionRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const closeButtonRef = useRef<HTMLButtonElement>(null);
   const triggerRef = useRef<HTMLElement | null>(null);
   const [docxError, setDocxError] = useState<string | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
-  const handleExportPdf = () => {
+  const handleExportPdf = async () => {
+    // Ensure the selected webfont is fully loaded before the print target
+    // renders, so the PDF never silently falls back to a system font.
+    try {
+      await document.fonts.ready;
+    } catch {
+      /* print proceeds even if the fonts API is unavailable */
+    }
     const prev = document.title;
     document.title = resume.name || "resume";
     setIsPrinting(true);
@@ -36,7 +53,11 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const handleExportDocx = async () => {
     setDocxError(null);
     try {
-      await exportToDocx(resume, resume.name || "resume");
+      // Pass the exact templateId + resolved style config the preview shows.
+      await exportToDocx(resume, resume.name || "resume", {
+        templateId: resume.templateId,
+        styleConfig: exportStyle,
+      });
       onClose();
     } catch {
       setDocxError("Failed to generate DOCX. Please try again.");
@@ -188,15 +209,24 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
       )}
     </AnimatePresence>
 
-    {/* Resume render target — mounted only when printing */}
+    {/* Resume render target — mounted only when printing.
+        Exactly one A4 page: 210mm × min 297mm, no browser-added margins. The
+        print CSS (@media print) reinforces this geometry and hides all app
+        chrome so the output contains ONLY the resume sheet. */}
     {isPrinting && (
       <div
         id="pdf-export-target"
         aria-hidden="true"
         className="fixed -left-[9999px] top-0 print:static print:left-auto"
-        style={{ width: "210mm", backgroundColor: "#fff" }}
+        style={{
+          width: "210mm",
+          minHeight: "297mm",
+          boxSizing: "border-box",
+          margin: 0,
+          backgroundColor: "#fff",
+        }}
       >
-        <ResumePreview resume={resume} template={template} />
+        <ResumePreview resume={resume} template={template} styleConfig={styleConfig} />
       </div>
     )}
     </>

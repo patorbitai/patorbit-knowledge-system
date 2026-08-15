@@ -66,6 +66,31 @@ export function NetworkView({
     return gs;
   }, [graph]);
 
+  // NOTE: these memos must stay above the early returns so every hook is
+  // called unconditionally in the same order on every render (Rules of Hooks).
+  // They are safe to compute on an empty GraphService — the early-return
+  // branches never read their values.
+  const connectionSummary = useMemo(() => {
+    if (!selectedNodeId) return { skills: 0, organization: 0, projects: 0, education: 0 };
+    const allOutgoing = graphService.getEdges(selectedNodeId);
+    const allIncoming = graphService.getIncomingEdges(selectedNodeId);
+    let skills = 0, organization = 0, projects = 0, education = 0;
+    for (const e of [...allOutgoing, ...allIncoming]) {
+      const otherId = e.sourceNodeId === selectedNodeId ? e.targetNodeId : e.sourceNodeId;
+      const targetNode = graphService.getNode(otherId);
+      if (!targetNode) continue;
+      if (targetNode.type === "skill") skills++;
+      else if (targetNode.type === "organization") organization++;
+      else if (targetNode.type === "project") projects++;
+      else if (targetNode.type === "education") education++;
+    }
+    return { skills, organization, projects, education };
+  }, [selectedNodeId, graphService]);
+
+  const popularSkills = useMemo(() => {
+    return graphService.findSkills().slice(0, 8);
+  }, [graphService]);
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-6">
@@ -131,27 +156,6 @@ export function NetworkView({
     const matchesFilter = filterType === "all" || node.type === filterType;
     return matchesSearch && matchesFilter;
   });
-
-  const connectionSummary = useMemo(() => {
-    if (!selectedNodeId) return { skills: 0, organization: 0, projects: 0, education: 0 };
-    const allOutgoing = graphService.getEdges(selectedNodeId);
-    const allIncoming = graphService.getIncomingEdges(selectedNodeId);
-    let skills = 0, organization = 0, projects = 0, education = 0;
-    for (const e of [...allOutgoing, ...allIncoming]) {
-      const otherId = e.sourceNodeId === selectedNodeId ? e.targetNodeId : e.sourceNodeId;
-      const targetNode = graphService.getNode(otherId);
-      if (!targetNode) continue;
-      if (targetNode.type === "skill") skills++;
-      else if (targetNode.type === "organization") organization++;
-      else if (targetNode.type === "project") projects++;
-      else if (targetNode.type === "education") education++;
-    }
-    return { skills, organization, projects, education };
-  }, [selectedNodeId, graphService]);
-
-  const popularSkills = useMemo(() => {
-    return graphService.findSkills().slice(0, 8);
-  }, [graphService]);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-8">

@@ -1,5 +1,11 @@
 @import "tailwindcss";
 
+/* Tailwind v4: make the `dark:` variant follow the manual `.dark` class on
+   <html> (set by ThemeProvider), NOT the OS prefers-color-scheme. Without
+   this, components using dark: utilities (e.g. AccountMenu) ignore the app's
+   own theme toggle. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root, .dark {
   --background: #030712;
   --foreground: #f1f5f9;
@@ -107,6 +113,58 @@
   color: #0f172a !important;
   border-color: rgba(15, 23, 42, 0.2) !important;
 }
+
+/* ── Resume Builder / Professional Preview chrome ─────────────────────────
+   The Builder, Preview, Gallery, and Customize workspaces use additional
+   dark surfaces not covered above (#070d18 page backgrounds, hex text
+   colors, and white-alpha surfaces/borders with opacity modifiers). Map
+   them onto the same light palette so the whole app chrome flips. */
+
+.light .bg-\[\#070d18\],
+.light .bg-\[\#070d18\]\/90,
+.light .bg-\[\#070d18\]\/95,
+.light .bg-\[\#0A0E1B\]\/95,
+.light .bg-\[\#04070e\]\/95 {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+
+.light .text-\[\#f8fafc\] { color: #0f172a !important; }
+.light .text-\[\#cbd5e1\] { color: #334155 !important; }
+.light .text-\[\#94a3b8\] { color: #64748b !important; }
+.light .text-\[\#22d3ee\] { color: #0891b2 !important; }
+.light .text-slate-100 { color: #0f172a !important; }
+
+/* White-alpha surfaces & borders — attribute-substring match covers the base
+   classes AND their hover:/focus: variants in one rule. */
+.light [class*="bg-white/[0.0"] {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+.light [class*="bg-white/[0.1"] {
+  background-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+.light [class*="border-white/[0."] {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+.light [class*="border-[rgba(148,163,184"] {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+.light [class*="bg-slate-800"],
+.light [class*="bg-slate-700"],
+.light [class*="bg-slate-600"],
+.light [class*="bg-slate-900/"] {
+  background-color: #eef2f7 !important;
+  color: #0f172a !important;
+}
+
+/* The resume document is THEME-INDEPENDENT: switching the app to light must
+   never change the rendered resume or the user's template colors. The sheet
+   is always wrapped in [data-rs-scope] (ResumePreview/StyleScope), so
+   re-assert the template's own class-based colors inside every sheet. */
+html.light [data-rs-scope] .text-white { color: #ffffff !important; }
+html.light [data-rs-scope] .text-slate-400 { color: #94a3b8 !important; }
 
 @theme inline {
   --color-background: var(--background);
@@ -387,9 +445,14 @@ body {
    PRINT / PDF
    ============================================================ */
 
+/* The resume sheet carries its own internal page margin (the configured
+   pageMargin), so the page margin must be 0 — otherwise the browser adds
+   whitespace on top of the resume's own padding and the PDF does not match
+   the on-screen preview. The print page is a TRUE A4 page (210mm × 297mm)
+   with zero browser-added margins. */
 @page {
-  size: A4 portrait;
-  margin: 15mm 0mm;
+  size: A4;
+  margin: 0;
   @top-left { content: ""; }
   @top-center { content: ""; }
   @top-right { content: ""; }
@@ -415,32 +478,44 @@ body {
      page in CSS print layout, causing duplicates. Absolute elements fall at
      their document position and paginate normally. */
   body { position: relative !important; }
+  /* The printable page is exactly one A4 sheet — the SAME geometry the
+     Professional Preview lays out at (794×1123px at 96dpi ≈ 210×297mm).
+     No scaling, no width/height overrides beyond the A4 constants, no
+     arbitrary margin compensation: the resume's own configured pageMargin is
+     the only padding. box-sizing: border-box keeps 210mm as the outer size. */
   #pdf-export-target {
     position: absolute !important;
     top: 0 !important;
     left: 0 !important;
-    width: 100% !important;
-    max-width: 100% !important;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    box-sizing: border-box !important;
     margin: 0 !important;
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
+    padding: 0 !important;
     background: white !important;
   }
 
-  /* Page-break control */
-  article { break-inside: avoid; }
-  .break-inside-avoid { break-inside: avoid; }
+  /* Render the resume EXACTLY as the user sees it in Professional Preview.
+     Without this, Chrome/Edge drop every background color from the PDF unless
+     the user manually checks "Background graphics" in the print dialog — so
+     colored sidebars, header bands, and dark templates silently lose their
+     colors. `exact` forces the sheet's colors to print as designed. */
+  #pdf-export-target,
+  #pdf-export-target * {
+    print-color-adjust: exact !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  /* Page-break control. IMPORTANT: NO break-inside: avoid on article/section
+     — the Professional Preview paginates at fixed A4-height windows (it clips
+     content at the page boundary), so print must flow the SAME way or page
+     breaks land at different locations than the preview. break-after: avoid
+     and orphans/widows are typographic minimums that keep a heading or a lone
+     line off the bottom of a page without shifting section positions. */
   h1, h2, h3, h4 { break-after: avoid; orphans: 3; widows: 3; }
   p, li { orphans: 2; widows: 2; }
 
-  /* Strip decorative chrome from template components */
-  #pdf-export-target .rounded-lg,
-  #pdf-export-target .rounded-xl,
-  #pdf-export-target .rounded-2xl {
-    border-radius: 0 !important;
-  }
-  #pdf-export-target * {
-    box-shadow: none !important;
-    text-shadow: none !important;
-  }
+  /* The resume must print pixel-faithful to the on-screen preview: no
+     border-radius, shadow, or text-shadow stripping — those rules changed
+     template designs (rounded chips printed as squares). */
 }

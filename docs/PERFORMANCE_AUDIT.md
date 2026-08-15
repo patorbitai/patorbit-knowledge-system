@@ -2,7 +2,39 @@
 
 **Date:** 2026-08-08  
 **Scope:** Render efficiency · Zustand · Expensive components · AI request deduplication · Bundle size · Lazy loading · Server/client boundaries  
-**Status:** Read-only audit — no code modified
+**Status:** Read-only audit — no code modified (original findings below; resolution status tracked in the addendum)
+
+---
+
+# Resolution Status Addendum — 2026-08-15
+
+Status of each finding verified against the current code:
+
+| Finding | Severity | Status |
+|---|---|---|
+| §3.1 `ResumePreview` always mounted off-screen in `ExportModal` | Critical | ✅ **FIXED** — `ExportModal` now gates the print target behind an `isPrinting` state; the resume renders only while printing. |
+| §2.3 `startAnalysis()` fired on every hydration | Critical | ✅ **FIXED** — `onRehydrateStorage` normalizes persisted resumes only; no AI request on page load. |
+| §1.1 `OptimizationPanel` setState during render | Critical | ✅ **FIXED** — summary draft propagation moved into `useEffect`. |
+| §4.1 No `AbortController` cleanup on unmount | High | 🔶 **PARTIAL** — abort-before-start is used before every request, but no unmount cleanup effect exists in `useOptimization.ts`; still open. |
+| §5.1 `mammoth` in initial client bundle | High | ✅ **RESOLVED** — `mammoth` is now used only in the server-side `/api/import` route (`src/utils/resume-parser.ts` has no mammoth import); not in the client bundle. |
+| §5.2 `html2canvas`/`jspdf` dead weight | High | 🔶 **PARTIAL** — `jspdf` removed from `package.json`; `html2canvas` remains declared but has **zero imports** in `src/` — ready for removal in a dependency cleanup. |
+| §6.1 Zero `dynamic()`/`React.lazy()` usage | High | 🔶 **OPEN** — no `next/dynamic` or `React.lazy` in `src/`; component-level code-splitting not yet introduced. |
+| §6.2 All templates statically imported via barrel | Medium | 🔶 **OPEN** — unchanged. |
+| §2.1/2.4 Whole-store subscriptions, no `useShallow` | High | 🔶 **OPEN** — `Passport` and `RightCopilot` still subscribe to the whole resume; zero `useShallow` usage. |
+| §2.2 `progress`/`sectionComplete` stored as functions | High | 🔶 **OPEN** — unchanged. |
+| §1.2/1.3 Inline arrays/functions in `ExperienceSection`/`SkillsSection` | High/Medium | 🔶 **OPEN** — unchanged. |
+| §1.4 `Passport` sub-components not memoized | High | 🔶 **OPEN** — unchanged. |
+| §1.5/1.6 `RightCopilot` re-render, `Hero` timeout-in-updater | High/Medium | 🔶 **OPEN** — unchanged. |
+| §3.2/3.3/3.4 Gallery virtualization, `MiniaturePreview` memo, double `overallConfidence` | Medium/Low | 🔶 **OPEN** — gallery renders are still non-virtualized. |
+| §5.3/5.4/7.x Framer `LazyMotion`, server boundaries, marketing client islands | Medium | 🔶 **OPEN** — not addressed. |
+| Vitest worker pool stability (Windows) | — | ✅ **FIXED** — `vitest.config.ts` uses `pool: "threads"`; the suite runs green repeatedly (63 files / 560 tests). |
+| Lint-noise cleanup + dead/generated artifact removal | — | ✅ **DONE** — `build-errors.txt`, `server.log`, `public/pdf.worker.mjs`, `SettingsModal.tsx` removed; coverage/lint ignores added. |
+
+**Summary:** the three Critical findings are fixed; several High findings remain open and are tracked in the product backlog rather than this release.
+
+---
+
+# Original Audit (2026-08-08)
 
 ---
 

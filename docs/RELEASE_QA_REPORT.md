@@ -7,6 +7,50 @@
 
 ---
 
+# Validation Update — 2026-08-15
+
+**Scope:** Re-validation of the original audit findings after the resume-builder release-readiness work. This addendum supersedes the statuses below where marked; the original report remains as the historical record.
+
+## Issue Status
+
+| ID | Issue | 2026-08-08 | 2026-08-15 |
+|---|---|---|---|
+| P0-1 | `OPENAI_API_KEY` missing | ❌ Blocker | ✅ **FIXED/VERIFIED** — centralized provider with placeholder-key diagnostics (`docs/fixes/P0-1-AI-CONFIGURATION.md`); key read server-side only, all AI routes guarded. A real key must still be provided by the operator in the deployment environment. |
+| P0-2 | `AUTH_SECRET` vs `NEXTAUTH_SECRET` mismatch | ❌ Blocker | ✅ **FIXED/VERIFIED** — `src/middleware.ts` and `src/lib/auth.ts` both read `process.env.AUTH_SECRET`. Validated live: unauth session `{}`, protected routes 307 → `/login`, protected APIs 401, authenticated DOCX generation succeeds. |
+| P1-1 | Production credentials committed | ❌ Critical | ⚠️ **MITIGATED (working tree)** — `.env*` untracked and gitignored; no secrets found in the working diff. **Operator action required:** rotate any credentials that ever entered git history. |
+| P1-2 | No rate limiting on AI routes | ❌ High | 🔶 **OPEN** — still outstanding (backlog). |
+| P1-3 | `console.log` in production paths | ❌ High | 🔶 **PARTIALLY ADDRESSED** — cleanup reduced logging in touched paths; a structured-logger pass remains. |
+| P2-1 | `split-vibrant` not registered | ❌ P2 | ✅ **RESOLVED** — template removed from the registry; all **29 registered templates** are wired and render. |
+| P2-2 | Import Review: no validation on Continue | ❌ P2 | 🔶 **OPEN** — outstanding. |
+| P2-3 | Session cache fingerprint collision | ❌ P2 | 🔶 **OPEN** — outstanding (low likelihood). |
+| P2-4 | DOCX export size warning | ❌ P2 | 🔶 **OPEN** — outstanding. |
+| P3-1 / P3-2 | Polish items | ❌ P3 | 🔶 **OPEN** — outstanding. |
+
+## Latest Validation Results (2026-08-15)
+
+| Check | Result |
+|---|---|
+| TypeScript (`npx tsc --noEmit`) | ✅ exit 0, zero errors |
+| Test suite | ✅ **63 files / 560 tests passed** |
+| Production build (`next build`) | ✅ compiled successfully (note: `prisma generate` inside `npm run build` can hit a Windows DLL lock while the dev server is running — environmental, stop the dev server first) |
+| Lint | 🔶 363 total problems (254 errors / 109 warnings) — ~250+ are pre-existing legacy-template issues; **0 newly introduced** by the staged work; all new files lint clean |
+| DOCX export | ✅ verified end-to-end with a real authenticated request — HTTP 200, valid OOXML, selected font/colors/bullets/margins present, LinkedIn/GitHub hyperlinks |
+| PDF/print | ✅ A4 geometry parity pinned (`@page` A4 margin 0, shared A4 constants); requires an eyeball browser pass for pixel-perfect confirmation |
+| Import | ✅ auth-guarded, node_modules `pdfjs-dist`, parser tests green |
+| Security scan | ✅ no secrets in working tree; `.env*` gitignored |
+
+## Remaining Before Release (non-blocking)
+
+- 🔶 P1-2 rate limiting, P1-3 structured logging, P2-2/2-3/2-4, P3-1/3-2 — backlog items
+- ⏸️ Deferred: multi-page sidebar/background height on partially filled pages (see `KNOWN_ISSUES.md` M-06)
+- 👁 Claims requiring visual verification in a browser session: pixel-perfect print parity, light-mode chrome appearance, mobile behavior of the editor columns
+
+---
+
+# Original Report (2026-08-08)
+
+---
+
 ## Executive Summary
 
 **Result:** ❌ **NOT READY FOR PRIVATE BETA**

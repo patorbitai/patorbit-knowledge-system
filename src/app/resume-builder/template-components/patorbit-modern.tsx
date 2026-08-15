@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Resume, FormattedDescription } from "./shared";
+import { Resume, FormattedDescription, SocialLink } from "./shared";
 import {
   fontFamilies,
   typography,
@@ -161,8 +161,8 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
             {resume.nationality && <div>{resume.nationality}</div>}
             {resume.social && (resume.social.linkedin || resume.social.github || resume.social.website || resume.social.portfolio) && (
               <div style={{ marginTop: spacing[1], textAlign: "right", ...typography.caption, color: colors.muted, lineHeight: 1.8 }}>
-                {resume.social.linkedin && <div>{resume.social.linkedin.replace(/^https?:\/\//, "")}</div>}
-                {resume.social.github && <div>{resume.social.github.replace(/^https?:\/\//, "")}</div>}
+                {resume.social.linkedin && <div><SocialLink href={resume.social.linkedin} /></div>}
+                {resume.social.github && <div><SocialLink href={resume.social.github} /></div>}
                 {resume.social.website && <div>{resume.social.website.replace(/^https?:\/\//, "")}</div>}
                 {resume.social.portfolio && <div>{resume.social.portfolio.replace(/^https?:\/\//, "")}</div>}
               </div>
