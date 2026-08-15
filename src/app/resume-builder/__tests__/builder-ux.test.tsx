@@ -13,6 +13,20 @@ vi.mock("@/components/providers/ThemeProvider", () => ({
   ThemeProvider: ({ children }: { children: React.ReactNode }) => children,
   useTheme: () => ({ theme: "dark", setTheme: vi.fn(), toggleTheme: vi.fn() }),
 }));
+// The Builder header now renders ImportButton, which uses next/navigation's
+// useRouter. Without an AppRouterContext in jsdom this throws, so mock it.
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+    refresh: vi.fn(),
+  }),
+  usePathname: () => "/resume-builder",
+  useSearchParams: () => new URLSearchParams(),
+}));
 
 import ResumeBuilderPage from "../page";
 import PreviewPage from "../preview/page";
@@ -75,6 +89,14 @@ describe("Builder Preview UX refactor", () => {
     expect(previewLink?.textContent).toContain("Preview");
     expect(findButton("Settings")).toBeFalsy();
     expect(findButton("Account menu")).toBeTruthy();
+    unmount();
+  });
+
+  it("main Builder header renders the Import Resume action at the top", () => {
+    const { unmount } = renderToContainer(<ResumeBuilderPage />);
+
+    // Import lives in the Builder (top header), not on the Overview card.
+    expect(document.body.textContent).toContain("Import Resume");
     unmount();
   });
 

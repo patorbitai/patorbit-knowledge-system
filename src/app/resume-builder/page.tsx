@@ -9,6 +9,7 @@ import { ai } from "@/lib/ai/client";
 import { LeftSidebar, CenterWorkspace, RightCopilot, ClaimsReview } from "@/components/resume-builder";
 import MobileSectionNav from "@/components/resume-builder/MobileSectionNav";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
+import { ImportButton } from "@/components/resume-builder/ImportButton";
 import AccountMenu from "@/components/hub/AccountMenu";
 import { Eye, ArrowLeft, ChevronRight } from "lucide-react";
 import { debounce } from "@/lib/debounce";
@@ -186,6 +187,9 @@ function AppHeader() {
 
         {/* Right: Actions */}
         <div className="flex items-center gap-2">
+          {/* Import Resume — prominently available at the top of the Builder */}
+          <ImportButton variant="card" label="Import Resume" />
+
           <SaveStatusIndicator />
 
           <div className="h-3 w-px bg-white/[0.08]" />

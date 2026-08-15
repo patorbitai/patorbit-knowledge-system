@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, ShieldCheck, FileText, Network, Briefcase, CheckCircle2, Sparkles, Award, Cpu, Globe } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
-import { ImportButton } from "@/components/resume-builder/ImportButton";
 import type { IdentityScoreData } from "@/lib/identity-score";
 import type { Experience, Skill } from "@/types/resume";
 
@@ -292,8 +291,8 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
               </p>
             ) : (
               <p className="text-[#94a3b8] text-xs leading-relaxed mb-6">
-                No resume imported yet.<br />
-                Import your existing resume and we&apos;ll use it to build your professional identity.
+                No resume yet.<br />
+                Import your existing resume from the Resume Builder to build your professional identity.
               </p>
             )}
           </div>
@@ -301,15 +300,12 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
             {hasActiveResume ? (
               <>
                 <span className="inline-block px-2.5 py-1 rounded-full bg-[#101b2c] text-[#cbd5e1] text-[10px] font-semibold">Completeness {actualCompleteness}%</span>
-                <div className="flex items-center gap-2.5 flex-wrap justify-end">
-                  <ImportButton variant="card" label="Import / Replace Resume" />
-                  <Link href="/resume-builder" className="text-[#22d3ee] text-xs font-bold hover:underline whitespace-nowrap">Open Resume →</Link>
-                </div>
+                <Link href="/resume-builder" className="text-[#22d3ee] text-xs font-bold hover:underline whitespace-nowrap">Open Resume →</Link>
               </>
             ) : (
               <>
                 <span className="inline-block px-2.5 py-1 rounded-full bg-[#101b2c] text-[#cbd5e1] text-[10px] font-semibold">No resume</span>
-                <ImportButton variant="card" label="Import Resume" />
+                <Link href="/resume-builder" className="text-[#22d3ee] text-xs font-bold hover:underline whitespace-nowrap">Open Resume Builder →</Link>
               </>
             )}
           </div>
