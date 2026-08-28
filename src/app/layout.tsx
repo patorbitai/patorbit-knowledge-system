@@ -8,6 +8,8 @@ import {
 } from "next/font/google";
 import SessionProvider from "@/components/providers/SessionProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
+import { InactivityProvider } from "@/components/providers/InactivityProvider";
+import { InactivityWarning } from "@/components/providers/InactivityWarning";
 import { DeploymentUpdateBanner } from "@/components/common/DeploymentUpdateBanner";
 import "./globals.css";
 
@@ -46,7 +48,12 @@ export default function RootLayout({
       </head>
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
-          <SessionProvider>{children}</SessionProvider>
+          <SessionProvider>
+            <InactivityProvider>
+              {children}
+              <InactivityWarning />
+            </InactivityProvider>
+          </SessionProvider>
         </ThemeProvider>
         <DeploymentUpdateBanner />
       </body>

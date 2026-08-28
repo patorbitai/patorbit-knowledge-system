@@ -2,14 +2,13 @@
 
 import { clsx } from "clsx";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import { Upload } from "lucide-react";
-import { AnimatePresence } from "framer-motion";
+
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ImportReviewScreen } from "./ImportReviewScreen";
 import type { ImportMeta } from "./ImportReviewScreen";
 import type { Resume } from "@/types/resume";
-import { normalizeImportedResume } from "@/utils/normalize-import";
+import { mergeImportedResume } from "@/utils/normalize-import";
 
 interface PendingImport {
   resume: Resume;
@@ -66,7 +65,6 @@ function CircularProgress({ progress }: { progress: number }) {
 }
 
 export function ImportButton({ variant = "sidebar", label, className }: ImportButtonProps) {
-  const router = useRouter();
   const setResume = useResumeBuilder((s) => s.setResume);
   const [importing, setImporting] = useState(false);
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
@@ -111,9 +109,10 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
   };
 
   const handleConfirm = (draft: Resume) => {
-    setResume(normalizeImportedResume(draft));
+    const currentResume = useResumeBuilder.getState().resume;
+    const merged = mergeImportedResume(currentResume, draft);
+    setResume(merged);
     setPending(null);
-    router.push("/resume-builder");
   };
 
   const currentStage = stages[currentStageIndex];
@@ -188,27 +187,26 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
           <div
             role="alert"
             className={clsx(
-              "flex items-center justify-between gap-2 text-red-400 leading-snug",
+              "flex items-center justify-between gap-2 rounded-lg border px-3 py-2 text-xs font-medium leading-snug",
+              "border-red-500/30 bg-red-500/10 text-red-400",
               variant === "hero"
-                ? "mt-2 text-center text-xs justify-center"
-                : "mt-1 px-2.5 text-[10px]"
+                ? "mt-2 text-center justify-center"
+                : "mt-2"
             )}
           >
             <span>{error}</span>
-            <span className="underline cursor-pointer hover:text-white" onClick={() => setError(null)}>Clear</span>
+            <span className="shrink-0 ml-2 underline cursor-pointer hover:text-white" onClick={() => setError(null)}>Dismiss</span>
           </div>
         )}
       </div>
-      <AnimatePresence>
-        {pending && (
-          <ImportReviewScreen
-            resume={pending.resume}
-            meta={pending.meta}
-            onConfirm={handleConfirm}
-            onCancel={() => setPending(null)}
-          />
-        )}
-      </AnimatePresence>
+      {pending && (
+        <ImportReviewScreen
+          resume={pending.resume}
+          meta={pending.meta}
+          onConfirm={handleConfirm}
+          onCancel={() => setPending(null)}
+        />
+      )}
     </>
   );
 }
