@@ -97,7 +97,7 @@ function looksLikeRole(line: string): boolean {
   if (/(corp|inc|ltd|llc|gmbh|co\.)/i.test(t)) return false;
   if (/[$%×\d]/.test(t)) return false;
   if (/^\s*[•·▪◦∙*\-\–—\d.)]/.test(t)) return false;
-  return /^[A-Z][a-zA-Z0-9\/&,()\-\s]+$/.test(t) || /^[A-Z][a-zA-Z0-9\/&,()\-\s]+(?:\s+(?:and|or|of|for|in|at)\s+[A-Za-z0-9\/&,()\-\s]+)+/i.test(t);
+  return /^[A-Z][a-zA-Z0-9\/&,()\-\s]+$/.test(t) || /^[A-Z][a-zA-Z0-9\/&,()\-\s]+(?:\s+(?:and|or|of|for|in|at)\s+[A-Za-z0-9\/&,()\-\s]+)+/.test(t);
 }
 
 function looksLikeAchievement(line: string): boolean {
