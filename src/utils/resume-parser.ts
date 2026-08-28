@@ -136,89 +136,232 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
   let current: { company: string; position: string; duration: string; location: string; description: string } | null = null;
   const bulletLines: string[] = [];
 
+  // Broad date patterns as plain strings (not RegExp.source) to avoid
+  // double-escaping issues when nested into larger patterns.
+  const MN = "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)";
+  const DATE_ATOM = MN + "\\.?\\s+\\d{1,4}|\\d{4}";
+  const DATE_ATOM_BROAD = MN + "\\.?\\s+\\d{1,2},?\\s+\\d{4}";
+  // A date range: DATE - DATE  (handles en-dash, em-dash, hyphen)
+  const DATE_RANGE_PAT = "(" + DATE_ATOM + ")\\s*[-\\u2013\\u2014]\\s*(Present|current|now|ongoing|" + DATE_ATOM + ")";
+  // Single date at end of line
+  const DATE_SINGLE_PAT = "(" + DATE_ATOM + ")";
+
+  const RE_DATE_RANGE = new RegExp(DATE_RANGE_PAT + "\\s*$", "i");
+  const RE_DATE_SINGLE = new RegExp(DATE_SINGLE_PAT + "\\s*$", "i");
+
+  /** Clean trailing punctuation from a name/label. */
+  const cleanName = (s: string) => s.replace(/[\s,;:]+$/, "").replace(/^[,;:\s]+/, "").trim();
+
+  /** Clean a company name: strip trailing description text after commas.
+   *  "People Tech Group, layers, and reporting" → "People Tech Group"
+   *  "PystackJs Pvt. Ltd. (MarsDevs)" → "PystackJs Pvt. Ltd. (MarsDevs)" (kept)
+   *  "Google, Mountain View" → "Google" (location stripped)
+   */
+  const cleanCompanyName = (s: string): string => {
+    const t = cleanName(s);
+    // Split on commas and keep only parts that look like company text.
+    // Known company suffixes and parenthetical names are kept;
+    // plain descriptive text ("layers", "and reporting", etc.) is stripped.
+    const parts = t.split(/\s*,\s*/);
+    if (parts.length <= 1) return t;
+    // Keep building from the left: stop at the first part that doesn't
+    // look like it belongs to a company name.
+    const companySuffix = /\b(?:Inc|LLC|Ltd|Corp|Co\.?|GmbH|Pvt|Limited|Company|Group|Technologies|Tech|Solutions|Services|Systems|Labs|Studio|Consulting|Analytics|Enterprises|Holdings|Ventures|Industries)\b/i;
+    const kept: string[] = [];
+    for (const part of parts) {
+      const p = part.trim();
+      if (!p) continue;
+      // If this part matches known company patterns or looks company-shaped,
+      // keep it. Otherwise stop.
+      if (companySuffix.test(p) || /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+)*$/.test(p)) {
+        kept.push(p);
+      } else if (kept.length > 0 && /^\(.*\)$/.test(p)) {
+        // Parenthetical alternative name like "(MarsDevs)" — keep it
+        kept.push(p);
+      } else {
+        break;
+      }
+    }
+    return kept.length > 0 ? kept.join(", ") : t;
+  };
+
+  /** Extract any trailing date or date range from a line. */
+  const extractDate = (text: string): { date: string; rest: string } => {
+    const rm = RE_DATE_RANGE.exec(text);
+    if (rm) return { date: rm[0].trim(), rest: cleanName(text.slice(0, rm.index)) };
+    const sm = RE_DATE_SINGLE.exec(text);
+    if (sm) return { date: sm[0].trim(), rest: cleanName(text.slice(0, sm.index)) };
+    return { date: "", rest: text };
+  };
+
+  /** Check if a line is a bullet/achievement marker. */
+  const isBullet = (t: string) => /^[•·▪◦∙\-*\d.]/.test(t);
+
+  /** Detect a pipe "Company | Position" separator (not hyphens/en-dashes). */
+  const PIPE_SEP = /^(.+?)\s*\|\s*(.+)$/;
+
+  /** Check if text looks like a role/position title (not a company). */
+  const ROLE_HINTS = /(?:Engineer|Developer|Manager|Director|Lead|Architect|Analyst|Designer|Consultant|Specialist|Coordinator|Supervisor|Officer|Executive|VP|CTO|CEO|CFO|COO|Head|Principal|Senior|Junior|Staff|Associate|Intern|Freelance|Scientist|Researcher|Professor|Teacher|Nurse|Doctor|Technician|Operator)/i;
+  const COMPANY_HINTS = /\b(?:Inc|LLC|Ltd|Corp|Co|GmbH|Pvt|Limited|Company|Group|Technologies|Tech|Solutions|Services|Systems|Labs|Studio|Consulting|Analytics|Enterprises|Holdings|Ventures|Industries)\b/i;
+
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    // Split a trailing date range off first, so the en-dash inside
-    // "Mar 2020 – Present" is never read as a company/position separator.
-    const rangeEnd = new RegExp(DATE_RANGE_RE.source + "$", "i");
-    const rangeMatch = trimmed.match(rangeEnd);
-    const range = rangeMatch ? rangeMatch[0] : "";
-    const head = rangeMatch ? trimmed.slice(0, rangeMatch.index).trim() : trimmed;
-
-    // Detect company/position line: "Company Name | Position" or "Position at Company" or "Company - Position"
-    const companyMatch = head.match(/^(.+?)(?:\s*[|–—-]\s*)(.+)$/);
-    if (companyMatch) {
-      if (current) {
-        current.description = bulletLines.join("\n");
-        items.push(current);
-        bulletLines.length = 0;
-      }
-      current = {
-        company: companyMatch[1].trim(),
-        position: companyMatch[2].trim(),
-        duration: range,
-        location: "",
-        description: "",
-      };
-      continue;
-    }
-
-    // Or: "Position, Company"
-    const positionFirst = head.match(/^(.+?),\s*(.+)$/) && !/^\d/.test(head);
-    if (positionFirst && !companyMatch) {
-      if (current) {
-        current.description = bulletLines.join("\n");
-        items.push(current);
-        bulletLines.length = 0;
-      }
-      current = {
-        company: head,
-        position: head,
-        duration: range,
-        location: "",
-        description: "",
-      };
-      continue;
-    }
-
-    // Company-only line with a date range on the same line:
-    // "Acme Corp  Mar 2020 – Present" → company "Acme Corp", duration the range.
-    if (rangeMatch && head) {
-      if (current) {
-        current.description = bulletLines.join("\n");
-        items.push(current);
-        bulletLines.length = 0;
-      }
-      current = {
-        company: head,
-        position: "",
-        duration: range,
-        location: "",
-        description: "",
-      };
-      continue;
-    }
-
-    // Bare date range on its own line → attach as duration to the current entry.
-    if (rangeMatch && !head) {
-      if (current) current.duration = range;
-      continue;
-    }
-
-    // Location
-    if (current && !current.location && /^[A-Z][a-z]+(?:,\s*[A-Z]{2})?$/.test(trimmed)) {
-      current.location = trimmed;
-      continue;
-    }
-
-    // Bullet points
-    if (/^[•\-*\d.]/.test(trimmed) || trimmed.startsWith("-") || trimmed.startsWith("*")) {
+    // 1) BULLET/ACHIEVEMENT LINES → always description, never a new entry.
+    if (isBullet(trimmed) || /^-\s/.test(trimmed)) {
       bulletLines.push(trimmed);
-    } else if (current && trimmed.length > 10) {
-      // Continuation of last bullet or description
+      continue;
+    }
+
+    // 2) EXTRACT DATE from the line (handles "2024 – Apr 9", "Apr 2022 – Jan 2024", etc.)
+    const { date, rest } = extractDate(trimmed);
+
+    // 3) PIPE SEPARATOR: "Company | Position" or "Position | Company"
+    if (rest) {
+      const pipeMatch = rest.match(PIPE_SEP);
+      if (pipeMatch) {
+        if (current) {
+          current.description = bulletLines.join("\n");
+          items.push(current);
+          bulletLines.length = 0;
+        }
+        const left = pipeMatch[1].trim();
+        const right = pipeMatch[2].trim();
+        // Determine which side is company vs position using heuristics
+        let company = left;
+        let position = right;
+        if (ROLE_HINTS.test(left) && COMPANY_HINTS.test(right)) {
+          company = right;
+          position = left;
+        } else if (COMPANY_HINTS.test(left) && ROLE_HINTS.test(right)) {
+          company = left;
+          position = right;
+        }
+        current = { company, position, duration: date, location: "", description: "" };
+        continue;
+      }
+    }
+
+    // 4) EN-DASH/HYPHEN SEPARATOR: "Company – Position" or "Position – Company"
+    //    Only split when both sides look meaningful (not just a date fragment).
+    if (rest) {
+      const dashMatch = rest.match(/^(.+?)\s+[–—-]\s+(.+)$/);
+      if (dashMatch && !/^\d/.test(rest) && dashMatch[1].trim().length > 1 && dashMatch[2].trim().length > 1) {
+        const left = dashMatch[1].trim();
+        const right = dashMatch[2].trim();
+        // Only treat as separator if one side looks like a company and the other like a role
+        if (COMPANY_HINTS.test(left) && ROLE_HINTS.test(right)) {
+          if (current) {
+            current.description = bulletLines.join("\n");
+            items.push(current);
+            bulletLines.length = 0;
+          }
+          current = { company: cleanCompanyName(left), position: right, duration: date, location: "", description: "" };
+          continue;
+        }
+        if (ROLE_HINTS.test(left) && COMPANY_HINTS.test(right)) {
+          if (current) {
+            current.description = bulletLines.join("\n");
+            items.push(current);
+            bulletLines.length = 0;
+          }
+          current = { company: cleanCompanyName(right), position: left, duration: date, location: "", description: "" };
+          continue;
+        }
+      }
+    }
+
+    // 5) COMMA SEPARATOR: "Position, Company" — e.g. "Machine Learning Engineer, PystackJs"
+    if (rest) {
+      const commaMatch = rest.match(/^(.+?),\s*(.+)$/);
+      if (commaMatch && !/^\d/.test(rest) && !date) {
+        const left = commaMatch[1].trim();
+        const right = commaMatch[2].trim();
+        if (ROLE_HINTS.test(left) && COMPANY_HINTS.test(right)) {
+          if (current) {
+            current.description = bulletLines.join("\n");
+            items.push(current);
+            bulletLines.length = 0;
+          }
+          current = { company: cleanCompanyName(right), position: left, duration: "", location: "", description: "" };
+          continue;
+        }
+      }
+    }
+
+    // 6) STANDALONE DATE on its own line → attach to current entry.
+    if (date && !rest) {
+      if (current) current.duration = date;
+      continue;
+    }
+
+    // 7) LINE WITH A DATE AND REMAINING TEXT
+    // Could be:
+    //   "Acme Corp  Mar 2020 – Present" (company-first)
+    //   "Machine Learning Engineer , 2024 – Apr 9" (position-first)
+    if (date && rest) {
+      if (current) {
+        current.description = bulletLines.join("\n");
+        items.push(current);
+        bulletLines.length = 0;
+      }
+      // If rest looks like a role/position (not a company), treat as position-first:
+      // the company is expected on the next line.
+      if (ROLE_HINTS.test(rest) && !COMPANY_HINTS.test(rest)) {
+        current = { company: "", position: rest, duration: date, location: "", description: "" };
+      } else {
+        current = { company: cleanCompanyName(rest), position: "", duration: date, location: "", description: "" };
+      }
+      continue;
+    }
+
+    // 8) STANDALONE SHORT TEXT: could be a company name, position title, or continuation.
+    if (rest && rest.length > 1 && rest.length < 60) {
+      // Check if it's a company-like line (has corporate suffix)
+      if (COMPANY_HINTS.test(rest)) {
+        // Position-first format: if current has a position but no company,
+        // this line is the company we've been waiting for.
+        if (current && !current.company && current.position) {
+          current.company = cleanCompanyName(rest);
+        } else {
+          if (current) {
+            current.description = bulletLines.join("\n");
+            items.push(current);
+            bulletLines.length = 0;
+          }
+          current = { company: cleanCompanyName(rest), position: "", duration: "", location: "", description: "" };
+        }
+        continue;
+      }
+      // Check if it's a role/position line
+      if (ROLE_HINTS.test(rest) && !COMPANY_HINTS.test(rest)) {
+        if (current && !current.position) {
+          // Entry waiting for a position → attach as position
+          current.position = rest;
+        } else if (current && current.duration && bulletLines.length > 0) {
+          // Dated entry that already has description content → this role starts a NEW entry.
+          // Flush current, start fresh with this as the pending position.
+          current.description = bulletLines.join("\n");
+          items.push(current);
+          bulletLines.length = 0;
+          current = { company: "", position: rest, duration: "", location: "", description: "" };
+        } else if (current) {
+          bulletLines.push(rest);
+        } else {
+          // No current entry yet → start entry with this as position
+          current = { company: "", position: rest, duration: "", location: "", description: "" };
+        }
+        continue;
+      }
+    }
+
+    // 9) LONGER TEXT or unrecognized → description continuation
+    if (current && trimmed.length > 5) {
       bulletLines.push(trimmed);
+    } else if (!current && trimmed.length > 2 && trimmed.length < 60) {
+      // Unknown short line before any entry — treat as potential company
+      current = { company: trimmed, position: "", duration: "", location: "", description: "" };
     }
   }
 

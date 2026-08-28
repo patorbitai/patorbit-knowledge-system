@@ -71,16 +71,18 @@ interface Builder {
 
 /** Corporate suffixes that make a bare line read as a company name, not a role. */
 const COMPANY_SUFFIX_RE =
-  /\b(?:corporation|incorporated|corp\.?|inc\.?|ltd\.?|llc|llp|gmbh|plc|co\.|company|companies|group|technologies?|systems|solutions|consulting|partners?|associates?|labs?|studios?|services|holdings?|ventures|industries?)\b/i;
+  /\b(?:corporation|incorporated|corp\.?|inc\.?|ltd\.?|pvt\.?|llc|llp|gmbh|plc|co\.|company|companies|group|technologies?|systems|solutions|consulting|partners?|associates?|labs?|studios?|services|holdings?|ventures|industries?)\b/i;
 
 /**
  * Conservative re-confirmation that an `other` line is a company name: short,
  * no bullet/number/year/sentence punctuation, every word capitalised, and a
  * company suffix present. Anything prose-like fails the capitalisation or the
  * suffix checks and stays `unassigned` (rules 6–7).
+ * Parenthetical names like "(MarsDevs)" are stripped before checking.
  */
 function isCompanyShaped(line: string): boolean {
-  const t = line.trim();
+  // Strip parenthetical alternative names before checking company shape
+  const t = line.trim().replace(/\s*\([^)]+\)/g, "").trim();
   if (!t || t.length > 60) return false;
   if (/^\s*[•·▪◦∙*\-\–—\d.)]/.test(t)) return false;
   if (/\b\d{4}\b/.test(t)) return false;
@@ -88,7 +90,7 @@ function isCompanyShaped(line: string): boolean {
   if (!COMPANY_SUFFIX_RE.test(t)) return false;
   const words = t.split(/\s+/);
   if (words.length === 0 || words.length > 6) return false;
-  return words.every((w) => /^[A-Z0-9&'’.]/.test(w));
+  return words.every((w) => /^[A-Z0-9&'’.(]/.test(w));
 }
 
 /**
