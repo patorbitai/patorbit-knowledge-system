@@ -664,8 +664,8 @@ function paginateRoot(root: HTMLElement, scope: HTMLElement): string[] {
   const ctx: Ctx = {
     pageHeight: PAGE_H,
     safeTop1,
-    safeTopN: safeTop1 > 0 ? safeTop1 : SAFE_TOP,
-    safeBottom: safeBottom > 0 ? safeBottom : SAFE_BOTTOM,
+    safeTopN: Math.max(safeTop1, SAFE_TOP),
+    safeBottom: Math.max(safeBottom, SAFE_BOTTOM),
     safeLeft,
     safeRight,
     zoom,
