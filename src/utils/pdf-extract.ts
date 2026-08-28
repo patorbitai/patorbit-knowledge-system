@@ -208,6 +208,23 @@ function dehyphenate(lines: { text: string; y: number }[]): { text: string; y: n
 }
 
 /**
+ * Known section headers (lowercase) for validating collapsed results. */
+const KNOWN_HEADERS = new Set([
+  "summary", "professionalsummary", "profile", "objective",
+  "experience", "workexperience", "professionalexperience",
+  "employmenthistory", "workhistory", "professionalbackground",
+  "education", "academicbackground",
+  "skills", "technicalskills", "coreskills", "competencies",
+  "techstack", "technologies", "keyskills", "areasofexpertise",
+  "projects", "selectedprojects", "technicalprojects",
+  "certifications", "certificates", "licenses",
+  "languages", "languageskills",
+  "achievements", "awards", "honors",
+  "interests", "hobbies",
+  "references",
+]);
+
+/**
  * Deterministically undo letter-spacing artifacts in all-caps headers
  * (e.g. `L ANGUES` produced by a spaced-out `LANGUAGES` header). Only rewrites
  * lines that are entirely uppercase so ordinary names/locations are untouched.
@@ -226,6 +243,14 @@ function collapseLetterSpacing(
       tokens[1] = tokens[0] + tokens[1];
       tokens.shift();
       return { text: tokens.join(" "), y: l.y };
+    }
+    // Try collapsing all short tokens (1-3 chars) into one word.
+    // `SK I L L S` -> `SKILLS`, `ED U C A T I O N` -> `EDUCATION`.
+    if (tokens.every((t) => t.length <= 3)) {
+      const collapsed = tokens.join("").toLowerCase();
+      if (KNOWN_HEADERS.has(collapsed)) {
+        return { text: collapsed, y: l.y };
+      }
     }
     return l;
   });

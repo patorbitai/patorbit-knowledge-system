@@ -27,7 +27,7 @@ import type {
   DocumentSourceType,
   SectionKind,
 } from "./types";
-import { detectSectionKind, normalizeSectionTitle } from "./sections";
+import { detectSectionKind, normalizeSectionTitle, splitHeaderFromContent } from "./sections";
 
 const EMAIL_RE = /[\w.+-]+@[\w-]+\.[\w.-]+/i;
 const PHONE_RE = /(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/;
@@ -192,24 +192,40 @@ export function buildDocumentBlocks(lines: DocumentLine[]): DocumentBlock[] {
 
   let first = true;
   for (const line of lines) {
-    const kind = first ? null : detectSectionKind(line.raw);
+    // Try to split merged header+content lines (e.g. "skills Python SQL Azure")
+    const parts = first ? [line.raw] : splitHeaderFromContent(line.raw);
     first = false;
 
-    if (kind !== null) {
+    const headerKind = detectSectionKind(parts[0]);
+
+    if (headerKind !== null) {
       flushPreamble();
       close();
+      // Create a synthetic DocumentLine for the header
+      const headerLine: DocumentLine = { ...line, raw: parts[0] };
       current = {
-        id: blockId(line.page, line.lno),
-        kind,
-        title: normalizeSectionTitle(line.raw),
-        lines: [line],
-        page: line.page,
-        startLine: line.lno,
-        endLine: line.lno,
-        confidence: kind === "custom" ? 0.3 : 1,
-        uncertain: kind === "custom",
+        id: blockId(headerLine.page, headerLine.lno),
+        kind: headerKind,
+        title: normalizeSectionTitle(headerLine.raw),
+        lines: [headerLine],
+        page: headerLine.page,
+        startLine: headerLine.lno,
+        endLine: headerLine.lno,
+        confidence: headerKind === "custom" ? 0.3 : 1,
+        uncertain: headerKind === "custom",
         fromHeading: true,
       };
+      // If there was content after the header on the same line, add it
+      if (parts.length > 1 && parts[1].trim()) {
+        const contentLine: DocumentLine = {
+          lno: line.lno + 0.5, // fractional to keep order
+          page: line.page,
+          raw: parts[1].trim(),
+          ...(line.column != null ? { column: line.column } : {}),
+        };
+        current.lines.push(contentLine);
+        current.endLine = contentLine.lno;
+      }
       continue;
     }
 
