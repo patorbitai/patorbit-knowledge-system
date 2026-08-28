@@ -151,7 +151,13 @@ export function parseRawResumeText(text: string): ParsedResume {
 
   lines.forEach((line, i) => {
     const trimmed = line.trim();
-    const isHeader = SECTION_HEADERS.some(re => re.test(trimmed)) && trimmed.length < 50;
+    // Section headers: must match a known pattern, be short, and NOT be a sentence
+    // containing the keyword (e.g. "Data Engineer with experience" is not a header).
+    // Require: all-uppercase, or title-case with ≤4 words.
+    const matchesSection = SECTION_HEADERS.some(re => re.test(trimmed));
+    const isAllUpper = /^[A-Z][A-Z\s&/\-()]+$/.test(trimmed);
+    const isShortTitleCase = /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}$/.test(trimmed);
+    const isHeader = matchesSection && trimmed.length < 50 && (isAllUpper || isShortTitleCase);
 
     if (isHeader) {
       if (currentLines.length > 0 || sectionTexts.length === 0) {
@@ -188,6 +194,12 @@ export function parseRawResumeText(text: string): ParsedResume {
         }
       } else {
         result.summary = headerLines.join(" ").trim() || undefined;
+      }
+    }
+
+    if (/summary|profile|objective|about\s*me|career\s*(?:summary|objective|goal)|personal\s*statement/i.test(name)) {
+      if (!result.summary) {
+        result.summary = body.trim();
       }
     }
 
@@ -498,41 +510,64 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
 
 function parseEducationSection(lines: string[]): ParsedResume["education"] {
   const items: ParsedResume["education"] = [];
-  let current: { school: string; degree: string; year: string; field: string } = { school: "", degree: "", year: "", field: "" };
+  let current: { school: string; degree: string; year: string; field: string } | null = null;
+
+  const flush = () => {
+    if (current && current.school) items.push(current);
+    current = null;
+  };
+
+  const SCHOOL_RE = /(?:University|College|Institute|School|Academy|Institut|Universit)/i;
+  const DEGREE_RE = /(?:B\.?\s*[ASCE]|M\.?\s*[ASCE]|Ph\.?\s*D|Bachelor|Master|Associate|MBA|Doctorate|B\.Sc|B\.A|B\.S|M\.S|M\.Tech|B\.Tech|MCA|BCA)/i;
+  const YEAR_RE = /(\d{4})\s*(?:-|–|\u2013|to)\s*(\d{4}|Present|current)/i;
+  const YEAR_SINGLE = /(?:\b|\s)(\d{4})(?:\b|$)/;
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    // School name — often starts the entry
-    const schoolMatch = trimmed.match(/^(?:University|College|Institute|School|Academy)\s+of\s+(.+)|^(.+?)\s+(?:University|College|Institute)/i);
-    if (schoolMatch && current.school) {
-      if (current.school) items.push(current);
-      current = { school: trimmed, degree: "", year: "", field: "" };
+    // Extract year from the line (handles "2016-2018", "2016–2018", "(2016)" etc.)
+    const yearM = YEAR_RE.exec(trimmed) || YEAR_SINGLE.exec(trimmed);
+    const yearStr = yearM ? yearM[0].trim() : "";
+    const textWithoutYear = yearStr ? trimmed.replace(yearStr, "").replace(/[,;()]+/g, "").trim() : trimmed;
+
+    // School+year on same line: "Bharathiar University 2016-2018"
+    if (SCHOOL_RE.test(textWithoutYear)) {
+      flush();
+      current = { school: textWithoutYear, degree: "", year: yearStr, field: "" };
       continue;
     }
 
-    // Degree pattern: "B.S., B.A., M.S., Ph.D., Bachelor, Master, Associate"
-    const degreeMatch = trimmed.match(/(B\.?\s*[ASCE]|M\.?\s*[ASCE]|Ph\.?\s*D|Bachelor|Master|Associate|MBA|Doctorate)/i);
-    if (degreeMatch) {
-      current.degree = trimmed;
+    // Degree pattern
+    if (DEGREE_RE.test(textWithoutYear)) {
+      if (current) {
+        current.degree = textWithoutYear;
+      } else {
+        current = { school: "", degree: textWithoutYear, year: yearStr, field: "" };
+      }
+      if (yearStr && !current.year) current.year = yearStr;
       continue;
     }
 
-    // Year
-    const yearMatch = trimmed.match(/(\d{4})\s*(?:-|–)\s*(\d{4}|Present)/) || trimmed.match(/(?:graduated?\s*)?(?:in\s*)?(\d{4})/i);
-    if (yearMatch) {
-      current.year = trimmed;
+    // Standalone year → attach to current
+    if (yearStr && !textWithoutYear) {
+      if (current && !current.year) current.year = yearStr;
       continue;
     }
 
-    // Field of study
-    if (trimmed.length > 3 && trimmed.length < 60 && !current.field && !/^\d/.test(trimmed)) {
-      current.field = trimmed;
+    // Unknown line: if no current entry, this might be a short school name ("MIT", "Stanford")
+    if (!current && textWithoutYear.length > 1 && textWithoutYear.length < 40 && /^[A-Z]/.test(textWithoutYear)) {
+      current = { school: textWithoutYear, degree: "", year: yearStr, field: "" };
+      continue;
+    }
+
+    // Otherwise, treat as field of study or extra info
+    if (current && !current.field && textWithoutYear.length > 2) {
+      current.field = textWithoutYear;
     }
   }
 
-  if (current.school) items.push(current);
+  flush();
   return items.length > 0 ? items : undefined;
 }
 
@@ -564,7 +599,7 @@ export function splitSkillLevel(
 function parseSkillsSection(body: string): ParsedResume["skills"] {
   const items: ParsedResume["skills"] = [];
   // Split by commas, newlines, bullets, pipes
-  const parts = body.split(/[,;•\n|*]+/).map(s => s.trim()).filter(s => s.length > 1);
+  const parts = body.split(/[,;•·\n|*\-–—]+/).map(s => s.trim()).filter(s => s.length > 1);
 
   for (const part of parts) {
     const clean = part.replace(/^skills|\bskills\b/i, "").trim();
