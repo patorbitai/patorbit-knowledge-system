@@ -24,17 +24,79 @@ const DATE_RANGE_RE =
   /((?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Winter|Spring|Summer|Fall)?\s*\d{4})\s*(?:-|–|to)\s*(Present|(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec|Winter|Spring|Summer|Fall)?\s*\d{4})/i;
 
 const SECTION_HEADERS = [
-  /(?:summary|profile|objective|about\s*me)/i,
-  /(?:experience|work\s*history|employment|work\s*experience)/i,
-  /(?:education|academic|university|college|school)/i,
-  /(?:skills|technical\s*skills|core\s*competencies)/i,
-  /(?:projects|project)/i,
-  /(?:certifications|certificates|licenses)/i,
+  /(?:summary|profile|objective|about\s*me|professional\s*summary|career\s*summary|career\s*objective|personal\s*statement)/i,
+  /(?:experience|work\s*history|employment|work\s*experience|professional\s*experience|professional\s*background|work\s*background|employment\s*history|career\s*history|work\s*experience|relevant\s*experience)/i,
+  /(?:education|academic|university|college|school|educational\s*background|academic\s*background|qualifications?)/i,
+  /(?:skills|technical\s*skills|core\s*competencies|technical\s*competenc|key\s*skills|technologies|proficiencies|tech\s*stack)/i,
+  /(?:projects|project|personal\s*projects|key\s*projects)/i,
+  /(?:certifications|certificates|licenses|certifications?\s*&?\s*licenses?)/i,
   /(?:publications|research|awards|honors|languages|interests|references)/i,
 ];
 
+/**
+ * Detect and normalize label-based resume formats.
+ * Converts:
+ *   Company: Amazon
+ *   Role: SDE II
+ *   Duration: Apr 2021 – Present
+ *   Description: Designed microservices
+ * Into:
+ *   Amazon | SDE II | Apr 2021 – Present
+ *   Designed microservices
+ */
+function normalizeLabelFormat(lines: string[]): string[] {
+  const LABEL_RE = /^(Company|Employer|Organization|Org|Role|Title|Position|Job\s*Title|Duration|Timeframe|Period|Dates?|Institute|School|University|College|Degree|Field|Year|Description|Location):\s*(.+)/i;
+  const out: string[] = [];
+  let i = 0;
+  // First check if the file actually uses label format (needs >= 3 label lines)
+  const labelCount = lines.filter(l => LABEL_RE.test(l.trim())).length;
+  if (labelCount < 3) return lines; // not a label format, return as-is
+
+  while (i < lines.length) {
+    const t = lines[i].trim();
+    if (!t) { i++; continue; } // skip blank lines
+    const m = t.match(LABEL_RE);
+    if (m) {
+      // Collect a BLOCK of consecutive label lines (terminated by blank line or non-label)
+      const parts: string[] = [];
+      let desc = "";
+      while (i < lines.length) {
+        const ct = lines[i].trim();
+        if (!ct) { i++; break; } // blank line = end of block
+        const cm = ct.match(LABEL_RE);
+        if (cm) {
+          const key = cm[1].toLowerCase();
+          const val = cm[2].trim();
+          if (/^(description|desc)$/i.test(key)) {
+            desc = val;
+          } else {
+            parts.push(val);
+          }
+          i++;
+        } else {
+          break;
+        }
+      }
+      if (parts.length > 0) {
+        out.push(parts.join(" | "));
+      }
+      if (desc) {
+        out.push(desc);
+      }
+    } else {
+      out.push(lines[i]);
+      i++;
+    }
+  }
+  return out;
+}
+
 export function parseRawResumeText(text: string): ParsedResume {
-  const lines = text.split("\n").filter(l => l.trim());
+  const rawLines = text.split("\n");
+
+  // ── Preprocessor: normalize label-based formats BEFORE filtering blanks ──
+  const normalized = normalizeLabelFormat(rawLines);
+  const lines = normalized.filter(l => l.trim());
   const result: ParsedResume = {};
 
   // Name: usually first non-empty line
@@ -107,23 +169,23 @@ export function parseRawResumeText(text: string): ParsedResume {
       }
     }
 
-    if (/experience|work/i.test(name)) {
+    if (/experience|work|employment|background|career/i.test(name)) {
       result.experience = parseExperienceSection(section.lines);
     }
 
-    if (/education|university|college/i.test(name)) {
+    if (/education|university|college|school|academic|qualification/i.test(name)) {
       result.education = parseEducationSection(section.lines);
     }
 
-    if (/skills|competenc/i.test(name)) {
+    if (/skill|competenc|technolog|proficien|tech\s*stack/i.test(name)) {
       result.skills = parseSkillsSection(body);
     }
 
-    if (/projects/i.test(name)) {
+    if (/project/i.test(name)) {
       result.projects = parseProjectsSection(section.lines);
     }
 
-    if (/certifications|certificates/i.test(name)) {
+    if (/certific|licens/i.test(name)) {
       result.certifications = parseCertificationsSection(section.lines);
     }
   }
@@ -146,8 +208,8 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
   // Single date at end of line
   const DATE_SINGLE_PAT = "(" + DATE_ATOM + ")";
 
-  const RE_DATE_RANGE = new RegExp(DATE_RANGE_PAT + "\\s*$", "i");
-  const RE_DATE_SINGLE = new RegExp(DATE_SINGLE_PAT + "\\s*$", "i");
+  const RE_DATE_RANGE = new RegExp(DATE_RANGE_PAT + "\\)?\\s*$", "i");
+  const RE_DATE_SINGLE = new RegExp("(?:\\()?" + DATE_SINGLE_PAT + "(?:\\))?\\s*$", "i");
 
   /** Clean trailing punctuation from a name/label. */
   const cleanName = (s: string) => s.replace(/[\s,;:]+$/, "").replace(/^[,;:\s]+/, "").trim();
@@ -186,11 +248,20 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
   };
 
   /** Extract any trailing date or date range from a line. */
+  /** Strip trailing/leading parens from rest text when date was inside parens. */
+  const cleanRest = (s: string) => s.replace(/\s*[($]+\s*$/, "").replace(/\s+/g, " ").trim();
+
   const extractDate = (text: string): { date: string; rest: string } => {
     const rm = RE_DATE_RANGE.exec(text);
-    if (rm) return { date: rm[0].trim(), rest: cleanName(text.slice(0, rm.index)) };
+    if (rm) {
+      const date = rm[0].replace(/^[()]+|[()]+$/g, "").trim();
+      return { date, rest: cleanRest(text.slice(0, rm.index)) };
+    }
     const sm = RE_DATE_SINGLE.exec(text);
-    if (sm) return { date: sm[0].trim(), rest: cleanName(text.slice(0, sm.index)) };
+    if (sm) {
+      const date = sm[0].replace(/^[()]+|[()]+$/g, "").trim();
+      return { date, rest: cleanRest(text.slice(0, sm.index)) };
+    }
     return { date: "", rest: text };
   };
 
@@ -209,7 +280,10 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     if (!trimmed) continue;
 
     // 1) BULLET/ACHIEVEMENT LINES → always description, never a new entry.
-    if (isBullet(trimmed) || /^-\s/.test(trimmed)) {
+    //    BUT: skip lines that are actually dates ("2020-Present", "Jan 2022")
+    //    — digits at the start don't mean bullet here.
+    const isDateLine = RE_DATE_RANGE.test(trimmed) || RE_DATE_SINGLE.test(trimmed);
+    if ((isBullet(trimmed) || /^-\s/.test(trimmed)) && !isDateLine) {
       bulletLines.push(trimmed);
       continue;
     }
@@ -244,14 +318,13 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     }
 
     // 4) EN-DASH/HYPHEN SEPARATOR: "Company – Position" or "Position – Company"
-    //    Only split when both sides look meaningful (not just a date fragment).
+    //    Split when one side looks like a role or has a company hint.
     if (rest) {
       const dashMatch = rest.match(/^(.+?)\s+[–—-]\s+(.+)$/);
       if (dashMatch && !/^\d/.test(rest) && dashMatch[1].trim().length > 1 && dashMatch[2].trim().length > 1) {
         const left = dashMatch[1].trim();
         const right = dashMatch[2].trim();
-        // Only treat as separator if one side looks like a company and the other like a role
-        if (COMPANY_HINTS.test(left) && ROLE_HINTS.test(right)) {
+        if (ROLE_HINTS.test(right) || COMPANY_HINTS.test(right)) {
           if (current) {
             current.description = bulletLines.join("\n");
             items.push(current);
@@ -260,7 +333,7 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
           current = { company: cleanCompanyName(left), position: right, duration: date, location: "", description: "" };
           continue;
         }
-        if (ROLE_HINTS.test(left) && COMPANY_HINTS.test(right)) {
+        if (ROLE_HINTS.test(left) || COMPANY_HINTS.test(left)) {
           if (current) {
             current.description = bulletLines.join("\n");
             items.push(current);
@@ -300,7 +373,15 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     // Could be:
     //   "Acme Corp  Mar 2020 – Present" (company-first)
     //   "Machine Learning Engineer , 2024 – Apr 9" (position-first)
+    //   "Meta (Facebook)  2021 – Present" (date-rail: company+date, role was on previous line)
     if (date && rest) {
+      // Date-rail: if current has a position but no company AND no duration yet,
+      // this line is the company+date for the current entry.
+      if (current && current.position && !current.company && !current.duration) {
+        current.company = cleanCompanyName(rest);
+        current.duration = date;
+        continue;
+      }
       if (current) {
         current.description = bulletLines.join("\n");
         items.push(current);
