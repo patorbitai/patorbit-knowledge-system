@@ -9,8 +9,8 @@
 import { useEffect, useRef, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
 
-/** How long before we consider the user inactive (ms). Default: 30 minutes. */
-const INACTIVITY_TIMEOUT = 30 * 60 * 1000;
+/** How long before we consider the user inactive (ms). Default: 10 minutes. */
+const INACTIVITY_TIMEOUT = 10 * 60 * 1000;
 
 /** How far before logout to show the warning (ms). Default: 60 seconds. */
 const WARNING_BEFORE = 60 * 1000;

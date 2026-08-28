@@ -2,6 +2,7 @@
 
 import { clsx } from "clsx";
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { Upload } from "lucide-react";
 
 import { useResumeBuilder } from "@/store/resume-builder";
@@ -199,13 +200,14 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
           </div>
         )}
       </div>
-      {pending && (
+      {pending && createPortal(
         <ImportReviewScreen
           resume={pending.resume}
           meta={pending.meta}
           onConfirm={handleConfirm}
           onCancel={() => setPending(null)}
-        />
+        />,
+        document.body,
       )}
     </>
   );
