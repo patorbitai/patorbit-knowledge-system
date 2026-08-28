@@ -316,6 +316,26 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
       continue;
     }
 
+    // 7b) BULLET CONTINUATION: if we're accumulating description for a
+    //     bullet point (bulletLines.length > 0), treat lines that look
+    //     like sentence continuations as description, not new entries.
+    //     This prevents false splits on "Engineer", "Solutions", etc.
+    //     inside normal description text.
+    if (current && bulletLines.length > 0 && !date) {
+      const startsWithLower = /^[a-z]/.test(rest);
+      const isContinuationWord = /^(?:for|with|using|to|the|a|an|in|on|by|of|and|or|that|which|while|as|from|into|through|over|under|across|after|before|between|during|without|within)\b/i.test(rest);
+      const isLongLine = rest.length > 40;
+      // Hyphenated compounds like "Engineer-level", "data-driven" are
+      // adjectives, not standalone role titles.
+      const hasHyphenCompound = /\b\w+[-\u2013]\w+\b/.test(rest) && rest.length > 15;
+
+      if (startsWithLower || isContinuationWord || isLongLine || hasHyphenCompound) {
+        bulletLines.push(trimmed);
+        continue;
+      }
+      // Otherwise, fall through — this might be a new entry header
+    }
+
     // 8) STANDALONE SHORT TEXT: could be a company name, position title, or continuation.
     if (rest && rest.length > 1 && rest.length < 60) {
       // Check if it's a company-like line (has corporate suffix)
@@ -343,7 +363,7 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
           // Dated entry that already has description content → this role starts a NEW entry.
           // Flush current, start fresh with this as the pending position.
           current.description = bulletLines.join("\n");
-          items.push(current);
+            items.push(current);
           bulletLines.length = 0;
           current = { company: "", position: rest, duration: "", location: "", description: "" };
         } else if (current) {
@@ -357,7 +377,7 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     }
 
     // 9) LONGER TEXT or unrecognized → description continuation
-    if (current && trimmed.length > 5) {
+    if (current && trimmed.length > 0) {
       bulletLines.push(trimmed);
     } else if (!current && trimmed.length > 2 && trimmed.length < 60) {
       // Unknown short line before any entry — treat as potential company
