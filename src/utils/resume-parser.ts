@@ -356,13 +356,17 @@ function parseCertificationsSection(lines: string[]): ParsedResume["certificatio
 
   for (const line of lines) {
     const trimmed = line.trim();
-    if (!trimmed || /^[•\-*\d.]/.test(trimmed)) continue;
+    if (!trimmed) continue;
 
-    const yearMatch = trimmed.match(/(\d{4})/);
-    const issuerMatch = trimmed.match(/(?:issued\s*(?:by|from)|by|from|via)\s+(.+)/i);
+    // Strip leading bullet/number markers so the cert name is clean.
+    const clean = trimmed.replace(/^[•\-*\d.)\]]+\s*/, "").trim();
+    if (!clean) continue;
+
+    const yearMatch = clean.match(/(\d{4})/);
+    const issuerMatch = clean.match(/(?:issued\s*(?:by|from)|by|from|via)\s+(.+)/i);
 
     items.push({
-      name: trimmed.replace(/\(.*?\)/g, "").trim(),
+      name: clean.replace(/\(.*?\)/g, "").trim(),
       issuer: issuerMatch?.[1]?.trim() || "",
       date: yearMatch?.[1] || "",
     });
