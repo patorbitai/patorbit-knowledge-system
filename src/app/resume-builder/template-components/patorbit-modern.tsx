@@ -175,8 +175,8 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
       <div
         style={{
           display: "grid",
-          gridTemplateColumns: "1fr 260px",
-          gap: layout.columnGap,
+          gridTemplateColumns: "1fr 220px",
+          gap: 16,
           padding: `${spacing[3]} ${layout.marginH}`,
           alignItems: "start",
         }}
@@ -187,7 +187,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
           {resume.summary && (
             <section style={{ marginBottom: spacing[2] }}>
               <SectionTitle>Professional Profile</SectionTitle>
-              <div style={{ ...typography.body, color: colors.body, lineHeight: 1.6 }}>
+              <div style={{ fontSize: "0.75rem", lineHeight: 1.5, color: colors.body }}>
                 <FormattedDescription text={resume.summary} color={colors.body} mutedColor={colors.muted} size="sm" />
               </div>
             </section>
@@ -197,17 +197,16 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
           {resume.experience.length > 0 && (
             <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Experience</SectionTitle>
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
                 {resume.experience.map((exp) => (
                   <article
                     key={exp.id}
                     style={{
                       display: "flex",
-                      gap: spacing[2],
+                      gap: 6,
                     }}
                   >
-                    <TimelineDot />
-                    <div style={{ flex: 1, minWidth: 0 }}>
+                    <TimelineDot />                        <div style={{ flex: 1, minWidth: 0, lineHeight: 1.45 }}>
                       <EntryRow
                         left={
                           <h3
@@ -239,20 +238,23 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
                         )}
                       </p>
                       {exp.description && (
-                        <FormattedDescription text={exp.description} color={colors.body} mutedColor={colors.muted} />
+                        <div style={{ fontSize: "0.75rem", lineHeight: 1.45 }}>
+                          <FormattedDescription text={exp.description} color={colors.body} mutedColor={colors.muted} />
+                        </div>
                       )}
                       {exp.bulletPoints && exp.bulletPoints.length > 0 && (
                         <ul
                           style={{
-                            margin: `${spacing[2]} 0 0 ${spacing[4]}`,
+                            margin: `2px 0 0 14px`,
                             padding: 0,
                             listStyleType: "disc",
-                            ...typography.body,
+                            fontSize: "0.75rem",
+                            lineHeight: 1.5,
                             color: colors.body,
                           }}
                         >
                           {exp.bulletPoints.map((bp, i) => (
-                            <li key={i} style={{ marginBottom: 3, lineHeight: 1.65 }}>{bp}</li>
+                            <li key={i} style={{ marginBottom: 1 }}>{bp}</li>
                           ))}
                         </ul>
                       )}
@@ -267,7 +269,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
           {resume.projects.length > 0 && (
             <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Projects</SectionTitle>
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {resume.projects.map((p) => (
                   <article key={p.id}>
                     <EntryRow
@@ -318,14 +320,14 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
           {resume.education.length > 0 && (
             <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Education</SectionTitle>
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {resume.education.map((edu) => (
                   <article key={edu.id}>
-                    <p style={{ fontSize: "0.8rem", fontWeight: 700, color: colors.ink }}>{edu.school}</p>
-                    <p style={{ ...typography.body, color: colors.body, marginTop: 2 }}>
+                    <p style={{ fontSize: "0.75rem", fontWeight: 700, color: colors.ink }}>{edu.school}</p>
+                    <p style={{ fontSize: "0.75rem", color: colors.body, marginTop: 1 }}>
                       {edu.degree}{edu.field && ` in ${edu.field}`}
                     </p>
-                    <p style={{ ...typography.caption, color: colors.muted, marginTop: 2 }}>
+                    <p style={{ fontSize: "0.6875rem", color: colors.muted, marginTop: 1 }}>
                       {edu.year}{edu.gpa && ` · GPA ${edu.gpa}`}
                     </p>
                     {edu.honors && (
@@ -356,8 +358,8 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
             <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Certifications</SectionTitle>
               {resume.certifications.map((c) => (
-                <div key={c.id} style={{ marginBottom: spacing[3] }}>
-                  <p style={{ fontSize: "0.8rem", fontWeight: 600, color: colors.ink }}>{c.name}</p>
+                <div key={c.id} style={{ marginBottom: 4 }}>
+                  <p style={{ fontSize: "0.75rem", fontWeight: 600, color: colors.ink }}>{c.name}</p>
                   {(c.issuer || c.date) && (
                     <p style={{ ...typography.caption, color: colors.muted, marginTop: 2 }}>
                       {[c.issuer, c.date].filter(Boolean).join(" · ")}
@@ -378,8 +380,8 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
                   style={{
                     display: "flex",
                     justifyContent: "space-between",
-                    ...typography.body,
-                    marginBottom: spacing[1],
+                    fontSize: "0.75rem",
+                    marginBottom: 2,
                   }}
                 >
                   <span style={{ color: colors.body }}>{l.name}</span>
