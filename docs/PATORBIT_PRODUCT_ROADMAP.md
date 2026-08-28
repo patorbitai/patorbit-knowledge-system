@@ -1,8 +1,8 @@
 # Patorbit Product Roadmap
 
-**Last Updated:** 2026-08-08  
-**Version:** 2.0.0  
-**Status:** Active — Career Intelligence (Phase 1)
+**Last Updated:** 2026-08-16  
+**Version:** 2.1.0  
+**Status:** Active — Career Intelligence (Phase 1); identity/trust direction documented in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md)
 
 ---
 
@@ -72,6 +72,22 @@ Must work: Resume Builder, Resume Preview, Export, Professional Passport, Trust 
 
 **Layer 3 — Future Platform** (ships clearly labeled as previews or coming soon)  
 Knowledge Graph, Trust Timeline, Job Match, Career Hub extensions, Advanced AI Insights.
+
+---
+
+## Master Architecture & Current vs. Future
+
+**Canonical current-vs-future direction:** [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md)
+
+That document is the single project-direction reference for:
+
+- the product principle that **resume content ≠ verified truth** (editing a resume never silently rewrites historical verified evidence),
+- the **claim / evidence / verification / conflict / trust** models and their current-vs-future status,
+- the **Patorbit Network** (trusted issuer integrations) and scalable verification levels L0–L3,
+- the **resume import** and **A4 pagination** architectures as currently implemented,
+- the identity/trust **6-phase roadmap** (Stabilize Builder → Evidence + Provenance → Verification Engine → Professional Passport → Issuer Network → Patorbit Platform).
+
+This file's roadmap below remains the **career-intelligence** delivery plan; the identity/trust roadmap in the Master Architecture document is the **verification** delivery plan. They are complementary, not competing.
 
 ---
 

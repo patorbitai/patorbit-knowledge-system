@@ -33,23 +33,30 @@ During Sprint 3, a refactor considered renaming template IDs for consistency (e.
 | Template `name` (display label) | ❌ No | Display name is presentation-only |
 | Template component internals | ❌ No | Visual redesigns are allowed |
 
-### Current Template Registry (22 templates)
+### Current Template Registry (29 templates)
 
 | ID | Display Name | Category |
 |---|---|---|
+| `executive` | Patorbit Executive | Executive |
+| `patorbit-modern` | Patorbit Modern | Professional |
+| `minimal-ats` | Patorbit ATS | ATS Optimized |
 | `modern-clean` | Modern Clean | Professional |
-| `executive` | Executive | Executive |
-| `split-vibrant` | Split Vibrant | Creative |
+| `executive-pro` | Executive Pro | Executive |
+| `engineering-clean` | Engineering Clean | Software Engineer |
+| `consulting-elite` | Consulting Elite | Consulting |
+| `product-manager` | Product Manager | Product Manager |
+| `creative-professional` | Creative Professional | Designer |
+| `academic-cv` | Academic CV | Academic |
 | `classic-serif` | Classic Serif | Professional |
-| `tech-mono` | Tech Mono | Professional |
-| `creative-burst` | Creative Burst | Creative |
-| `compact-pro` | Compact Pro | Minimal |
+| `tech-mono` | Tech Mono | Software Engineer |
+| `creative-burst` | Creative Burst | Designer |
+| `compact-pro` | Compact Pro | DevOps |
 | `corporate-blue` | Corporate Blue | Professional |
-| `minimal-edge` | Minimal Edge | Minimal |
+| `minimal-edge` | Minimal Edge | ATS Optimized |
 | `banner-bold` | Banner Bold | Creative |
-| `sidebar-elegance` | Sidebar Elegance | Professional |
+| `sidebar-elegance` | Sidebar Elegance | Designer |
 | `gradient-flow` | Gradient Flow | Creative |
-| `academic-formal` | Academic Formal | Professional |
+| `academic-formal` | Academic Formal | Academic |
 | `startup-vibe` | Startup Vibe | Creative |
 | `dark-elegance` | Dark Elegance | Executive |
 | `timeline-pro` | Timeline Pro | Professional |
@@ -59,6 +66,14 @@ During Sprint 3, a refactor considered renaming template IDs for consistency (e.
 | `swiss-design` | Swiss Design | Minimal |
 | `scientific` | Scientific | Professional |
 | `creative-portfolio` | Creative Portfolio | Creative |
+
+> **Registry accuracy note (2026-08-16):** the earlier registry in this ADR
+> listed 22 templates and included `split-vibrant`, which has since been
+> removed from the registry. The table above is the authoritative, current
+> 29-template registry from `src/app/resume-builder/templates.ts` (8 flagship:
+> `executive-pro`, `minimal-ats`, `engineering-clean`, `patorbit-modern`,
+> `consulting-elite`, `product-manager`, `academic-cv`, `creative-professional`).
+> The frozen-ID policy below applies to all 29.
 
 ### Adding New Templates
 

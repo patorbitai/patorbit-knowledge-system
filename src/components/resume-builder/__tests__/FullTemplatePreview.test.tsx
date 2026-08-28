@@ -30,6 +30,9 @@ function templateOf(id: string) {
   return t;
 }
 
+// These tests render the full template preview with ResizeObserver stubs and
+// measurement passes; under full-suite parallel load they can exceed the
+// default 5s timeout even though each passes quickly in isolation.
 describe("FullTemplatePreview", () => {
   beforeEach(() => {
     installObserverStubs();
@@ -279,4 +282,4 @@ describe("FullTemplatePreview", () => {
     expect(overlay.className).toContain("inset-0");
     unmount();
   });
-});
+}, 30000);

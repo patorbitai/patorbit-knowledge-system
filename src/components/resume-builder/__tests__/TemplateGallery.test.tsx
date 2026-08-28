@@ -20,6 +20,9 @@ function useButtonFor(templateId: string): HTMLButtonElement | null {
   ) as HTMLButtonElement | null;
 }
 
+// These tests render full template previews with ResizeObserver stubs and
+// measurement passes; under full-suite parallel load they can exceed the
+// default 5s timeout even though each passes quickly in isolation.
 describe("TemplateGallery", () => {
   beforeEach(() => {
     installObserverStubs();
@@ -105,8 +108,9 @@ describe("TemplateGallery", () => {
 
     const state = useResumeBuilder.getState();
     expect(state.resume.templateId).toBe("patorbit-modern");
-    expect(state.resume.fontPreference).toBe("jakarta");
-    // User data preserved — sample data must never overwrite it.
+    // Only the template changes — the user's font preference and other data
+    // stay intact (the template's suggested font is NOT forced onto them).
+    expect(state.resume.fontPreference).toBe(defaultResume.fontPreference);
     expect(state.resume.name).toBe("Jane Doe");
     expect(state.resume.title).toBe("Data Engineer");
     expect(state.resume.experience[0].company).toBe("Acme Corp");
@@ -170,4 +174,4 @@ describe("TemplateGallery", () => {
     expect(sheet.style.transform).toContain("translateY(-1123px)");
     unmount();
   });
-});
+}, 30000);

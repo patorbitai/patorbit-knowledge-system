@@ -75,7 +75,7 @@ Component → ai.generateSummary(resume)
 
 ### 5. Template System
 
-**22 templates** registered in `src/app/resume-builder/templates.ts`. Each has:
+**29 templates** registered in `src/app/resume-builder/templates.ts` (the registry was 22 at the time this ADR was written; see ADR-0004 for the authoritative current registry). Each has:
 - `id` — stable kebab-case identifier (frozen per ADR-0004)
 - `name` — display name
 - `component` — React component reference

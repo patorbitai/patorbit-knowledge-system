@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import { createPortal } from "react-dom";
 import { motion } from "framer-motion";
 import { Check, ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, X } from "lucide-react";
-import { ResumePreview } from "@/components/resume/ResumePreview";
+import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import type { ResumeTemplate } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
 import { GALLERY_SAMPLE_RESUME } from "./gallery-sample-resume";
@@ -342,8 +342,10 @@ export function FullTemplatePreview({
                   transformOrigin: "top left",
                 }}
               >
+                {/* Real A4 pages: the same paginated sheet the PDF export
+                    renders, so the Gallery is representative of the resume. */}
                 <div ref={measureRef}>
-                  <ResumePreview resume={resume} template={template} />
+                  <PaginatedResumeSheet resume={resume} template={template} />
                 </div>
               </div>
             </div>

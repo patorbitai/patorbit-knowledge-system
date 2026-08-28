@@ -4,7 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
 import { X, FileText, Download, AlertCircle, Printer } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
-import { ResumePreview, getActiveTemplate } from "@/components/resume/ResumePreview";
+import { getActiveTemplate } from "@/components/resume/ResumePreview";
+import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { exportToDocx } from "@/utils/export";
 import { resolveStyleConfig, resolveHeadingHex } from "@/lib/resume-design-system/style-config";
 
@@ -210,9 +211,12 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
     </AnimatePresence>
 
     {/* Resume render target — mounted only when printing.
-        Exactly one A4 page: 210mm × min 297mm, no browser-added margins. The
-        print CSS (@media print) reinforces this geometry and hides all app
-        chrome so the output contains ONLY the resume sheet. */}
+        Contains the SAME paginated A4 pages the Gallery and Professional
+        Preview show, so the exported PDF matches the preview by construction:
+        each .rs-page div prints as exactly one A4 sheet (210mm × 297mm, no
+        browser-added margins). The print CSS (@media print) reinforces this
+        geometry and hides all app chrome so the output contains ONLY the
+        resume. */}
     {isPrinting && (
       <div
         id="pdf-export-target"
@@ -226,7 +230,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
           backgroundColor: "#fff",
         }}
       >
-        <ResumePreview resume={resume} template={template} styleConfig={styleConfig} />
+        <PaginatedResumeSheet resume={resume} template={template} styleConfig={styleConfig} />
       </div>
     )}
     </>

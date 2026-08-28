@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { normalizeImportedResume } from "../normalize-import";
+import { normalizeImportedResume, mergeImportedResume } from "../normalize-import";
 import type { Resume, Experience } from "@/types/resume";
 
 function entry(duration: string, startDate = "", endDate = ""): Experience {
@@ -54,6 +54,105 @@ function baseResume(experience: Experience[] = []): Resume {
     claims: [],
   };
 }
+
+describe("mergeImportedResume (the import → apply step)", () => {
+  function importedResume(overrides: Partial<Resume> = {}): Resume {
+    return {
+      ...baseResume(),
+      name: "IMPORT TEST USER",
+      title: "IMPORT TEST ENGINEER",
+      email: "import-test@example.com",
+      summary: "A summary written for the import test.",
+      ...overrides,
+    };
+  }
+
+  it("replaces content with imported data but preserves the user's template when the import has no real templateId", () => {
+    const current = { ...baseResume(), name: "Original User", templateId: "executive-pro" };
+    const imported = importedResume(); // templateId defaults to "modern-clean" in baseResume...
+    // Force the schema-default "unspecified" marker, as parseResumeJson produces
+    // for imports without a templateId.
+    imported.templateId = "template-1";
+
+    const merged = mergeImportedResume(current, imported);
+
+    // Imported content wins.
+    expect(merged.name).toBe("IMPORT TEST USER");
+    expect(merged.title).toBe("IMPORT TEST ENGINEER");
+    expect(merged.email).toBe("import-test@example.com");
+    expect(merged.summary).toBe("A summary written for the import test.");
+    // User's template is preserved — the import must not reset it.
+    expect(merged.templateId).toBe("executive-pro");
+  });
+
+  it("uses the imported templateId when the import explicitly carries a real template", () => {
+    const current = { ...baseResume(), name: "Original User", templateId: "executive-pro" };
+    const imported = importedResume({ templateId: "engineering-clean" });
+
+    const merged = mergeImportedResume(current, imported);
+
+    expect(merged.name).toBe("IMPORT TEST USER");
+    expect(merged.templateId).toBe("engineering-clean");
+  });
+
+  it("preserves the user's template when the import's templateId is unknown", () => {
+    const current = { ...baseResume(), name: "Original User", templateId: "executive-pro" };
+    const imported = importedResume({ templateId: "not-a-real-template" });
+
+    const merged = mergeImportedResume(current, imported);
+
+    expect(merged.templateId).toBe("executive-pro");
+  });
+
+  it("never writes the parser/schema 'unspecified' marker into the real resume", () => {
+    const current = { ...baseResume(), name: "Original User", templateId: "modern-clean" };
+    const imported = importedResume({ templateId: "template-1" });
+
+    const merged = mergeImportedResume(current, imported);
+
+    expect(merged.templateId).toBe("modern-clean");
+    expect(merged.templateId).not.toBe("template-1");
+  });
+
+  it("keeps the imported content with the user's template and preserves identity", () => {
+    const current = {
+      ...baseResume(),
+      resumeId: "current-id-123",
+      resumeName: "My Resume",
+      name: "Original User",
+      templateId: "executive-pro",
+      careerStage: "manager" as const,
+      claims: [{ id: "c1", assertionText: "x", claimType: "Skill" as const, sourceActivityId: "s1", confidence: 1, reasoning: "r", verificationStatus: "accepted" as const, reviewed: true, accepted: true, createdAt: "2026-01-01" }],
+    };
+    const imported = importedResume();
+    imported.templateId = "template-1";
+
+    const merged = mergeImportedResume(current, imported);
+
+    // Content from the import, template from the user.
+    expect(merged.name).toBe("IMPORT TEST USER");
+    expect(merged.templateId).toBe("executive-pro");
+    // Identity/trust fields the import cannot know about survive the merge.
+    expect(merged.resumeId).toBe("current-id-123");
+    expect(merged.resumeName).toBe("My Resume");
+    expect(merged.careerStage).toBe("manager");
+    expect(merged.claims).toHaveLength(1);
+  });
+
+  it("applies date normalization after the merge (imported durations split into startDate/endDate)", () => {
+    const current = baseResume();
+    const imported = importedResume({
+      experience: [entry("Apr 2024 – Present")],
+    });
+    imported.templateId = "template-1";
+
+    const merged = mergeImportedResume(current, imported);
+
+    expect(merged.experience[0]?.startDate).toBe("Apr 2024");
+    expect(merged.experience[0]?.endDate).toBe("Present");
+    expect(merged.templateId).toBe(current.templateId);
+  });
+});
 
 describe("normalizeImportedResume", () => {
   it("splits a 'Start – Present' range into explicit startDate/endDate", () => {

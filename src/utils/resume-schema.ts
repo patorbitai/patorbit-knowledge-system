@@ -9,8 +9,12 @@ const SocialLinksSchema = z.object({
   stackoverflow: z.string().default(""),
 });
 
+// Array item ids may be numbers (deterministic parser) or strings (the app's
+// uid() format, and what JSON-imported resumes carry). They are opaque keys.
+const ItemIdSchema = z.union([z.number(), z.string()]);
+
 const ExperienceSchema = z.object({
-  id: z.number(),
+  id: ItemIdSchema,
   company: z.string().default(""),
   position: z.string().default(""),
   location: z.string().default(""),
@@ -23,7 +27,7 @@ const ExperienceSchema = z.object({
 });
 
 const EducationSchema = z.object({
-  id: z.number(),
+  id: ItemIdSchema,
   school: z.string().default(""),
   degree: z.string().default(""),
   year: z.string().default(""),
@@ -36,7 +40,7 @@ const EducationSchema = z.object({
 });
 
 const SkillSchema = z.object({
-  id: z.number(),
+  id: ItemIdSchema,
   name: z.string().default(""),
   level: z.enum(["Beginner", "Intermediate", "Advanced", "Expert"]).default("Intermediate"),
   category: z.string().default(""),
@@ -44,7 +48,7 @@ const SkillSchema = z.object({
 });
 
 const ProjectSchema = z.object({
-  id: z.number(),
+  id: ItemIdSchema,
   name: z.string().default(""),
   description: z.string().default(""),
   tech: z.string().default(""),
@@ -57,7 +61,7 @@ const ProjectSchema = z.object({
 });
 
 const CertificationSchema = z.object({
-  id: z.number(),
+  id: ItemIdSchema,
   name: z.string().default(""),
   issuer: z.string().default(""),
   date: z.string().default(""),
@@ -67,10 +71,10 @@ const CertificationSchema = z.object({
   skills: z.string().default(""),
 });
 
-const LanguageSchema = z.object({ id: z.number().default(0), name: z.string().default(""), proficiency: z.string().default("Fluent") });
-const InterestSchema = z.object({ id: z.number().default(0), name: z.string().default("") });
-const AchievementSchema = z.object({ id: z.number().default(0), description: z.string().default("") });
-const ReferenceSchema = z.object({ id: z.number().default(0), name: z.string().default(""), company: z.string().default(""), position: z.string().default(""), email: z.string().default(""), phone: z.string().default("") });
+const LanguageSchema = z.object({ id: ItemIdSchema.default(0), name: z.string().default(""), proficiency: z.string().default("Fluent") });
+const InterestSchema = z.object({ id: ItemIdSchema.default(0), name: z.string().default("") });
+const AchievementSchema = z.object({ id: ItemIdSchema.default(0), description: z.string().default("") });
+const ReferenceSchema = z.object({ id: ItemIdSchema.default(0), name: z.string().default(""), company: z.string().default(""), position: z.string().default(""), email: z.string().default(""), phone: z.string().default("") });
 
 const PortfolioSchema = z.object({
   id: z.union([z.number(), z.string()]).default(0),

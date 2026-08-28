@@ -397,6 +397,9 @@ export function rawToResume(text: string) {
     interests: [],
     achievements: [],
     references: [],
-    templateId: "modern-clean",
+    // No templateId here: a PDF/DOCX file carries no template choice, so the
+    // import must not reset the user's current template. The schema default
+    // ("template-1", which is not a real template) marks "unspecified" and the
+    // apply step preserves the user's existing templateId.
   };
 }

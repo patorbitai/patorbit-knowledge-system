@@ -1,7 +1,7 @@
 # Patorbit — Professional Identity Platform
 
 **Version:** 0.1.0 (resume-builder release-readiness work staged)
-**Last Updated:** 2026-08-15
+**Last Updated:** 2026-08-16
 **Stack:** Next.js 16.3.0 · React 19 · PostgreSQL · Prisma · Zustand · OpenAI
 
 ---
@@ -38,6 +38,7 @@ See `docs/CHANGELOG.md` (Unreleased) and `docs/RELEASE_QA_REPORT.md` for the ful
 
 | Document | Purpose |
 |---|---|
+| [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md) | **Master architecture** — product vision, current-vs-future, claim/evidence/verification/trust models, roadmap |
 | [PROJECT_MASTER_ROADMAP.md](./PROJECT_MASTER_ROADMAP.md) | Vision, mission, modules, milestones, sprint timeline |
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, folder structure, data flow, tech stack |
 | [CHANGELOG.md](./CHANGELOG.md) | Version history, features added, bugs fixed |
@@ -156,15 +157,16 @@ See [ARCHITECTURE.md](./ARCHITECTURE.md) for detailed folder breakdown.
 - ✅ Authentication (register, login, session management) — `AUTH_SECRET` used consistently across middleware and auth config
 - ✅ Application light/dark theme switching (persisted, does not affect the resume document)
 - ✅ Marketing site (pricing, features, platform pages)
-- ✅ Trust Score backend pipeline (services, graph, coordinator)
+- ✅ Trust Score backend pipeline (services, graph, coordinator, subscriber) with Trust view (`/trust`)
+- ✅ Claims Review + evidence upload/link flow (builder store, IndexedDB storage, VerificationBadge derivation)
 - ✅ Dashboard Overview redesign
 - ✅ Deployment version detection + update banner
 - ✅ Performance pass: conditional preview mounting, no AI request on hydration, abort cleanup, granular store selectors, lint-noise cleanup
 
 **Known Limitations:**
 - ⚠️ On some multi-page templates with full-height sidebars/background panels, a partially filled later page may not extend the sidebar/background to the bottom of the A4 page (deferred)
-- ⚠️ Trust Score backend complete but not wired to UI
-- ⚠️ Evidence attachment upload not implemented
+- ⚠️ Claims/evidence are builder-scoped (local store + IndexedDB), not yet the first-class identity-centric domain model (see [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md))
+- ⚠️ Trust Score UI wiring is partial — the backend pipeline and views exist, but full evidence-weighted explainability is future work
 - ⚠️ No email verification or password reset yet
 - ⚠️ Resume data in localStorage only (no multi-device sync)
 - ⚠️ Resume Builder editor remains desktop-focused (gallery, preview, and customize are responsive)

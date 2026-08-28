@@ -5,6 +5,7 @@ import { checkImportRateLimit } from "@/lib/rate-limit";
 import mammoth from "mammoth";
 import { parseResumeJson } from "@/utils/resume-schema";
 import { rawToResume, withIds } from "@/utils/resume-parser";
+import { ensureItemIds } from "@/utils/import-json";
 import { mapEvidenceToResume } from "@/utils/evidence-resume-mapper";
 import { getAIService } from "@/lib/ai/service";
 import { extractPageText, type PdfTextItem } from "@/utils/pdf-extract";
@@ -148,8 +149,9 @@ async function extractWithAI(rawText: string): Promise<Record<string, unknown> |
         raw[field] = [];
       }
     }
-    // Preserve templateId default
-    if (!raw.templateId) raw.templateId = "modern-clean";
+    // No templateId here: imported files carry no template choice, so the
+    // apply step preserves the user's current template. The schema default
+    // ("template-1", not a real template) marks "unspecified".
     return raw;
   } catch {
     return null; // signal caller to keep the deterministic result
@@ -209,7 +211,7 @@ export async function POST(request: NextRequest) {
 
     if (fileType === "application/json") {
       const text = await file.text();
-      parsedData = JSON.parse(text);
+      parsedData = ensureItemIds(JSON.parse(text));
       usedAI = false;
     } else if (fileType === "application/pdf") {
       const arrayBuffer = await file.arrayBuffer();

@@ -183,7 +183,13 @@ describe("Builder Preview UX refactor", () => {
     const id = useResumeBuilder.getState().resume.templateId;
     expect(id).not.toBe("modern-clean");
     // Resume content is preserved; the preview still renders the user's data.
-    expect(useResumeBuilder.getState().resume.name).toBe("Ada Lovelace");
+    const after = useResumeBuilder.getState().resume;
+    expect(after.name).toBe("Ada Lovelace");
+    expect(after.email).toBe("ada@example.com");
+    expect(after.summary).toBe("Mathematician and computing pioneer.");
+    // Only the template changes — the template's suggested font must not
+    // overwrite the user's preference.
+    expect(after.fontPreference).toBe(USER_RESUME.fontPreference);
     expect(document.body.textContent).toContain("Ada Lovelace");
     unmount();
   });

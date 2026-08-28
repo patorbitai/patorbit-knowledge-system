@@ -1,7 +1,11 @@
 # Patorbit Architecture
 
-**Last Updated:** 2026-08-07  
-**Stack:** Next.js 16.2.12 · React 19 · PostgreSQL · Prisma · Zustand · OpenAI
+**Last Updated:** 2026-08-16  
+**Stack:** Next.js 16.3.0 · React 19 · PostgreSQL · Prisma · Zustand · OpenAI
+
+> **Project direction (current vs. future):** see [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md).
+> This file documents the implemented system; the master document adds the
+> identity/claims/evidence/verification direction and the 6-phase roadmap.
 
 ---
 
@@ -94,11 +98,11 @@ D:/Patorbit Knowledge System (PKS)/
 │   │   ├── resume-builder/        Resume Builder feature
 │   │   │   ├── page.tsx           Main builder UI
 │   │   │   ├── preview/page.tsx   Preview & export
-│   │   │   ├── template-components/  22 template renderers
+│   │   │   ├── template-components/  29 template renderers
 │   │   │   │   ├── shared.tsx         Shared types + primitives
 │   │   │   │   ├── modern-clean.tsx
 │   │   │   │   ├── executive.tsx
-│   │   │   │   └── ... (20 more)
+│   │   │   │   └── ... (27 more)
 │   │   │   └── templates.ts       Template registry + font/palette config
 │   │   ├── dashboard/page.tsx     Legacy dashboard redirect
 │   │   ├── coming-soon/page.tsx
@@ -129,7 +133,8 @@ D:/Patorbit Knowledge System (PKS)/
 │   │   │   ├── SmartSuggestion.tsx
 │   │   │   └── JobMatchPanel.tsx
 │   │   ├── resume/
-│   │   │   └── ResumePreview.tsx  Template renderer dispatcher
+│   │   │   ├── ResumePreview.tsx  Template renderer dispatcher
+│   │   │   └── PaginatedResumeSheet.tsx  A4 page-frame paginator (gallery/preview/export)
 │   │   ├── identity/
 │   │   │   └── Passport.tsx
 │   │   ├── common/
@@ -139,6 +144,10 @@ D:/Patorbit Knowledge System (PKS)/
 │   ├── hooks/
 │   │   └── useDeploymentVersion.ts  Deployment polling hook
 │   ├── lib/
+│   │   ├── resume-design-system/
+│   │   │   ├── geometry.ts         A4 geometry (794×1123px / 210×297mm) — single source of truth
+│   │   │   ├── page-frame.ts       Canonical A4 page frame (safe top/bottom content areas)
+│   │   │   └── style-config.ts     ResumeStyleConfig + template capability rules
 │   │   ├── ai/
 │   │   │   ├── client.ts          Frontend AI client (→ /api/ai)
 │   │   │   ├── service.ts         Server-side AI dispatcher
@@ -445,6 +454,59 @@ User clicks Export PDF
   → @page { size: A4; margin: 0 } + print-color-adjust: exact → Save as PDF matches the preview
 ```
 Page-break math shares the A4 constants module (`src/lib/resume-design-system/geometry.ts`) with the preview and gallery.
+
+## A4 Page-Frame / Pagination Architecture
+
+The Gallery, the Professional Preview, and the PDF export all render through the
+**same** paginated DOM — one page model, no competing layouts.
+
+```
+A4 Geometry (src/lib/resume-design-system/geometry.ts)
+  │  794×1123px screen / 210×297mm print — single source of truth
+  ▼
+Canonical Page Frame (src/lib/resume-design-system/page-frame.ts)
+  │  physical A4 boundary + safe top/bottom content area
+  ▼
+Template content (29 templates — untouched)
+  ▼
+PaginatedResumeSheet (src/components/resume/PaginatedResumeSheet.tsx)
+  │  real DOM pagination, semantic block splitting,
+  │  consistent per-page safe space, no content clipping
+  ├── Template Gallery (FullTemplatePreview)
+  ├── Professional Resume Preview
+  └── PDF / print export (#pdf-export-target)
+```
+
+- One A4 size definition is shared everywhere — no duplicate geometry.
+- `PaginatedResumeSheet` distributes content across real A4 pages; page
+  navigation shows the actual rendered page count; continuation pages get the
+  same safe top/bottom space as page 1.
+- `break-inside-avoid` is respected for small semantic blocks (experience
+  article, education entry, project, certification) — never for a whole
+  template root container.
+- Templates are not modified for pagination; no template-specific hacks.
+
+## Resume Import Pipeline
+
+```
+File (PDF/DOCX/JSON)
+  → POST /api/import
+  → regex extractor (src/utils/resume-parser.ts) and/or AI extraction
+  → parsed Resume (src/utils/resume-schema.ts validates with safe defaults)
+  → ImportReviewScreen (review/edit before apply)
+  → one Apply action
+  → mergeImportedResume(current, imported) (src/utils/normalize-import.ts)
+  → setResume → Zustand persist (patorbit-resume-v2)
+  → Resume Builder renders imported data
+```
+
+- The import pipeline populates every section in one step; no per-section
+  manual import.
+- The Apply step preserves the user's current resume content and `templateId`
+  (an import only carries a template when the file explicitly specifies one);
+  gallery sample data is never written into the real resume.
+- Imported data is not automatically "verified" — import and verification are
+  related but distinct pipelines (see MASTER_ARCHITECTURE.md).
 
 ### DOCX Export (server-side)
 ```

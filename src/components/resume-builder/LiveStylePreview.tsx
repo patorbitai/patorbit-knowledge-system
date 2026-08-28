@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { ChevronLeft, ChevronRight, Minus, Plus, RotateCcw } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
-import { getActiveTemplate, ResumePreview } from "@/components/resume/ResumePreview";
+import { getActiveTemplate } from "@/components/resume/ResumePreview";
+import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { A4 } from "@/lib/resume-design-system/geometry";
 
 const PAGE_WIDTH = A4.widthPx;
@@ -259,8 +260,10 @@ export function LiveStylePreview({
                 transformOrigin: "top left",
               }}
             >
+              {/* Real A4 pages — the same canonical page frame the Gallery and
+                  the PDF export use, so all three stay pixel-aligned. */}
               <div ref={measureRef}>
-                <ResumePreview resume={resume} template={template} styleConfig={styleConfig} />
+                <PaginatedResumeSheet resume={resume} template={template} styleConfig={styleConfig} />
               </div>
             </div>
           </div>

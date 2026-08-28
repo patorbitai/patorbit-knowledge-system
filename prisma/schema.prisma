@@ -83,7 +83,36 @@ model ProfessionalIdentity {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  resumes Resume[]
+}
+
+// ─── Resume (Phase 0 — server persistence foundation) ───────────
+//
+// Canonical server-side Resume (ADR-001, ADR-002, ADR-003).
+//   - `resumeId` is the stable public/domain ID already used by the client
+//     (multi-resume store). It is globally unique and also scoped per
+//     ProfessionalIdentity via the compound unique index.
+//   - `payload` is the validated resume document (ResumeSchema + optional
+//     styleConfigs), stored as JSONB. Claims remain inside the payload during
+//     this transitional phase so no existing data is lost (ADR-003 §Transition).
+//   - `templateId` / `careerStage` are authoritative relational metadata; the
+//     matching fields inside `payload` are kept in sync with these columns.
+//   - Not yet connected to the client/Zustand — the table may remain empty.
+model Resume {
+  id                     String   @id @default(cuid())
+  resumeId               String   @unique
+  professionalIdentityId String
+  resumeName             String
+  templateId             String
+  careerStage            String   @default("working-professional")
+  payload                Json
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  professionalIdentity ProfessionalIdentity @relation(fields: [professionalIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalIdentityId, resumeId])
 }
 
 model EvidenceRecord {

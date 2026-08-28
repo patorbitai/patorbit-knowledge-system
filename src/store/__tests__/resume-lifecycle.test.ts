@@ -1,0 +1,421 @@
+/**
+ * Comprehensive Resume Lifecycle Test
+ * 
+ * Tests the entire resume lifecycle to ensure reliability and consistency:
+ * - Multi-resume creation and switching
+ * - Edit/switch/restore behavior
+ * - Resume ID stability
+ * - Persistence and rehydration
+ * - Import behavior
+ * - Template switching
+ * - Deletion behavior
+ */
+
+import { describe, it, expect, beforeEach } from "vitest";
+import { useResumeBuilder, defaultResume } from "../resume-builder";
+import type { Resume } from "@/types/resume";
+
+describe("Resume Lifecycle Reliability", () => {
+  beforeEach(() => {
+    // Reset store to initial state
+    useResumeBuilder.setState({
+      resumes: [{ ...defaultResume, resumeId: "initial", resumeName: "Initial Resume" }],
+      activeResumeId: "initial",
+      resume: { ...defaultResume, resumeId: "initial", resumeName: "Initial Resume" },
+      styleConfigs: {},
+    });
+  });
+
+  describe("Multi-Resume Creation and Switching", () => {
+    it("creates multiple resumes with unique IDs", () => {
+      const state = useResumeBuilder.getState();
+      
+      const id1 = state.createResume("Resume A");
+      const id2 = state.createResume("Resume B");
+      const id3 = state.createResume("Resume C");
+
+      expect(id1).not.toBe(id2);
+      expect(id2).not.toBe(id3);
+      expect(id1).not.toBe(id3);
+
+      const resumes = useResumeBuilder.getState().resumes;
+      expect(resumes).toHaveLength(4); // initial + A, B, C
+      expect(resumes.map(r => r.resumeId)).toContain(id1);
+      expect(resumes.map(r => r.resumeId)).toContain(id2);
+      expect(resumes.map(r => r.resumeId)).toContain(id3);
+    });
+
+    it("switches between resumes correctly", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice A");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob B");
+      
+      const idC = state.createResume("Resume C");
+      state.updateField("name", "Charlie C");
+
+      // Switch to A
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Alice A");
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idA);
+
+      // Switch to B
+      state.switchResume(idB);
+      expect(useResumeBuilder.getState().resume.name).toBe("Bob B");
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idB);
+
+      // Switch to C
+      state.switchResume(idC);
+      expect(useResumeBuilder.getState().resume.name).toBe("Charlie C");
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idC);
+
+      // Switch back to A
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Alice A");
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idA);
+    });
+
+    it("isolates data between resumes", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      state.updateField("email", "alice@test.com");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+      state.updateField("email", "bob@test.com");
+
+      // Verify A's data
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Alice");
+      expect(useResumeBuilder.getState().resume.email).toBe("alice@test.com");
+
+      // Verify B's data
+      state.switchResume(idB);
+      expect(useResumeBuilder.getState().resume.name).toBe("Bob");
+      expect(useResumeBuilder.getState().resume.email).toBe("bob@test.com");
+    });
+  });
+
+  describe("Edit/Switch/Restore Behavior", () => {
+    it("preserves edits when switching between resumes", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Original A");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Original B");
+
+      // Edit A
+      state.switchResume(idA);
+      state.updateField("name", "Edited A");
+      expect(useResumeBuilder.getState().resume.name).toBe("Edited A");
+
+      // Switch to B and edit
+      state.switchResume(idB);
+      state.updateField("name", "Edited B");
+      expect(useResumeBuilder.getState().resume.name).toBe("Edited B");
+
+      // Switch back to A - should have edited version
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Edited A");
+
+      // Switch back to B - should have edited version
+      state.switchResume(idB);
+      expect(useResumeBuilder.getState().resume.name).toBe("Edited B");
+    });
+
+    it("maintains activeResumeId across operations", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Test A");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Test B");
+
+      // Switch to A
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idA);
+
+      // Edit A
+      state.updateField("name", "Edited Test A");
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idA);
+
+      // Switch to B
+      state.switchResume(idB);
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idB);
+
+      // Switch back to A
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Edited Test A");
+    });
+  });
+
+  describe("Resume ID Integrity", () => {
+    it("maintains stable resumeId across operations", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Test User");
+      state.updateField("email", "test@test.com");
+
+      // Edit resume
+      state.updateField("name", "Edited User");
+      state.updateField("email", "edited@test.com");
+
+      // Verify resumeId unchanged
+      expect(useResumeBuilder.getState().resume.resumeId).toBe(idA);
+      expect(useResumeBuilder.getState().resumes.find(r => r.resumeId === idA)?.resumeId).toBe(idA);
+
+      // Switch away and back
+      const idB = state.createResume("Resume B");
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().resume.resumeId).toBe(idA);
+
+      // Rename
+      state.renameResume(idA, "Renamed Resume");
+      expect(useResumeBuilder.getState().resume.resumeId).toBe(idA);
+      expect(useResumeBuilder.getState().resumes.find(r => r.resumeId === idA)?.resumeId).toBe(idA);
+    });
+
+    it("does not change resumeId when applying template", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Test User");
+
+      // Apply template
+      state.applyTemplate("executive-pro");
+      expect(useResumeBuilder.getState().resume.resumeId).toBe(idA);
+      expect(useResumeBuilder.getState().resume.templateId).toBe("executive-pro");
+
+      // Apply another template
+      state.applyTemplate("modern-clean");
+      expect(useResumeBuilder.getState().resume.resumeId).toBe(idA);
+      expect(useResumeBuilder.getState().resume.templateId).toBe("modern-clean");
+    });
+  });
+
+  describe("Resume Deletion", () => {
+    it("deletes inactive resume and preserves active", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+
+      // Delete B while A is active
+      state.switchResume(idA);
+      state.deleteResume(idB);
+
+      expect(useResumeBuilder.getState().resumes).toHaveLength(2); // initial + A
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Alice");
+    });
+
+    it("deletes active resume and switches to another", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+
+      // Delete A while A is active
+      state.switchResume(idA);
+      state.deleteResume(idA);
+
+      // Should switch to first remaining resume (initial resume, not B)
+      expect(useResumeBuilder.getState().resumes).toHaveLength(2); // initial + B
+      expect(useResumeBuilder.getState().activeResumeId).toBe("initial");
+      expect(useResumeBuilder.getState().resume.name).toBe(""); // initial resume has empty name
+    });
+
+    it("prevents deleting the last remaining resume", () => {
+      const state = useResumeBuilder.getState();
+      const initialId = state.activeResumeId;
+
+      state.deleteResume(initialId);
+
+      expect(useResumeBuilder.getState().resumes).toHaveLength(1);
+      expect(useResumeBuilder.getState().activeResumeId).toBe(initialId);
+    });
+  });
+
+  describe("Template Switching", () => {
+    it("changes template without affecting resume content", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Test User");
+      state.updateField("email", "test@test.com");
+      state.updateField("summary", "Test summary");
+
+      // Apply template
+      state.applyTemplate("executive-pro");
+      expect(useResumeBuilder.getState().resume.templateId).toBe("executive-pro");
+      expect(useResumeBuilder.getState().resume.name).toBe("Test User");
+      expect(useResumeBuilder.getState().resume.email).toBe("test@test.com");
+      expect(useResumeBuilder.getState().resume.summary).toBe("Test summary");
+
+      // Apply another template
+      state.applyTemplate("modern-clean");
+      expect(useResumeBuilder.getState().resume.templateId).toBe("modern-clean");
+      expect(useResumeBuilder.getState().resume.name).toBe("Test User");
+      expect(useResumeBuilder.getState().resume.email).toBe("test@test.com");
+      expect(useResumeBuilder.getState().resume.summary).toBe("Test summary");
+    });
+
+    it("preserves template per resume", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.applyTemplate("executive-pro");
+      
+      const idB = state.createResume("Resume B");
+      state.applyTemplate("modern-clean");
+
+      // Verify A's template
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().resume.templateId).toBe("executive-pro");
+
+      // Verify B's template
+      state.switchResume(idB);
+      expect(useResumeBuilder.getState().resume.templateId).toBe("modern-clean");
+    });
+  });
+
+  describe("Persistence and Rehydration", () => {
+    it("persists resumes array and activeResumeId", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+
+      // Verify persistence shape
+      const persisted = useResumeBuilder.getState();
+      expect(persisted.resumes).toHaveLength(3); // initial + A, B
+      expect(persisted.activeResumeId).toBe(idB);
+      expect(persisted.resumes.find(r => r.resumeId === idA)?.name).toBe("Alice");
+      expect(persisted.resumes.find(r => r.resumeId === idB)?.name).toBe("Bob");
+    });
+
+    it("restores correct state after simulated rehydration", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+
+      // Simulate rehydration by setting state
+      const resumes = useResumeBuilder.getState().resumes;
+      const activeResumeId = useResumeBuilder.getState().activeResumeId;
+      
+      useResumeBuilder.setState({
+        resumes,
+        activeResumeId,
+        resume: resumes.find(r => r.resumeId === activeResumeId) || resumes[0],
+      });
+
+      // Verify restored state
+      expect(useResumeBuilder.getState().resumes).toHaveLength(3);
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idB);
+      expect(useResumeBuilder.getState().resume.name).toBe("Bob");
+    });
+  });
+
+  describe("Import Behavior", () => {
+    it("merges imported resume into current resume", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Original User");
+      state.updateField("templateId", "executive-pro");
+
+      // Simulate import
+      const importedResume: Resume = {
+        ...defaultResume,
+        resumeId: idA, // Same ID
+        name: "Imported User",
+        email: "imported@test.com",
+        templateId: "template-1", // Not a real template
+      };
+
+      // Merge imported resume (using setResume directly)
+      state.setResume(importedResume);
+
+      // Verify merge - setResume now validates templateId
+      // Invalid templateId ("template-1") is rejected, current templateId ("executive-pro") is preserved
+      expect(useResumeBuilder.getState().resume.resumeId).toBe(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Imported User");
+      expect(useResumeBuilder.getState().resume.email).toBe("imported@test.com");
+      expect(useResumeBuilder.getState().resume.templateId).toBe("executive-pro"); // Preserved because "template-1" is invalid
+    });
+  });
+
+  describe("Edge Cases", () => {
+    it("handles rapid switching without data loss", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+
+      // Rapid switching
+      for (let i = 0; i < 10; i++) {
+        state.switchResume(idA);
+        state.switchResume(idB);
+      }
+
+      expect(useResumeBuilder.getState().resume.name).toBe("Bob");
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idB);
+
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Alice");
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idA);
+    });
+
+    it("handles concurrent edits to different resumes", () => {
+      const state = useResumeBuilder.getState();
+      
+      const idA = state.createResume("Resume A");
+      const idB = state.createResume("Resume B");
+
+      // Edit A
+      state.switchResume(idA);
+      state.updateField("name", "Alice");
+      state.updateField("email", "alice@test.com");
+
+      // Edit B
+      state.switchResume(idB);
+      state.updateField("name", "Bob");
+      state.updateField("email", "bob@test.com");
+
+      // Verify both edits persisted
+      state.switchResume(idA);
+      expect(useResumeBuilder.getState().resume.name).toBe("Alice");
+      expect(useResumeBuilder.getState().resume.email).toBe("alice@test.com");
+
+      state.switchResume(idB);
+      expect(useResumeBuilder.getState().resume.name).toBe("Bob");
+      expect(useResumeBuilder.getState().resume.email).toBe("bob@test.com");
+    });
+  });
+});

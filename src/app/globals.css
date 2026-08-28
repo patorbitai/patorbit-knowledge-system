@@ -145,6 +145,25 @@
   background-color: #e2e8f0 !important;
   color: #0f172a !important;
 }
+
+/* RightCopilot gradient backgrounds */
+.light [class*="from-[rgba(10"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+.light [class*="to-[rgba(7"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+/* Additional hardcoded dark backgrounds */
+.light .bg-\[\#0C1322\],
+.light .bg-\[\#080C18\] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
 .light [class*="border-white/[0."] {
   border-color: rgba(15, 23, 42, 0.12) !important;
 }
@@ -156,6 +175,28 @@
 .light [class*="bg-slate-600"],
 .light [class*="bg-slate-900/"] {
   background-color: #eef2f7 !important;
+  color: #0f172a !important;
+}
+
+/* Gradient backgrounds from RightCopilot and other components */
+.light [class*="from-[rgba(10"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+.light [class*="to-[rgba(7"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+/* Dark gradient overlays */
+.light [class*="from-[rgba(10,18,32,0.96]"] {
+  background: #ffffff !important;
+  color: #0f172a !important;
+}
+.light [class*="to-[rgba(7,14,26,0.92]"] {
+  background: #ffffff !important;
   color: #0f172a !important;
 }
 
@@ -445,11 +486,11 @@ body {
    PRINT / PDF
    ============================================================ */
 
-/* The resume sheet carries its own internal page margin (the configured
-   pageMargin), so the page margin must be 0 — otherwise the browser adds
-   whitespace on top of the resume's own padding and the PDF does not match
-   the on-screen preview. The print page is a TRUE A4 page (210mm × 297mm)
-   with zero browser-added margins. */
+/* Every page carries its own internal page frame (safe content area), so the
+   page margin must be 0 — otherwise the browser adds whitespace on top of the
+   resume's own padding and the PDF does not match the on-screen preview. The
+   print page is a TRUE A4 page (210mm × 297mm) with zero browser-added
+   margins; each .rs-page div fills exactly one sheet. */
 @page {
   size: A4;
   margin: 0;
@@ -506,12 +547,37 @@ body {
     -webkit-print-color-adjust: exact !important;
   }
 
-  /* Page-break control. IMPORTANT: NO break-inside: avoid on article/section
-     — the Professional Preview paginates at fixed A4-height windows (it clips
-     content at the page boundary), so print must flow the SAME way or page
-     breaks land at different locations than the preview. break-after: avoid
-     and orphans/widows are typographic minimums that keep a heading or a lone
-     line off the bottom of a page without shifting section positions. */
+  /* Paginated page frame. The Gallery / Professional Preview and the PDF
+     export render the SAME pre-paginated .rs-page divs (built by
+     PaginatedResumeSheet), so the exported PDF matches the preview by
+     construction. On screen the pages are absolutely stacked; in print they
+     flow as static blocks — each page div is exactly 210mm × 297mm, i.e. one
+     A4 sheet, so no flow-level break rules are needed (and none are added:
+     the paginator already honors the templates' break-inside-avoid articles). */
+  .rs-page-measure {
+    display: none !important;
+  }
+  .rs-pages {
+    position: static !important;
+    height: auto !important;
+  }
+  .rs-page {
+    position: static !important;
+    top: auto !important;
+    left: auto !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .rs-page:not(:last-child) {
+    page-break-after: page;
+  }
+
+  /* Typographic minimums: never orphan a heading or a lone line at the
+     bottom of a page inside a page div. */
   h1, h2, h3, h4 { break-after: avoid; orphans: 3; widows: 3; }
   p, li { orphans: 2; widows: 2; }
 

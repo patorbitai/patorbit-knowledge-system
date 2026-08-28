@@ -272,7 +272,16 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         },
         setResume: (newResume) => set((s) => {
           const currentId = s.activeResumeId;
-          const updated = { ...newResume, resumeId: currentId, resumeName: s.resume.resumeName || newResume.name || "My Resume" };
+          // Validate templateId - fall back to current if invalid
+          const validTemplateId = TEMPLATES.some(t => t.id === newResume.templateId) 
+            ? newResume.templateId 
+            : s.resume.templateId;
+          const updated = { 
+            ...newResume, 
+            resumeId: currentId, 
+            resumeName: s.resume.resumeName || newResume.name || "My Resume",
+            templateId: validTemplateId
+          };
           const resumes = s.resumes.map((r) => r.resumeId === currentId ? updated : r);
           return { resumes, resume: updated, saveStatus: "unsaved" };
         }),
@@ -295,7 +304,8 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         resetResume: () => set((s) => {
           const currentId = s.activeResumeId;
           const currentName = s.resume.resumeName;
-          const resetR: Resume = { ...defaultResume, resumeId: currentId, resumeName: currentName };
+          const currentTemplate = s.resume.templateId;
+          const resetR: Resume = { ...defaultResume, resumeId: currentId, resumeName: currentName, templateId: currentTemplate };
           const resumes = s.resumes.map((r) => r.resumeId === currentId ? resetR : r);
           return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null };
         }),
@@ -305,13 +315,13 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         setAIAction: (key, state) => set((s) => ({ aiActions: { ...s.aiActions, [key]: { ...(s.aiActions[key] ?? { status: "idle", result: null, error: null }), ...state } } })),
         setCopilotOpen: (open) => set({ isCopilotOpen: open }), setJobMatchOpen: (open) => set({ isJobMatchOpen: open }), setPreviewTab: (tab) => set({ previewTab: tab }),
         applyTemplate: (templateId) => {
-          const template = TEMPLATES.find((t) => t.id === templateId);
-          if (template) {
+          // Only the template changes — every other field of the user's resume
+          // (name, contact, sections, font/color customization) stays intact.
+          if (TEMPLATES.some((t) => t.id === templateId)) {
             set((s) => {
               const updatedResume = {
                 ...s.resume,
-                templateId: template.id,
-                fontPreference: template.suggestedFont,
+                templateId,
               };
               const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
               return { resumes, resume: updatedResume, saveStatus: "unsaved" };
@@ -513,11 +523,52 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
       };
   };
 
+/**
+ * Merge persisted state into the current store on rehydration.
+ *
+ * The store used to persist a single top-level `resume` object (`{ resume,
+ * evidence }`). The multi-resume store persists a `resumes` array instead.
+ * Zustand's DEFAULT shallow merge (`{ ...current, ...persisted }`) would put
+ * the legacy resume into `state.resume` while leaving the store's non-empty
+ * placeholder `resumes` array untouched — and the placeholder (a blank
+ * default resume) would then be persisted over the user's real data on the
+ * first write after hydration. This merge migrates the legacy shape into the
+ * multi-resume array BEFORE hydration completes so real resume data (and the
+ * selected templateId) is never lost.
+ */
+export function mergePersistedResumeState(
+  persisted: unknown,
+  current: ResumeBuilderState,
+): ResumeBuilderState {
+  const p = (persisted ?? {}) as Partial<ResumeBuilderState> & { resume?: Partial<Resume> };
+  // Legacy single-resume shape: persisted `resume` with no `resumes` array.
+  if (p.resume && !Array.isArray(p.resumes)) {
+    const legacy: Resume = { ...defaultResume, ...p.resume } as Resume;
+    const migratedId = legacy.resumeId || uid();
+    const migrated: Resume = {
+      ...legacy,
+      resumeId: migratedId,
+      resumeName: legacy.resumeName || legacy.name || "My Resume",
+    };
+    return {
+      ...current,
+      ...p,
+      resumes: [migrated],
+      activeResumeId: migratedId,
+      resume: migrated,
+    };
+  }
+  // Current multi-resume shape (or an empty/unknown payload): keep zustand's
+  // default shallow merge behavior.
+  return { ...current, ...p };
+}
+
 export const useResumeBuilder = create<ResumeBuilderState>()(
   persist(
     resumeStore,
     {
       name: "patorbit-resume-v2",
+      merge: mergePersistedResumeState,
       partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs }),
       onRehydrateStorage: () => (state) => {
         if (state) {

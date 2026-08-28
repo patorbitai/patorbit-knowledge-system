@@ -49,9 +49,11 @@ describe("import → confirm flow: fields the builder needs after setResume", ()
     expect(Array.isArray(parsed.claims)).toBe(true);
   });
 
-  it("keeps templateId so the template gallery shows the right template", () => {
+  it("does not invent a templateId for text imports (preserved at apply time)", () => {
     const parsed = parseResumeJson(rawToResume("Jane Doe\nWORK EXPERIENCE\nAcme Corp  Mar 2020 – Present"));
-    expect(parsed.templateId).toBe("modern-clean");
+    // Text imports carry no template choice; the schema default marks "unspecified"
+    // and mergeImportedResume preserves the user's current template instead.
+    expect(parsed.templateId).toBe("template-1");
   });
 });
 
@@ -147,7 +149,8 @@ describe("document-model evidence runs alongside the existing import result", ()
 
     expect(resume.name).toBe("Jane Doe");
     expect(resume.experience[0]?.company).toBe("Acme Corp");
-    expect(resume.templateId).toBe("modern-clean");
+    // Text imports carry no template choice; the schema default marks "unspecified".
+    expect(resume.templateId).toBe("template-1");
   });
 });
 
