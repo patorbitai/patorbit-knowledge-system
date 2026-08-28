@@ -91,11 +91,33 @@ function normalizeLabelFormat(lines: string[]): string[] {
   return out;
 }
 
+/**
+ * Collapse PDF letter-spacing artifacts in section headers.
+ * "SU M M A R Y" → "SUMMARY", "E X P E R I E N C E" → "EXPERIENCE"
+ */
+function collapseSpacedHeaders(lines: string[]): string[] {
+  const HEADER_WORDS = /^(summary|experience|education|skills|projects|certifications|languages|interests|references|profile|objective|employment|academic|qualifications|publications|research|awards|honors|achievements)$/i;
+  return lines.map(line => {
+    const trimmed = line.trim();
+    // Only process short, all-uppercase lines with single-char tokens
+    if (trimmed.length > 40 || !/^[A-Z][A-Z ]+$/.test(trimmed)) return line;
+    const tokens = trimmed.split(/\s+/);
+    if (tokens.length < 3) return line;
+    // Check if collapsing all tokens produces a known header word
+    const collapsed = tokens.join("");
+    if (HEADER_WORDS.test(collapsed)) return line.replace(trimmed, collapsed);
+    return line;
+  });
+}
+
 export function parseRawResumeText(text: string): ParsedResume {
   const rawLines = text.split("\n");
 
-  // ── Preprocessor: normalize label-based formats BEFORE filtering blanks ──
-  const normalized = normalizeLabelFormat(rawLines);
+  // ── Preprocessors (order matters) ──
+  // 1. Collapse PDF letter-spacing: "SU M M A R Y" → "SUMMARY"
+  const collapsed = collapseSpacedHeaders(rawLines);
+  // 2. Normalize label-based formats: "Company: X" → "X | ..."
+  const normalized = normalizeLabelFormat(collapsed);
   const lines = normalized.filter(l => l.trim());
   const result: ParsedResume = {};
 
