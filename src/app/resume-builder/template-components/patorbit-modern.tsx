@@ -33,8 +33,8 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
         ...typography.section,
         color: colors.accent,
         borderBottom: `1.5px solid ${colors.accent}`,
-        paddingBottom: spacing[2],
-        marginBottom: spacing[4],
+        paddingBottom: spacing[1],
+        marginBottom: spacing[2],
       }}
     >
       {children}
@@ -115,11 +115,11 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
       {/* ── HEADER ───────────────────────────────────────────────── */}
       <header
         style={{
-          padding: `${spacing[8]} ${layout.marginH} ${spacing[6]}`,
+          padding: `${spacing[4]} ${layout.marginH} ${spacing[3]}`,
           borderBottom: `2px solid ${colors.accent}`,
         }}
       >
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: spacing[6] }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: spacing[3] }}>
           {/* Name + title */}
           <div style={{ flex: 1 }}>
             <h1
@@ -160,7 +160,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
             {resume.address && <div>{resume.address}</div>}
             {resume.nationality && <div>{resume.nationality}</div>}
             {resume.social && (resume.social.linkedin || resume.social.github || resume.social.website || resume.social.portfolio) && (
-              <div style={{ marginTop: spacing[1], textAlign: "right", ...typography.caption, color: colors.muted, lineHeight: 1.8 }}>
+              <div style={{ marginTop: 0, textAlign: "right", ...typography.caption, color: colors.muted, lineHeight: 1.6 }}>
                 {resume.social.linkedin && <div><SocialLink href={resume.social.linkedin} /></div>}
                 {resume.social.github && <div><SocialLink href={resume.social.github} /></div>}
                 {resume.social.website && <div>{resume.social.website.replace(/^https?:\/\//, "")}</div>}
@@ -177,7 +177,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
           display: "grid",
           gridTemplateColumns: "1fr 260px",
           gap: layout.columnGap,
-          padding: `${spacing[6]} ${layout.marginH}`,
+          padding: `${spacing[3]} ${layout.marginH}`,
           alignItems: "start",
         }}
       >
@@ -185,9 +185,9 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
         <div>
           {/* Summary */}
           {resume.summary && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[2] }}>
               <SectionTitle>Professional Profile</SectionTitle>
-              <div style={{ ...typography.body, color: colors.body, lineHeight: 1.7 }}>
+              <div style={{ ...typography.body, color: colors.body, lineHeight: 1.6 }}>
                 <FormattedDescription text={resume.summary} color={colors.body} mutedColor={colors.muted} size="sm" />
               </div>
             </section>
@@ -195,16 +195,15 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Experience */}
           {resume.experience.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Experience</SectionTitle>
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing[5] }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing[3] }}>
                 {resume.experience.map((exp) => (
                   <article
                     key={exp.id}
-                    className="break-inside-avoid"
                     style={{
                       display: "flex",
-                      gap: spacing[3],
+                      gap: spacing[2],
                     }}
                   >
                     <TimelineDot />
@@ -266,11 +265,11 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Projects */}
           {resume.projects.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Projects</SectionTitle>
-              <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
                 {resume.projects.map((p) => (
-                  <article key={p.id} className="break-inside-avoid">
+                  <article key={p.id}>
                     <EntryRow
                       left={
                         <h3 style={{ fontSize: "0.8125rem", fontWeight: 700, color: colors.ink, margin: 0 }}>
@@ -298,7 +297,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Achievements */}
           {resume.achievements.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Achievements</SectionTitle>
               {resume.achievements.map((a) => (
                 <p
@@ -317,7 +316,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
         <div>
           {/* Education */}
           {resume.education.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Education</SectionTitle>
               <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
                 {resume.education.map((edu) => (
@@ -342,7 +341,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Skills */}
           {resume.skills.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Skills</SectionTitle>
               <div style={{ display: "flex", flexWrap: "wrap", gap: spacing[1] }}>
                 {resume.skills.map((s) => (
@@ -354,7 +353,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Certifications */}
           {resume.certifications.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Certifications</SectionTitle>
               {resume.certifications.map((c) => (
                 <div key={c.id} style={{ marginBottom: spacing[3] }}>
@@ -371,7 +370,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Languages */}
           {resume.languages.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Languages</SectionTitle>
               {resume.languages.map((l) => (
                 <div
@@ -392,7 +391,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* Interests */}
           {resume.interests.length > 0 && (
-            <section style={{ marginBottom: spacing[6] }}>
+            <section style={{ marginBottom: spacing[3] }}>
               <SectionTitle>Interests</SectionTitle>
               <p style={{ ...typography.body, color: colors.muted }}>
                 {resume.interests.map((i) => i.name).join(" · ")}
@@ -402,7 +401,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
 
           {/* References */}
           {resume.references.length > 0 && (
-            <section style={{ marginTop: spacing[6] }}>
+            <section style={{ marginTop: spacing[3] }}>
               <SectionTitle>References</SectionTitle>
               {resume.references.map((r) => (
                 <div key={r.id} style={{ marginBottom: spacing[3] }}>
