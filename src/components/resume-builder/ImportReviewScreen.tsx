@@ -287,15 +287,6 @@ function SkillsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resume)
             onChange={e => update(i, "name", e.target.value)}
             placeholder="Skill name"
           />
-          <select
-            className="text-[11px] bg-transparent text-slate-400 outline-none border-none cursor-pointer"
-            value={skill.level}
-            onChange={e => update(i, "level", e.target.value)}
-          >
-            {["Beginner", "Intermediate", "Advanced", "Expert"].map(l => (
-              <option key={l} value={l} className="bg-[#0A0E1B]">{l}</option>
-            ))}
-          </select>
           <button type="button" onClick={() => remove(i)} className="p-0.5 text-slate-700 hover:text-red-400 transition">
             <X className="w-3 h-3" />
           </button>

@@ -12,8 +12,6 @@ import { Trash2, Plus, Sparkles, Filter } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
-const levels = ["Beginner", "Intermediate", "Advanced", "Expert"] as const;
-
 export function SkillsSection() {
   const resume = useResumeBuilder((s) => s.resume);
   const addSkill = useResumeBuilder((s) => s.addSkill);
@@ -121,8 +119,8 @@ export function SkillsSection() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-3.5 hover:border-white/[0.1] transition-all"
             >
-              <div className="flex items-start gap-3">
-                <div className="flex-1 min-w-0 space-y-2">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 min-w-0">
                   <input
                     type="text"
                     value={skill.name}
@@ -132,28 +130,8 @@ export function SkillsSection() {
                     className={"w-full bg-transparent text-sm text-white font-medium placeholder:text-slate-600 outline-none " + (getFieldError("skills", "name", idx) ? "text-red-400" : "")}
                   />
                   {getFieldError("skills", "name", idx) && <p className="text-[11px] text-red-400">{getFieldError("skills", "name", idx)}</p>}
-                  <div className="flex gap-2">
-                    <div className="flex-1">
-                      <select
-                        value={skill.level}
-                        onChange={(e) => updateSkill(skill.id, "level", e.target.value)}
-                        className="w-full bg-white/[0.04] border border-white/[0.06] rounded-lg text-[10px] text-slate-300 px-2 py-1 outline-none focus:border-blue-500/50"
-                      >
-                        {levels.map((l) => <option key={l} value={l}>{l}</option>)}
-                      </select>
-                    </div>
-                    <div className="flex-1">
-                      <input
-                        type="text"
-                        value={skill.category}
-                        onChange={(e) => updateSkill(skill.id, "category", e.target.value)}
-                        placeholder="Category"
-                        className="w-full bg-white/[0.04] border border-white/[0.06] rounded-lg text-[10px] text-slate-300 px-2 py-1 outline-none placeholder:text-slate-600 focus:border-blue-500/50"
-                      />
-                    </div>
-                  </div>
                 </div>
-                <button onClick={() => removeSkill(skill.id)} className="p-1 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10 shrink-0 mt-0.5">
+                <button onClick={() => removeSkill(skill.id)} className="p-1 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10 shrink-0">
                   <Trash2 className="w-3 h-3" />
                 </button>
               </div>

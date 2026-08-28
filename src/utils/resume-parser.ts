@@ -323,7 +323,7 @@ function parseProjectsSection(lines: string[]): ParsedResume["projects"] {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    if (/^[A-Z][A-Za-z0-9\s]{2,50}$/.test(trimmed) && !/^[•\-*\d.]/.test(trimmed) && trimmed.length < 60) {
+    if (/^[A-Z]/.test(trimmed) && !/^[•\-*\d.]/.test(trimmed) && trimmed.length < 80 && trimmed.length > 2) {
       if (current) {
         current.description = bullets.join("\n");
         items.push(current);
