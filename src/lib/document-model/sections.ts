@@ -121,14 +121,35 @@ function looksCustom(title: string): boolean {
 }
 
 /**
+ * Collapse PDF letter-spacing: "SK I L L S" → "skills".
+ * Only processes short, all-uppercase lines with 3+ space-separated tokens
+ * that collapse into a known section alias.
+ */
+function collapseSpacedHeader(title: string): string {
+  if (title.length > 40 || !/^[A-Z][A-Z'\u2019\- ]+$/.test(title)) return title;
+  const tokens = title.split(/\s+/);
+  if (tokens.length < 3) return title;
+  const collapsed = tokens.join("");
+  const norm = collapsed.toLowerCase();
+  for (const { aliases } of SECTION_ALIASES) {
+    for (const a of aliases) {
+      if (norm === a || norm.startsWith(`${a}:`)) return collapsed;
+    }
+  }
+  return title;
+}
+
+/**
  * Classify a raw line as a section heading. Returns the recognised kind, or
  * `"custom"` when the line looks like a heading but matches no known alias, or
  * `null` when the line is ordinary content. Never throws away the source line.
  */
 export function detectSectionKind(line: string): SectionKind | null {
-  const title = normalize(line);
-  if (!title) return null;
-  if (!headingShape(title)) return null;
+  const raw = normalize(line);
+  if (!raw) return null;
+  if (!headingShape(raw)) return null;
+  // Collapse PDF letter-spacing before matching aliases
+  const title = collapseSpacedHeader(raw);
 
   const norm = title.toLowerCase();
   for (const { kind, aliases } of SECTION_ALIASES) {
