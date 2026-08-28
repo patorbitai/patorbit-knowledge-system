@@ -316,38 +316,56 @@ function parseSkillsSection(body: string): ParsedResume["skills"] {
 
 function parseProjectsSection(lines: string[]): ParsedResume["projects"] {
   const items: ParsedResume["projects"] = [];
-  let current: any = null;
-  const bullets: string[] = [];
+  let current: { name: string; description: string; tech: string } | null = null;
+  const descLines: string[] = [];
+
+  const flush = () => {
+    if (current) {
+      current.description = descLines.join("\n").trim();
+      items.push(current);
+      descLines.length = 0;
+    }
+    current = null;
+  };
+
+  // Detect tech mentions in any line.
+  const TECH_RE = /(?:using|with|built\s*(?:with|using)|tech(?:nology)?\s*:?\s*)(.+)/i;
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    if (/^[A-Z]/.test(trimmed) && !/^[•\-*\d.]/.test(trimmed) && trimmed.length < 80 && trimmed.length > 2) {
-      if (current) {
-        current.description = bullets.join("\n");
-        items.push(current);
-        bullets.length = 0;
-      }
-      current = { name: trimmed, description: "", tech: "" };
+    // Strip leading bullet/number markers.
+    const clean = trimmed.replace(/^[•\-*\d.)\]\u2022\u25E6\u25AA\u25AB]+\s*/, "").trim();
+    if (!clean) continue;
+
+    // A project title is: short (< 80 chars), starts with uppercase, and is
+    // NOT a long sentence (<= 12 words).  Also detect bullet-prefixed titles.
+    const isTitle =
+      clean.length > 2 &&
+      clean.length < 80 &&
+      /^[A-Z]/.test(clean) &&
+      clean.split(/\s+/).length <= 12 &&
+      !/[.!?]$/.test(clean); // not ending with period (likely a sentence)
+
+    if (isTitle) {
+      flush();
+      current = { name: clean, description: "", tech: "" };
+      // The same line might carry tech info after a separator.
+      const techM = clean.match(TECH_RE);
+      if (techM) current.tech = techM[1].trim();
       continue;
     }
 
-    if (/^[•\-*\d.]/.test(trimmed)) {
-      bullets.push(trimmed);
-      // Check for tech mentions
-      const techMatch = trimmed.match(/(?:using|with|built\s*(?:with|using)|tech:\s*)(.+)/i);
-      if (techMatch && current) current.tech = techMatch[1].trim();
-    } else if (current) {
-      bullets.push(trimmed);
+    // Everything else is description / detail for the current project.
+    if (current) {
+      descLines.push(trimmed);
+      const techM = trimmed.match(TECH_RE);
+      if (techM) current.tech = (current.tech ? current.tech + ", " : "") + techM[1].trim();
     }
   }
 
-  if (current) {
-    current.description = bullets.join("\n");
-    items.push(current);
-  }
-
+  flush();
   return items.length > 0 ? items : undefined;
 }
 
