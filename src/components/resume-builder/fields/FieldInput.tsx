@@ -38,8 +38,8 @@ export function FieldInput({
   const charCount = typeof value === "string" ? value.length : 0;
 
   const handleInput = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const v = e.target.value;
-    if (maxLength && v.length > maxLength) return;
+    let v = e.target.value;
+    if (maxLength && v.length > maxLength) v = v.slice(0, maxLength);
     onChange(v);
   };
 
