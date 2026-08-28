@@ -601,11 +601,13 @@ function distribute(
 /* ── Page assembly ─────────────────────────────────────────────────────────── */
 
 function applyPageFrame(pageRoot: HTMLElement, ctx: Ctx, pageIndex: number, constantTop: boolean): void {
-  const top = constantTop || pageIndex === 0 ? ctx.safeTop1 : ctx.safeTopN;
+  // All pages get at least the safe area as padding (header/footer space).
+  // safeTopN = Math.max(template, safeArea) so every page has consistent spacing.
+  const top = Math.max(constantTop ? ctx.safeTop1 : ctx.safeTopN, SAFE_TOP);
   pageRoot.style.paddingTop = `${top}px`;
-  pageRoot.style.paddingBottom = `${ctx.safeBottom}px`;
-  pageRoot.style.paddingLeft = `${ctx.safeLeft}px`;
-  pageRoot.style.paddingRight = `${ctx.safeRight}px`;
+  pageRoot.style.paddingBottom = `${Math.max(ctx.safeBottom, SAFE_BOTTOM)}px`;
+  pageRoot.style.paddingLeft = `${Math.max(ctx.safeLeft, PAGE_FRAME.safe.left)}px`;
+  pageRoot.style.paddingRight = `${Math.max(ctx.safeRight, PAGE_FRAME.safe.right)}px`;
   pageRoot.style.boxSizing = "border-box";
   pageRoot.style.minHeight = `${ctx.pageHeight}px`;
   pageRoot.style.overflow = "hidden";
@@ -657,15 +659,15 @@ function detectScale(scope: HTMLElement): number {
 function paginateRoot(root: HTMLElement, scope: HTMLElement): string[] {
   const zoom = detectScale(scope);
   const cs = getComputedStyle(root);
-  const safeTop1 = px(cs.paddingTop);
-  const safeRight = px(cs.paddingRight);
-  const safeBottom = px(cs.paddingBottom);
-  const safeLeft = px(cs.paddingLeft);
+  const safeTop1 = Math.max(px(cs.paddingTop), SAFE_TOP);
+  const safeRight = Math.max(px(cs.paddingRight), PAGE_FRAME.safe.right);
+  const safeBottom = Math.max(px(cs.paddingBottom), SAFE_BOTTOM);
+  const safeLeft = Math.max(px(cs.paddingLeft), PAGE_FRAME.safe.left);
   const ctx: Ctx = {
     pageHeight: PAGE_H,
     safeTop1,
-    safeTopN: Math.max(safeTop1, SAFE_TOP),
-    safeBottom: Math.max(safeBottom, SAFE_BOTTOM),
+    safeTopN: Math.max(px(cs.paddingTop), SAFE_TOP),
+    safeBottom,
     safeLeft,
     safeRight,
     zoom,
