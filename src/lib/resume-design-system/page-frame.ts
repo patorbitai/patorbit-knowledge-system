@@ -27,7 +27,8 @@ export const PAGE_FRAME = {
   /** Screen height of one A4 page (px). */
   height: A4.heightPx,
   /**
-   * Canonical safe content area (px): top=40, bottom=30, sides=25.
+   * Canonical safe content area (px), matching the design-system tokens
+   * (spacing[8] / layout.marginH / layout.marginV = 32px).
    *
    * The paginator uses the template root's own computed padding as the page
    * insets — so every template keeps its designed look on page 1 — and falls
@@ -35,7 +36,7 @@ export const PAGE_FRAME = {
    * margin (full-bleed banners/sidebars): continuation pages always start
    * with SAFE.top of space and every page ends with SAFE.bottom of space.
    */
-  safe: { top: 40, right: 25, bottom: 30, left: 25 },
+  safe: { top: 32, right: 32, bottom: 32, left: 32 },
 } as const;
 
 /**
