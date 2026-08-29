@@ -55,7 +55,12 @@ export const resumeRepository = {
     return prisma.resume.create({ data });
   },
 
-  /** Update an existing resume row (scoped to its owner identity). */
+  /**
+   * Update an existing resume row (scoped to its owner identity).
+   * C6: If `baseVersion` is provided, the update is conditional on the
+   * current version matching. Returns null when the version is stale
+   * (0 rows affected) so the service layer can throw ResumeConflictError.
+   */
   async update(
     resumeId: string,
     professionalIdentityId: string,
@@ -65,6 +70,7 @@ export const resumeRepository = {
       careerStage?: string;
       payload?: Prisma.InputJsonValue;
       version?: number;
+      baseVersion?: number;
     },
   ): Promise<ResumeRecord | null> {
     const existing = await this.findByResumeIdAndIdentity(
@@ -74,9 +80,42 @@ export const resumeRepository = {
     if (!existing) {
       return null;
     }
+
+    // Atomic conditional update: only update if version matches
+    if (data.baseVersion !== undefined) {
+      const result = await prisma.resume.updateMany({
+        where: {
+          id: existing.id,
+          version: data.baseVersion,
+        },
+        data: {
+          resumeName: data.resumeName,
+          templateId: data.templateId,
+          careerStage: data.careerStage,
+          payload: data.payload,
+          version: data.baseVersion + 1,
+        },
+      });
+
+      if (result.count === 0) {
+        // Version mismatch — stale update
+        return null;
+      }
+
+      // Return the updated record
+      return this.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
+    }
+
+    // No baseVersion — legacy non-atomic update (backward compat)
     return prisma.resume.update({
       where: { id: existing.id },
-      data,
+      data: {
+        resumeName: data.resumeName,
+        templateId: data.templateId,
+        careerStage: data.careerStage,
+        payload: data.payload,
+        version: data.version,
+      },
     });
   },
 

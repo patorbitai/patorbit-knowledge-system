@@ -252,11 +252,6 @@ export class ResumeService {
       throw new ResumeNotFoundError();
     }
 
-    // Optimistic lock check: if client sent a baseVersion, it must match.
-    if (input.baseVersion !== undefined && input.baseVersion !== existing.version) {
-      throw new ResumeConflictError(existing.version);
-    }
-
     const templateId =
       input.templateId !== undefined
         ? this.assertTemplateId(input.templateId)
@@ -280,9 +275,19 @@ export class ResumeService {
         careerStage,
         payload: payload as Prisma.InputJsonValue,
         version: existing.version + 1,
+        baseVersion: input.baseVersion,
       },
     );
     if (!record) {
+      // Atomic update returned null — version was stale (race condition)
+      if (input.baseVersion !== undefined) {
+        // Re-read to get current version for the conflict response
+        const current = await resumeRepository.findByResumeIdAndIdentity(
+          resumeId,
+          professionalIdentityId,
+        );
+        throw new ResumeConflictError(current?.version ?? existing.version);
+      }
       throw new ResumeNotFoundError();
     }
     return this.toServerResume(record);

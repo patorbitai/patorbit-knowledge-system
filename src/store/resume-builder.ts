@@ -58,7 +58,12 @@ export interface ResumeBuilderState {
   renameResume: (resumeId: string, name: string) => void;
   deleteResume: (resumeId: string) => void;
 
-  activeSection: SectionId; saveStatus: SaveStatus;
+  activeSection: SectionId;  saveStatus: SaveStatus;
+  /** Server version per resume — populated by sync, used by write-back. */
+  serverVersions: Record<string, number>;
+  /** Conflict state: set when a write-back gets 409 CONFLICT. */
+  writeConflict: { resumeId: string; serverVersion: number } | null;
+  clearWriteConflict: () => void;
   analysis: ResumeAnalysis | null; analysisLoading: boolean;
   jobMatch: JobMatchResult | null; jobDescription: string;
   aiActions: Record<string, AIActionState>;
@@ -114,6 +119,8 @@ export interface ResumeBuilderState {
   setAIAction: (key: string, state: Partial<AIActionState>) => void; setCopilotOpen: (open: boolean) => void;
   setJobMatchOpen: (open: boolean) => void;  setPreviewTab: (tab: "resume" | "passport" | "knowledge-graph" | "trust-timeline") => void;
   setSaveStatus: (status: SaveStatus) => void;
+  setServerVersion: (resumeId: string, version: number) => void;
+  triggerWriteBack: () => void;
   /** Visual customization per resume, stored separately from resume content. */
   styleConfigs: Record<string, ResumeStyleConfig>;
   setStyleConfig: (resumeId: string, patch: Partial<ResumeStyleConfig>) => void;
@@ -223,6 +230,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         },
 
         analysis: null, activeSection: "personal", saveStatus: "unsaved",
+        serverVersions: {}, writeConflict: null,
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
         qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
@@ -310,6 +318,16 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null };
         }),
         setSaveStatus: (status) => set({ saveStatus: status }),
+        setServerVersion: (resumeId, version) => set((s) => ({
+          serverVersions: { ...s.serverVersions, [resumeId]: version },
+        })),
+        clearWriteConflict: () => set({ writeConflict: null }),
+        triggerWriteBack: () => {
+          // Imported dynamically to avoid circular imports
+          import("@/lib/resume-write-back").then(({ debouncedSave }) => {
+            debouncedSave();
+          });
+        },
         setAnalysis: (analysis) => set({ analysis }), setAnalysisLoading: (loading) => set({ analysisLoading: loading }),
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),
         setAIAction: (key, state) => set((s) => ({ aiActions: { ...s.aiActions, [key]: { ...(s.aiActions[key] ?? { status: "idle", result: null, error: null }), ...state } } })),
@@ -569,7 +587,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     {
       name: "patorbit-resume-v2",
       merge: mergePersistedResumeState,
-      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs }),
+      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions }),
       onRehydrateStorage: () => (state) => {
         if (state) {
           let resumes = state.resumes;
@@ -593,6 +611,8 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
           state.resume = resume;
           state.evidence = state.evidence ?? [];
           state.styleConfigs = state.styleConfigs ?? {};
+          state.serverVersions = state.serverVersions ?? {};
+          state.writeConflict = null;
           state.setSaveStatus("saved");
         }
       },

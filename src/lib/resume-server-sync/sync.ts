@@ -5,16 +5,15 @@ import {
   type ParityReport,
 } from "./parity";
 import { isResumeServerSyncEnabled } from "./config";
+import { useResumeBuilder } from "@/store/resume-builder";
 
 /**
- * Read-only server resume sync (Phase 1A, ADR-004).
+ * Read-only server resume sync (Phase 1A, ADR-004) + C6 version capture.
  *
  * Fetches the SERVER_SNAPSHOT for the authenticated user and classifies it
- * against the local resumes. It is deliberately PURE with respect to the
- * application state: it never writes to Zustand, never uploads local resumes,
- * never adds server-only resumes to the UI, and never overwrites anything.
- * Every failure mode returns an `error` outcome so the builder can keep
- * working entirely from localStorage (fail closed).
+ * against the local resumes. It never overwrites local resume content.
+ * It DOES capture the server version for each matching resume so that
+ * future write-back can use optimistic locking (baseVersion).
  */
 export type ResumeSyncOutcome =
   | { status: "disabled" }
@@ -31,6 +30,21 @@ export async function runServerResumeSync(
   try {
     const serverResumes = await fetchServerResumes();
     const report = computeParity(localSnapshots, serverResumes);
+
+    // C6: Capture server versions for matching resumes (read-only for content)
+    const state = useResumeBuilder.getState();
+    const newVersions = { ...state.serverVersions };
+    let changed = false;
+    for (const server of serverResumes) {
+      if (server.version && (!newVersions[server.resumeId] || newVersions[server.resumeId] !== server.version)) {
+        newVersions[server.resumeId] = server.version;
+        changed = true;
+      }
+    }
+    if (changed) {
+      useResumeBuilder.setState({ serverVersions: newVersions });
+    }
+
     return { status: "ok", report };
   } catch (err: unknown) {
     return {
