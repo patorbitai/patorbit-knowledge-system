@@ -114,7 +114,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
         fontFamily: fontFamilies.jakarta,
         color: C.body,
         maxWidth: layout.pageWidth,
-        padding: "40px 32px 30px",
+        padding: "40px 32px 20px",
         backgroundColor: C.white,
       }}
     >
