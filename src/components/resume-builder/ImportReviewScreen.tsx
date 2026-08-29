@@ -519,8 +519,8 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
       <div className="flex-1 flex overflow-hidden">
 
         {/* Section nav */}
-        <nav className="w-[200px] shrink-0 border-r border-white/[0.06] bg-[#080C18] overflow-y-auto py-2 px-2 space-y-0.5">
-          {SECTIONS.map(({ key, label }) => {
+        <nav className="w-[220px] shrink-0 border-r border-white/[0.06] bg-[#080C18] overflow-y-auto py-3 px-3 space-y-1">
+          {SECTIONS.map(({ key, label }, idx) => {
             const level = confidences[key];
             const isActive = activeSection === key;
             return (
@@ -529,13 +529,17 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
                 type="button"
                 onClick={() => setActiveSection(key)}
                 className={clsx(
-                  "w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-xl text-xs font-medium transition-all text-left",
+                  "w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm transition-all text-left",
                   isActive
-                    ? "bg-blue-500/10 text-white border border-blue-500/15"
+                    ? "bg-gradient-to-r from-blue-500/15 to-cyan-500/10 text-white border border-blue-500/20 shadow-sm"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent",
                 )}
               >
-                <span>{label}</span>
+                <span className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold shrink-0"
+                  style={{ backgroundColor: isActive ? 'rgba(59,130,246,0.2)' : 'rgba(148,163,184,0.1)', color: isActive ? '#60a5fa' : '#64748b' }}>
+                  {idx + 1}
+                </span>
+                <span className="flex-1 font-medium">{label}</span>
                 <ConfidenceDot level={level} />
               </button>
             );
@@ -545,8 +549,8 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
         {/* Editable panel */}
         <div className="flex-1 overflow-y-auto min-w-0">
           <div className="w-full px-8 py-5">
-            <div className="flex items-center gap-3 mb-5">
-              <h2 className="text-base font-semibold text-white">{activeLabel}</h2>
+            <div className="flex items-center gap-3 mb-6 pb-4 border-b border-white/[0.06]">
+              <h2 className="text-lg font-bold text-white">{activeLabel}</h2>
               <ConfidenceBadge level={confidences[activeSection]} />
             </div>
             {renderPanel()}
