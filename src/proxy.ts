@@ -2,9 +2,9 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  console.log("[middleware] path:", pathname);
+  console.log("[proxy] path:", pathname);
 
   let token;
   try {
@@ -12,9 +12,9 @@ export async function middleware(request: NextRequest) {
       req: request,
       secret: process.env.AUTH_SECRET,
     });
-    console.log("[middleware] token present:", !!token, "path:", pathname);
+    console.log("[proxy] token present:", !!token, "path:", pathname);
   } catch (err) {
-    console.error("[middleware] getToken threw:", err);
+    console.error("[proxy] getToken threw:", err);
   }
 
   // Auth pages — redirect to overview if already authenticated
