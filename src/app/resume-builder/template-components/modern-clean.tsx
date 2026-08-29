@@ -11,8 +11,8 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
   const subheader = "#334155";
 
   const Section = ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <section className="mb-3">
-      <div className="flex items-center gap-3 mb-2 pb-1.5 border-b" style={{ borderColor: border }}>
+    <section className="mb-2">
+      <div className="flex items-center gap-3 mb-1.5 pb-1 border-b" style={{ borderColor: border }}>
         <h2 className="text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: ink }}>
           {title}
         </h2>
@@ -24,8 +24,8 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
 
   return (
     <div className="bg-white rounded-xl shadow-2xl overflow-hidden print:shadow-none print:rounded-none" style={{ fontFamily: fontFamilies.sans, color: ink }}>
-      <main className="p-6 print:p-5">
-        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b" style={{ borderColor: border }}>
+      <main className="p-4 print:p-4">
+        <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b" style={{ borderColor: border }}>
           <div>
             <h1 className="text-2xl font-extrabold tracking-tight" style={{ color: ink }}>
               {resume.name || "Your Name"}
@@ -46,7 +46,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
           </div>
         </header>
 
-        <div className="mt-4 space-y-3">
+        <div className="mt-3 space-y-2">
           {resume.summary && (
             <Section title="Professional Summary">
               <div className="text-[11px] leading-relaxed" style={{ color: ink }}>
@@ -57,7 +57,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
 
           {resume.experience.length > 0 && (
             <Section title="Work Experience">
-              <div className="space-y-3">
+              <div className="space-y-1.5">
                 {resume.experience.map((exp) => (
                   <article key={exp.id}>
                     <div className="flex justify-between items-baseline gap-3">
@@ -78,7 +78,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
                       </div>
                     )}
                     {exp.bulletPoints && exp.bulletPoints.length > 0 && (
-                      <ul className="mt-1 ml-4 list-disc list-outside space-y-0.5 text-[11px]" style={{ color: ink }}>
+                      <ul className="mt-0.5 ml-4 list-disc list-outside space-y-0 text-[10px]" style={{ color: ink }}>
                         {exp.bulletPoints.map((bp, i) => <li key={i}>{bp}</li>)}
                       </ul>
                     )}
@@ -123,9 +123,9 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
 
           {resume.projects.length > 0 && (
             <Section title="Projects">
-              <div className="space-y-2">
+              <div className="space-y-1">
                 {resume.projects.map((p) => (
-                  <article key={p.id} className="p-2 rounded border" style={{ backgroundColor: cardBg, borderColor: border }}>
+                  <article key={p.id} className="p-1.5 rounded border" style={{ backgroundColor: cardBg, borderColor: border }}>
                     <div className="flex justify-between items-start gap-2">
                       <h3 className="text-[11px] font-bold" style={{ color: ink }}>{p.name}</h3>
                       {p.status && p.status !== 'Completed' && (
@@ -145,7 +145,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
                       </div>
                     )}
                     {p.bulletPoints && p.bulletPoints.length > 0 && (
-                      <ul className="mt-0.5 ml-3 list-disc list-outside space-y-0 text-[10px]" style={{ color: ink }}>
+                      <ul className="mt-0.5 ml-3 list-disc list-outside space-y-0 text-[9px]" style={{ color: ink }}>
                         {p.bulletPoints.map((bp, i) => <li key={i}>{bp}</li>)}
                       </ul>
                     )}
@@ -190,7 +190,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
 
           {resume.languages.length > 0 && (
             <Section title="Languages">
-              <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+              <div className="flex flex-wrap gap-x-3 gap-y-0">
                 {resume.languages.map((l) => (
                   <span key={l.id} className="text-[10px]">
                     <span style={{ color: ink }}>{l.name}</span>
