@@ -110,12 +110,13 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
         fontFamily: fontFamilies.jakarta,
         color: colors.body,
         maxWidth: layout.pageWidth,
+        padding: `40px ${layout.marginH} 30px`,
       }}
     >
       {/* ── HEADER ───────────────────────────────────────────────── */}
       <header
         style={{
-          padding: `${spacing[4]} ${layout.marginH} ${spacing[3]}`,
+          paddingBottom: spacing[3],
           borderBottom: `2px solid ${colors.accent}`,
         }}
       >
@@ -174,7 +175,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
       {/* ── BODY (single-column flow — no grid, no blank space) ──── */}
       <div
         style={{
-          padding: `${spacing[3]} ${layout.marginH}`,
+          paddingTop: spacing[3],
         }}
       >
         {/* Summary */}

@@ -98,7 +98,7 @@ export function AcademicCvPreview({ resume }: { resume: Resume }) {
         fontFamily: fontFamilies.garamond,
         color: C.body,
         maxWidth: layout.pageWidth,
-        padding: `${spacing[8]} ${layout.marginH}`,
+        padding: `40px ${layout.marginH} 30px`,
       }}
     >
       {/* ── HEADER ─────────────────────────────────────────────────── */}

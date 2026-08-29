@@ -110,7 +110,7 @@ export function ConsultingElitePreview({ resume }: { resume: Resume }) {
         fontFamily: fontFamilies.jakarta,
         color: C.body,
         maxWidth: layout.pageWidth,
-        padding: `${spacing[8]} ${layout.marginH}`,
+        padding: `40px ${layout.marginH} 30px`,
       }}
     >
       {/* ── HEADER ─────────────────────────────────────────────────── */}

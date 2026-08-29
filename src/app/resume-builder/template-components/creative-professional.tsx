@@ -72,7 +72,7 @@ export function CreativeProfessionalPreview({ resume }: { resume: Resume }) {
   return (
     <div
       className="bg-white rounded-lg shadow-2xl print:shadow-none print:rounded-none"
-      style={{ fontFamily: fontFamilies.jakarta, color: C.body, maxWidth: layout.pageWidth, padding: `${spacing[8]} ${layout.marginH}` }}
+      style={{ fontFamily: fontFamilies.jakarta, color: C.body, maxWidth: layout.pageWidth, padding: `40px ${layout.marginH} 30px` }}
     >
       {/* ── HEADER ─────────────────────────────────────────────────── */}
       <header style={{ marginBottom: spacing[6] }}>

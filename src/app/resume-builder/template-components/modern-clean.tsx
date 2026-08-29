@@ -23,7 +23,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
   );
 
   return (
-    <div className="bg-white rounded-xl shadow-2xl overflow-hidden print:shadow-none print:rounded-none" style={{ fontFamily: fontFamilies.sans, color: ink }}>
+    <div className="bg-white rounded-xl shadow-2xl overflow-hidden print:shadow-none print:rounded-none" style={{ fontFamily: fontFamilies.sans, color: ink, padding: '40px 32px 30px' }}>
       <main className="p-4 print:p-4">
         <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 pb-3 border-b" style={{ borderColor: border }}>
           <div>

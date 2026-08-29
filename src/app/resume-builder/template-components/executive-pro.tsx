@@ -107,12 +107,13 @@ export function ExecutiveProPreview({ resume }: { resume: Resume }) {
         fontFamily: fontFamilies.garamond,
         color: C.body,
         maxWidth: layout.pageWidth,
+        padding: `40px ${spacing[6]} 30px`,
       }}
     >
       {/* ── HEADER ─────────────────────────────────────────────────────── */}
       <header
         style={{
-          padding: `${spacing[6]} ${spacing[6]} ${spacing[4]}`,
+          paddingBottom: spacing[4],
           borderTop: `3px solid ${C.gold}`,
           borderBottom: `3px solid ${C.sidebarBg}`,
         }}
@@ -174,7 +175,7 @@ export function ExecutiveProPreview({ resume }: { resume: Resume }) {
       <div
         style={{
           backgroundColor: C.sidebarBg,
-          padding: `${spacing[4]} ${spacing[6]}`,
+          padding: `${spacing[4]} 0`,
           display: "grid",
           gridTemplateColumns: "repeat(3, 1fr)",
           gap: spacing[4],
@@ -318,7 +319,7 @@ export function ExecutiveProPreview({ resume }: { resume: Resume }) {
       </div>
 
       {/* ── BODY ─────────────────────────────────────────────────────── */}
-      <div style={{ padding: `${spacing[4]} ${spacing[6]} ${spacing[6]}` }}>
+      <div style={{ paddingTop: spacing[4] }}>
         {/* Executive Summary */}
         {resume.summary && (
           <section style={{ marginBottom: spacing[4] }}>
