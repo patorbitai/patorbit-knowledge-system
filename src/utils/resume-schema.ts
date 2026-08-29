@@ -20,10 +20,14 @@ const ExperienceSchema = z.object({
   location: z.string().default(""),
   employmentType: z.string().default(""),
   industry: z.string().default(""),
+  startDate: z.string().default(""),
+  endDate: z.string().default(""),
+  current: z.boolean().default(false),
   duration: z.string().default(""),
   description: z.string().default(""),
   achievements: z.string().default(""),
   techUsed: z.string().default(""),
+  bulletPoints: z.array(z.string()).default([]),
 });
 
 const EducationSchema = z.object({
@@ -58,6 +62,7 @@ const ProjectSchema = z.object({
   role: z.string().default(""),
   teamSize: z.string().default(""),
   status: z.enum(["Completed", "In Progress", "Ongoing"]).default("Completed"),
+  bulletPoints: z.array(z.string()).default([]),
 });
 
 const CertificationSchema = z.object({
@@ -73,7 +78,7 @@ const CertificationSchema = z.object({
 
 const LanguageSchema = z.object({ id: ItemIdSchema.default(0), name: z.string().default(""), proficiency: z.string().default("Fluent") });
 const InterestSchema = z.object({ id: ItemIdSchema.default(0), name: z.string().default("") });
-const AchievementSchema = z.object({ id: ItemIdSchema.default(0), description: z.string().default("") });
+const AchievementSchema = z.object({ id: ItemIdSchema.default(0), title: z.string().default(""), description: z.string().default(""), date: z.string().default(""), issuer: z.string().default("") });
 const ReferenceSchema = z.object({ id: ItemIdSchema.default(0), name: z.string().default(""), company: z.string().default(""), position: z.string().default(""), email: z.string().default(""), phone: z.string().default("") });
 
 const PortfolioSchema = z.object({
