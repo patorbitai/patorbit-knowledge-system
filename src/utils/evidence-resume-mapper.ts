@@ -116,13 +116,19 @@ export function mapEvidenceToResume(
   const social = ensureSocial(resume);
 
   // name ← person fact (verbatim source text). Evidence wins when the parser
-  // got it wrong or left it empty.
+  // got it wrong or left it empty. Only use the person fact when it looks
+  // like a reasonable name (≤5 words, ≤60 chars) — a long value is likely
+  // a merged header line (name + title + contact on one PDF line).
   const person = firstFact(facts, (f) => f.type === "person");
   if (person && person.value.trim()) {
-    const current = String(resume.name ?? "").trim();
-    if (!current || !sameValue(current, person.value)) {
-      resume.name = person.value;
-      markChanged(changed, "name");
+    const words = person.value.trim().split(/\s+/).length;
+    const isReasonableName = words <= 5 && person.value.trim().length <= 60;
+    if (isReasonableName) {
+      const current = String(resume.name ?? "").trim();
+      if (!current || !sameValue(current, person.value)) {
+        resume.name = person.value;
+        markChanged(changed, "name");
+      }
     }
   }
 

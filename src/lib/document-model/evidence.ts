@@ -173,12 +173,51 @@ function splitList(line: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * Clean a person name line by removing contact info (email, phone, URLs,
+ * social links) and title/role content that may be merged on the same line
+ * in PDF extraction. Returns just the name portion.
+ */
+function cleanPersonName(raw: string): string {
+  let cleaned = raw
+    // Remove email addresses
+    .replace(/[\w.+-]+@[\w-]+\.[\w.-]+/g, "")
+    // Remove phone numbers
+    .replace(/(?:\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, "")
+    // Remove URLs (http/https/www)
+    .replace(/https?:\/\/[^\s,;]+/gi, "")
+    .replace(/www\.[^\s,;]+/gi, "")
+    // Remove LinkedIn/GitHub handles
+    .replace(/linkedin\.com\/[^\s,;]+/gi, "")
+    .replace(/github\.com\/[^\s,;]+/gi, "")
+    // Remove · separators with trailing content after them (common in contact lines)
+    .replace(/\s*·\s*.*/g, "")
+    // Remove pipe-separated title content (e.g. "Name | Title | Role")
+    .replace(/\s*\|.*/g, "")
+    // Clean up extra whitespace
+    .replace(/\s+/g, " ")
+    .trim();
+
+  // If the result is still long (more than 4 words), it likely contains title
+  // content merged on the same line. Take only the first 4 words as the name.
+  const words = cleaned.split(/\s+/);
+  if (words.length > 4) {
+    cleaned = words.slice(0, 4).join(" ");
+  }
+
+  return cleaned;
+}
+
 function extractLine(block: DocumentBlock, line: DocumentLine, index: number, add: AddFact): void {
   switch (block.kind) {
     case "name":
       // First name-block line → person; trailing title lines → role/other.
       if (index === 0) {
-        add("person", line.raw, 0.8);
+        // Clean the person name by removing merged contact info
+        const cleanedName = cleanPersonName(line.raw);
+        if (cleanedName && cleanedName.length > 2) {
+          add("person", cleanedName, 0.8);
+        }
       } else if (looksLikeRole(line.raw)) {
         add("role", line.raw, 0.7);
       } else {
