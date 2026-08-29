@@ -11,7 +11,7 @@ import type { SocialLinks as SocialLinksShape } from "@/types/resume";
  * NOTE: `SocialLinks` is intentionally NOT re-exported as a type here — the
  * SocialLinks *component* below owns that name. Components needing the type can
  * import it directly from `@/types/resume`. */
-export type {
+import type {
   Experience,
   Education,
   Skill,
@@ -23,6 +23,19 @@ export type {
   Reference,
   Resume,
 } from "@/types/resume";
+
+export type {
+  Experience,
+  Education,
+  Skill,
+  Project,
+  Certification,
+  Language,
+  Interest,
+  Achievement,
+  Reference,
+  Resume,
+};
 
 /* ── FormattedDescription ── */
 export function FormattedDescription({ text, color, mutedColor, size = "xs" }: { text: string; color: string; mutedColor?: string; size?: string }) {
@@ -133,4 +146,174 @@ export function SocialLinks({ social, color, size = "sm" }: { social: SocialLink
 
 export function levelToDots(level: string | undefined): number {
   switch (level) { case "Expert": return 4; case "Advanced": return 3; case "Intermediate": return 2; case "Beginner": return 1; default: return 2; }
+}
+
+/* ── Shared Body Sections ──────────────────────────────────────────────────
+ * Reusable section renderers for all templates. Templates import these to
+ * avoid duplicating the same Experience/Skills/Education rendering logic.
+ * Each renderer accepts a minimal config for colors and bullet style.
+ */
+
+export interface SectionTheme {
+  ink: string;
+  body: string;
+  muted: string;
+  light?: string;
+  accent?: string;
+  border?: string;
+  bulletChar?: string; // default "▸"
+}
+
+/** Format a date string from duration or start/end dates. */
+export function fmtDate(exp: { duration?: string; startDate?: string; endDate?: string }): string {
+  return exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
+}
+
+/** Render an experience entry. */
+export function ExperienceEntry({ exp, theme }: { exp: Resume["experience"][0]; theme: SectionTheme }) {
+  const t = theme;
+  const b = t.bulletChar || "▸";
+  const dateStr = fmtDate(exp);
+  return (
+    <div style={{ marginBottom: 12 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: t.ink, lineHeight: 1.3 }}>{exp.company}</span>
+        {dateStr && <span style={{ fontSize: 9, fontWeight: 500, color: t.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{dateStr}</span>}
+      </div>
+      <div style={{ fontSize: 10, color: t.body, marginTop: 1, lineHeight: 1.4 }}>
+        <span style={{ fontWeight: 600 }}>{exp.position}</span>
+        {exp.employmentType && <span style={{ color: t.muted }}> · {exp.employmentType}</span>}
+        {exp.location && <span style={{ color: t.muted }}> · {exp.location}</span>}
+      </div>
+      {exp.description && (
+        <div style={{ marginTop: 4, fontSize: 10, lineHeight: 1.6, color: t.body }}>
+          <FormattedDescription text={exp.description} color={t.body} mutedColor={t.muted} size="xs" />
+        </div>
+      )}
+      {exp.bulletPoints && exp.bulletPoints.length > 0 && (
+        <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
+          {exp.bulletPoints.map((bp, i) => (
+            <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: t.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
+              <span style={{ position: "absolute", left: 0, color: t.accent || t.muted, fontSize: 8, top: 2 }}>{b}</span>
+              {bp}
+            </li>
+          ))}
+        </ul>
+      )}
+      {exp.techUsed && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+          {exp.techUsed.split(/[,;]/).map((t2) => t2.trim()).filter(Boolean).map((tech, i) => (
+            <span key={i} style={{ fontSize: 8, fontWeight: 500, color: t.accent || t.muted, backgroundColor: (t.accent || t.muted) + "15", padding: "1px 6px", borderRadius: 3, lineHeight: 1.4 }}>{tech}</span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** Render an education entry. */
+export function EducationEntry({ edu, theme }: { edu: Resume["education"][0]; theme: SectionTheme }) {
+  const t = theme;
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: t.ink }}>{edu.school}</span>
+        {edu.year && <span style={{ fontSize: 9, color: t.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
+      </div>
+      <div style={{ fontSize: 10, color: t.body, marginTop: 1 }}>
+        <span style={{ fontWeight: 500 }}>{edu.degree}{edu.field ? ` in ${edu.field}` : ""}</span>
+        {edu.gpa && <span style={{ color: t.muted }}> · GPA {edu.gpa}</span>}
+      </div>
+      {edu.honors && <div style={{ fontSize: 9, color: t.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
+      {edu.location && <div style={{ fontSize: 9, color: t.light || t.muted, marginTop: 1 }}>{edu.location}</div>}
+    </div>
+  );
+}
+
+/** Render a project entry. */
+export function ProjectEntry({ proj, theme }: { proj: Resume["projects"][0]; theme: SectionTheme }) {
+  const t = theme;
+  const b = t.bulletChar || "▸";
+  const dateStr = [proj.startDate, proj.endDate].filter(Boolean).join(" – ");
+  return (
+    <div style={{ marginBottom: 10 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+        <span style={{ fontSize: 11, fontWeight: 700, color: t.ink }}>{proj.name}</span>
+        {dateStr && <span style={{ fontSize: 9, color: t.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
+      </div>
+      {proj.role && <div style={{ fontSize: 10, color: t.body, fontWeight: 500, marginTop: 1 }}>{proj.role}</div>}
+      {proj.tech && (
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 3 }}>
+          {proj.tech.split(/[,;]/).map((t2) => t2.trim()).filter(Boolean).map((tech, i) => (
+            <span key={i} style={{ fontSize: 8, fontWeight: 500, color: t.accent || t.muted, backgroundColor: (t.accent || t.muted) + "15", padding: "1px 5px", borderRadius: 3 }}>{tech}</span>
+          ))}
+        </div>
+      )}
+      {proj.description && (
+        <div style={{ marginTop: 3, fontSize: 10, lineHeight: 1.5, color: t.body }}>
+          <FormattedDescription text={proj.description} color={t.body} mutedColor={t.muted} size="xs" />
+        </div>
+      )}
+      {proj.bulletPoints && proj.bulletPoints.length > 0 && (
+        <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
+          {proj.bulletPoints.map((bp, i) => (
+            <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: t.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
+              <span style={{ position: "absolute", left: 0, color: t.accent || t.muted, fontSize: 8, top: 2 }}>{b}</span>
+              {bp}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/** Render a standard certifications section. */
+export function CertificationsList({ certs, theme }: { certs: Resume["certifications"]; theme: SectionTheme }) {
+  const t = theme;
+  return (
+    <>
+      {certs.map((c) => (
+        <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+          <div>
+            <span style={{ fontSize: 10, fontWeight: 600, color: t.ink }}>{c.name}</span>
+            {c.issuer && <span style={{ fontSize: 9, color: t.muted }}> — {c.issuer}</span>}
+          </div>
+          {c.date && <span style={{ fontSize: 9, color: t.muted, whiteSpace: "nowrap" }}>{c.date}</span>}
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** Render a standard achievements section. */
+export function AchievementsList({ achievements, theme }: { achievements: Resume["achievements"]; theme: SectionTheme }) {
+  const t = theme;
+  return (
+    <>
+      {achievements.map((a) => (
+        <div key={a.id} style={{ fontSize: 10, color: t.body, marginBottom: 3 }}>
+          {a.title && <span style={{ fontWeight: 600 }}>{a.title}</span>}
+          {a.title && a.description && <span> — </span>}
+          {a.description && <span>{a.description}</span>}
+          {a.date && <span style={{ color: t.muted, fontSize: 9 }}> ({a.date})</span>}
+        </div>
+      ))}
+    </>
+  );
+}
+
+/** Render a standard languages section. */
+export function LanguagesList({ languages, theme }: { languages: Resume["languages"]; theme: SectionTheme }) {
+  const t = theme;
+  return (
+    <div style={{ fontSize: 10, color: t.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
+      {languages.map((l) => (
+        <span key={l.id}>
+          {l.name}
+          {l.proficiency && <span style={{ color: t.muted }}> ({l.proficiency})</span>}
+        </span>
+      ))}
+    </div>
+  );
 }

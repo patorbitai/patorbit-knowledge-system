@@ -10,71 +10,49 @@ import {
   formatDuration,
 } from "@/lib/resume-design-system";
 
-// ── Design tokens — Engineering Clean ────────────────────────────────────────
+/**
+ * Engineering Clean — Professional engineering resume template.
+ *
+ * Design language:
+ *   - Clean single-column with subtle gray section dividers
+ *   - Skills grouped by category with clean layout
+ *   - Tech tags for experience/project tech stacks
+ *   - ATS-friendly, no graphics or sidebars
+ *
+ * Typography:
+ *   Name:      22px / 800
+ *   Title:     12px / 500 / muted
+ *   Section:   9px  / 700 / uppercase / slate-500
+ *   Entry:     11px / 700 + 10px / 400
+ *   Body:      10px / 400 / 1.6
+ */
+
+// ── Colors ─────────────────────────────────────────────────────────────────
 const C = {
-  ink:    "#0f172a",
-  body:   "#1e293b",
-  muted:  "#64748b",
-  light:  "#94a3b8",
-  border: "#e2e8f0",
-  tag:    "#f1f5f9",
-  white:  "#ffffff",
+  ink:     "#0f172a",
+  body:    "#334155",
+  muted:   "#64748b",
+  light:   "#94a3b8",
+  border:  "#e2e8f0",
+  accent:  "#475569",
+  tag:     "#f1f5f9",
+  white:   "#ffffff",
 };
 
-// ── Grouped skill logic ───────────────────────────────────────────────────────
-// Canonical engineering categories in display order.
-const SKILL_GROUP_ORDER = [
-  "Languages",
-  "Frameworks",
-  "Cloud",
-  "Databases",
-  "DevOps",
-  "AI/ML",
-  "Tools",
-];
-
-function groupSkills(skills: Resume["skills"]): [string, string[]][] {
-  const map = new Map<string, string[]>();
-
-  for (const s of skills) {
-    const raw = (s.category || "").trim();
-    // Normalise to canonical bucket or fall through to "Tools"
-    const bucket =
-      SKILL_GROUP_ORDER.find(
-        (g) => g.toLowerCase() === raw.toLowerCase()
-      ) ?? (raw || "Tools");
-    if (!map.has(bucket)) map.set(bucket, []);
-    map.get(bucket)!.push(s.name);
-  }
-
-  // Sort buckets by canonical order, then alphabetically for unknown ones
-  const sorted = [...map.entries()].sort(([a], [b]) => {
-    const ia = SKILL_GROUP_ORDER.indexOf(a);
-    const ib = SKILL_GROUP_ORDER.indexOf(b);
-    if (ia !== -1 && ib !== -1) return ia - ib;
-    if (ia !== -1) return -1;
-    if (ib !== -1) return 1;
-    return a.localeCompare(b);
-  });
-
-  return sorted;
-}
-
-// ── Primitives ────────────────────────────────────────────────────────────────
-
-function SectionHeading({ children }: { children: React.ReactNode }) {
+// ── Section Title ──────────────────────────────────────────────────────────
+function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <h2
       style={{
-        fontSize: "0.625rem",
+        fontSize: 9,
         fontWeight: 700,
-        letterSpacing: "0.18em",
+        letterSpacing: "0.16em",
         textTransform: "uppercase",
-        color: C.muted,
+        color: C.accent,
+        margin: "0 0 8px 0",
+        paddingBottom: 4,
         borderBottom: `1px solid ${C.border}`,
-        paddingBottom: spacing[2],
-        marginBottom: spacing[4],
-        marginTop: 0,
+        lineHeight: 1,
       }}
     >
       {children}
@@ -82,20 +60,22 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
   );
 }
 
+// ── Tech Tag ───────────────────────────────────────────────────────────────
 function TechTag({ children }: { children: React.ReactNode }) {
   return (
     <span
       style={{
         display: "inline-block",
-        fontSize: "0.625rem",
+        fontSize: 8,
         fontWeight: 500,
-        color: C.muted,
+        color: C.accent,
         backgroundColor: C.tag,
         border: `1px solid ${C.border}`,
+        padding: "1px 6px",
         borderRadius: 3,
-        paddingInline: 6,
-        paddingBlock: 2,
         lineHeight: 1.4,
+        marginRight: 3,
+        marginBottom: 3,
       }}
     >
       {children}
@@ -103,76 +83,46 @@ function TechTag({ children }: { children: React.ReactNode }) {
   );
 }
 
-function EntryHeader({
-  primary,
-  secondary,
-  tertiary,
-  date,
-}: {
-  primary: React.ReactNode;
-  secondary?: React.ReactNode;
-  tertiary?: React.ReactNode;
-  date?: string;
-}) {
-  return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "baseline",
-          gap: spacing[3],
-        }}
-      >
-        <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.ink, lineHeight: 1.3 }}>
-          {primary}
-        </span>
-        {date && (
-          <span style={{ flexShrink: 0, ...typography.caption, color: C.muted }}>
-            {date}
-          </span>
-        )}
-      </div>
-      {secondary && (
-        <p style={{ ...typography.body, color: C.body, marginTop: 2 }}>{secondary}</p>
-      )}
-      {tertiary && (
-        <p style={{ ...typography.caption, color: C.light, marginTop: 2 }}>{tertiary}</p>
-      )}
-    </div>
-  );
+// ── Skill Group ────────────────────────────────────────────────────────────
+const SKILL_GROUP_ORDER = ["Languages", "Frameworks", "Cloud", "Databases", "DevOps", "AI/ML", "Tools"];
+
+function groupSkills(skills: Resume["skills"]): [string, string[]][] {
+  const map = new Map<string, string[]>();
+  for (const s of skills) {
+    const raw = (s.category || "").trim();
+    const bucket = SKILL_GROUP_ORDER.find((g) => g.toLowerCase() === raw.toLowerCase()) ?? (raw || "Tools");
+    if (!map.has(bucket)) map.set(bucket, []);
+    map.get(bucket)!.push(s.name);
+  }
+  return [...map.entries()].sort(([a], [b]) => {
+    const ia = SKILL_GROUP_ORDER.indexOf(a);
+    const ib = SKILL_GROUP_ORDER.indexOf(b);
+    if (ia !== -1 && ib !== -1) return ia - ib;
+    if (ia !== -1) return -1;
+    if (ib !== -1) return 1;
+    return a.localeCompare(b);
+  });
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
-
+// ── Main Component ─────────────────────────────────────────────────────────
 export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
   const skillGroups = groupSkills(resume.skills);
 
-  const contactParts = [
-    resume.email,
-    resume.phone,
-    resume.address,
-    resume.social?.linkedin,
-    resume.social?.github,
-    resume.social?.website,
-    resume.social?.portfolio,
-  ].filter(Boolean) as string[];
-
   return (
     <div
-      className="bg-white rounded-lg shadow-2xl print:shadow-none print:rounded-none"
       style={{
         fontFamily: fontFamilies.jakarta,
         color: C.body,
         maxWidth: layout.pageWidth,
-        padding: `40px ${layout.marginH} 30px`,
+        padding: "40px 32px 30px",
+        backgroundColor: C.white,
       }}
     >
-      {/* ── HEADER ─────────────────────────────────────────────────── */}
-      <header style={{ marginBottom: spacing[6] }}>
+      {/* ── HEADER ─────────────────────────────────────────────── */}
+      <header style={{ marginBottom: 16 }}>
         <h1
           style={{
-            fontSize: "1.75rem",
+            fontSize: 22,
             fontWeight: 800,
             color: C.ink,
             letterSpacing: "-0.02em",
@@ -184,223 +134,134 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
         </h1>
 
         {resume.title && (
-          <p
-            style={{
-              fontSize: "0.9375rem",
-              fontWeight: 500,
-              color: C.body,
-              marginTop: spacing[1],
-              letterSpacing: "-0.005em",
-            }}
-          >
+          <p style={{ fontSize: 12, fontWeight: 500, color: C.muted, marginTop: 3 }}>
             {resume.title}
           </p>
         )}
 
-        {contactParts.length > 0 && (
-          <p style={{ ...typography.caption, color: C.muted, marginTop: spacing[2], lineHeight: 1.6 }}>
-            <ContactRow parts={contactParts} linkedin={resume.social?.linkedin} github={resume.social?.github} />
-          </p>
+        {/* Contact */}
+        <div style={{ fontSize: 9, color: C.muted, marginTop: 6, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
+          {resume.email && <span>{resume.email}</span>}
+          {resume.phone && <span>{resume.phone}</span>}
+          {resume.address && <span>{resume.address}</span>}
+        </div>
+        {resume.social && (
+          <div style={{ fontSize: 9, color: C.accent, marginTop: 3, display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
+            {resume.social.linkedin && <span>{resume.social.linkedin}</span>}
+            {resume.social.github && <span>{resume.social.github}</span>}
+            {resume.social.website && <span>{resume.social.website}</span>}
+          </div>
         )}
       </header>
 
-      {/* ── SUMMARY ────────────────────────────────────────────────── */}
+      {/* ── SUMMARY ────────────────────────────────────────────── */}
       {resume.summary && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Summary</SectionHeading>
-          <div style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
+        <section style={{ marginBottom: 16 }}>
+          <SectionTitle>Summary</SectionTitle>
+          <div style={{ fontSize: 10, lineHeight: 1.65, color: C.body }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
           </div>
         </section>
       )}
 
-      {/* ── EXPERIENCE ─────────────────────────────────────────────── */}
+      {/* ── EXPERIENCE ─────────────────────────────────────────── */}
       {resume.experience.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Experience</SectionHeading>
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing[5] }}>
-            {resume.experience.map((exp) => (
-              <article key={exp.id} className="break-inside-avoid">
-                <EntryHeader
-                  primary={exp.company}
-                  secondary={
-                    <>
-                      {exp.position}
-                      {exp.employmentType && (
-                        <span style={{ color: C.light, fontWeight: 400 }}> · {exp.employmentType}</span>
-                      )}
-                      {exp.location && (
-                        <span style={{ color: C.muted, fontWeight: 400 }}> · {exp.location}</span>
-                      )}
-                    </>
-                  }
-                  date={formatDuration(exp.duration, exp.startDate, exp.endDate)}
-                />
+        <section style={{ marginBottom: 16 }}>
+          <SectionTitle>Experience</SectionTitle>
+          {resume.experience.map((exp) => {
+            const dateStr = exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
+            return (
+              <div key={exp.id} style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>{exp.company}</span>
+                  {dateStr && <span style={{ fontSize: 9, color: C.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{dateStr}</span>}
+                </div>
+                <div style={{ fontSize: 10, color: C.body, marginTop: 1 }}>
+                  <span style={{ fontWeight: 600 }}>{exp.position}</span>
+                  {exp.employmentType && <span style={{ color: C.muted }}> · {exp.employmentType}</span>}
+                  {exp.location && <span style={{ color: C.muted }}> · {exp.location}</span>}
+                </div>
                 {exp.description && (
-                  <div style={{ marginTop: spacing[2] }}>
-                    <FormattedDescription text={exp.description} color={C.body} mutedColor={C.muted} />
+                  <div style={{ marginTop: 4, fontSize: 10, lineHeight: 1.6, color: C.body }}>
+                    <FormattedDescription text={exp.description} color={C.body} mutedColor={C.muted} size="xs" />
                   </div>
                 )}
                 {exp.bulletPoints && exp.bulletPoints.length > 0 && (
-                  <ul
-                    style={{
-                      margin: `${spacing[2]} 0 0 ${spacing[4]}`,
-                      padding: 0,
-                      listStyleType: "disc",
-                      ...typography.body,
-                      color: C.body,
-                    }}
-                  >
+                  <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
                     {exp.bulletPoints.map((bp, i) => (
-                      <li key={i} style={{ marginBottom: 2 }}>{bp}</li>
+                      <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
+                        <span style={{ position: "absolute", left: 0, color: C.muted, fontSize: 8, top: 2 }}>▸</span>
+                        {bp}
+                      </li>
                     ))}
                   </ul>
                 )}
                 {exp.techUsed && (
-                  <div
-                    style={{
-                      display: "flex",
-                      flexWrap: "wrap",
-                      gap: 4,
-                      marginTop: spacing[2],
-                    }}
-                  >
+                  <div style={{ marginTop: 4 }}>
                     {exp.techUsed.split(/[,;]/).map((t) => t.trim()).filter(Boolean).map((t, i) => (
                       <TechTag key={i}>{t}</TechTag>
                     ))}
                   </div>
                 )}
-              </article>
-            ))}
-          </div>
+              </div>
+            );
+          })}
         </section>
       )}
 
-      {/* ── PROJECTS ───────────────────────────────────────────────── */}
+      {/* ── PROJECTS ────────────────────────────────────────────── */}
       {resume.projects.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Projects</SectionHeading>
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing[5] }}>
-            {resume.projects.map((p) => (
-              <article
-                key={p.id}
-                className="break-inside-avoid"
-                style={{
-                  borderLeft: `2px solid ${C.border}`,
-                  paddingLeft: spacing[3],
-                }}
-              >
-                {/* Project name + date */}
-                <div
-                  style={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "baseline",
-                    gap: spacing[3],
-                  }}
-                >
-                  <span style={{ fontSize: "0.8125rem", fontWeight: 700, color: C.ink }}>
-                    {p.name}
-                    {p.status === "In Progress" && (
-                      <span
-                        style={{
-                          marginLeft: 6,
-                          fontSize: "0.5625rem",
-                          fontWeight: 600,
-                          letterSpacing: "0.08em",
-                          textTransform: "uppercase",
-                          color: C.muted,
-                        }}
-                      >
-                        In Progress
-                      </span>
-                    )}
-                  </span>
-                  {p.startDate && (
-                    <span style={{ flexShrink: 0, ...typography.caption, color: C.muted }}>
-                      {formatDuration(undefined, p.startDate, p.endDate)}
-                    </span>
-                  )}
+        <section style={{ marginBottom: 16 }}>
+          <SectionTitle>Projects</SectionTitle>
+          {resume.projects.map((p) => {
+            const dateStr = [p.startDate, p.endDate].filter(Boolean).join(" – ");
+            return (
+              <div key={p.id} style={{ marginBottom: 10, borderLeft: `2px solid ${C.border}`, paddingLeft: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>{p.name}</span>
+                  {dateStr && <span style={{ fontSize: 9, color: C.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
                 </div>
-
-                {/* Role */}
-                {p.role && (
-                  <p style={{ ...typography.body, color: C.body, marginTop: 2 }}>{p.role}</p>
-                )}
-
-                {/* Tech stack */}
+                {p.role && <div style={{ fontSize: 10, color: C.body, fontWeight: 500, marginTop: 1 }}>{p.role}</div>}
                 {p.tech && (
-                  <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: spacing[1] }}>
+                  <div style={{ marginTop: 3 }}>
                     {p.tech.split(/[,;]/).map((t) => t.trim()).filter(Boolean).map((t, i) => (
                       <TechTag key={i}>{t}</TechTag>
                     ))}
                   </div>
                 )}
-
-                {/* Description */}
                 {p.description && (
-                  <div style={{ marginTop: spacing[2] }}>
-                    <FormattedDescription text={p.description} color={C.body} mutedColor={C.muted} />
+                  <div style={{ marginTop: 3, fontSize: 10, lineHeight: 1.5, color: C.body }}>
+                    <FormattedDescription text={p.description} color={C.body} mutedColor={C.muted} size="xs" />
                   </div>
                 )}
-
-                {/* Impact bullets */}
                 {p.bulletPoints && p.bulletPoints.length > 0 && (
-                  <ul
-                    style={{
-                      margin: `${spacing[2]} 0 0 ${spacing[4]}`,
-                      padding: 0,
-                      listStyleType: "disc",
-                      ...typography.body,
-                      color: C.body,
-                    }}
-                  >
+                  <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
                     {p.bulletPoints.map((bp, i) => (
-                      <li key={i} style={{ marginBottom: 2 }}>{bp}</li>
+                      <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
+                        <span style={{ position: "absolute", left: 0, color: C.muted, fontSize: 8, top: 2 }}>▸</span>
+                        {bp}
+                      </li>
                     ))}
                   </ul>
                 )}
-
-                {/* Links */}
-                {p.link && (
-                  <p style={{ ...typography.caption, color: C.muted, marginTop: spacing[1] }}>
-                    {p.link}
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
+              </div>
+            );
+          })}
         </section>
       )}
 
-      {/* ── SKILLS (grouped) ───────────────────────────────────────── */}
+      {/* ── SKILLS (grouped) ────────────────────────────────────── */}
       {skillGroups.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Technical Skills</SectionHeading>
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
+        <section style={{ marginBottom: 16 }}>
+          <SectionTitle>Technical Skills</SectionTitle>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {skillGroups.map(([group, names]) => (
-              <div
-                key={group}
-                style={{
-                  display: "flex",
-                  gap: spacing[3],
-                  alignItems: "baseline",
-                }}
-              >
-                <span
-                  style={{
-                    flexShrink: 0,
-                    minWidth: 80,
-                    maxWidth: 110,
-                    ...typography.caption,
-                    fontWeight: 600,
-                    color: C.ink,
-                  }}
-                >
+              <div key={group} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+                <span style={{ flexShrink: 0, minWidth: 80, maxWidth: 110, fontSize: 9, fontWeight: 600, color: C.ink }}>
                   {group}
                 </span>
-                <span style={{ ...typography.body, color: C.body, lineHeight: 1.6 }}>
-                  {names.join("  ·  ")}
+                <span style={{ fontSize: 10, color: C.body, lineHeight: 1.6 }}>
+                  {names.join(" · ")}
                 </span>
               </div>
             ))}
@@ -408,94 +269,79 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
         </section>
       )}
 
-      {/* ── EDUCATION ──────────────────────────────────────────────── */}
+      {/* ── EDUCATION ──────────────────────────────────────────── */}
       {resume.education.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Education</SectionHeading>
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing[4] }}>
-            {resume.education.map((edu) => (
-              <article key={edu.id} className="break-inside-avoid">
-                <EntryHeader
-                  primary={edu.school}
-                  secondary={
-                    <>
-                      {edu.degree}{edu.field && ` in ${edu.field}`}
-                      {edu.gpa && <span style={{ color: C.muted }}> · GPA {edu.gpa}</span>}
-                    </>
-                  }
-                  date={edu.year}
-                />
-                {edu.honors && (
-                  <p style={{ ...typography.caption, color: C.muted, marginTop: 2, fontStyle: "italic" }}>
-                    {edu.honors}
-                  </p>
-                )}
-              </article>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── CERTIFICATIONS ─────────────────────────────────────────── */}
-      {resume.certifications.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Certifications</SectionHeading>
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
-            {resume.certifications.map((c) => (
-              <div
-                key={c.id}
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "baseline",
-                  gap: spacing[3],
-                }}
-              >
-                <span style={{ ...typography.body, fontWeight: 600, color: C.ink }}>{c.name}</span>
-                {(c.issuer || c.date) && (
-                  <span style={{ flexShrink: 0, ...typography.caption, color: C.muted }}>
-                    {[c.issuer, c.date].filter(Boolean).join(" · ")}
-                  </span>
-                )}
+        <section style={{ marginBottom: 16 }}>
+          <SectionTitle>Education</SectionTitle>
+          {resume.education.map((edu) => (
+            <div key={edu.id} style={{ marginBottom: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>{edu.school}</span>
+                {edu.year && <span style={{ fontSize: 9, color: C.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
               </div>
-            ))}
-          </div>
+              <div style={{ fontSize: 10, color: C.body, marginTop: 1 }}>
+                <span style={{ fontWeight: 500 }}>{edu.degree}{edu.field ? ` in ${edu.field}` : ""}</span>
+                {edu.gpa && <span style={{ color: C.muted }}> · GPA {edu.gpa}</span>}
+              </div>
+              {edu.honors && <div style={{ fontSize: 9, color: C.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
+              {edu.location && <div style={{ fontSize: 9, color: C.light, marginTop: 1 }}>{edu.location}</div>}
+            </div>
+          ))}
         </section>
       )}
 
-      {/* ── ACHIEVEMENTS ───────────────────────────────────────────── */}
+      {/* ── CERTIFICATIONS ─────────────────────────────────────── */}
+      {resume.certifications.length > 0 && (
+        <section style={{ marginBottom: 16 }}>
+          <SectionTitle>Certifications</SectionTitle>
+          {resume.certifications.map((c) => (
+            <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <div>
+                <span style={{ fontSize: 10, fontWeight: 600, color: C.ink }}>{c.name}</span>
+                {c.issuer && <span style={{ fontSize: 9, color: C.muted }}> — {c.issuer}</span>}
+              </div>
+              {c.date && <span style={{ fontSize: 9, color: C.muted, whiteSpace: "nowrap" }}>{c.date}</span>}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* ── ACHIEVEMENTS ────────────────────────────────────────── */}
       {resume.achievements.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Achievements</SectionHeading>
-          <div style={{ display: "flex", flexDirection: "column", gap: spacing[2] }}>
-            {resume.achievements.map((a) => (
-              <p key={a.id} style={{ ...typography.body, color: C.body }}>
-                {a.title && <strong style={{ fontWeight: 700 }}>{a.title}{a.description ? " — " : ""}</strong>}
-                {a.description}
-              </p>
+        <section style={{ marginBottom: 16 }}>
+          <SectionTitle>Achievements</SectionTitle>
+          {resume.achievements.map((a) => (
+            <div key={a.id} style={{ fontSize: 10, color: C.body, marginBottom: 3 }}>
+              {a.title && <span style={{ fontWeight: 600 }}>{a.title}</span>}
+              {a.title && a.description && <span> — </span>}
+              {a.description && <span>{a.description}</span>}
+              {a.date && <span style={{ color: C.muted, fontSize: 9 }}> ({a.date})</span>}
+            </div>
+          ))}
+        </section>
+      )}
+
+      {/* ── LANGUAGES ──────────────────────────────────────────── */}
+      {resume.languages.length > 0 && (
+        <section style={{ marginBottom: 16 }}>
+          <SectionTitle>Languages</SectionTitle>
+          <div style={{ fontSize: 10, color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
+            {resume.languages.map((l) => (
+              <span key={l.id}>
+                {l.name}
+                {l.proficiency && <span style={{ color: C.muted }}> ({l.proficiency})</span>}
+              </span>
             ))}
           </div>
         </section>
       )}
 
-      {/* ── LANGUAGES ──────────────────────────────────────────────── */}
-      {resume.languages.length > 0 && (
-        <section style={{ marginBottom: spacing[6] }}>
-          <SectionHeading>Languages</SectionHeading>
-          <p style={{ ...typography.body, color: C.body, lineHeight: 1.7 }}>
-            {resume.languages
-              .map((l) => (l.proficiency ? `${l.name} (${l.proficiency})` : l.name))
-              .join("  ·  ")}
-          </p>
-        </section>
-      )}
-
-      {/* ── INTERESTS ──────────────────────────────────────────────── */}
+      {/* ── INTERESTS ──────────────────────────────────────────── */}
       {resume.interests.length > 0 && (
         <section>
-          <SectionHeading>Interests</SectionHeading>
-          <p style={{ ...typography.body, color: C.muted }}>
-            {resume.interests.map((i) => i.name).join("  ·  ")}
+          <SectionTitle>Interests</SectionTitle>
+          <p style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
+            {resume.interests.map((i) => i.name).join(" · ")}
           </p>
         </section>
       )}
