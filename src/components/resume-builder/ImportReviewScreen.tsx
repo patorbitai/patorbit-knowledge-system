@@ -150,7 +150,7 @@ function ConfidenceDot({ level }: { level: Confidence }) {
 /* ── Shared input styles ── */
 
 const inputCls = (empty: boolean) => clsx(
-  "w-full rounded-lg px-3.5 py-2.5 text-[14px] leading-snug text-white/90 bg-white/[0.04] border outline-none transition",
+  "w-full rounded-lg px-3 py-2 text-[13px] leading-snug text-white/90 bg-white/[0.04] border outline-none transition",
   "focus:border-blue-500/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
   empty
     ? "border-amber-500/40 bg-amber-500/5 placeholder:text-amber-500/60"
@@ -158,7 +158,7 @@ const inputCls = (empty: boolean) => clsx(
 );
 
 const textareaCls = (empty: boolean) => clsx(
-  "w-full rounded-lg px-3.5 py-2.5 text-[14px] leading-relaxed text-white/90 bg-white/[0.04] border outline-none transition resize-none",
+  "w-full rounded-lg px-3 py-2 text-[13px] leading-relaxed text-white/90 bg-white/[0.04] border outline-none transition resize-none",
   "focus:border-blue-500/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
   empty
     ? "border-amber-500/40 bg-amber-500/5 placeholder:text-amber-500/60"
@@ -298,7 +298,7 @@ function SkillsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resume)
       {draft.skills.map((skill, i) => (
         <div key={skill.id} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
           <input
-            className="flex-1 bg-transparent text-[14px] text-white outline-none placeholder:text-slate-600"
+            className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600"
             value={skill.name}
             onChange={e => update(i, "name", e.target.value)}
             placeholder="Skill name"
@@ -372,13 +372,13 @@ function LanguagesPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resu
       {draft.languages.map((lang, i) => (
         <div key={lang.id} className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
           <input
-            className="flex-1 bg-transparent text-[14px] text-white outline-none placeholder:text-slate-600"
+            className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600"
             value={lang.name}
             onChange={e => update(i, "name", e.target.value)}
             placeholder="Language"
           />
           <select
-            className="text-[13px] bg-transparent text-slate-400 outline-none border-none cursor-pointer"
+            className="text-[12px] bg-transparent text-slate-400 outline-none border-none cursor-pointer"
             value={lang.proficiency}
             onChange={e => update(i, "proficiency", e.target.value)}
           >
@@ -545,7 +545,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
                 type="button"
                 onClick={() => setActiveSection(key)}
                 className={clsx(
-                  "w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-[14px] transition-all text-left",
+                  "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] transition-all text-left",
                   isActive
                     ? "bg-gradient-to-r from-blue-500/15 to-cyan-500/10 text-white border border-blue-500/20 shadow-sm shadow-blue-500/5"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent",
@@ -566,7 +566,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
         <div className="flex-1 overflow-y-auto min-w-0">
           <div className="w-full px-8 py-5">
             <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/[0.06]">
-              <h2 className="text-xl font-bold text-white tracking-tight">{activeLabel}</h2>
+              <h2 className="text-lg font-bold text-white tracking-tight">{activeLabel}</h2>
               <ConfidencePill level={confidences[activeSection]} />
             </div>
             {renderPanel()}
@@ -615,14 +615,14 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
           <button
             type="button"
             onClick={onCancel}
-            className="px-5 py-2.5 rounded-lg text-[13px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
+            className="px-5 py-2 rounded-lg text-[12px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all"
           >
             Cancel
           </button>
           <button
             type="button"
             onClick={() => onConfirm(draft)}
-            className="flex items-center gap-1.5 px-6 py-2.5 rounded-lg text-[14px] font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20"
+            className="flex items-center gap-1.5 px-6 py-2 rounded-lg text-[13px] font-semibold bg-blue-500 text-white hover:bg-blue-600 transition-all shadow-lg shadow-blue-500/20"
           >
             Continue to Builder
             <ChevronRight className="w-4 h-4" />
