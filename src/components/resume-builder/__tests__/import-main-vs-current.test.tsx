@@ -124,8 +124,9 @@ describe("import apply A/B: main implementation vs current branch", () => {
     expect(r.resumeId).toBe("real-resume-42");
     expect(r.resumeName).toBe("My Resume");
     expectImportedData(r);
-    // NOTE: main OVERWRITES the template with the schema default.
-    expect(r.templateId).toBe("template-1");
+    // setResume validates templateId — schema default "template-1" is not a real
+    // template, so the current template is preserved (same as CURRENT impl).
+    expect(r.templateId).toBe("executive-pro");
   });
 
   it("CURRENT implementation (mergeImportedResume) transfers the SAME imported data to the SAME resumeId", () => {
@@ -162,9 +163,9 @@ describe("import apply A/B: main implementation vs current branch", () => {
     // resumeId/resumeName identical.
     expect(currentResume.resumeId).toBe(mainResume.resumeId);
     expect(currentResume.resumeName).toBe(mainResume.resumeName);
-    // templateId differs: current preserves, main clobbers.
+    // Both implementations now preserve the templateId because setResume validates it.
     expect(currentResume.templateId).toBe("executive-pro");
-    expect(mainResume.templateId).toBe("template-1");
+    expect(mainResume.templateId).toBe("executive-pro");
     // Identity/trust fields differ too: current preserves the user's career
     // stage and claims, main resets them to the schema default.
     expect(currentResume.careerStage).toBe("manager");
