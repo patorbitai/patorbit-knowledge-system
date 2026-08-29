@@ -53,13 +53,13 @@ export function FieldInput({
       ? "border-red-500/50 focus:border-red-500/80 focus:ring-red-500/20 hover:border-red-500/40"
       : "border-[rgba(148,163,184,.2)] focus:border-cyan-400 focus:ring-cyan-500/30",
     disabled && "opacity-50 cursor-not-allowed",
-    type === "textarea" ? "px-4.5 py-3.5 min-h-[100px] resize-y" : "px-4 py-3",
+    type === "textarea" ? "px-5 py-4 min-h-[140px] text-[15px] leading-relaxed resize-y" : "px-4 py-3.5 text-[15px]",
   );
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-[#94a3b8] tracking-wide">{label}</label>
+        <label className="text-[11px] font-semibold text-[#94a3b8] tracking-wide uppercase">{label}</label>
         {maxLength && (
           <span className={clsx(
             "text-[10px] font-mono",
@@ -75,8 +75,8 @@ export function FieldInput({
           value={value ?? ""}
           onChange={handleInput}
           onBlur={onBlur}
-          placeholder={placeholder}
-          rows={rows}
+        placeholder={placeholder}
+        rows={Math.max(rows, 5)}
           disabled={disabled}
           className={inputClasses}
         />

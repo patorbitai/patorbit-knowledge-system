@@ -127,7 +127,7 @@ export function CertificationsSection() {
                             <FieldInput label="Expiry Date" placeholder="Jan 2027" value={cert.expiryDate} onChange={(v) => updateCertification(cert.id, "expiryDate", v)} />
                             <FieldInput label="Credential Link" placeholder="https://..." value={cert.link} onChange={(v) => updateCertification(cert.id, "link", v)} type="url" />
                           </div>
-                          <FieldInput label="Description" placeholder="Cert details..." value={cert.description} onChange={(v) => updateCertification(cert.id, "description", v)} type="textarea" rows={3} />
+                          <FieldInput label="Description" placeholder="Cert details..." value={cert.description} onChange={(v) => updateCertification(cert.id, "description", v)} type="textarea" rows={4} />
                           <FieldInput label="Relevant Skills" placeholder="DevOps, Cloud Architecture" value={cert.skills} onChange={(v) => updateCertification(cert.id, "skills", v)} />
                         </div>
                       </motion.div>

@@ -135,7 +135,7 @@ export function ProjectsSection() {
                             <p className="text-[11px] text-red-400">{aiActions[`proj-${proj.id}-gen`].error || "AI request failed. Please try again."}</p>
                           )}
 
-                          <FieldInput label="Description" placeholder="Describe the project and your contributions..." value={proj.description} onChange={(v) => updateProject(proj.id, "description", v)} type="textarea" rows={3} />
+                          <FieldInput label="Description" placeholder="Describe the project and your contributions..." value={proj.description} onChange={(v) => updateProject(proj.id, "description", v)} type="textarea" rows={6} />
 
                           {projSug && (
                             <SmartSuggestion

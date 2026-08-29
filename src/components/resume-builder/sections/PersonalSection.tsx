@@ -171,7 +171,7 @@ export function PersonalSection() {
             value={resume.summary}
             onChange={(v) => updateField("summary", v)}
             type="textarea"
-            rows={4}
+            rows={7}
             maxLength={5000}
           />
         </div>

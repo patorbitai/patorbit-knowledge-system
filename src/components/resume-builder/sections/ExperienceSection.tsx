@@ -344,7 +344,7 @@ export function ExperienceSection() {
                             value={exp.description}
                             onChange={(v) => updateExperience(exp.id, "description", v)}
                             type="textarea"
-                            rows={3}
+                            rows={6}
                           />
 
                           {/* Bullet points */}
@@ -370,12 +370,12 @@ export function ExperienceSection() {
                                   <div key={bpIdx} className="flex items-start gap-2 group/bullet">
                                     <span className="text-slate-500 mt-2 shrink-0">•</span>
                                     <div className="flex-1">
-                                      <input
-                                        type="text"
+                                      <textarea
                                         value={bp}
                                         onChange={(e) => handleUpdateBullet(exp.id, bpIdx, e.target.value)}
-                                        className="w-full bg-transparent text-sm text-slate-200 placeholder:text-slate-600 border-b border-transparent hover:border-white/[0.08] focus:border-blue-500/50 outline-none py-1 transition-colors"
+                                        className="w-full bg-transparent text-[15px] text-slate-200 placeholder:text-slate-600 border-b border-transparent hover:border-white/[0.08] focus:border-blue-500/50 outline-none py-1.5 transition-colors resize-none leading-relaxed"
                                         placeholder="Describe an achievement or responsibility..."
+                                        rows={2}
                                       />
                                     </div>
                                     <div className="flex items-center gap-0.5 opacity-0 group-hover/bullet:opacity-100 transition-opacity">

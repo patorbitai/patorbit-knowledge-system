@@ -51,7 +51,7 @@ export function SectionCard({
       )}
     >
       {/* Card header */}
-      <div className="flex items-center justify-between px-7 pt-6 pb-4 border-b border-[rgba(148,163,184,.08)]">
+      <div className="flex items-center justify-between px-5 pt-4 pb-3 border-b border-[rgba(148,163,184,.08)]">
         <div className="flex items-center gap-3.5">
           <motion.div
             whileHover={{ scale: 1.05, rotate: -3 }}
@@ -96,7 +96,7 @@ export function SectionCard({
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.25 }}
-            className="px-7 py-6 space-y-6"
+            className="px-5 py-4 space-y-4"
           >
             {children}
           </motion.div>
