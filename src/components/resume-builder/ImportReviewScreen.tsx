@@ -150,7 +150,7 @@ function ConfidenceDot({ level }: { level: Confidence }) {
 /* ── Shared input styles ── */
 
 const inputCls = (empty: boolean) => clsx(
-  "w-full rounded-lg px-3 py-2 text-[13px] leading-snug text-white/90 bg-white/[0.04] border outline-none transition",
+  "w-full rounded-lg px-2.5 py-1.5 text-[12px] leading-snug text-white/90 bg-white/[0.04] border outline-none transition",
   "focus:border-blue-500/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
   empty
     ? "border-amber-500/40 bg-amber-500/5 placeholder:text-amber-500/60"
@@ -158,7 +158,7 @@ const inputCls = (empty: boolean) => clsx(
 );
 
 const textareaCls = (empty: boolean) => clsx(
-  "w-full rounded-lg px-3 py-2 text-[13px] leading-relaxed text-white/90 bg-white/[0.04] border outline-none transition resize-none",
+  "w-full rounded-lg px-2.5 py-1.5 text-[12px] leading-relaxed text-white/90 bg-white/[0.04] border outline-none transition resize-none",
   "focus:border-blue-500/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
   empty
     ? "border-amber-500/40 bg-amber-500/5 placeholder:text-amber-500/60"
@@ -166,12 +166,12 @@ const textareaCls = (empty: boolean) => clsx(
 );
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-[12px] font-semibold text-slate-300 mb-1.5">{children}</label>;
+  return <label className="block text-[11px] font-semibold text-slate-300 mb-1">{children}</label>;
 }
 
 function EntryCard({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
-    <div className="relative rounded-xl border border-white/[0.08] bg-white/[0.025] p-4 space-y-3 shadow-sm shadow-black/20">
+    <div className="relative rounded-xl border border-white/[0.08] bg-white/[0.025] p-3 space-y-2 shadow-sm shadow-black/20">
       <button
         type="button"
         onClick={onRemove}
@@ -296,7 +296,7 @@ function SkillsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resume)
   return (
     <div className="grid grid-cols-2 gap-2">
       {draft.skills.map((skill, i) => (
-        <div key={skill.id} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+        <div key={skill.id} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2">
           <input
             className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600"
             value={skill.name}
@@ -370,7 +370,7 @@ function LanguagesPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resu
   return (
     <div className="space-y-2">
       {draft.languages.map((lang, i) => (
-        <div key={lang.id} className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+        <div key={lang.id} className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-2.5 py-2">
           <input
             className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600"
             value={lang.name}
@@ -564,8 +564,8 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
 
         {/* Editable panel */}
         <div className="flex-1 overflow-y-auto min-w-0">
-          <div className="w-full px-8 py-5">
-            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/[0.06]">
+          <div className="w-full px-6 py-4">
+            <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/[0.06]">
               <h2 className="text-lg font-bold text-white tracking-tight">{activeLabel}</h2>
               <ConfidencePill level={confidences[activeSection]} />
             </div>
