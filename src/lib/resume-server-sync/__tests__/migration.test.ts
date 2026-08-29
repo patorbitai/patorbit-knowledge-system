@@ -113,6 +113,7 @@ describe("Migration Planner and Executor (Phase 1B)", () => {
           careerStage: "working-professional",
           resume: { ...mockResume1 },
           createdAt: new Date().toISOString(),
+          version: 1,
           updatedAt: new Date().toISOString(),
         },
       ];
@@ -134,6 +135,7 @@ describe("Migration Planner and Executor (Phase 1B)", () => {
           careerStage: "working-professional",
           resume: { ...mockResume1, name: "Different User" },
           createdAt: new Date().toISOString(),
+          version: 1,
           updatedAt: new Date().toISOString(),
         },
       ];
@@ -158,6 +160,7 @@ describe("Migration Planner and Executor (Phase 1B)", () => {
           careerStage: "working-professional",
           resume: { ...mockResume1 },
           createdAt: new Date().toISOString(),
+          version: 1,
           updatedAt: new Date().toISOString(),
         },
         {
@@ -167,6 +170,7 @@ describe("Migration Planner and Executor (Phase 1B)", () => {
           careerStage: "entry-level",
           resume: { name: "Server User" },
           createdAt: new Date().toISOString(),
+          version: 1,
           updatedAt: new Date().toISOString(),
         },
       ];

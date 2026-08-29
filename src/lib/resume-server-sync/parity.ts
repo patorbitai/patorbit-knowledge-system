@@ -42,6 +42,7 @@ export interface ResumeParityEntry {
   status: ParityStatus;
   localExists: boolean;
   serverExists: boolean;
+  serverVersion?: number;
   serverUpdatedAt?: string;
 }
 
@@ -132,6 +133,7 @@ export function computeParity(
         status: "SERVER_ONLY",
         localExists: false,
         serverExists: true,
+        serverVersion: server!.version,
         serverUpdatedAt: server!.updatedAt,
       });
       continue;
@@ -153,6 +155,7 @@ export function computeParity(
       status: identical ? "IDENTICAL" : "DIFFERENT",
       localExists: true,
       serverExists: true,
+      serverVersion: server.version,
       serverUpdatedAt: server.updatedAt,
     });
   }

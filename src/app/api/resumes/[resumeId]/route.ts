@@ -8,6 +8,7 @@ import {
   resumeService,
   ResumeNotFoundError,
   ResumeValidationError,
+  ResumeConflictError,
   type SaveResumeInput,
 } from "@/services/resume.service";
 
@@ -67,6 +68,12 @@ export async function PUT(req: NextRequest, context: RouteContext) {
   } catch (err: unknown) {
     if (err instanceof ResumeNotFoundError) {
       return NextResponse.json({ error: "Resume not found" }, { status: 404 });
+    }
+    if (err instanceof ResumeConflictError) {
+      return NextResponse.json(
+        { error: "CONFLICT", message: err.message, currentVersion: err.currentVersion },
+        { status: 409 },
+      );
     }
     if (err instanceof ResumeValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });

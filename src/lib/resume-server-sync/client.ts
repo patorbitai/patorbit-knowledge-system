@@ -17,6 +17,7 @@ export interface ServerResumeRecord {
   careerStage: string;
   /** The canonical resume document (payload). */
   resume: Record<string, unknown>;
+  version: number;
   createdAt: string;
   updatedAt: string;
 }

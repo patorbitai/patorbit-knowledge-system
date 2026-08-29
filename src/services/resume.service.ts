@@ -42,6 +42,7 @@ export interface ServerResume {
   templateId: string;
   careerStage: string;
   resume: ResumePayload;
+  version: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -54,6 +55,8 @@ export interface SaveResumeInput {
   careerStage?: string;
   /** The resume document (ResumeSchema shape + optional styleConfigs). */
   resume?: unknown;
+  /** Client's known version — for optimistic locking on update. */
+  baseVersion?: number;
 }
 
 /** Validation failure → HTTP 400. */
@@ -61,6 +64,14 @@ export class ResumeValidationError extends Error {}
 
 /** Scoped row missing → HTTP 404 (never reveals another user's resume). */
 export class ResumeNotFoundError extends Error {}
+
+/** Version conflict → HTTP 409 (client's baseVersion is stale). */
+export class ResumeConflictError extends Error {
+  constructor(public readonly currentVersion: number) {
+    super("Resume was modified on the server");
+    this.name = "ResumeConflictError";
+  }
+}
 
 export class ResumeService {
   /** Validate an unknown resume document against the canonical payload schema. */
@@ -100,6 +111,7 @@ export class ResumeService {
         templateId: record.templateId,
         careerStage: record.careerStage as ResumePayload["careerStage"],
       },
+      version: record.version,
       createdAt: record.createdAt.toISOString(),
       updatedAt: record.updatedAt.toISOString(),
     };
@@ -222,6 +234,10 @@ export class ResumeService {
   /**
    * Update a resume (merge semantics — only provided fields change). Scoped to
    * the owner identity; missing/foreign rows throw ResumeNotFoundError.
+   *
+   * Optimistic locking (C5): if `baseVersion` is provided, the update is
+   * conditional on the database version matching. A mismatch returns
+   * ResumeConflictError so the caller knows the client is stale.
    */
   async update(
     professionalIdentityId: string,
@@ -234,6 +250,11 @@ export class ResumeService {
     );
     if (!existing) {
       throw new ResumeNotFoundError();
+    }
+
+    // Optimistic lock check: if client sent a baseVersion, it must match.
+    if (input.baseVersion !== undefined && input.baseVersion !== existing.version) {
+      throw new ResumeConflictError(existing.version);
     }
 
     const templateId =
@@ -258,6 +279,7 @@ export class ResumeService {
         templateId,
         careerStage,
         payload: payload as Prisma.InputJsonValue,
+        version: existing.version + 1,
       },
     );
     if (!record) {

@@ -64,6 +64,7 @@ export const resumeRepository = {
       templateId?: string;
       careerStage?: string;
       payload?: Prisma.InputJsonValue;
+      version?: number;
     },
   ): Promise<ResumeRecord | null> {
     const existing = await this.findByResumeIdAndIdentity(

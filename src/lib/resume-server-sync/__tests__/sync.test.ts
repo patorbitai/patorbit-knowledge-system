@@ -31,6 +31,7 @@ const SERVER_RESUME: ServerResumeRecord = {
   templateId: "executive-pro",
   careerStage: "working-professional",
   resume: { name: "Server Only", templateId: "executive-pro", careerStage: "working-professional" },
+  version: 1,
   createdAt: "2026-08-16T00:00:00.000Z",
   updatedAt: "2026-08-16T00:00:00.000Z",
 };

@@ -107,6 +107,7 @@ model Resume {
   templateId             String
   careerStage            String   @default("working-professional")
   payload                Json
+  version                Int      @default(1)
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 

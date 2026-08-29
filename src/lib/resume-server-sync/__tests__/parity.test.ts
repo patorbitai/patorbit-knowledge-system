@@ -146,6 +146,7 @@ function serverRecord(
     templateId: "modern-clean",
     careerStage: "working-professional",
     resume: { ...payload, templateId: "modern-clean", careerStage: "working-professional" },
+    version: 1,
     createdAt: "2026-08-16T00:00:00.000Z",
     updatedAt: "2026-08-16T00:00:00.000Z",
     ...overrides,
