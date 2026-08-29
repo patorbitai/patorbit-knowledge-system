@@ -961,7 +961,10 @@ export function PaginatedResumeSheet({ resume, template, styleConfig }: Paginate
     const holder = measureRef.current;
     if (!holder) return;
     const scope = holder.querySelector("[data-rs-scope]") as HTMLElement | null;
-    const root = scope ? (scope.firstElementChild as HTMLElement | null) : null;
+    // Skip non-content elements (e.g. <style> tags) to find the actual template root.
+    const root = scope ? Array.from(scope.children).find(
+      (c): c is HTMLElement => c instanceof HTMLElement && c.tagName !== "STYLE",
+    ) ?? null : null;
     if (!scope || !root) return;
     let result: string[];
     try {

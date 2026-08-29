@@ -54,8 +54,8 @@ export function StyleScope({
   return (
     <ResumeStyleContext.Provider value={ctxValue}>
       <div data-rs-scope style={vars as React.CSSProperties}>
-        {rules && <style>{rules}</style>}
         {children}
+        {rules && <style>{rules}</style>}
       </div>
     </ResumeStyleContext.Provider>
   );
