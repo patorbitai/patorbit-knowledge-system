@@ -36,7 +36,7 @@ export const PAGE_FRAME = {
    * margin (full-bleed banners/sidebars): continuation pages always start
    * with SAFE.top of space and every page ends with SAFE.bottom of space.
    */
-  safe: { top: 40, right: 36, bottom: 36, left: 36 },
+  safe: { top: 36, right: 36, bottom: 36, left: 36 },
 } as const;
 
 /**
