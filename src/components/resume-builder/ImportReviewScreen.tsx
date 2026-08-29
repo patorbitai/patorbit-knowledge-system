@@ -124,7 +124,7 @@ function ConfidenceBadge({ level }: { level: Confidence }) {
 /* ── Shared input/textarea styles ── */
 
 const inputCls = (empty: boolean) => clsx(
-  "w-full rounded-lg px-3.5 py-2.5 text-[14px] leading-snug text-white bg-white/[0.04] border outline-none transition",
+  "w-full rounded-lg px-3 py-2 text-[13px] leading-snug text-white bg-white/[0.04] border outline-none transition",
   "focus:border-blue-500/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
   empty
     ? "border-amber-500/40 bg-amber-500/5 placeholder:text-amber-500/60"
@@ -132,7 +132,7 @@ const inputCls = (empty: boolean) => clsx(
 );
 
 const textareaCls = (empty: boolean) => clsx(
-  "w-full rounded-lg px-3.5 py-2.5 text-[14px] leading-relaxed text-white bg-white/[0.04] border outline-none transition resize-none",
+  "w-full rounded-lg px-3 py-2 text-[13px] leading-relaxed text-white bg-white/[0.04] border outline-none transition resize-none",
   "focus:border-blue-500/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
   empty
     ? "border-amber-500/40 bg-amber-500/5 placeholder:text-amber-500/60"
@@ -140,11 +140,11 @@ const textareaCls = (empty: boolean) => clsx(
 );
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-[12px] font-semibold text-slate-300 mb-1.5 tracking-wide">{children}</label>;
+  return <label className="block text-[11px] font-semibold text-slate-300 mb-1 tracking-wide">{children}</label>;
 }
 
 function FieldGroup({ children }: { children: React.ReactNode }) {
-  return <div className="space-y-4">{children}</div>;
+  return <div className="space-y-3">{children}</div>;
 }
 
 function SectionHeading({ children }: { children: React.ReactNode }) {
@@ -153,7 +153,7 @@ function SectionHeading({ children }: { children: React.ReactNode }) {
 
 function EntryCard({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
-    <div className="relative rounded-xl border border-white/[0.08] bg-white/[0.025] p-5 space-y-4 shadow-sm shadow-black/20">
+    <div className="relative rounded-xl border border-white/[0.08] bg-white/[0.025] p-4 space-y-3 shadow-sm shadow-black/20">
       <button
         type="button"
         onClick={onRemove}
@@ -208,7 +208,7 @@ function SummaryPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resume
         <FieldLabel>Professional Summary</FieldLabel>
         <textarea
           className={textareaCls(!draft.summary)}
-          rows={8}
+          rows={6}
           value={draft.summary}
           onChange={e => setDraft({ ...draft, summary: e.target.value })}
           placeholder="Not detected"
@@ -237,7 +237,7 @@ function ExperiencePanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Res
             <div><FieldLabel>Duration</FieldLabel><input className={inputCls(!exp.duration)} value={exp.duration} onChange={e => update(i, "duration", e.target.value)} placeholder="Not detected" /></div>
             <div><FieldLabel>Location</FieldLabel><input className={inputCls(!exp.location)} value={exp.location} onChange={e => update(i, "location", e.target.value)} placeholder="Not detected" /></div>
           </div>
-          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!exp.description)} rows={7} value={exp.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
+          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!exp.description)} rows={5} value={exp.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
         </EntryCard>
       ))}
     </div>
@@ -312,7 +312,7 @@ function ProjectsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resum
             <div><FieldLabel>Link</FieldLabel><input className={inputCls(!proj.link)} value={proj.link} onChange={e => update(i, "link", e.target.value)} placeholder="Not detected" /></div>
           </div>
           <div><FieldLabel>Tech Stack</FieldLabel><input className={inputCls(!proj.tech)} value={proj.tech} onChange={e => update(i, "tech", e.target.value)} placeholder="Not detected" /></div>
-          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!proj.description)} rows={7} value={proj.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
+          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!proj.description)} rows={5} value={proj.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
         </EntryCard>
       ))}
     </div>
@@ -549,7 +549,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
         {/* Editable panel */}
         <div className="flex-1 overflow-y-auto min-w-0">
           <div className="w-full px-8 py-5">
-            <div className="flex items-center gap-3 mb-6 pb-5 border-b border-white/[0.06]">
+            <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/[0.06]">
               <h2 className="text-xl font-bold text-white tracking-tight">{activeLabel}</h2>
               <ConfidenceBadge level={confidences[activeSection]} />
             </div>
