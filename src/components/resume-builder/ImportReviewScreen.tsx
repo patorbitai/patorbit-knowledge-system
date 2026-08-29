@@ -237,7 +237,7 @@ function ExperiencePanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Res
             <div><FieldLabel>Duration</FieldLabel><input className={inputCls(!exp.duration)} value={exp.duration} onChange={e => update(i, "duration", e.target.value)} placeholder="Not detected" /></div>
             <div><FieldLabel>Location</FieldLabel><input className={inputCls(!exp.location)} value={exp.location} onChange={e => update(i, "location", e.target.value)} placeholder="Not detected" /></div>
           </div>
-          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!exp.description)} rows={4} value={exp.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
+          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!exp.description)} rows={5} value={exp.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
         </EntryCard>
       ))}
     </div>
@@ -312,7 +312,7 @@ function ProjectsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resum
             <div><FieldLabel>Link</FieldLabel><input className={inputCls(!proj.link)} value={proj.link} onChange={e => update(i, "link", e.target.value)} placeholder="Not detected" /></div>
           </div>
           <div><FieldLabel>Tech Stack</FieldLabel><input className={inputCls(!proj.tech)} value={proj.tech} onChange={e => update(i, "tech", e.target.value)} placeholder="Not detected" /></div>
-          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!proj.description)} rows={3} value={proj.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
+          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!proj.description)} rows={5} value={proj.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
         </EntryCard>
       ))}
     </div>
@@ -544,7 +544,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
 
         {/* Editable panel */}
         <div className="flex-1 overflow-y-auto min-w-0">
-          <div className="max-w-2xl mx-auto px-6 py-6">
+          <div className="w-full px-8 py-5">
             <div className="flex items-center gap-3 mb-5">
               <h2 className="text-base font-semibold text-white">{activeLabel}</h2>
               <ConfidenceBadge level={confidences[activeSection]} />
