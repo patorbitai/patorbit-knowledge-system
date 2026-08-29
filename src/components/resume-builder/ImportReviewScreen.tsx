@@ -519,7 +519,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
       <div className="flex-1 flex overflow-hidden">
 
         {/* Section nav */}
-        <nav className="w-[220px] shrink-0 border-r border-white/[0.06] bg-[#080C18] overflow-y-auto py-3 px-3 space-y-1">
+        <nav className="w-[240px] shrink-0 border-r border-white/[0.06] bg-[#080C18] overflow-y-auto py-4 px-3 space-y-1.5">
           {SECTIONS.map(({ key, label }, idx) => {
             const level = confidences[key];
             const isActive = activeSection === key;
@@ -529,13 +529,13 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
                 type="button"
                 onClick={() => setActiveSection(key)}
                 className={clsx(
-                  "w-full flex items-center gap-3 px-3.5 py-3 rounded-xl text-sm transition-all text-left",
+                  "w-full flex items-center gap-3 px-3.5 py-3.5 rounded-xl text-[15px] transition-all text-left",
                   isActive
                     ? "bg-gradient-to-r from-blue-500/15 to-cyan-500/10 text-white border border-blue-500/20 shadow-sm"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent",
                 )}
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-md text-[10px] font-bold shrink-0"
+                <span className="flex h-7 w-7 items-center justify-center rounded-lg text-[11px] font-bold shrink-0"
                   style={{ backgroundColor: isActive ? 'rgba(59,130,246,0.2)' : 'rgba(148,163,184,0.1)', color: isActive ? '#60a5fa' : '#64748b' }}>
                   {idx + 1}
                 </span>
