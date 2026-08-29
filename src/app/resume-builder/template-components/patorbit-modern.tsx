@@ -159,7 +159,10 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
       </div>
 
       {/* ── BODY ───────────────────────────────────────────────── */}
-      <div style={{ padding: "20px 32px 30px" }}>
+      {/* No top/bottom padding — the paginator's safe areas (40/20) handle header/footer
+          space on every page. Adding padding here would stack with safe areas on page 2+,
+          wasting ~50px of vertical space. */}
+      <div style={{ paddingLeft: 32, paddingRight: 32, marginBottom: 0 }}>
 
         {/* Summary */}
         {resume.summary && (
