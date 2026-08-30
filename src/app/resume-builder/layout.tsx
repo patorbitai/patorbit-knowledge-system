@@ -1,4 +1,5 @@
 import IdentityPipelineBootstrap from "@/components/identity/IdentityPipelineBootstrap";
+import WriteBackBootstrap from "@/components/resume-builder/WriteBackBootstrap";
 
 /**
  * Resume Builder App Layout
@@ -21,6 +22,7 @@ export default function ResumeBuilderAppLayout({
   return (
     <>
       <IdentityPipelineBootstrap />
+      <WriteBackBootstrap />
       {children}
     </>
   );

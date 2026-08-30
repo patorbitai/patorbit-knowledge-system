@@ -129,7 +129,56 @@ export function cancelPendingSave(resumeId: string): void {
 }
 
 /**
+ * Flush pending saves synchronously on page unload.
+ * Uses sendBeacon as a fallback for cases where fetch() cannot complete.
+ */
+function handleBeforeUnload(): void {
+  const state = useResumeBuilder.getState();
+  const { resume, activeResumeId, serverVersions } = state;
+  if (!activeResumeId || !resume.resumeId || state.saveStatus !== "unsaved") return;
+
+  // Cancel the debounced timer — we're saving NOW
+  const existing = pendingSaves.get(activeResumeId);
+  if (existing) clearTimeout(existing);
+  pendingSaves.delete(activeResumeId);
+
+  // Try synchronous fetch with keepalive (works in most browsers on unload)
+  const baseVersion = serverVersions[resume.resumeId] ?? 0;
+  try {
+    const payload = JSON.stringify({
+      resumeId: resume.resumeId,
+      resumeName: resume.resumeName || resume.name || "My Resume",
+      templateId: resume.templateId,
+      careerStage: resume.careerStage,
+      resume,
+      baseVersion: baseVersion > 0 ? baseVersion : undefined,
+    });
+
+    // Prefer fetch with keepalive — survives page navigation
+    const sent = navigator.sendBeacon(
+      `/api/resumes/${resume.resumeId}`,
+      new Blob([payload], { type: "application/json" }),
+    );
+
+    if (!sent) {
+      // sendBeacon failed — fall back to fetch keepalive
+      fetch(`/api/resumes/${resume.resumeId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: payload,
+        keepalive: true,
+      }).catch(() => {
+        // Best-effort — cannot do anything more on unload
+      });
+    }
+  } catch {
+    // Silently fail — this is best-effort on unload
+  }
+}
+
+/**
  * Hook up store mutations to trigger debounced write-back.
+ * Also registers beforeunload to flush pending saves.
  * Call once when the app initializes.
  */
 let _hooked = false;
@@ -139,13 +188,20 @@ export function hookWriteBackToStore(): void {
 
   // Subscribe to store changes — trigger debounced save on any resume mutation
   useResumeBuilder.subscribe((state, prevState) => {
+    // Wait until localStorage hydration is complete
+    if (!state.hydrated) return;
     // Only save when resume content actually changed
     if (state.resume === prevState.resume) return;
-    // Don't save during initial hydration
-    if (state.saveStatus === "saved" && prevState.saveStatus === "saved") return;
     // Don't trigger during active saving
     if (state.saveStatus === "saving") return;
+    // Don't trigger server sync result propagation
+    if (state.saveStatus === "sync-failed" && prevState.saveStatus === "sync-failed") return;
 
     debouncedSave();
   });
+
+  // Flush pending saves on page unload (best-effort)
+  if (typeof window !== "undefined") {
+    window.addEventListener("beforeunload", handleBeforeUnload);
+  }
 }

@@ -59,6 +59,8 @@ export interface ResumeBuilderState {
   deleteResume: (resumeId: string) => void;
 
   activeSection: SectionId;  saveStatus: SaveStatus;
+  /** True after Zustand persist has rehydrated from localStorage. */
+  hydrated: boolean;
   /** Server version per resume — populated by sync, used by write-back. */
   serverVersions: Record<string, number>;
   /** Conflict state: set when a write-back gets 409 CONFLICT. */
@@ -230,6 +232,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         },
 
         analysis: null, activeSection: "personal", saveStatus: "unsaved",
+        hydrated: false,
         serverVersions: {}, writeConflict: null,
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
         qualificationMatch: null,
@@ -614,6 +617,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
           state.serverVersions = state.serverVersions ?? {};
           state.writeConflict = null;
           state.setSaveStatus("saved");
+          state.hydrated = true;
         }
       },
     },

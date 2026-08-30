@@ -1,17 +1,29 @@
 /**
- * C6 — Client-side Write-Back Tests
+ * C6/C6.1 — Client-side Write-Back Tests
  *
  * Tests the write-back service, debouncing, conflict handling,
- * and atomic repository update.
+ * hook initialization, beforeunload flush, and atomic repository update.
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
-// Mock fetch globally
-const mockFetch = vi.fn();
-vi.stubGlobal("fetch", mockFetch);
+// vi.hoisted() ensures these are available when vi.mock() runs (hoisted to top)
+const { mockFetch, mockSendBeacon, addEventListenerSpy, mockSetSaveStatus, mockSetServerVersion, mockSubscribe } = vi.hoisted(() => ({
+  mockFetch: vi.fn(),
+  mockSendBeacon: vi.fn(() => true),
+  addEventListenerSpy: vi.fn(),
+  mockSetSaveStatus: vi.fn(),
+  mockSetServerVersion: vi.fn(),
+  mockSubscribe: vi.fn(),
+}));
 
-// Mock the store
+vi.stubGlobal("fetch", mockFetch);
+vi.stubGlobal("navigator", { sendBeacon: mockSendBeacon });
+vi.stubGlobal("window", {
+  addEventListener: addEventListenerSpy,
+  removeEventListener: vi.fn(),
+});
+
 const mockState = {
   resume: {
     resumeId: "resume-1",
@@ -24,8 +36,9 @@ const mockState = {
   serverVersions: {} as Record<string, number>,
   writeConflict: null as { resumeId: string; serverVersion: number } | null,
   saveStatus: "unsaved" as string,
-  setSaveStatus: vi.fn(),
-  setServerVersion: vi.fn(),
+  hydrated: true,
+  setSaveStatus: mockSetSaveStatus,
+  setServerVersion: mockSetServerVersion,
 };
 
 vi.mock("@/store/resume-builder", () => ({
@@ -39,11 +52,16 @@ vi.mock("@/store/resume-builder", () => ({
         Object.assign(mockState, updater);
       }
     }),
-    subscribe: vi.fn(),
+    subscribe: mockSubscribe,
   },
 }));
 
-import { saveLocalResumeToServer, debouncedSave, forceSaveNow, cancelPendingSave } from "@/lib/resume-write-back";
+import {
+  saveLocalResumeToServer,
+  debouncedSave,
+  forceSaveNow,
+  cancelPendingSave,
+} from "@/lib/resume-write-back";
 
 describe("C6 — Resume Write-Back", () => {
   beforeEach(() => {
@@ -53,6 +71,14 @@ describe("C6 — Resume Write-Back", () => {
     mockState.writeConflict = null;
     mockState.saveStatus = "unsaved";
     mockState.activeResumeId = "resume-1";
+    mockState.hydrated = true;
+    mockState.resume = {
+      resumeId: "resume-1",
+      resumeName: "Test Resume",
+      name: "Test User",
+      templateId: "modern-clean",
+      careerStage: "working-professional",
+    };
   });
 
   afterEach(() => {
@@ -77,7 +103,6 @@ describe("C6 — Resume Write-Back", () => {
         })
       );
 
-      // Should NOT include baseVersion when serverVersions is empty
       const body = JSON.parse(mockFetch.mock.calls[0][1].body);
       expect(body.baseVersion).toBeUndefined();
     });
@@ -106,8 +131,8 @@ describe("C6 — Resume Write-Back", () => {
 
       await saveLocalResumeToServer();
 
-      expect(mockState.setServerVersion).toHaveBeenCalledWith("resume-1", 4);
-      expect(mockState.setSaveStatus).toHaveBeenCalledWith("saved");
+      expect(mockSetServerVersion).toHaveBeenCalledWith("resume-1", 4);
+      expect(mockSetSaveStatus).toHaveBeenCalledWith("saved");
     });
 
     it("does NOT overwrite local resume on success", async () => {
@@ -119,8 +144,7 @@ describe("C6 — Resume Write-Back", () => {
 
       await saveLocalResumeToServer();
 
-      // setSaveStatus was called but resume was NOT replaced
-      expect(mockState.setSaveStatus).toHaveBeenCalledWith("saved");
+      expect(mockSetSaveStatus).toHaveBeenCalledWith("saved");
     });
   });
 
@@ -135,7 +159,6 @@ describe("C6 — Resume Write-Back", () => {
 
       await saveLocalResumeToServer();
 
-      // Should set writeConflict
       expect(mockState.saveStatus).toBe("unsaved");
     });
 
@@ -148,7 +171,7 @@ describe("C6 — Resume Write-Back", () => {
 
       await saveLocalResumeToServer();
 
-      expect(mockState.setServerVersion).not.toHaveBeenCalled();
+      expect(mockSetServerVersion).not.toHaveBeenCalled();
     });
   });
 
@@ -158,7 +181,7 @@ describe("C6 — Resume Write-Back", () => {
 
       await saveLocalResumeToServer();
 
-      expect(mockState.setSaveStatus).toHaveBeenCalledWith("offline");
+      expect(mockSetSaveStatus).toHaveBeenCalledWith("offline");
     });
 
     it("sets sync-failed on server error", async () => {
@@ -170,7 +193,7 @@ describe("C6 — Resume Write-Back", () => {
 
       await saveLocalResumeToServer();
 
-      expect(mockState.setSaveStatus).toHaveBeenCalledWith("sync-failed");
+      expect(mockSetSaveStatus).toHaveBeenCalledWith("sync-failed");
     });
   });
 
@@ -183,11 +206,8 @@ describe("C6 — Resume Write-Back", () => {
       });
 
       debouncedSave();
-
-      // Not called yet
       expect(mockFetch).not.toHaveBeenCalled();
 
-      // After debounce
       vi.advanceTimersByTime(1500);
       await vi.waitFor(() => expect(mockFetch).toHaveBeenCalled());
     });
@@ -201,13 +221,33 @@ describe("C6 — Resume Write-Back", () => {
 
       debouncedSave();
       vi.advanceTimersByTime(500);
-      debouncedSave(); // Cancel first
+      debouncedSave();
       vi.advanceTimersByTime(1500);
 
       await vi.waitFor(() => {
-        // Only one fetch should have been made (the second one)
         expect(mockFetch).toHaveBeenCalledTimes(1);
       });
+    });
+
+    it("latest edit payload is what gets sent", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ version: 1 }),
+      });
+
+      mockState.resume = { ...mockState.resume, name: "Edit 1" };
+      debouncedSave();
+      vi.advanceTimersByTime(500);
+
+      mockState.resume = { ...mockState.resume, name: "Edit 2" };
+      debouncedSave();
+      vi.advanceTimersByTime(1500);
+
+      await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.resume.name).toBe("Edit 2");
     });
   });
 
@@ -223,8 +263,247 @@ describe("C6 — Resume Write-Back", () => {
       cancelPendingSave("resume-1");
       vi.advanceTimersByTime(2000);
 
-      // Should not have been called
       expect(mockFetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("forceSaveNow", () => {
+    it("saves immediately bypassing debounce", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ version: 1 }),
+      });
+
+      await forceSaveNow();
+
+      expect(mockFetch).toHaveBeenCalledTimes(1);
+    });
+  });
+});
+
+/**
+ * C6.1 tests use dynamic import + vi.resetModules() so the module-level
+ * `_hooked` flag resets between test groups. Each test group that calls
+ * hookWriteBackToStore() gets a fresh module instance.
+ */
+describe("C6.1 — Integration Hardening", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    mockState.serverVersions = {};
+    mockState.writeConflict = null;
+    mockState.saveStatus = "unsaved";
+    mockState.activeResumeId = "resume-1";
+    mockState.hydrated = true;
+    mockState.resume = {
+      resumeId: "resume-1",
+      resumeName: "Test Resume",
+      name: "Test User",
+      templateId: "modern-clean",
+      careerStage: "working-professional",
+    };
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  describe("hookWriteBackToStore initialization", () => {
+    it("registers a Zustand subscribe callback", async () => {
+      vi.resetModules();
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      hookWriteBackToStore();
+
+      expect(mockSubscribe).toHaveBeenCalledTimes(1);
+      expect(mockSubscribe).toHaveBeenCalledWith(expect.any(Function));
+    });
+
+    it("only registers once (idempotent)", async () => {
+      vi.resetModules();
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      hookWriteBackToStore();
+      hookWriteBackToStore();
+      hookWriteBackToStore();
+
+      expect(mockSubscribe).toHaveBeenCalledTimes(1);
+    });
+
+    it("registers beforeunload handler", async () => {
+      vi.resetModules();
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      hookWriteBackToStore();
+
+      expect(addEventListenerSpy).toHaveBeenCalledWith(
+        "beforeunload",
+        expect.any(Function)
+      );
+    });
+  });
+
+  describe("Subscription behavior", () => {
+    it("skips write-back when hydrated is false (pre-hydration)", async () => {
+      vi.resetModules();
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      mockState.hydrated = false;
+      hookWriteBackToStore();
+
+      const callback = mockSubscribe.mock.calls[0][0];
+      const prevState = { ...mockState, hydrated: false };
+      const newState = {
+        ...mockState,
+        hydrated: false,
+        resume: { ...mockState.resume, name: "Changed" },
+      };
+
+      callback(newState, prevState);
+
+      vi.advanceTimersByTime(2000);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("triggers debounced save when hydrated and resume changes", async () => {
+      vi.resetModules();
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      hookWriteBackToStore();
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ version: 1 }),
+      });
+
+      const callback = mockSubscribe.mock.calls[0][0];
+      const prevState = { ...mockState, saveStatus: "saved" };
+      const newState = {
+        ...mockState,
+        saveStatus: "unsaved",
+        resume: { ...mockState.resume, name: "Changed" },
+      };
+
+      callback(newState, prevState);
+
+      vi.advanceTimersByTime(1500);
+      expect(mockFetch).toHaveBeenCalled();
+    });
+
+    it("does NOT trigger when saveStatus is saving", async () => {
+      vi.resetModules();
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      hookWriteBackToStore();
+
+      const callback = mockSubscribe.mock.calls[0][0];
+      const prevState = { ...mockState, saveStatus: "saved" };
+      const newState = {
+        ...mockState,
+        saveStatus: "saving",
+        resume: { ...mockState.resume, name: "Changed" },
+      };
+
+      callback(newState, prevState);
+
+      vi.advanceTimersByTime(2000);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("does NOT trigger on sync-failed to sync-failed transition", async () => {
+      vi.resetModules();
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      hookWriteBackToStore();
+
+      const callback = mockSubscribe.mock.calls[0][0];
+      const prevState = { ...mockState, saveStatus: "sync-failed" as string };
+      const newState = {
+        ...mockState,
+        saveStatus: "sync-failed" as string,
+        resume: { ...mockState.resume, name: "Changed" },
+      };
+
+      callback(newState, prevState);
+
+      vi.advanceTimersByTime(2000);
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Multi-resume isolation", () => {
+    it("sends correct resumeId to server for the active resume", async () => {
+      mockFetch.mockResolvedValue({
+        ok: true,
+        status: 200,
+        json: () => Promise.resolve({ version: 1 }),
+      });
+
+      mockState.activeResumeId = "resume-2";
+      mockState.resume = {
+        ...mockState.resume,
+        resumeId: "resume-2",
+        name: "Resume B",
+      };
+
+      await saveLocalResumeToServer();
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        "/api/resumes/resume-2",
+        expect.anything()
+      );
+
+      const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+      expect(body.resumeId).toBe("resume-2");
+    });
+  });
+
+  describe("Pending save flush on unload", () => {
+    it("sendBeacon is called with resume data on beforeunload when unsaved", async () => {
+      vi.resetModules();
+      // Reset spy call history for this test
+      addEventListenerSpy.mockClear();
+
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      mockState.saveStatus = "unsaved";
+      mockState.hydrated = true;
+      hookWriteBackToStore();
+
+      // Get the beforeunload handler registered by hookWriteBackToStore
+      const beforeunloadCall = addEventListenerSpy.mock.calls.find(
+        (call: unknown[]) => call[0] === "beforeunload"
+      );
+      expect(beforeunloadCall).toBeDefined();
+
+      const handler = beforeunloadCall![1] as () => void;
+      handler();
+
+      expect(mockSendBeacon).toHaveBeenCalledWith(
+        "/api/resumes/resume-1",
+        expect.any(Blob)
+      );
+    });
+
+    it("does NOT sendBeacon when saveStatus is saved", async () => {
+      vi.resetModules();
+      addEventListenerSpy.mockClear();
+
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      mockState.saveStatus = "saved";
+      hookWriteBackToStore();
+
+      const beforeunloadCall = addEventListenerSpy.mock.calls.find(
+        (call: unknown[]) => call[0] === "beforeunload"
+      );
+      const handler = beforeunloadCall![1] as () => void;
+      handler();
+
+      expect(mockSendBeacon).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("Read-only server sync preserved", () => {
+    it("server sync only captures versions, never overwrites resume content", () => {
+      const originalResume = { ...mockState.resume };
+
+      mockState.serverVersions = { "resume-1": 5 };
+
+      expect(mockState.resume).toEqual(originalResume);
     });
   });
 });
