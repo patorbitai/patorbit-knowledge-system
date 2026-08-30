@@ -407,28 +407,40 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     // 3) EXTRACT DATE from the line (handles "2024 – Apr 9", "Apr 2022 – Jan 2024", etc.)
     const { date, rest } = extractDate(trimmed);
 
-    // 3) PIPE SEPARATOR: "Company | Position" or "Position | Company"
-    if (rest) {
-      const pipeMatch = rest.match(PIPE_SEP);
-      if (pipeMatch) {
+    // 3) PIPE SEPARATOR: "Company | Position | Date"
+    //    Handles 2-part (Company | Position) and 3-part (Company | Position | Date)
+    if (rest && rest.includes("|")) {
+      const pipeParts = rest.split("|").map(p => p.trim()).filter(Boolean);
+      if (pipeParts.length >= 2 && pipeParts.length <= 3) {
         if (current) {
           current.description = bulletLines.join("\n");
           items.push(current);
           bulletLines.length = 0;
         }
-        const left = pipeMatch[1].trim();
-        const right = pipeMatch[2].trim();
-        // Determine which side is company vs position using heuristics
-        let company = left;
-        let position = right;
-        if (ROLE_HINTS.test(left) && COMPANY_HINTS.test(right)) {
-          company = right;
-          position = left;
-        } else if (COMPANY_HINTS.test(left) && ROLE_HINTS.test(right)) {
-          company = left;
-          position = right;
+        let company = pipeParts[0];
+        let position = pipeParts[1];
+        let pipeDate = date;
+        let pipeLocation = "";
+        if (pipeParts.length === 3) {
+          // Third part could be date or location
+          const thirdDate = extractDate(pipeParts[2]);
+          if (thirdDate.date) {
+            pipeDate = thirdDate.date;
+            pipeLocation = thirdDate.rest;
+          } else {
+            pipeLocation = pipeParts[2];
+          }
         }
-        current = { company, position, duration: date, location: "", description: "" };
+        // Determine which side is company vs position using heuristics
+        if (ROLE_HINTS.test(company) && COMPANY_HINTS.test(position)) {
+          [company, position] = [position, company];
+        } else if (COMPANY_HINTS.test(company) && ROLE_HINTS.test(position)) {
+          // Already correct
+        } else if (ROLE_HINTS.test(company) && !COMPANY_HINTS.test(position)) {
+          // Left looks like role, right might be company
+          [company, position] = [position, company];
+        }
+        current = { company, position, duration: pipeDate, location: pipeLocation, description: "" };
         continue;
       }
     }
