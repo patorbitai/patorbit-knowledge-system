@@ -30,6 +30,7 @@ const SECTION_HEADERS = [
   /(?:skills|technical\s*skills|core\s*competencies|technical\s*competenc|key\s*skills|technologies|proficiencies|tech\s*stack)/i,
   /(?:projects|project|personal\s*projects|key\s*projects)/i,
   /(?:certifications|certificates|licenses|certifications?\s*&?\s*licenses?)/i,
+  /(?:links|portfolio|websites|online\s*presence)/i,
   /(?:publications|research|awards|honors|languages|interests|references)/i,
 ];
 
@@ -157,7 +158,14 @@ export function parseRawResumeText(text: string): ParsedResume {
     const matchesSection = SECTION_HEADERS.some(re => re.test(trimmed));
     const isAllUpper = /^[A-Z][A-Z\s&/\-()]+$/.test(trimmed);
     const isShortTitleCase = /^[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,3}$/.test(trimmed);
-    const isHeader = matchesSection && trimmed.length < 50 && (isAllUpper || isShortTitleCase);
+    // Exclude institution/school names from being treated as section headers.
+    // "Bharathiar University" contains "university" but is a school name, not a section.
+    // Only all-uppercase lines ("EDUCATION", "SKILLS") are reliable section headers.
+    // Title-case lines matching section keywords are only headers if they are known
+    // compound section names ("Work Experience", "Technical Skills"), not institution names.
+    const INSTITUTION_WORDS = /\b(?:University|College|Institute|School|Academy|Institut|Universit)\b/i;
+    const isExcludedInstitution = isShortTitleCase && !isAllUpper && INSTITUTION_WORDS.test(trimmed);
+    const isHeader = matchesSection && trimmed.length < 50 && (isAllUpper || isShortTitleCase) && !isExcludedInstitution;
 
     if (isHeader) {
       if (currentLines.length > 0 || sectionTexts.length === 0) {
@@ -242,8 +250,8 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
   // Single date at end of line
   const DATE_SINGLE_PAT = "(" + DATE_ATOM + ")";
 
-  const RE_DATE_RANGE = new RegExp(DATE_RANGE_PAT + "\\)?\\s*$", "i");
-  const RE_DATE_SINGLE = new RegExp("(?:\\()?" + DATE_SINGLE_PAT + "(?:\\))?\\s*$", "i");
+  const RE_DATE_RANGE = new RegExp(DATE_RANGE_PAT, "i");
+  const RE_DATE_SINGLE = new RegExp("(?:\\()?" + DATE_SINGLE_PAT + "(?:\\))?", "i");
 
   /** Clean trailing punctuation from a name/label. */
   const cleanName = (s: string) => s.replace(/[\s,;:]+$/, "").replace(/^[,;:\s]+/, "").trim();
@@ -306,14 +314,84 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
   const PIPE_SEP = /^(.+?)\s*\|\s*(.+)$/;
 
   /** Check if text looks like a role/position title (not a company). */
-  const ROLE_HINTS = /(?:Engineer|Developer|Manager|Director|Lead|Architect|Analyst|Designer|Consultant|Specialist|Coordinator|Supervisor|Officer|Executive|VP|CTO|CEO|CFO|COO|Head|Principal|Senior|Junior|Staff|Associate|Intern|Freelance|Scientist|Researcher|Professor|Teacher|Nurse|Doctor|Technician|Operator)/i;
+  const ROLE_HINTS = /\b(?:Engineer|Developer|Manager|Director|Lead|Architect|Analyst|Designer|Consultant|Specialist|Coordinator|Supervisor|Officer|Executive|VP|CTO|CEO|CFO|COO|Head|Principal|Senior|Junior|Staff|Associate|Intern|Freelance|Scientist|Researcher|Professor|Teacher|Nurse|Doctor|Technician|Operator)\b/i;
   const COMPANY_HINTS = /\b(?:Inc|LLC|Ltd|Corp|Co|GmbH|Pvt|Limited|Company|Group|Technologies|Tech|Solutions|Services|Systems|Labs|Studio|Consulting|Analytics|Enterprises|Holdings|Ventures|Industries)\b/i;
 
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    // 1) BULLET/ACHIEVEMENT LINES → always description, never a new entry.
+    // 1) BULLET SEPARATOR: "Company • Date • Location" format.
+    //    Split on • and reassemble into structured fields.
+    if (trimmed.includes("•")) {
+      const parts = trimmed.split("•").map(p => p.trim()).filter(Boolean);
+      if (parts.length >= 2) {
+        // Try to identify which parts are: company, date, location
+        let company = "";
+        let position = "";
+        let dateStr = "";
+        let location = "";
+
+        for (const part of parts) {
+          const partDate = extractDate(part);
+          if (partDate.date) {
+            dateStr = partDate.date;
+            // The non-date part of this segment might be a company name
+            if (partDate.rest && !company) company = partDate.rest;
+          } else if (!dateStr && !company) {
+            // No date found yet — this could be company or position.
+            // Check for em-dash separator: "Company — Position" or "Upwork — Freelance"
+            const dashParts = part.split(/\s*[\u2013\u2014—]\s*/);
+            if (dashParts.length >= 2) {
+              const left = dashParts[0].trim();
+              const right = dashParts.slice(1).join(" — ").trim();
+              if (ROLE_HINTS.test(right) && !COMPANY_HINTS.test(right)) {
+                company = cleanCompanyName(left);
+                position = right;
+              } else if (ROLE_HINTS.test(left) && !COMPANY_HINTS.test(left)) {
+                position = left;
+                company = cleanCompanyName(right);
+              } else {
+                company = cleanCompanyName(part);
+              }
+            } else if (ROLE_HINTS.test(part) && !COMPANY_HINTS.test(part)) {
+              position = part;
+            } else {
+              company = cleanCompanyName(part);
+            }
+          } else if (dateStr && company) {
+            // After date and company — this is location
+            location = part;
+          }
+        }
+
+        if (company || position || dateStr) {
+          // If current entry has a position but no company/duration, this • line
+          // is the company+date+location for that entry — update it, don't replace.
+          if (current && current.position && !current.company && !current.duration) {
+            if (company) current.company = company;
+            if (dateStr) current.duration = dateStr;
+            if (location) current.location = location;
+            continue;
+          }
+          if (current) {
+            current.description = bulletLines.join("\n");
+            items.push(current);
+            bulletLines.length = 0;
+          }
+          current = {
+            company: company,
+            position: position,
+            duration: dateStr,
+            location: location,
+            description: "",
+          };
+          continue;
+        }
+      }
+    }
+
+    // 2) BULLET/ACHIEVEMENT LINES → always description, never a new entry.
     //    BUT: skip lines that are actually dates ("2020-Present", "Jan 2022")
     //    — digits at the start don't mean bullet here.
     const isDateLine = RE_DATE_RANGE.test(trimmed) || RE_DATE_SINGLE.test(trimmed);
@@ -322,7 +400,7 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
       continue;
     }
 
-    // 2) EXTRACT DATE from the line (handles "2024 – Apr 9", "Apr 2022 – Jan 2024", etc.)
+    // 3) EXTRACT DATE from the line (handles "2024 – Apr 9", "Apr 2022 – Jan 2024", etc.)
     const { date, rest } = extractDate(trimmed);
 
     // 3) PIPE SEPARATOR: "Company | Position" or "Position | Company"
@@ -353,9 +431,18 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
 
     // 4) EN-DASH/HYPHEN SEPARATOR: "Company – Position" or "Position – Company"
     //    Split when one side looks like a role or has a company hint.
-    if (rest) {
+    //    IMPORTANT: Do NOT split on date-range hyphens ("Jan 2024 - Apr 2024").
+    if (rest && !date) {
       const dashMatch = rest.match(/^(.+?)\s+[–—-]\s+(.+)$/);
       if (dashMatch && !/^\d/.test(rest) && dashMatch[1].trim().length > 1 && dashMatch[2].trim().length > 1) {
+        // Skip if this looks like a date range (both sides contain month names or years)
+        const rightHasYear = /\b\d{4}\b/.test(dashMatch[2]);
+        const leftHasMonth = /\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)/i.test(dashMatch[1]);
+        if (rightHasYear && leftHasMonth) {
+          // This is a date range, not a company–position split
+          bulletLines.push(trimmed);
+          continue;
+        }
         const left = dashMatch[1].trim();
         const right = dashMatch[2].trim();
         if (ROLE_HINTS.test(right) || COMPANY_HINTS.test(right)) {
@@ -439,12 +526,15 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     if (current && bulletLines.length > 0 && !date) {
       const startsWithLower = /^[a-z]/.test(rest);
       const isContinuationWord = /^(?:for|with|using|to|the|a|an|in|on|by|of|and|or|that|which|while|as|from|into|through|over|under|across|after|before|between|during|without|within)\b/i.test(rest);
-      const isLongLine = rest.length > 40;
+      const isLongLine = rest.length > 60;
       // Hyphenated compounds like "Engineer-level", "data-driven" are
       // adjectives, not standalone role titles.
       const hasHyphenCompound = /\b\w+[-\u2013]\w+\b/.test(rest) && rest.length > 15;
+      // Lines that look like a role/position title should NOT be treated as
+      // description continuation, even if they exceed the line-length threshold.
+      const looksLikeTitle = ROLE_HINTS.test(rest) && !/[,.;:!?]$/.test(rest) && rest.split(/\s+/).length <= 8;
 
-      if (startsWithLower || isContinuationWord || isLongLine || hasHyphenCompound) {
+      if (startsWithLower || isContinuationWord || (isLongLine && !looksLikeTitle) || hasHyphenCompound) {
         bulletLines.push(trimmed);
         continue;
       }
@@ -519,7 +609,7 @@ function parseEducationSection(lines: string[]): ParsedResume["education"] {
 
   const SCHOOL_RE = /(?:University|College|Institute|School|Academy|Institut|Universit)/i;
   const DEGREE_RE = /(?:B\.?\s*[ASCE]|M\.?\s*[ASCE]|Ph\.?\s*D|Bachelor|Master|Associate|MBA|Doctorate|B\.Sc|B\.A|B\.S|M\.S|M\.Tech|B\.Tech|MCA|BCA)/i;
-  const YEAR_RE = /(\d{4})\s*(?:-|–|\u2013|to)\s*(\d{4}|Present|current)/i;
+  const YEAR_RE = /(\d{4})\s*(?:-|–|\u2013|to)\s*(?:\w+\s+)?(\d{4}|Present|current)/i;
   const YEAR_SINGLE = /(?:\b|\s)(\d{4})(?:\b|$)/;
 
   for (const line of lines) {
@@ -528,8 +618,12 @@ function parseEducationSection(lines: string[]): ParsedResume["education"] {
 
     // Extract year from the line (handles "2016-2018", "2016–2018", "(2016)" etc.)
     const yearM = YEAR_RE.exec(trimmed) || YEAR_SINGLE.exec(trimmed);
-    const yearStr = yearM ? yearM[0].trim() : "";
-    const textWithoutYear = yearStr ? trimmed.replace(yearStr, "").replace(/[,;()]+/g, "").trim() : trimmed;
+    let yearStr = yearM ? yearM[0].trim() : "";
+    // Clean up year string: "2016 - December 2018" → "2016 - 2018"
+    if (yearStr) {
+      yearStr = yearStr.replace(/\s*(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\s+/gi, " ").replace(/\s+/g, " ").trim();
+    }
+    const textWithoutYear = yearStr ? trimmed.replace(yearM![0], "").replace(/[,;()*•]+/g, " ").replace(/\b(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)\b/gi, "").replace(/\s+/g, " ").trim() : trimmed;
 
     // School+year on same line: "Bharathiar University 2016-2018"
     if (SCHOOL_RE.test(textWithoutYear)) {
