@@ -133,7 +133,9 @@ function collapseSpacedHeader(title: string): string {
   const norm = collapsed.toLowerCase();
   for (const { aliases } of SECTION_ALIASES) {
     for (const a of aliases) {
-      if (norm === a || norm.startsWith(`${a}:`)) return collapsed;
+      // Exact match, prefix match, OR substring match for compound headers
+      // like "executivesummary" which contains "summary".
+      if (norm === a || norm.startsWith(`${a}:`) || norm.includes(a)) return collapsed;
     }
   }
   return title;

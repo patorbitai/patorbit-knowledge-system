@@ -210,7 +210,7 @@ function dehyphenate(lines: { text: string; y: number }[]): { text: string; y: n
 /**
  * Known section headers (lowercase) for validating collapsed results. */
 const KNOWN_HEADERS = new Set([
-  "summary", "professionalsummary", "profile", "objective",
+  "summary", "professionalsummary", "executivesummary", "profile", "objective",
   "experience", "workexperience", "professionalexperience",
   "employmenthistory", "workhistory", "professionalbackground",
   "education", "academicbackground",
@@ -221,8 +221,10 @@ const KNOWN_HEADERS = new Set([
   "languages", "languageskills",
   "achievements", "awards", "honors",
   "interests", "hobbies",
-  "references",
+  "references", "portfolio",
 ]);
+/** Fallback: check if a collapsed string contains any known section keyword. */
+const HEADER_KEYWORD_RE = /summary|experience|education|skills|projects|certifications|languages|interests|references|profile|objective|employment|academic|qualifications|portfolio/i;
 
 /**
  * Deterministically undo letter-spacing artifacts in all-caps headers
@@ -246,9 +248,10 @@ function collapseLetterSpacing(
     }
     // Try collapsing all short tokens (1-3 chars) into one word.
     // `SK I L L S` -> `SKILLS`, `ED U C A T I O N` -> `EDUCATION`.
+    // `EX E C U T I V E S U M M A R Y` -> `executivesummary`.
     if (tokens.every((t) => t.length <= 3)) {
       const collapsed = tokens.join("").toLowerCase();
-      if (KNOWN_HEADERS.has(collapsed)) {
+      if (KNOWN_HEADERS.has(collapsed) || HEADER_KEYWORD_RE.test(collapsed)) {
         return { text: collapsed, y: l.y };
       }
     }
