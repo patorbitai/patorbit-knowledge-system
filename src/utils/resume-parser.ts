@@ -673,7 +673,7 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
 
 function parseEducationSection(lines: string[]): ParsedResume["education"] {
   const items: ParsedResume["education"] = [];
-  let current: { school: string; degree: string; year: string; field: string } | null = null;
+  let current: { school: string; degree: string; year: string; field: string; gpa?: string } | null = null;
 
   const flush = () => {
     if (current && current.school) items.push(current);

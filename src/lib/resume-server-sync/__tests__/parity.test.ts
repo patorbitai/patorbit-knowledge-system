@@ -166,6 +166,20 @@ describe("stableStringify", () => {
 describe("canonicalizeLocal", () => {
   it("strips local-only UI extension fields deterministically", () => {
     const a = localSnapshot();
+    // Add a field NOT in the canonical schema — Zod should strip it during parsing
+    const b = localSnapshot({
+      document: {
+        ...BASE_DOC,
+        experience: [
+          { ...BASE_DOC.experience[0], uiOnlyField: "should be stripped" } as typeof BASE_DOC.experience[0] & Record<string, unknown>,
+        ],
+      },
+    });
+    expect(canonicalizeLocal(a)).toBe(canonicalizeLocal(b));
+  });
+
+  it("preserves canonical fields like bulletPoints", () => {
+    const a = localSnapshot();
     const b = localSnapshot({
       document: {
         ...BASE_DOC,
@@ -174,7 +188,8 @@ describe("canonicalizeLocal", () => {
         ],
       },
     });
-    expect(canonicalizeLocal(a)).toBe(canonicalizeLocal(b));
+    // bulletPoints IS a canonical schema field — must NOT be stripped
+    expect(canonicalizeLocal(a)).not.toBe(canonicalizeLocal(b));
   });
 });
 
