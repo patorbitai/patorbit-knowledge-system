@@ -27,7 +27,7 @@ const SECTION_HEADERS = [
   /(?:summary|profile|objective|about\s*me|professional\s*summary|career\s*summary|career\s*objective|personal\s*statement)/i,
   /(?:experience|work\s*history|employment|work\s*experience|professional\s*experience|professional\s*background|work\s*background|employment\s*history|career\s*history|work\s*experience|relevant\s*experience)/i,
   /(?:education|academic|university|college|school|educational\s*background|academic\s*background|qualifications?)/i,
-  /(?:skills|technical\s*skills|core\s*competencies|technical\s*competenc|key\s*skills|technologies|proficiencies|tech\s*stack)/i,
+  /(?:skills|technical\s*skills|core\s*competencies|technical\s*competenc|key\s*skills|technologies|proficiencies|tech\s*stack|technical\s*expertise|areas?\s*of\s*expertise)/i,
   /(?:projects|project|personal\s*projects|key\s*projects)/i,
   /(?:certifications|certificates|licenses|certifications?\s*&?\s*licenses?)/i,
   /(?:links|portfolio|websites|online\s*presence)/i,
@@ -110,6 +110,7 @@ function collapseSpacedHeaders(lines: string[]): string[] {
     "skills", "technicalskills", "coreskills", "competencies",
     "corecompetencies", "technicalcompetencies", "technicalcompetenc",
     "techstack", "technologies", "keyskills", "areasofexpertise",
+    "technicalexpertise",
     "skillsandabilities", "tools",
     "projects", "selectedprojects", "technicalprojects",
     "personalprojects", "professionalprojects", "featuredprojects",
@@ -261,7 +262,7 @@ export function parseRawResumeText(text: string): ParsedResume {
       result.education = parseEducationSection(section.lines);
     }
 
-    if (/skill|competenc|technolog|proficien|tech\s*stack/i.test(name)) {
+    if (/skill|competenc|technolog|proficien|tech\s*stack|expertise|areas?\s*of/i.test(name)) {
       result.skills = parseSkillsSection(body);
     }
 
@@ -675,6 +676,35 @@ function parseEducationSection(lines: string[]): ParsedResume["education"] {
   for (const line of lines) {
     const trimmed = line.trim();
     if (!trimmed) continue;
+
+    // Handle pipe-separated education: "BS CS | MIT | 2014 – 2018"
+    // Split on pipes and process each part.
+    if (trimmed.includes("|") && !trimmed.startsWith("|")) {
+      const pipeParts = trimmed.split("|").map(p => p.trim()).filter(Boolean);
+      if (pipeParts.length >= 2) {
+        // Try to identify degree, school, year from pipe parts
+        let degree = "";
+        let school = "";
+        let yearStr = "";
+        for (const part of pipeParts) {
+          const ym = YEAR_RE.exec(part);
+          if (ym) {
+            yearStr = ym[0].replace(/\s*(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)\w*\s+/gi, " ").replace(/\s+/g, " ").trim();
+          } else if (SCHOOL_RE.test(part)) {
+            school = part;
+          } else if (DEGREE_RE.test(part)) {
+            degree = part;
+          } else if (!school && part.length < 40) {
+            school = part;
+          }
+        }
+        if (school || degree) {
+          flush();
+          current = { school, degree, year: yearStr, field: "" };
+          continue;
+        }
+      }
+    }
 
     // Extract year from the line (handles "2016-2018", "2016–2018", "(2016)" etc.)
     const yearM = YEAR_RE.exec(trimmed) || YEAR_SINGLE.exec(trimmed);
