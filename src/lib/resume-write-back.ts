@@ -12,6 +12,7 @@
 
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { Resume } from "@/types/resume";
+import { enqueueOfflineSave, removeOfflineEntry, getAllOfflineEntries } from "@/lib/offline-queue";
 
 /** Pending save operations keyed by resumeId. Only the latest per resume is sent. */
 const pendingSaves = new Map<string, ReturnType<typeof setTimeout>>();
@@ -91,6 +92,16 @@ export async function saveLocalResumeToServer(): Promise<void> {
     state.setSaveStatus("saved");
   } catch (err) {
     console.error("[write-back] Network error:", err);
+    // C8: Persist to IndexedDB offline queue so edits survive refresh
+    try {
+      await enqueueOfflineSave(
+        resume.resumeId,
+        resume as unknown as Record<string, unknown>,
+        baseVersion > 0 ? baseVersion : undefined,
+      );
+    } catch (queueErr) {
+      console.error("[write-back] Failed to enqueue offline save:", queueErr);
+    }
     state.setSaveStatus("offline");
   }
 }
@@ -172,6 +183,17 @@ function handleBeforeUnload(): void {
       baseVersion: baseVersion > 0 ? baseVersion : undefined,
     });
 
+    // C8: Also persist to IndexedDB as a safety net.
+    // If fetch(keepalive) fails (e.g. browser kills it), the offline queue
+    // ensures the edit is not lost on refresh.
+    enqueueOfflineSave(
+      resume.resumeId,
+      resume as unknown as Record<string, unknown>,
+      baseVersion > 0 ? baseVersion : undefined,
+    ).catch(() => {
+      // Best-effort — IndexedDB write may not complete before unload
+    });
+
     // fetch(keepalive) supports PUT and survives page unload in modern browsers.
     // sendBeacon only sends POST (not PUT), so it cannot be used with the
     // existing PUT /api/resumes/:resumeId endpoint.
@@ -180,8 +202,11 @@ function handleBeforeUnload(): void {
       headers: { "Content-Type": "application/json" },
       body: payload,
       keepalive: true,
+    }).then(() => {
+      // If the fetch succeeded, remove from offline queue
+      if (resume.resumeId) removeOfflineEntry(resume.resumeId).catch(() => {});
     }).catch(() => {
-      // Best-effort — cannot do anything more on unload
+      // Best-effort — the offline queue entry will be flushed on next startup
     });
   } catch {
     // Silently fail — this is best-effort on unload
@@ -189,8 +214,89 @@ function handleBeforeUnload(): void {
 }
 
 /**
+ * C8 — Flush the offline queue.
+ * Called on reconnect (online event) or app initialization.
+ * Sends each queued entry to the server. On success, removes the entry.
+ * On 409, enters C7 conflict flow. On persistent failure, keeps the entry.
+ */
+export async function flushOfflineQueue(): Promise<void> {
+  const entries = await getAllOfflineEntries();
+  if (entries.length === 0) return;
+
+  console.log(`[write-back] Flushing ${entries.length} offline queue entries`);
+
+  for (const entry of entries) {
+    try {
+      const res = await fetch(`/api/resumes/${entry.resumeId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resumeId: entry.resumeId,
+          resumeName: (entry.resume.resumeName as string) || (entry.resume.name as string) || "My Resume",
+          templateId: entry.resume.templateId,
+          careerStage: entry.resume.careerStage,
+          resume: entry.resume,
+          baseVersion: entry.baseVersion,
+        }),
+      });
+
+      if (res.ok) {
+        // Success — remove from queue, update store
+        await removeOfflineEntry(entry.resumeId);
+        const data = await res.json() as { version?: number };
+        const state = useResumeBuilder.getState();
+        if (data.version !== undefined) {
+          state.setServerVersion(entry.resumeId, data.version);
+        }
+        // Only set saved if this is the active resume
+        if (state.activeResumeId === entry.resumeId) {
+          state.setSaveStatus("saved");
+        }
+      } else if (res.status === 409) {
+        // C7 conflict — remove from queue, let C7 handle it
+        await removeOfflineEntry(entry.resumeId);
+        const body = await res.json().catch(() => ({}));
+        const serverVersion = (body as { currentVersion?: number }).currentVersion ?? entry.baseVersion ?? 0;
+        // Fetch server snapshot for conflict UI
+        let serverResume: Record<string, unknown> = {};
+        try {
+          const snapshotRes = await fetch(`/api/resumes/${entry.resumeId}`);
+          if (snapshotRes.ok) {
+            const snapshot = await snapshotRes.json() as { resume?: Record<string, unknown> };
+            serverResume = snapshot.resume ?? {};
+          }
+        } catch {
+          // Best-effort
+        }
+        const state = useResumeBuilder.getState();
+        // Only set conflict if this is the active resume
+        if (state.activeResumeId === entry.resumeId) {
+          useResumeBuilder.setState({
+            writeConflict: {
+              resumeId: entry.resumeId,
+              localResume: entry.resume as unknown as Resume,
+              serverResume: serverResume as unknown as Resume,
+              localBaseVersion: entry.baseVersion,
+              serverVersion,
+            },
+            saveStatus: "unsaved",
+          });
+        }
+      } else {
+        // Server error — keep entry for retry
+        console.error(`[write-back] Queue flush failed for ${entry.resumeId}: HTTP ${res.status}`);
+      }
+    } catch {
+      // Network still unavailable — keep entry for next retry
+      console.error(`[write-back] Queue flush network error for ${entry.resumeId}`);
+    }
+  }
+}
+
+/**
  * Hook up store mutations to trigger debounced write-back.
  * Also registers beforeunload to flush pending saves.
+ * Also registers online event to flush offline queue on reconnect.
  * Call once when the app initializes.
  */
 let _hooked = false;
@@ -212,8 +318,27 @@ export function hookWriteBackToStore(): void {
     debouncedSave();
   });
 
-  // Flush pending saves on page unload (best-effort)
   if (typeof window !== "undefined") {
+    // Flush pending saves on page unload (best-effort)
     window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // C8: Flush offline queue when browser comes back online
+    window.addEventListener("online", () => {
+      console.log("[write-back] Browser online — flushing offline queue");
+      flushOfflineQueue();
+    });
+
+    // C8: On startup, if there are queued entries and we're online, flush them
+    // (handles the case where user was offline, refreshed, and is now back online)
+    if (navigator.onLine) {
+      getAllOfflineEntries().then((entries) => {
+        if (entries.length > 0) {
+          console.log(`[write-back] Found ${entries.length} queued entries on startup — flushing`);
+          flushOfflineQueue();
+        }
+      }).catch(() => {
+        // IndexedDB not available — ignore
+      });
+    }
   }
 }

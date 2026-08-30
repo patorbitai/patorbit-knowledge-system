@@ -8,14 +8,18 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 // vi.hoisted() ensures these are available when vi.mock() runs (hoisted to top)
-const { mockFetch, mockSendBeacon, addEventListenerSpy, mockSetSaveStatus, mockSetServerVersion, mockSubscribe } = vi.hoisted(() => ({
-  mockFetch: vi.fn(),
-  mockSendBeacon: vi.fn(() => true),
-  addEventListenerSpy: vi.fn(),
-  mockSetSaveStatus: vi.fn(),
-  mockSetServerVersion: vi.fn(),
-  mockSubscribe: vi.fn(),
-}));
+const { mockFetch, mockSendBeacon, addEventListenerSpy, mockSetSaveStatus, mockSetServerVersion, mockSubscribe } = vi.hoisted(() => {
+  const ms = { saveStatus: "unsaved" as string };
+  return {
+    mockFetch: vi.fn(),
+    mockSendBeacon: vi.fn(() => true),
+    addEventListenerSpy: vi.fn(),
+    mockSetSaveStatus: vi.fn((status: string) => { ms.saveStatus = status; }),
+    mockSetServerVersion: vi.fn(),
+    mockSubscribe: vi.fn(),
+    _ms: ms,
+  };
+});
 
 vi.stubGlobal("fetch", mockFetch);
 vi.stubGlobal("navigator", { sendBeacon: mockSendBeacon });
@@ -40,6 +44,12 @@ const mockState = {
   setSaveStatus: mockSetSaveStatus,
   setServerVersion: mockSetServerVersion,
 };
+
+vi.mock("@/lib/offline-queue", () => ({
+  enqueueOfflineSave: vi.fn().mockResolvedValue(undefined),
+  removeOfflineEntry: vi.fn().mockResolvedValue(undefined),
+  getAllOfflineEntries: vi.fn().mockResolvedValue([]),
+}));
 
 vi.mock("@/store/resume-builder", () => ({
   useResumeBuilder: {
@@ -67,6 +77,7 @@ describe("C6 — Resume Write-Back", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    mockSetSaveStatus.mockImplementation((status: string) => { mockState.saveStatus = status; });
     mockState.serverVersions = {};
     mockState.writeConflict = null;
     mockState.saveStatus = "unsaved";
@@ -291,6 +302,7 @@ describe("C6.1 — Integration Hardening", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.useFakeTimers();
+    mockSetSaveStatus.mockImplementation((status: string) => { mockState.saveStatus = status; });
     mockState.serverVersions = {};
     mockState.writeConflict = null;
     mockState.saveStatus = "unsaved";
@@ -507,6 +519,31 @@ describe("C6.1 — Integration Hardening", () => {
       mockState.serverVersions = { "resume-1": 5 };
 
       expect(mockState.resume).toEqual(originalResume);
+    });
+  });
+
+  describe("C8 — Offline queue integration", () => {
+    it("network error results in offline status", async () => {
+      mockFetch.mockRejectedValue(new Error("Network error"));
+
+      await saveLocalResumeToServer();
+
+      // Status should be offline (enqueue may fail in test env but status is set)
+      expect(mockState.saveStatus).toBe("offline");
+    });
+
+    it("online event handler is registered by hookWriteBackToStore", async () => {
+      vi.resetModules();
+      addEventListenerSpy.mockClear();
+
+      const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
+      hookWriteBackToStore();
+
+      // Should have registered both beforeunload and online handlers
+      const onlineCall = addEventListenerSpy.mock.calls.find(
+        (call: unknown[]) => call[0] === "online"
+      );
+      expect(onlineCall).toBeDefined();
     });
   });
 });
