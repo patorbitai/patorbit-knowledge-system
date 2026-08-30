@@ -364,10 +364,11 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     const trimmed = line.trim();
     if (!trimmed) continue;
 
-    // 1) BULLET SEPARATOR: "Company • Date • Location" format.
-    //    Split on • and reassemble into structured fields.
-    if (trimmed.includes("•")) {
-      const parts = trimmed.split("•").map(p => p.trim()).filter(Boolean);
+    // 1) BULLET SEPARATOR: "Company • Date • Location" or "Position · Location" format.
+    //    Split on • or · and reassemble into structured fields.
+    const SEP_RE = /[•·]/;
+    if (SEP_RE.test(trimmed)) {
+      const parts = trimmed.split(SEP_RE).map(p => p.trim()).filter(Boolean);
       if (parts.length >= 2) {
         // Try to identify which parts are: company, date, location
         let company = "";
@@ -381,6 +382,10 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
             dateStr = partDate.date;
             // The non-date part of this segment might be a company name
             if (partDate.rest && !company) company = partDate.rest;
+          } else if (position && !company && !dateStr) {
+            // Position already set, no company/date yet — this is location
+            // e.g. "Machine Learning Engineer · Pune" → position + location
+            location = part;
           } else if (!dateStr && !company) {
             // No date found yet — this could be company or position.
             // Check for em-dash separator: "Company — Position" or "Upwork — Freelance"
