@@ -564,7 +564,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
 
         {/* Editable panel */}
         <div className="flex-1 overflow-y-auto min-w-0">
-          <div className="w-full max-w-[920px] mx-auto px-8 py-5">
+          <div className="w-full max-w-[1012px] mx-auto px-8 py-5">
             <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/[0.06]">
               <h2 className="text-xl font-bold text-white tracking-tight">{activeLabel}</h2>
               <ConfidencePill level={confidences[activeSection]} />
