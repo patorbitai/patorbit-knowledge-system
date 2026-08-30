@@ -414,8 +414,15 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
         }
 
         if (company || position || dateStr) {
-          // If current entry has a position but no company/duration, this • line
-          // is the company+date+location for that entry — update it, don't replace.
+          // If current entry exists and this line provides missing fields,
+          // update the current entry instead of creating a new one.
+          // e.g. line1: "PystackJs  Jan 2024" → current has company+date
+          //      line2: "ML Engineer · Pune" → should set position+location on current
+          if (current && !current.duration && current.company && !current.position && position) {
+            current.position = position;
+            if (location) current.location = location;
+            continue;
+          }
           if (current && current.position && !current.company && !current.duration) {
             if (company) current.company = company;
             if (dateStr) current.duration = dateStr;
