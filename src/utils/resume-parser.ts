@@ -736,10 +736,30 @@ function parseEducationSection(lines: string[]): ParsedResume["education"] {
 
     // Degree pattern
     if (DEGREE_RE.test(textWithoutYear)) {
+      // Split on · to extract degree, field of study, and GPA separately
+      // e.g. "Master of Business Administration (MBA) · in Information Technology · GPA 6.5"
+      let degree = textWithoutYear;
+      let field = "";
+      let gpa = "";
+      if (textWithoutYear.includes("·")) {
+        const parts = textWithoutYear.split("·").map(p => p.trim()).filter(Boolean);
+        degree = parts[0] || "";
+        for (const part of parts.slice(1)) {
+          const gpaMatch = part.match(/GPA[:\s]*([\d.]+)/i);
+          if (gpaMatch) {
+            gpa = gpaMatch[1];
+          } else if (!field && part.length > 2) {
+            field = part.replace(/^in\s+/i, "").trim();
+          }
+        }
+      }
       if (current) {
-        current.degree = textWithoutYear;
+        current.degree = degree;
+        if (field && !current.field) current.field = field;
+        if (gpa && !current.gpa) current.gpa = gpa;
       } else {
-        current = { school: "", degree: textWithoutYear, year: yearStr, field: "" };
+        current = { school: "", degree, year: yearStr, field };
+        if (gpa) current.gpa = gpa;
       }
       if (yearStr && !current.year) current.year = yearStr;
       continue;
