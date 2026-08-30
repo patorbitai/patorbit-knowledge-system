@@ -432,7 +432,8 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     // 4) EN-DASH/HYPHEN SEPARATOR: "Company – Position" or "Position – Company"
     //    Split when one side looks like a role or has a company hint.
     //    IMPORTANT: Do NOT split on date-range hyphens ("Jan 2024 - Apr 2024").
-    if (rest && !date) {
+    //    Also skip when accumulating description (bullets present).
+    if (rest && !date && bulletLines.length === 0) {
       const dashMatch = rest.match(/^(.+?)\s+[–—-]\s+(.+)$/);
       if (dashMatch && !/^\d/.test(rest) && dashMatch[1].trim().length > 1 && dashMatch[2].trim().length > 1) {
         // Skip if this looks like a date range (both sides contain month names or years)
@@ -467,7 +468,9 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
     }
 
     // 5) COMMA SEPARATOR: "Position, Company" — e.g. "Machine Learning Engineer, PystackJs"
-    if (rest) {
+    //    Only apply when NOT accumulating description text (no bullets yet for current entry).
+    //    Commas inside description prose ("Azure SQL, Azure Synapse") must NOT be split.
+    if (rest && bulletLines.length === 0) {
       const commaMatch = rest.match(/^(.+?),\s*(.+)$/);
       if (commaMatch && !/^\d/.test(rest) && !date) {
         const left = commaMatch[1].trim();
@@ -543,8 +546,11 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
 
     // 8) STANDALONE SHORT TEXT: could be a company name, position title, or continuation.
     if (rest && rest.length > 1 && rest.length < 60) {
-      // Check if it's a company-like line (has corporate suffix)
-      if (COMPANY_HINTS.test(rest)) {
+      // Check if it's a company-like line (has corporate suffix).
+      // Require: short (≤6 words), no sentence punctuation, and looks like a proper name.
+      // "Analytics supporting storage" contains "Analytics" but is a sentence, not a company.
+      const isCompanyName = COMPANY_HINTS.test(rest) && rest.split(/\s+/).length <= 6 && !/[.!?]$/.test(rest) && /^[A-Z]/.test(rest);
+      if (isCompanyName) {
         // Position-first format: if current has a position but no company,
         // this line is the company we've been waiting for.
         if (current && !current.company && current.position) {
