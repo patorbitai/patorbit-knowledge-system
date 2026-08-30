@@ -126,6 +126,16 @@ function looksCustom(title: string): boolean {
  * that collapse into a known section alias.
  */
 function collapseSpacedHeader(title: string): string {
+  // Handle already-collapsed lowercase single-word headers from pdf-extract.ts:
+  // e.g. "executivesummary" (produced by collapseLetterSpacing in pdf-extract.ts)
+  if (/^[a-z][a-z]+$/.test(title) && title.length < 40) {
+    for (const { aliases } of SECTION_ALIASES) {
+      for (const a of aliases) {
+        const aliasNoSpace = a.replace(/\s+/g, "");
+        if (title === a || title === aliasNoSpace || title.startsWith(`${a}:`) || title.startsWith(`${aliasNoSpace}:`)) return title.toUpperCase();
+      }
+    }
+  }
   if (title.length > 40 || !/^[A-Z][A-Z'\u2019\- ]+$/.test(title)) return title;
   const tokens = title.split(/\s+/);
   if (tokens.length < 3) return title;
@@ -133,8 +143,6 @@ function collapseSpacedHeader(title: string): string {
   const norm = collapsed.toLowerCase();
   for (const { aliases } of SECTION_ALIASES) {
     for (const a of aliases) {
-      // Exact match, prefix match, OR substring match for compound headers
-      // like "executivesummary" which contains "summary".
       if (norm === a || norm.startsWith(`${a}:`) || norm.includes(a)) return collapsed;
     }
   }
@@ -176,12 +184,17 @@ export function detectSectionKind(line: string): SectionKind | null {
   const title = collapseSpacedHeader(raw);
 
   const norm = title.toLowerCase();
+  // No-space version for matching compound collapsed headers
+  // like "executivesummary" (produced by pdf-extract.ts collapseLetterSpacing)
+  const normNoSpace = norm.replace(/\s+/g, "");
+
   for (const { kind, aliases } of SECTION_ALIASES) {
     for (const a of aliases) {
       if (norm === a || norm.startsWith(`${a}:`)) return kind;
-      // Compound phrases like "professional work experience" — the alias is a
-      // tail phrase whose leading words come from a small heading-word set,
-      // so body sentences ("10+ years of experience") never match.
+      // Match no-space compound headers: "executivesummary" vs "executive summary"
+      const aliasNoSpace = a.replace(/\s+/g, "");
+      if (normNoSpace === aliasNoSpace || normNoSpace.startsWith(aliasNoSpace)) return kind;
+      // Compound phrases like "professional work experience"
       const phrase = ` ${a}`;
       if (norm.endsWith(phrase)) {
         const head = norm.slice(0, -phrase.length).trim();

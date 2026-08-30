@@ -101,23 +101,40 @@ function collapseSpacedHeaders(lines: string[]): string[] {
   // Includes compound headers like "executivesummary" and "professionalexperience".
   const KNOWN = new Set([
     "summary", "professionalsummary", "executivesummary", "profile", "objective",
+    "careerobjective", "personalstatement", "aboutme",
     "experience", "workexperience", "professionalexperience", "relevanteexperience",
     "employmenthistory", "workhistory", "professionalbackground",
+    "workbackground", "careerhistory",
     "education", "academicbackground", "qualifications",
+    "educationalbackground", "universityeducation", "collegeeducation",
     "skills", "technicalskills", "coreskills", "competencies",
+    "corecompetencies", "technicalcompetencies", "technicalcompetenc",
     "techstack", "technologies", "keyskills", "areasofexpertise",
+    "skillsandabilities", "tools",
     "projects", "selectedprojects", "technicalprojects",
+    "personalprojects", "professionalprojects", "featuredprojects",
+    "keyprojects", "projectexperience",
     "certifications", "certificates", "licenses",
-    "languages", "languageskills",
-    "achievements", "awards", "honors",
+    "professionalcertifications", "certificationsandlicenses",
+    "languages", "languageskills", "languageproficiency",
+    "achievements", "awards", "honors", "accomplishments",
+    "awardsandhonors", "awardsandrecognition",
     "interests", "hobbies",
     "references", "portfolio",
-    "publications", "research",
+    "publications", "research", "worksamples", "onlinepresence",
+    "links", "websites",
   ]);
   return lines.map(line => {
     const trimmed = line.trim();
+    // Handle already-collapsed lowercase single-word headers:
+    // pdf-extract.ts collapseLetterSpacing converts "EX E C U T I V E S U M M A R Y"
+    // to lowercase "executivesummary". This must be re-uppercased so the
+    // section detector (which requires uppercase or title-case) can recognise it.
+    if (/^[a-z][a-z]+$/.test(trimmed) && trimmed.length < 40 && KNOWN.has(trimmed)) {
+      return line.replace(trimmed, trimmed.toUpperCase());
+    }
     // Only process short, all-uppercase lines with single-char tokens
-    if (trimmed.length > 40 || !/^[A-Z][A-Z\u2019' ]+$/.test(trimmed)) return line;
+    if (trimmed.length > 60 || !/^[A-Z][A-Z\u2019' ]+$/.test(trimmed)) return line;
     const tokens = trimmed.split(/\s+/);
     if (tokens.length < 3) return line;
     // Check if collapsing all tokens produces a known header
@@ -181,7 +198,16 @@ export function parseRawResumeText(text: string): ParsedResume {
     // compound section names ("Work Experience", "Technical Skills"), not institution names.
     const INSTITUTION_WORDS = /\b(?:University|College|Institute|School|Academy|Institut|Universit)\b/i;
     const isExcludedInstitution = isShortTitleCase && !isAllUpper && INSTITUTION_WORDS.test(trimmed);
-    const isHeader = matchesSection && trimmed.length < 50 && (isAllUpper || isShortTitleCase) && !isExcludedInstitution;
+    // Also try no-space matching for collapsed compound headers like
+    // "CORECOMPETENCIES" or "KEYPROJECTS" — the section header regexes use
+    // spaces ("core\\s*competencies") which fail on collapsed single-word forms.
+    const collapsedNoSpace = trimmed.replace(/\s+/g, '').toLowerCase();
+    const matchesSectionCollapsed = collapsedNoSpace !== trimmed.toLowerCase() &&
+      SECTION_HEADERS.some(re => {
+        const noSpacePattern = re.source.replace(/\\s\*/g, '').replace(/\\s\+/g, '').replace(/\s+/g, '');
+        try { return new RegExp(noSpacePattern, 'i').test(collapsedNoSpace); } catch { return false; }
+      });
+    const isHeader = (matchesSection || matchesSectionCollapsed) && trimmed.length < 50 && (isAllUpper || isShortTitleCase) && !isExcludedInstitution;
 
     if (isHeader) {
       if (currentLines.length > 0 || sectionTexts.length === 0) {
