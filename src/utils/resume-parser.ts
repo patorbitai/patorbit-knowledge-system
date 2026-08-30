@@ -97,20 +97,32 @@ function normalizeLabelFormat(lines: string[]): string[] {
  * "SU M M A R Y" → "SUMMARY", "E X P E R I E N C E" → "EXPERIENCE"
  */
 function collapseSpacedHeaders(lines: string[]): string[] {
-  // Keywords that appear in section headers. We check if the collapsed
-  // string CONTAINS any of these as a substring (not exact match) so that
-  // compound headers like "EXECUTIVE SUMMARY" → "executivesummary" match
-  // because they contain "summary".
-  const HEADER_KEYWORDS = /summary|experience|education|skills|projects|certifications|languages|interests|references|profile|objective|employment|academic|qualifications|publications|research|awards|honors|achievements|portfolio/i;
+  // Exact-match set of known section headers after collapsing spaced tokens.
+  // Includes compound headers like "executivesummary" and "professionalexperience".
+  const KNOWN = new Set([
+    "summary", "professionalsummary", "executivesummary", "profile", "objective",
+    "experience", "workexperience", "professionalexperience", "relevanteexperience",
+    "employmenthistory", "workhistory", "professionalbackground",
+    "education", "academicbackground", "qualifications",
+    "skills", "technicalskills", "coreskills", "competencies",
+    "techstack", "technologies", "keyskills", "areasofexpertise",
+    "projects", "selectedprojects", "technicalprojects",
+    "certifications", "certificates", "licenses",
+    "languages", "languageskills",
+    "achievements", "awards", "honors",
+    "interests", "hobbies",
+    "references", "portfolio",
+    "publications", "research",
+  ]);
   return lines.map(line => {
     const trimmed = line.trim();
     // Only process short, all-uppercase lines with single-char tokens
     if (trimmed.length > 40 || !/^[A-Z][A-Z\u2019' ]+$/.test(trimmed)) return line;
     const tokens = trimmed.split(/\s+/);
     if (tokens.length < 3) return line;
-    // Check if collapsing all tokens produces a known header keyword
-    const collapsed = tokens.join("");
-    if (HEADER_KEYWORDS.test(collapsed)) return line.replace(trimmed, collapsed.toUpperCase());
+    // Check if collapsing all tokens produces a known header
+    const collapsed = tokens.join("").toLowerCase();
+    if (KNOWN.has(collapsed)) return line.replace(trimmed, collapsed.toUpperCase());
     return line;
   });
 }
