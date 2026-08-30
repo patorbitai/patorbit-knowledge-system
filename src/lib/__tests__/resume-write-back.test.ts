@@ -454,9 +454,8 @@ describe("C6.1 — Integration Hardening", () => {
   });
 
   describe("Pending save flush on unload", () => {
-    it("sendBeacon is called with resume data on beforeunload when unsaved", async () => {
+    it("fetch(keepalive) is called on beforeunload when unsaved", async () => {
       vi.resetModules();
-      // Reset spy call history for this test
       addEventListenerSpy.mockClear();
 
       const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
@@ -464,7 +463,6 @@ describe("C6.1 — Integration Hardening", () => {
       mockState.hydrated = true;
       hookWriteBackToStore();
 
-      // Get the beforeunload handler registered by hookWriteBackToStore
       const beforeunloadCall = addEventListenerSpy.mock.calls.find(
         (call: unknown[]) => call[0] === "beforeunload"
       );
@@ -473,13 +471,18 @@ describe("C6.1 — Integration Hardening", () => {
       const handler = beforeunloadCall![1] as () => void;
       handler();
 
-      expect(mockSendBeacon).toHaveBeenCalledWith(
+      // C7: uses fetch(keepalive) instead of sendBeacon because sendBeacon
+      // only sends POST but the API expects PUT
+      expect(mockFetch).toHaveBeenCalledWith(
         "/api/resumes/resume-1",
-        expect.any(Blob)
+        expect.objectContaining({
+          method: "PUT",
+          keepalive: true,
+        })
       );
     });
 
-    it("does NOT sendBeacon when saveStatus is saved", async () => {
+    it("does NOT send fetch on beforeunload when saveStatus is saved", async () => {
       vi.resetModules();
       addEventListenerSpy.mockClear();
 
@@ -493,7 +496,7 @@ describe("C6.1 — Integration Hardening", () => {
       const handler = beforeunloadCall![1] as () => void;
       handler();
 
-      expect(mockSendBeacon).not.toHaveBeenCalled();
+      expect(mockFetch).not.toHaveBeenCalled();
     });
   });
 

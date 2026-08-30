@@ -1,5 +1,6 @@
 import IdentityPipelineBootstrap from "@/components/identity/IdentityPipelineBootstrap";
 import WriteBackBootstrap from "@/components/resume-builder/WriteBackBootstrap";
+import { ConflictResolutionModal } from "@/components/resume-builder/ConflictResolutionModal";
 
 /**
  * Resume Builder App Layout
@@ -23,6 +24,7 @@ export default function ResumeBuilderAppLayout({
     <>
       <IdentityPipelineBootstrap />
       <WriteBackBootstrap />
+      <ConflictResolutionModal />
       {children}
     </>
   );

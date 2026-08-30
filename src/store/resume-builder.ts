@@ -64,8 +64,17 @@ export interface ResumeBuilderState {
   /** Server version per resume — populated by sync, used by write-back. */
   serverVersions: Record<string, number>;
   /** Conflict state: set when a write-back gets 409 CONFLICT. */
-  writeConflict: { resumeId: string; serverVersion: number } | null;
+  writeConflict: {
+    resumeId: string;
+    localResume: Resume;
+    serverResume: Resume;
+    localBaseVersion?: number;
+    serverVersion: number;
+  } | null;
+  setWriteConflict: (conflict: ResumeBuilderState["writeConflict"]) => void;
   clearWriteConflict: () => void;
+  resolveConflictKeepMine: () => Promise<void>;
+  resolveConflictUseServer: () => void;
   analysis: ResumeAnalysis | null; analysisLoading: boolean;
   jobMatch: JobMatchResult | null; jobDescription: string;
   aiActions: Record<string, AIActionState>;
@@ -324,7 +333,51 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         setServerVersion: (resumeId, version) => set((s) => ({
           serverVersions: { ...s.serverVersions, [resumeId]: version },
         })),
+        setWriteConflict: (conflict) => set({ writeConflict: conflict }),
         clearWriteConflict: () => set({ writeConflict: null }),
+        resolveConflictKeepMine: async () => {
+          const state = get();
+          const conflict = state.writeConflict;
+          if (!conflict) return;
+          // Re-fetch latest server version to ensure we have the true current version
+          try {
+            const res = await fetch(`/api/resumes/${conflict.resumeId}`);
+            if (!res.ok) return;
+            const serverData = await res.json() as { version?: number };
+            const latestVersion = serverData.version ?? conflict.serverVersion;
+            // Retry with local resume + latest server version as base
+            state.setServerVersion(conflict.resumeId, latestVersion);
+            state.clearWriteConflict();
+            state.setSaveStatus("unsaved");
+            // Trigger a debounced save which will use the updated serverVersion
+            import("@/lib/resume-write-back").then(({ debouncedSave }) => {
+              debouncedSave();
+            });
+          } catch {
+            // Network error — keep conflict open for retry
+          }
+        },
+        resolveConflictUseServer: () => {
+          const state = get();
+          const conflict = state.writeConflict;
+          if (!conflict) return;
+          const serverResume = conflict.serverResume as Resume;
+          // Replace only the conflicted resume — preserve resumeId
+          const updated = {
+            ...serverResume,
+            resumeId: conflict.resumeId,
+          };
+          const resumes = state.resumes.map((r) =>
+            r.resumeId === conflict.resumeId ? updated : r,
+          );
+          set({
+            resumes,
+            resume: state.activeResumeId === conflict.resumeId ? updated : state.resume,
+            serverVersions: { ...state.serverVersions, [conflict.resumeId]: conflict.serverVersion },
+            writeConflict: null,
+            saveStatus: "saved",
+          });
+        },
         triggerWriteBack: () => {
           // Imported dynamically to avoid circular imports
           import("@/lib/resume-write-back").then(({ debouncedSave }) => {

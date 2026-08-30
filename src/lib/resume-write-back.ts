@@ -11,6 +11,7 @@
  */
 
 import { useResumeBuilder } from "@/store/resume-builder";
+import type { Resume } from "@/types/resume";
 
 /** Pending save operations keyed by resumeId. Only the latest per resume is sent. */
 const pendingSaves = new Map<string, ReturnType<typeof setTimeout>>();
@@ -49,8 +50,25 @@ export async function saveLocalResumeToServer(): Promise<void> {
       // Conflict — server version is newer. Do NOT overwrite local.
       const body = await res.json().catch(() => ({}));
       const serverVersion = (body as { currentVersion?: number }).currentVersion ?? baseVersion;
+      // Fetch the latest server snapshot for the conflict review UI
+      let serverResume: Record<string, unknown> = {};
+      try {
+        const snapshotRes = await fetch(`/api/resumes/${resume.resumeId}`);
+        if (snapshotRes.ok) {
+          const snapshot = await snapshotRes.json() as { resume?: Record<string, unknown> };
+          serverResume = snapshot.resume ?? {};
+        }
+      } catch {
+        // Best-effort — if snapshot fetch fails, show conflict without server data
+      }
       useResumeBuilder.setState({
-        writeConflict: { resumeId: resume.resumeId, serverVersion },
+        writeConflict: {
+          resumeId: resume.resumeId,
+          localResume: { ...resume },
+          serverResume: serverResume as unknown as Resume,
+          localBaseVersion: baseVersion > 0 ? baseVersion : undefined,
+          serverVersion,
+        },
         saveStatus: "unsaved",
       });
       return;
@@ -154,23 +172,17 @@ function handleBeforeUnload(): void {
       baseVersion: baseVersion > 0 ? baseVersion : undefined,
     });
 
-    // Prefer fetch with keepalive — survives page navigation
-    const sent = navigator.sendBeacon(
-      `/api/resumes/${resume.resumeId}`,
-      new Blob([payload], { type: "application/json" }),
-    );
-
-    if (!sent) {
-      // sendBeacon failed — fall back to fetch keepalive
-      fetch(`/api/resumes/${resume.resumeId}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: payload,
-        keepalive: true,
-      }).catch(() => {
-        // Best-effort — cannot do anything more on unload
-      });
-    }
+    // fetch(keepalive) supports PUT and survives page unload in modern browsers.
+    // sendBeacon only sends POST (not PUT), so it cannot be used with the
+    // existing PUT /api/resumes/:resumeId endpoint.
+    fetch(`/api/resumes/${resume.resumeId}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: payload,
+      keepalive: true,
+    }).catch(() => {
+      // Best-effort — cannot do anything more on unload
+    });
   } catch {
     // Silently fail — this is best-effort on unload
   }
