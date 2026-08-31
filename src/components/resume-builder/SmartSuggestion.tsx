@@ -50,20 +50,20 @@ export function SmartSuggestion({
           </div>
           <div className="flex-1 min-w-0 space-y-2">
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-white capitalize">{type} Suggestion</span>
-              <span className="text-[10px] text-slate-500 font-medium bg-white/[0.04] px-1.5 py-0.5 rounded">AI</span>
+              <span className="text-xs font-semibold text-gray-900 dark:text-white capitalize">{type} Suggestion</span>
+              <span className="text-[10px] text-gray-400 dark:text-slate-500 font-medium bg-gray-100 dark:bg-white/[0.04] px-1.5 py-0.5 rounded">AI</span>
             </div>
             {original && (
               <div className="space-y-1">
-                <span className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Current</span>
-                <div className="text-xs text-slate-400 bg-white/[0.03] rounded-lg px-3 py-2 border border-white/[0.04]">
+                <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-medium">Current</span>
+                <div className="text-xs text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-white/[0.03] rounded-lg px-3 py-2 border border-gray-200 dark:border-white/[0.04]">
                   {original}
                 </div>
               </div>
             )}
             <div className="space-y-1">
-              <span className="text-[10px] text-slate-500 uppercase tracking-wider font-medium">Suggested</span>
-              <div className="text-xs text-slate-200 bg-white/[0.06] rounded-lg px-3 py-2 border border-white/[0.06]">
+              <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-medium">Suggested</span>
+              <div className="text-xs text-gray-800 dark:text-slate-200 bg-gray-100 dark:bg-white/[0.06] rounded-lg px-3 py-2 border border-gray-200 dark:border-white/[0.06]">
                 {suggestion}
               </div>
             </div>
@@ -71,7 +71,7 @@ export function SmartSuggestion({
               <button
                 onClick={onAccept}
                 disabled={isLoading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-600 text-white text-[10px] font-semibold transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-semibold transition-all disabled:opacity-50"
               >
                 <Check className="w-3 h-3" />
                 Accept
@@ -79,7 +79,7 @@ export function SmartSuggestion({
               <button
                 onClick={onRegenerate}
                 disabled={isLoading}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.08] hover:bg-white/[0.12] text-slate-300 hover:text-white text-[10px] font-medium transition-all disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-white/[0.08] hover:bg-gray-200 dark:hover:bg-white/[0.12] text-gray-600 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white text-[10px] font-medium transition-all disabled:opacity-50"
               >
                 <RefreshCw className={clsx("w-3 h-3", isLoading && "animate-spin")} />
                 Regenerate
@@ -87,7 +87,7 @@ export function SmartSuggestion({
               <button
                 onClick={onDismiss}
                 disabled={isLoading}
-                className="ml-auto p-1.5 rounded-lg text-slate-500 hover:text-white hover:bg-white/[0.06] transition-all disabled:opacity-50"
+                className="ml-auto p-1.5 rounded-lg text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all disabled:opacity-50"
               >
                 <X className="w-3 h-3" />
               </button>

@@ -29,14 +29,14 @@ export function ProgressIndicator({
   return (
     <div className="group">
       <div className="flex items-center justify-between mb-1">
-        <span className={`font-medium text-slate-400 ${size === "sm" ? "text-[10px]" : "text-xs"}`}>
+        <span className={`font-medium text-gray-500 dark:text-slate-400 ${size === "sm" ? "text-[10px]" : "text-xs"}`}>
           {title}
         </span>
         <span className={`font-semibold ${size === "sm" ? "text-[10px]" : "text-xs"}`} style={{ color }} suppressHydrationWarning>
           {displayValue}{max !== 100 ? ` / ${max}` : "%"}
         </span>
       </div>
-      <div className="relative h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+      <div className="relative h-1.5 rounded-full bg-gray-200 dark:bg-white/[0.06] overflow-hidden">
         <motion.div
           className="absolute inset-y-0 left-0 rounded-full"
           style={{ backgroundColor: color }}

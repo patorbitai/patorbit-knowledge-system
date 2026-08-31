@@ -95,11 +95,11 @@ export function SkillsSection() {
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          className="flex flex-col items-center justify-center py-14 text-center bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]"
+          className="flex flex-col items-center justify-center py-14 text-center bg-gray-50 dark:bg-white/[0.02] rounded-xl border border-dashed border-gray-200 dark:border-white/[0.06]"
         >
           <ZapIcon />
-          <p className="text-sm text-slate-400 mb-1 mt-4">No skills added yet</p>
-          <p className="text-xs text-slate-500 mb-5">Add your key technical and professional skills</p>
+          <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-4">No skills added yet</p>
+          <p className="text-xs text-gray-400 dark:text-slate-500 mb-5">Add your key technical and professional skills</p>
           <div className="flex gap-2">
             <AIActionButton label="Add Skill" onClick={addSkill} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
             <AIActionButton label="Suggest with AI" onClick={handleSuggestSkills} isLoading={isLoadingSuggestions} variant="secondary" size="md" />
@@ -117,7 +117,7 @@ export function SkillsSection() {
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white/[0.03] rounded-xl border border-white/[0.06] p-3.5 hover:border-white/[0.1] transition-all"
+              className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] p-3.5 hover:border-gray-300 dark:hover:border-white/[0.1] transition-all"
             >
               <div className="flex items-center gap-3">
                 <div className="flex-1 min-w-0">
@@ -127,7 +127,7 @@ export function SkillsSection() {
                     onChange={(e) => updateSkill(skill.id, "name", e.target.value)}
                     onBlur={() => touch(`skills.${idx}.name`)}
                     placeholder="Skill name"
-                    className={"w-full bg-transparent text-sm text-white font-medium placeholder:text-slate-600 outline-none " + (getFieldError("skills", "name", idx) ? "text-red-400" : "")}
+                    className={"w-full bg-transparent text-sm text-gray-900 dark:text-white font-medium placeholder:text-gray-400 dark:placeholder:text-slate-600 outline-none " + (getFieldError("skills", "name", idx) ? "text-red-400" : "")}
                   />
                   {getFieldError("skills", "name", idx) && <p className="text-[11px] text-red-400">{getFieldError("skills", "name", idx)}</p>}
                 </div>

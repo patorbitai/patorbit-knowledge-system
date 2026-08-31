@@ -105,7 +105,7 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           transition={{ duration: 0.15 }}
-          className="fixed inset-0 z-[60] h-[100dvh] w-full overflow-hidden bg-[#0A0E1B] text-white flex flex-col"
+          className="fixed inset-0 z-[60] h-[100dvh] w-full overflow-hidden bg-white dark:bg-[#0A0E1B] text-gray-900 dark:text-white flex flex-col"
         >
           {/* Header — fixed */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06] shrink-0">
@@ -311,7 +311,7 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
               </div>
 
               {/* Footer — pinned, always visible */}
-              <div data-testid="customize-controls-footer" className="shrink-0 px-4 py-3 bg-[#0A0E1B] border-t border-white/[0.06] flex items-center justify-between gap-3">
+              <div data-testid="customize-controls-footer" className="shrink-0 px-4 py-3 bg-white dark:bg-[#0A0E1B] border-t border-gray-200 dark:border-white/[0.06] flex items-center justify-between gap-3">
                 <button
                   onClick={() => resetStyleConfig(resumeId)}
                   className={`flex items-center gap-1.5 px-2.5 py-2 rounded-lg text-[11px] font-medium text-slate-500 hover:text-slate-200 hover:bg-white/[0.04] transition-all ${FOCUS_CLASS}`}

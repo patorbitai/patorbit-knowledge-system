@@ -350,30 +350,30 @@ export function ExperienceSection() {
                           {/* Bullet points */}
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <label className="text-[11px] font-medium text-slate-400">
+                              <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">
                                 Bullet Points ({exp.bulletPoints?.length || 0})
                               </label>
                               <button
                                 onClick={() => handleAddBullet(exp.id)}
-                                className="text-[10px] text-blue-400 hover:text-blue-300 font-medium flex items-center gap-1"
+                                className="text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium flex items-center gap-1"
                               >
                                 <Plus className="w-2.5 h-2.5" /> Add Bullet
                               </button>
                             </div>
                             {(!exp.bulletPoints || exp.bulletPoints.length === 0) ? (
-                              <div className="text-[11px] text-slate-500 italic">
+                              <div className="text-[11px] text-gray-400 dark:text-slate-500 italic">
                                 No bullet points yet. Add detailed achievements for ATS optimization.
                               </div>
                             ) : (
                               <div className="space-y-1.5">
                                 {exp.bulletPoints.map((bp, bpIdx) => (
                                   <div key={bpIdx} className="flex items-start gap-2 group/bullet">
-                                    <span className="text-slate-500 mt-2 shrink-0">•</span>
+                                    <span className="text-gray-400 dark:text-slate-500 mt-2 shrink-0">•</span>
                                     <div className="flex-1">
                                       <textarea
                                         value={bp}
                                         onChange={(e) => handleUpdateBullet(exp.id, bpIdx, e.target.value)}
-                                        className="w-full bg-transparent text-[15px] text-slate-200 placeholder:text-slate-600 border-b border-transparent hover:border-white/[0.08] focus:border-blue-500/50 outline-none py-1.5 transition-colors resize-none leading-relaxed"
+                                        className="w-full bg-transparent text-[15px] text-gray-900 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-600 border-b border-transparent hover:border-gray-300 dark:hover:border-white/[0.08] focus:border-blue-500/50 outline-none py-1.5 transition-colors resize-none leading-relaxed"
                                         placeholder="Describe an achievement or responsibility..."
                                         rows={2}
                                       />
@@ -382,20 +382,20 @@ export function ExperienceSection() {
                                       <button
                                         onClick={() => handleMoveBullet(exp.id, bpIdx, -1)}
                                         disabled={bpIdx === 0}
-                                        className="p-0.5 text-slate-500 hover:text-white disabled:opacity-20"
+                                        className="p-0.5 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20"
                                       >
                                         <ChevronUp className="w-3 h-3" />
                                       </button>
                                       <button
                                         onClick={() => handleMoveBullet(exp.id, bpIdx, 1)}
                                         disabled={bpIdx === exp.bulletPoints.length - 1}
-                                        className="p-0.5 text-slate-500 hover:text-white disabled:opacity-20"
+                                        className="p-0.5 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20"
                                       >
                                         <ChevronDown className="w-3 h-3" />
                                       </button>
                                       <button
                                         onClick={() => handleRemoveBullet(exp.id, bpIdx)}
-                                        className="p-0.5 text-red-400 hover:text-red-300"
+                                        className="p-0.5 text-red-400 hover:text-red-500"
                                       >
                                         <Trash2 className="w-2.5 h-2.5" />
                                       </button>

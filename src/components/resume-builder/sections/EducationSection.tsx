@@ -65,8 +65,8 @@ export function EducationSection() {
             className="flex flex-col items-center justify-center py-14 text-center bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]"
           >
             <GraduationCapIcon />
-            <p className="text-sm text-slate-400 mb-1 mt-4">No education entries yet</p>
-            <p className="text-xs text-slate-500 mb-5">Add your degrees and academic achievements</p>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-4">No education entries yet</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mb-5">Add your degrees and academic achievements</p>
             <AIActionButton label="Add Education" onClick={handleAddEducation} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
           </motion.div>
         ) : (
@@ -80,24 +80,24 @@ export function EducationSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8, height: 0 }}
-                  className="bg-white/[0.03] rounded-xl border border-white/[0.06] overflow-hidden"
+                  className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] overflow-hidden"
                 >
                   <div
-                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/[0.02] transition-colors"
                     onClick={() => toggleExpand(edu.id)}
                   >
-                    <GripVertical className="w-3.5 h-3.5 text-slate-600 shrink-0 cursor-grab" />
+                    <GripVertical className="w-3.5 h-3.5 text-gray-400 dark:text-slate-600 shrink-0 cursor-grab" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-white truncate">{edu.school || "New Education"}</span>
+                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{edu.school || "New Education"}</span>
                         {edu.degree && (
                           <>
-                            <span className="text-slate-600">·</span>
-                            <span className="text-sm text-slate-400 truncate">{edu.degree}</span>
+                            <span className="text-gray-400 dark:text-slate-600">·</span>
+                            <span className="text-sm text-gray-500 dark:text-slate-400 truncate">{edu.degree}</span>
                           </>
                         )}
                       </div>
-                      {edu.year && <span className="text-[11px] text-slate-500">{edu.year}</span>}
+                      {edu.year && <span className="text-[11px] text-gray-400 dark:text-slate-500">{edu.year}</span>}
                     </div>
                     <div className="flex items-center gap-1.5">
                       {(() => {
@@ -105,14 +105,14 @@ export function EducationSection() {
                         return claim ? (
                           <VerificationBadge claim={claim} size="sm" />
                         ) : (
-                          <span className="text-[10px] text-slate-600 italic">No claim yet</span>
+                          <span className="text-[10px] text-gray-400 dark:text-slate-600 italic">No claim yet</span>
                         );
                       })()}
                       <div className="flex items-center gap-0.5">
-                        <button onClick={(e) => { e.stopPropagation(); moveEducation(edu.id, -1); }} disabled={idx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
-                        <button onClick={(e) => { e.stopPropagation(); moveEducation(edu.id, 1); }} disabled={idx === resume.education.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); moveEducation(edu.id, -1); }} disabled={idx === 0} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); moveEducation(edu.id, 1); }} disabled={idx === resume.education.length - 1} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); removeEducation(edu.id); }} className="p-1.5 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); removeEducation(edu.id); }} className="p-1.5 text-red-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10"><Trash2 className="w-3 h-3" /></button>
                     </div>
                   </div>
                   <AnimatePresence>
@@ -122,8 +122,12 @@ export function EducationSection() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FieldInput label="School / University" placeholder="Stanford University" value={edu.school} onChange={(v) => updateEducation(edu.id, "school", v)} onBlur={() => touch(`education.${idx}.school`)} error={getFieldError("education", "school", idx)} />
                             <FieldInput label="Degree" placeholder="Bachelor of Science" value={edu.degree} onChange={(v) => updateEducation(edu.id, "degree", v)} onBlur={() => touch(`education.${idx}.degree`)} error={getFieldError("education", "degree", idx)} />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FieldInput label="Field of Study" placeholder="Computer Science" value={edu.field} onChange={(v) => updateEducation(edu.id, "field", v)} />
                             <FieldInput label="Year" placeholder="2020" value={edu.year} onChange={(v) => updateEducation(edu.id, "year", v)} />
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FieldInput label="GPA" placeholder="3.8 / 4.0" value={edu.gpa} onChange={(v) => updateEducation(edu.id, "gpa", v)} />
                             <FieldInput label="Location" placeholder="Stanford, CA" value={edu.location} onChange={(v) => updateEducation(edu.id, "location", v)} />
                           </div>

@@ -161,19 +161,19 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
-            className="fixed inset-4 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[360px] z-50 bg-burlap-shadow bg-[#0A0E1B] rounded-2xl border border-white/[0.06] shadow-2xl overflow-hidden"
+            className="fixed inset-4 sm:inset-auto sm:top-1/2 sm:left-1/2 sm:-translate-x-1/2 sm:-translate-y-1/2 sm:w-[360px] z-50 bg-white dark:bg-[#0A0E1B] rounded-2xl border border-gray-200 dark:border-white/[0.06] shadow-2xl overflow-hidden"
             onKeyDown={handleDialogKeyDown}
           >
-            <div className="flex items-center justify-between px-5 py-4 border-b border-white/[0.06]">
+            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-200 dark:border-white/[0.06]">
               <div className="flex items-center gap-2">
-                <Download className="w-4 h-4 text-slate-400" />
-                <h2 id="export-modal-title" className="text-sm font-semibold text-white">Export Resume</h2>
+                <Download className="w-4 h-4 text-gray-400 dark:text-slate-400" />
+                <h2 id="export-modal-title" className="text-sm font-semibold text-gray-900 dark:text-white">Export Resume</h2>
               </div>
               <button
                 ref={closeButtonRef}
                 onClick={onClose}
                 aria-label="Close export menu"
-                className="p-1.5 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all"
+                className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -186,16 +186,16 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
                   ref={(el) => { optionRefs.current[i] = el; }}
                   onClick={opt.action}
                   onKeyDown={(e) => handleOptionKeyDown(e, i)}
-                  className="w-full flex items-center gap-4 px-5 py-4 rounded-xl border border-white/[0.06] bg-white/[0.02] hover:border-white/[0.12] hover:bg-white/[0.04] transition-all text-left"
+                  className="w-full flex items-center gap-4 px-5 py-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-all text-left"
                 >
                   <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/15">
                     <opt.icon className="w-5 h-5 text-blue-400" />
                   </div>
                   <div className="flex-1">
-                    <p className="text-sm font-semibold text-slate-200">{opt.label}</p>
-                    <p className="text-[11px] text-slate-500 mt-0.5">{opt.description}</p>
+                    <p className="text-sm font-semibold text-gray-900 dark:text-slate-200">{opt.label}</p>
+                    <p className="text-[11px] text-gray-500 dark:text-slate-500 mt-0.5">{opt.description}</p>
                   </div>
-                  <Download className="w-4 h-4 text-slate-500" />
+                  <Download className="w-4 h-4 text-gray-400 dark:text-slate-500" />
                 </button>
               ))}
               {docxError && (

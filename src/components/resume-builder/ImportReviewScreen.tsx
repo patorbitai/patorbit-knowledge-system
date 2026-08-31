@@ -150,28 +150,28 @@ function ConfidenceDot({ level }: { level: Confidence }) {
 /* ── Shared input styles ── */
 
 const inputCls = (empty: boolean) => clsx(
-  "w-full rounded-lg px-3 py-2 text-[13px] leading-snug text-white/90 bg-white/[0.04] border outline-none transition",
-  "focus:border-blue-500/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
+  "w-full rounded-lg px-3 py-2 text-[13px] leading-snug text-gray-900 dark:text-white/90 bg-gray-100 dark:bg-white/[0.04] border outline-none transition",
+  "focus:border-blue-500/50 focus:bg-gray-50 dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
   empty
     ? "border-amber-500/40 bg-amber-500/5 placeholder:text-amber-500/60"
-    : "border-white/[0.08] placeholder:text-slate-500",
+    : "border-gray-200 dark:border-white/[0.08] placeholder:text-gray-400 dark:placeholder:text-slate-500",
 );
 
 const textareaCls = (empty: boolean) => clsx(
-  "w-full rounded-lg px-3 py-2 text-[13px] leading-relaxed text-white/90 bg-white/[0.04] border outline-none transition resize-none",
-  "focus:border-blue-500/50 focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
+  "w-full rounded-lg px-3 py-2 text-[13px] leading-relaxed text-gray-900 dark:text-white/90 bg-gray-100 dark:bg-white/[0.04] border outline-none transition resize-none",
+  "focus:border-blue-500/50 focus:bg-gray-50 dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-blue-500/20",
   empty
     ? "border-amber-500/40 bg-amber-500/5 placeholder:text-amber-500/60"
-    : "border-white/[0.08] placeholder:text-slate-500",
+    : "border-gray-200 dark:border-white/[0.08] placeholder:text-gray-400 dark:placeholder:text-slate-500",
 );
 
 function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-[12px] font-semibold text-slate-300 mb-1.5">{children}</label>;
+  return <label className="block text-[12px] font-semibold text-gray-600 dark:text-slate-300 mb-1.5">{children}</label>;
 }
 
 function EntryCard({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
   return (
-    <div className="relative rounded-xl border border-white/[0.08] bg-white/[0.025] p-4 space-y-3 shadow-sm shadow-black/20">
+    <div className="relative rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.025] p-4 space-y-3 shadow-sm shadow-black/20">
       <button
         type="button"
         onClick={onRemove}
@@ -207,7 +207,7 @@ function PersonalPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resum
         <div><FieldLabel>Nationality</FieldLabel><input className={inputCls(!draft.nationality)} value={draft.nationality} onChange={f("nationality")} placeholder="Not detected" /></div>
       </div>
       <div className="pt-1 border-t border-white/[0.06]">
-        <h3 className="text-[12px] font-bold text-slate-300 uppercase tracking-[0.12em] mb-3 mt-4">Social Links</h3>
+        <h3 className="text-[12px] font-bold text-gray-600 dark:text-slate-300 uppercase tracking-[0.12em] mb-3 mt-4">Social Links</h3>
         <div className="grid grid-cols-2 gap-3">
           <div><FieldLabel>LinkedIn</FieldLabel><input className={inputCls(!draft.social.linkedin)} value={draft.social.linkedin} onChange={sf("linkedin")} placeholder="Not detected" /></div>
           <div><FieldLabel>GitHub</FieldLabel><input className={inputCls(!draft.social.github)} value={draft.social.github} onChange={sf("github")} placeholder="Not detected" /></div>
@@ -296,9 +296,9 @@ function SkillsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resume)
   return (
     <div className="grid grid-cols-2 gap-2">
       {draft.skills.map((skill, i) => (
-        <div key={skill.id} className="flex items-center gap-2 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+        <div key={skill.id} className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] px-3 py-2.5">
           <input
-            className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600"
+            className="flex-1 bg-transparent text-[13px] text-gray-900 dark:text-white outline-none placeholder:text-gray-400 dark:placeholder:text-slate-600"
             value={skill.name}
             onChange={e => update(i, "name", e.target.value)}
             placeholder="Skill name"
@@ -370,15 +370,15 @@ function LanguagesPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resu
   return (
     <div className="space-y-2">
       {draft.languages.map((lang, i) => (
-        <div key={lang.id} className="flex items-center gap-3 rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2.5">
+        <div key={lang.id} className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] px-3 py-2.5">
           <input
-            className="flex-1 bg-transparent text-[13px] text-white outline-none placeholder:text-slate-600"
+            className="flex-1 bg-transparent text-[13px] text-gray-900 dark:text-white outline-none placeholder:text-gray-400 dark:placeholder:text-slate-600"
             value={lang.name}
             onChange={e => update(i, "name", e.target.value)}
             placeholder="Language"
           />
           <select
-            className="text-[13px] bg-transparent text-slate-400 outline-none border-none cursor-pointer"
+            className="text-[13px] bg-transparent text-gray-500 dark:text-slate-400 outline-none border-none cursor-pointer"
             value={lang.proficiency}
             onChange={e => update(i, "proficiency", e.target.value)}
           >
@@ -423,14 +423,14 @@ function ImportSummary({ resume, meta }: { resume: Resume; meta: ImportMeta }) {
   const confidenceColor = confidence >= 90 ? "text-emerald-400" : confidence >= 70 ? "text-amber-400" : "text-red-400";
 
   return (
-    <div className="px-6 py-3 border-b border-white/[0.06] bg-white/[0.02] flex flex-wrap items-center gap-x-6 gap-y-2">
+    <div className="px-6 py-3 border-b border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] flex flex-wrap items-center gap-x-6 gap-y-2">
       <div className="flex items-center gap-2">
         <CheckCircle2 className="w-4 h-4 text-blue-400" />
-        <span className="text-sm font-semibold text-white">Import Complete</span>
+        <span className="text-sm font-semibold text-gray-900 dark:text-white">Import Complete</span>
         <span className={clsx("text-sm font-bold", confidenceColor)}>{confidence}%</span>
-        <span className="text-[11px] text-slate-500">confidence</span>
+        <span className="text-[11px] text-gray-400 dark:text-slate-500">confidence</span>
       </div>
-      <div className="h-3 w-px bg-white/[0.06]" />
+      <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.06]" />
       <div className="flex flex-wrap items-center gap-3">
         {items.map(item => (
           <span key={item.label} className={clsx("inline-flex items-center gap-1 text-[11px]", item.ok ? "text-slate-400" : "text-amber-400")}>
@@ -492,20 +492,20 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.18 }}
-      className="fixed inset-0 z-[60] bg-[#070911] flex flex-col overflow-hidden"
+      className="fixed inset-0 z-[60] bg-gray-50 dark:bg-[#070911] flex flex-col overflow-hidden"
     >
       {/* Header */}       <header className="h-12 shrink-0 border-b border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] flex items-center justify-between px-4 gap-4">
         <div className="flex items-center gap-2">
           <button
             type="button"
             onClick={onCancel}
-            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[12px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all group"
+            className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[12px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all group"
           >
             <ArrowLeft className="w-3.5 h-3.5 transition-transform group-hover:-translate-x-0.5" />
             Back to Builder
           </button>
           <ChevronRight className="w-3 h-3 text-slate-700" />
-          <span className="text-[12px] font-semibold text-white">Review Imported Resume</span>
+          <span className="text-[12px] font-semibold text-gray-900 dark:text-white">Review Imported Resume</span>
         </div>
         <div className="flex items-center gap-2">
           {meta.rawText && (
@@ -516,7 +516,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
                 "flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[12px] font-medium transition-all",
                 showRaw
                   ? "bg-blue-500/20 text-blue-300 border border-blue-500/20"
-                  : "text-slate-400 hover:text-white hover:bg-white/[0.06]",
+                  : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06]",
               )}
             >
               {showRaw ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}

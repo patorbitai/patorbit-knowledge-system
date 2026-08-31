@@ -158,9 +158,9 @@ export function LiveStylePreview({
       className="flex flex-col h-full min-h-0"
     >
       {/* Toolbar: zoom + page navigation */}
-      <div className="sticky top-0 z-10 flex items-center justify-center gap-3 flex-wrap px-4 py-2 bg-[#0A0E1B]/95 backdrop-blur-sm border-b border-white/[0.06] shrink-0">
+      <div className="sticky top-0 z-10 flex items-center justify-center gap-3 flex-wrap px-4 py-2 bg-white/90 dark:bg-[#0A0E1B]/95 backdrop-blur-sm border-b border-gray-200 dark:border-white/[0.06] shrink-0">
         <div
-          className="flex items-center gap-0.5 rounded-lg border border-white/[0.08] bg-white/[0.03] p-1"
+          className="flex items-center gap-0.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-100 dark:bg-white/[0.03] p-1"
           role="group"
           aria-label="Zoom controls"
           data-testid="live-zoom-controls"
@@ -170,11 +170,11 @@ export function LiveStylePreview({
             onClick={zoomOut}
             disabled={effectiveZoom <= MIN_ZOOM}
             aria-label="Zoom out"
-            className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="p-1.5 rounded-md text-gray-500 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/[0.08] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all cursor-pointer"
           >
             <Minus className="w-3.5 h-3.5" />
           </button>
-          <span className="min-w-[46px] text-center text-xs font-semibold text-slate-200 tabular-nums" data-testid="live-zoom-percent">
+          <span className="min-w-[46px] text-center text-xs font-semibold text-gray-900 dark:text-slate-200 tabular-nums" data-testid="live-zoom-percent">
             {effectiveZoom}%
           </span>
           <button
@@ -182,16 +182,16 @@ export function LiveStylePreview({
             onClick={zoomIn}
             disabled={effectiveZoom >= MAX_ZOOM}
             aria-label="Zoom in"
-            className="p-1.5 rounded-md text-slate-300 hover:text-white hover:bg-white/[0.08] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all cursor-pointer"
+            className="p-1.5 rounded-md text-gray-500 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/[0.08] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
           </button>
-          <div className="w-px h-4 bg-white/[0.1] mx-1" />
+          <div className="w-px h-4 bg-gray-300 dark:bg-white/[0.1] mx-1" />
           <button
             type="button"
             onClick={resetZoom}
             aria-label="Reset zoom"
-            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-semibold text-slate-300 hover:text-white hover:bg-white/[0.08] transition-all cursor-pointer"
+            className="inline-flex items-center gap-1 px-2 py-1.5 rounded-md text-[10px] font-semibold text-gray-500 dark:text-slate-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/[0.08] transition-all cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
             Reset
@@ -205,7 +205,7 @@ export function LiveStylePreview({
               onClick={() => goPage(-1)}
               disabled={page === 1}
               aria-label="Previous page"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="p-1.5 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -218,8 +218,8 @@ export function LiveStylePreview({
                 aria-current={page === n ? "page" : undefined}
                 className={`min-w-8 h-8 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
                   page === n
-                    ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/40"
-                    : "text-slate-400 hover:text-white hover:bg-white/[0.06] border border-transparent"
+                    ? "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/40"
+                    : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/[0.06] border border-transparent"
                 }`}
               >
                 {n}
@@ -230,13 +230,13 @@ export function LiveStylePreview({
               onClick={() => goPage(1)}
               disabled={page === pages}
               aria-label="Next page"
-              className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all cursor-pointer"
+              className="p-1.5 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-white/[0.06] disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition-all cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
           </div>
         )}
-        <span className="text-[10px] text-slate-500 hidden lg:inline">
+        <span className="text-[10px] text-gray-400 dark:text-slate-500 hidden lg:inline">
           {pages} page{pages > 1 ? "s" : ""} · A4
         </span>
       </div>

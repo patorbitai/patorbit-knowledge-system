@@ -77,20 +77,20 @@ export function AnalysisScore({
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
           {isAvailable ? (
-            <span className={clsx("font-bold text-white", cfg.fontSize)}>{animatedPct}</span>
+            <span className={clsx("font-bold text-gray-900 dark:text-white", cfg.fontSize)}>{animatedPct}</span>
           ) : (
-            <span className={clsx("font-medium text-slate-500 leading-tight text-center px-0.5", cfg.placeholderSize)}>—</span>
+            <span className={clsx("font-medium text-gray-400 dark:text-slate-500 leading-tight text-center px-0.5", cfg.placeholderSize)}>—</span>
           )}
         </div>
       </div>
       <div className="flex flex-col">
-        <span className="text-[11px] font-medium text-slate-400 leading-tight">{label}</span>
+        <span className="text-[11px] font-medium text-gray-500 dark:text-slate-400 leading-tight">{label}</span>
         {isAvailable ? (
           <span className="text-[10px] leading-tight" style={{ color }}>
             {pct >= 80 ? "Excellent" : pct >= 60 ? "Good" : pct >= 40 ? "Needs Work" : "Poor"}
           </span>
         ) : (
-          <span className="text-[10px] text-slate-600 leading-tight">{statusLabel || "No Data"}</span>
+          <span className="text-[10px] text-gray-400 dark:text-slate-600 leading-tight">{statusLabel || "No Data"}</span>
         )}
       </div>
     </div>

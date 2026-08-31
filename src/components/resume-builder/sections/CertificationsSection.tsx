@@ -65,8 +65,8 @@ export function CertificationsSection() {
             className="flex flex-col items-center justify-center py-14 text-center bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]"
           >
             <AwardIcon />
-            <p className="text-sm text-slate-400 mb-1 mt-4">No certifications yet</p>
-            <p className="text-xs text-slate-500 mb-5">Add relevant certifications to boost credibility</p>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-4">No certifications yet</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mb-5">Add relevant certifications to boost credibility</p>
             <AIActionButton label="Add Certification" onClick={handleAddCertification} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
           </motion.div>
         ) : (
@@ -80,19 +80,19 @@ export function CertificationsSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8, height: 0 }}
-                  className="bg-white/[0.03] rounded-xl border border-white/[0.06] overflow-hidden"
+                  className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] overflow-hidden"
                 >
                   <div
-                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-white/[0.02] transition-colors"
+                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/[0.02] transition-colors"
                     onClick={() => toggleExpand(cert.id)}
                   >
-                    <GripVertical className="w-3.5 h-3.5 text-slate-600 shrink-0 cursor-grab" />
+                    <GripVertical className="w-3.5 h-3.5 text-gray-400 dark:text-slate-600 shrink-0 cursor-grab" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-white truncate">{cert.name || "New Certification"}</span>
-                        {cert.issuer && <><span className="text-slate-600">·</span><span className="text-xs text-slate-500 truncate">{cert.issuer}</span></>}
+                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{cert.name || "New Certification"}</span>
+                        {cert.issuer && <><span className="text-gray-400 dark:text-slate-600">·</span><span className="text-xs text-gray-500 dark:text-slate-500 truncate">{cert.issuer}</span></>}
                       </div>
-                      {cert.date && <span className="text-[11px] text-slate-500">{cert.date}</span>}
+                      {cert.date && <span className="text-[11px] text-gray-400 dark:text-slate-500">{cert.date}</span>}
                     </div>
                     <div className="flex items-center gap-1.5">
                       {(() => {
@@ -100,14 +100,14 @@ export function CertificationsSection() {
                         return claim ? (
                           <VerificationBadge claim={claim} size="sm" />
                         ) : (
-                          <span className="text-[10px] text-slate-600 italic">No claim yet</span>
+                          <span className="text-[10px] text-gray-400 dark:text-slate-600 italic">No claim yet</span>
                         );
                       })()}
                       <div className="flex items-center gap-0.5">
-                        <button onClick={(e) => { e.stopPropagation(); moveCertification(cert.id, -1); }} disabled={idx === 0} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
-                        <button onClick={(e) => { e.stopPropagation(); moveCertification(cert.id, 1); }} disabled={idx === resume.certifications.length - 1} className="p-1 text-slate-500 hover:text-white disabled:opacity-20 rounded-md hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); moveCertification(cert.id, -1); }} disabled={idx === 0} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
+                        <button onClick={(e) => { e.stopPropagation(); moveCertification(cert.id, 1); }} disabled={idx === resume.certifications.length - 1} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); removeCertification(cert.id); }} className="p-1.5 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); removeCertification(cert.id); }} className="p-1.5 text-red-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10"><Trash2 className="w-3 h-3" /></button>
                     </div>
                   </div>
                   <AnimatePresence>

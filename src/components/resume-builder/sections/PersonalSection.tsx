@@ -76,7 +76,7 @@ export function PersonalSection() {
         <div className="flex items-center gap-1.5">
           <button
             onClick={() => setCollapsed(!collapsed)}
-            className="text-slate-500 hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-white/[0.06] transition-all"
+            className="text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all"
           >
             {collapsed ? "Expand" : "Collapse"}
           </button>
