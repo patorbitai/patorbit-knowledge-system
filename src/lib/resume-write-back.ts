@@ -11,8 +11,17 @@
  */
 
 import { useResumeBuilder } from "@/store/resume-builder";
-import type { Resume } from "@/types/resume";
+import type { Resume, CareerStage } from "@/types/resume";
 import { enqueueOfflineSave, removeOfflineEntry, getAllOfflineEntries } from "@/lib/offline-queue";
+
+/** Valid careerStage values accepted by the server. */
+const VALID_CAREER_STAGES = new Set<string>(["student", "recent-graduate", "working-professional", "manager", "freelancer"]);
+
+/** Sanitize careerStage to a valid server value. Falls back to "working-professional". */
+function sanitizeCareerStage(stage: unknown): CareerStage {
+  if (typeof stage === "string" && VALID_CAREER_STAGES.has(stage)) return stage as CareerStage;
+  return "working-professional";
+}
 
 /** Pending save operations keyed by resumeId. Only the latest per resume is sent. */
 const pendingSaves = new Map<string, ReturnType<typeof setTimeout>>();
@@ -41,7 +50,7 @@ export async function saveLocalResumeToServer(): Promise<void> {
         resumeId: resume.resumeId,
         resumeName: resume.resumeName || resume.name || "My Resume",
         templateId: resume.templateId,
-        careerStage: resume.careerStage,
+        careerStage: sanitizeCareerStage(resume.careerStage),
         resume,
         baseVersion: baseVersion > 0 ? baseVersion : undefined,
       }),
@@ -88,7 +97,7 @@ export async function saveLocalResumeToServer(): Promise<void> {
             resumeId: resume.resumeId,
             resumeName: resume.resumeName || resume.name || "My Resume",
             templateId: resume.templateId,
-            careerStage: resume.careerStage,
+            careerStage: sanitizeCareerStage(resume.careerStage),
             resume,
           }),
         });
@@ -214,7 +223,7 @@ function handleBeforeUnload(): void {
       resumeId: resume.resumeId,
       resumeName: resume.resumeName || resume.name || "My Resume",
       templateId: resume.templateId,
-      careerStage: resume.careerStage,
+      careerStage: sanitizeCareerStage(resume.careerStage),
       resume,
       baseVersion: baseVersion > 0 ? baseVersion : undefined,
     });
@@ -270,7 +279,7 @@ export async function flushOfflineQueue(): Promise<void> {
           resumeId: entry.resumeId,
           resumeName: (entry.resume.resumeName as string) || (entry.resume.name as string) || "My Resume",
           templateId: entry.resume.templateId,
-          careerStage: entry.resume.careerStage,
+          careerStage: sanitizeCareerStage(entry.resume.careerStage),
           resume: entry.resume,
           baseVersion: entry.baseVersion,
         }),
@@ -299,7 +308,7 @@ export async function flushOfflineQueue(): Promise<void> {
               resumeId: entry.resumeId,
               resumeName: (entry.resume.resumeName as string) || (entry.resume.name as string) || "My Resume",
               templateId: entry.resume.templateId,
-              careerStage: entry.resume.careerStage,
+              careerStage: sanitizeCareerStage(entry.resume.careerStage),
               resume: entry.resume,
             }),
           });
@@ -373,8 +382,11 @@ export function hookWriteBackToStore(): void {
 
   // Subscribe to store changes — trigger debounced save on any resume mutation
   useResumeBuilder.subscribe((state, prevState) => {
-    // Wait until localStorage hydration is complete
-    if (!state.hydrated) return;
+    // Wait until localStorage hydration is complete.
+    // In Zustand v5, onRehydrateStorage may not propagate hydrated=true
+    // reliably to the live store. Use a robust fallback check.
+    const isHydrated = state.hydrated || (Array.isArray(state.resumes) && state.resumes.length > 0 && state.activeResumeId);
+    if (!isHydrated) return;
     // Only save when resume content actually changed
     if (state.resume === prevState.resume) return;
     // Don't trigger during active saving

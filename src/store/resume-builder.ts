@@ -662,15 +662,19 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
             ? state.activeResumeId
             : resumes[0].resumeId;
           const resume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
-          state.resumes = resumes;
-          state.activeResumeId = activeResumeId!;
-          state.resume = resume;
-          state.evidence = state.evidence ?? [];
-          state.styleConfigs = state.styleConfigs ?? {};
-          state.serverVersions = state.serverVersions ?? {};
-          state.writeConflict = null;
-          state.setSaveStatus("saved");
-          state.hydrated = true;
+          // In Zustand v5, `state` is a snapshot — direct mutations do NOT
+          // propagate to the live store. Use setState() to apply all changes.
+          useResumeBuilder.setState({
+            resumes,
+            activeResumeId: activeResumeId!,
+            resume,
+            evidence: state.evidence ?? [],
+            styleConfigs: state.styleConfigs ?? {},
+            serverVersions: state.serverVersions ?? {},
+            writeConflict: null,
+            saveStatus: "saved" as const,
+            hydrated: true,
+          });
         }
       },
     },

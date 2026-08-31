@@ -403,10 +403,13 @@ describe("C6.1 — Integration Hardening", () => {
   });
 
   describe("Subscription behavior", () => {
-    it("skips write-back when hydrated is false (pre-hydration)", async () => {
+    it("skips write-back when hydrated is false and no resumes (pre-hydration)", async () => {
       vi.resetModules();
       const { hookWriteBackToStore } = await import("@/lib/resume-write-back");
       mockState.hydrated = false;
+      const origResumes = (mockState as any).resumes;
+      (mockState as any).resumes = [];
+      (mockState as any).activeResumeId = undefined;
       hookWriteBackToStore();
 
       const callback = mockSubscribe.mock.calls[0][0];
@@ -421,6 +424,10 @@ describe("C6.1 — Integration Hardening", () => {
 
       vi.advanceTimersByTime(2000);
       expect(mockFetch).not.toHaveBeenCalled();
+      // Restore
+      mockState.hydrated = true;
+      (mockState as any).resumes = origResumes;
+      (mockState as any).activeResumeId = "resume-1";
     });
 
     it("triggers debounced save when hydrated and resume changes", async () => {
