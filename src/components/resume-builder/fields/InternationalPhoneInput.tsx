@@ -110,7 +110,7 @@ export function InternationalPhoneInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-[#94a3b8] tracking-wide">{label}</label>
+        <label className="text-xs font-medium text-gray-500 dark:text-slate-400">{label}</label>
       </div>
 
       <div className="relative flex items-center" ref={dropdownRef}>
@@ -118,13 +118,13 @@ export function InternationalPhoneInput({
           type="button"
           onClick={() => setIsOpen(!isOpen)}
           className={clsx(
-            "flex items-center gap-1.5 px-3.5 py-3 bg-[#070d18] border rounded-l-xl text-sm text-[#f8fafc] font-medium transition-all duration-200 cursor-pointer shrink-0",
-            "border-[rgba(148,163,184,.2)] hover:border-[rgba(148,163,184,.35)] focus:outline-none focus:border-cyan-400"
+            "flex items-center gap-1.5 px-3.5 py-3 bg-gray-50 dark:bg-[#070d18] border rounded-l-xl text-sm text-gray-900 dark:text-white font-medium transition-all duration-200 cursor-pointer shrink-0",
+            "border-gray-200 dark:border-white/[0.15] hover:border-gray-300 dark:hover:border-white/[0.25] focus:outline-none focus:border-cyan-400"
           )}
         >
           <span className="text-base">{selectedCountry.flag}</span>
           <span className="font-mono text-xs text-cyan-300">{selectedCountry.dialCode}</span>
-          <ChevronDown className="w-3 h-3 text-[#94a3b8]" />
+          <ChevronDown className="w-3 h-3 text-gray-400 dark:text-slate-400" />
         </button>
 
         <input
@@ -134,9 +134,9 @@ export function InternationalPhoneInput({
           onBlur={onBlur}
           placeholder={placeholder}
           className={clsx(
-            "w-full bg-[#070d18] border-l-0 border rounded-r-xl text-sm text-[#f8fafc] font-medium",
+            "w-full bg-gray-50 dark:bg-[#070d18] border-l-0 border rounded-r-xl text-sm text-gray-900 dark:text-white font-medium",
             "focus:outline-none focus:ring-1 transition-all duration-200",
-            "placeholder:text-[#64748b]",
+            "placeholder:text-gray-400 dark:placeholder:text-slate-500",
             "hover:border-[rgba(148,163,184,.35)]",
             "focus:shadow-[0_0_25px_rgba(34,211,238,0.12)]",
             error
@@ -147,23 +147,23 @@ export function InternationalPhoneInput({
         />
 
         {isOpen && (
-          <div className="absolute top-full left-0 mt-2 w-72 bg-[#070d18] border border-[rgba(148,163,184,.2)] rounded-2xl shadow-2xl z-50 p-2">
-            <div className="p-2 border-b border-[rgba(148,163,184,.14)]">
+          <div className="absolute top-full left-0 mt-2 w-72 bg-white dark:bg-[#0C1222] border border-gray-200 dark:border-white/[0.15] rounded-2xl shadow-2xl z-50 p-2">
+            <div className="p-2 border-b border-gray-100 dark:border-white/[0.08]">
               <div className="relative flex items-center">
-                <Search className="w-3.5 h-3.5 text-[#94a3b8] absolute left-3" />
+                <Search className="w-3.5 h-3.5 text-gray-400 dark:text-slate-400 absolute left-3" />
                 <input
                   type="text"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search country or code..."
-                  className="w-full bg-white/[0.04] border border-[rgba(148,163,184,.2)] rounded-xl text-xs text-white pl-9 pr-3 py-2 outline-none focus:border-cyan-400 placeholder:text-[#64748b]"
+                  className="w-full bg-gray-50 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.15] rounded-xl text-xs text-gray-900 dark:text-white pl-9 pr-3 py-2 outline-none focus:border-cyan-400 placeholder:text-gray-400 dark:placeholder:text-slate-500"
                   autoFocus
                 />
               </div>
             </div>
             <div className="max-h-60 overflow-y-auto py-1 space-y-0.5">
               {filteredCountries.length === 0 ? (
-                <div className="py-4 text-center text-xs text-[#94a3b8]">No country found</div>
+                <div className="py-4 text-center text-xs text-gray-400 dark:text-slate-400">No country found</div>
               ) : (
                 filteredCountries.map((c) => (
                   <button
@@ -174,7 +174,7 @@ export function InternationalPhoneInput({
                       "w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-colors cursor-pointer",
                       selectedCountry.code === c.code
                         ? "bg-gradient-to-r from-cyan-500/15 to-blue-500/15 text-white font-semibold border border-cyan-500/30"
-                        : "text-[#94a3b8] hover:bg-white/[0.04] hover:text-white"
+                        : "text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-900 dark:hover:text-white"
                     )}
                   >
                     <div className="flex items-center gap-2.5">

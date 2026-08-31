@@ -133,7 +133,7 @@ function ResumeSelector() {
 function RightPanel({ mode, onModeChange }: { mode: "preview" | "copilot"; onModeChange: (m: "preview" | "copilot") => void }) {
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center border-b border-gray-200 dark:border-white/[0.08] shrink-0 bg-gray-50 dark:bg-[#0C1222]">
+      <div className="flex items-center border-b border-gray-200 dark:border-white/[0.08] shrink-0 bg-white dark:bg-[#0C1222]">
         <button onClick={() => onModeChange("preview")}
           className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-all cursor-pointer border-b-2 ${mode === "preview" ? "text-cyan-600 dark:text-cyan-300 border-cyan-500" : "text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-700 dark:hover:text-white"}`}>
           <Eye className="w-3.5 h-3.5" /> Preview

@@ -62,8 +62,8 @@ export function LeftSidebar() {
           color="#22d3ee"
         />
         <div className="flex items-center justify-between text-[10px]">
-          <span className="text-gray-500 dark:text-[#94a3b8]">Sections complete</span>
-          <span className="text-gray-900 dark:text-[#f8fafc] font-medium">
+          <span className="text-gray-500 dark:text-slate-400">Sections complete</span>
+          <span className="text-gray-900 dark:text-white font-medium">
             {hydrated ? sections.filter((s) => s.id !== "review" && sectionComplete(s.id)).length : 0} / 9
           </span>
         </div>
