@@ -44,22 +44,22 @@ export function FieldInput({
   };
 
   const inputClasses = clsx(
-    "w-full bg-[#070d18] border rounded-xl text-sm text-[#f8fafc] font-medium",
+    "w-full bg-[#070d18] border rounded-lg text-[14px] text-[#f8fafc] font-normal",
     "focus:outline-none focus:ring-1 transition-all duration-200",
     "placeholder:text-[#64748b]",
-    "hover:border-[rgba(148,163,184,.35)]",
-    "focus:shadow-[0_0_25px_rgba(34,211,238,0.12)]",
+    "hover:border-[rgba(148,163,184,.3)]",
+    "focus:shadow-[0_0_20px_rgba(34,211,238,0.08)]",
     error
       ? "border-red-500/50 focus:border-red-500/80 focus:ring-red-500/20 hover:border-red-500/40"
-      : "border-[rgba(148,163,184,.2)] focus:border-cyan-400 focus:ring-cyan-500/30",
+      : "border-[rgba(148,163,184,.15)] focus:border-cyan-400 focus:ring-cyan-500/30",
     disabled && "opacity-50 cursor-not-allowed",
-    type === "textarea" ? "px-5 py-4 min-h-[140px] text-[15px] leading-relaxed resize-y" : "px-4 py-3.5 text-[15px]",
+    type === "textarea" ? "px-4 py-3 min-h-[120px] text-[14px] leading-relaxed resize-y" : "px-3.5 py-2.5 text-[14px]",
   );
 
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-[11px] font-semibold text-[#94a3b8] tracking-wide uppercase">{label}</label>
+        <label className="text-[11px] font-medium text-[#94a3b8] tracking-wide">{label}</label>
         {maxLength && (
           <span className={clsx(
             "text-[10px] font-mono",

@@ -9,7 +9,7 @@ import { useResumeBuilder } from "@/store/resume-builder";
 const indicators = {
   saved: {
     text: "Saved",
-    subtext: "Saved locally",
+    subtext: "All changes saved",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
     border: "border-emerald-500/20",
@@ -17,7 +17,7 @@ const indicators = {
   },
   saving: {
     text: "Saving...",
-    subtext: "Saving changes",
+    subtext: "Syncing your changes",
     color: "text-amber-400",
     bg: "bg-amber-500/10",
     border: "border-amber-500/20",
@@ -33,15 +33,15 @@ const indicators = {
   },
   offline: {
     text: "Offline",
-    subtext: "No internet connection",
-    color: "text-slate-400",
-    bg: "bg-slate-500/10",
-    border: "border-slate-500/20",
+    subtext: "Changes saved locally",
+    color: "text-amber-400",
+    bg: "bg-amber-500/10",
+    border: "border-amber-500/20",
     icon: CloudOff,
   },
   "sync-failed": {
-    text: "Save Failed",
-    subtext: "Could not save changes",
+    text: "Save failed",
+    subtext: "Will retry automatically",
     color: "text-rose-400",
     bg: "bg-rose-500/10",
     border: "border-rose-500/20",
