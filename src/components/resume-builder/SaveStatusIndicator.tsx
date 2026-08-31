@@ -99,7 +99,7 @@ export function SaveStatusIndicator() {
           ease: "easeOut"
         }}
         className={clsx(
-          "flex items-center gap-2 px-2.5 py-1.5 rounded-lg border transition-colors",
+          "flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border transition-colors",
           config.bg,
           config.border,
         )}
@@ -109,7 +109,7 @@ export function SaveStatusIndicator() {
           <span className={clsx("text-[10px] font-semibold leading-tight", config.color)}>
             {config.text}
           </span>
-          <span className="text-[8px] text-slate-500 leading-tight">{config.subtext}</span>
+          <span className="hidden sm:block text-[8px] text-slate-500 leading-tight">{config.subtext}</span>
         </div>
       </motion.div>
     </AnimatePresence>

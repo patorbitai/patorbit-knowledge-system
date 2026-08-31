@@ -163,7 +163,7 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
                    variant === "hero"
                      ? "text-sm font-semibold text-white"
                      : variant === "card"
-                     ? "text-xs font-semibold text-cyan-300 whitespace-nowrap"
+                     ? "text-xs font-semibold text-cyan-300 whitespace-nowrap hidden sm:inline"
                      : "text-[10px] font-medium"
                  )}
                >

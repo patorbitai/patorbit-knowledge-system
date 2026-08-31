@@ -200,14 +200,14 @@ function AppHeader() {
           <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.08]" />
           <ResumeSelector />
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 sm:gap-2">
           <ImportButton variant="card" label="Import Resume" />
           <SaveStatusIndicator />
-          <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.08]" />
+          <div className="hidden sm:block h-3 w-px bg-gray-300 dark:bg-white/[0.08]" />
           <Link href="/resume-builder/preview"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/[0.08] hover:bg-cyan-100 dark:hover:bg-cyan-500/[0.16] hover:border-cyan-500/50 transition-all">
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/[0.08] hover:bg-cyan-100 dark:hover:bg-cyan-500/[0.16] hover:border-cyan-500/50 transition-all">
             <Eye className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Full Preview</span>
+            <span>Full Preview</span>
           </Link>
           <AccountMenu />
         </div>
