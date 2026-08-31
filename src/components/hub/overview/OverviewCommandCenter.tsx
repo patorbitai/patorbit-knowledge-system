@@ -2,10 +2,19 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, ShieldCheck, FileText, Network, Briefcase, CheckCircle2, Sparkles, Award, Cpu, Globe } from "lucide-react";
+import {
+  Plus,
+  Upload,
+  FileText,
+  Clock,
+  MoreHorizontal,
+  Trash2,
+  Pencil,
+  ArrowRight,
+  LayoutDashboard,
+} from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { IdentityScoreData } from "@/lib/identity-score";
-import type { Experience, Skill } from "@/types/resume";
 
 type Props = {
   name: string;
@@ -15,7 +24,6 @@ type Props = {
 
 export function OverviewCommandCenter({ name, email, data }: Props) {
   const [mounted, setMounted] = useState(false);
-  const resume = useResumeBuilder((s) => s.resume);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -23,324 +31,277 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
   }, []);
 
   const firstName = name.split(" ")[0] || "there";
-  const userInitials = name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase()
-    .slice(0, 2) || "U";
 
-  const professionalTitle = mounted && resume?.title ? resume.title : "Professional Identity";
-  const experienceEntries: Experience[] = mounted && resume?.experience ? resume.experience : [];
-  const skills: Skill[] = mounted && resume?.skills ? resume.skills : [];
-  const resumeName = mounted && resume?.resumeName ? resume.resumeName : "Primary Resume";
-  const resumeSummary = mounted && resume?.summary ? resume.summary : "";
+  // Get all resumes from the store
+  const resumes = useResumeBuilder((s) => s.resumes);
+  const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
+  const createResume = useResumeBuilder((s) => s.createResume);
+  const deleteResume = useResumeBuilder((s) => s.deleteResume);
+  const switchResume = useResumeBuilder((s) => s.switchResume);
 
-  const hasActiveResume = mounted && resume && (
-    (resume.resumeName && resume.resumeName !== "My Resume" && resume.resumeName !== "Default Resume") ||
-    !!resume.name ||
-    !!resume.email ||
-    !!resume.summary ||
-    resume.experience.length > 0 ||
-    resume.education.length > 0 ||
-    resume.skills.length > 0 ||
-    resume.projects.length > 0 ||
-    resume.certifications.length > 0
-  );
+  const resumeList = mounted && resumes ? resumes : [];
+  const hasResumes = resumeList.length > 0;
 
-  const actualCompleteness = mounted ? useResumeBuilder.getState().progress() : (data.resumeCompleteness || 0);
-  const actualResumeName = mounted && resume?.resumeName ? resume.resumeName : "My Resume";
-  const lastUpdatedDate = mounted ? new Date().toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "Today";
-
-  let nextAction = {
-    title: "Verify your credentials",
-    description: "Connect verified achievements and evidence records to elevate your professional trust score.",
-    href: "/trust",
-    label: "Verify credentials →",
+  const handleCreateResume = () => {
+    const id = createResume();
+    switchResume(id);
+    window.location.href = "/resume-builder";
   };
 
-  if (mounted && resume) {
-    if (experienceEntries.length === 0) {
-      nextAction = {
-        title: "Build your resume",
-        description: "Add your work history, core skills, and credentials in the Resume Builder to unlock full verification.",
-        href: "/resume-builder",
-        label: "Build your resume →",
-      };
-    } else if (data.verifiedCredentials === 0) {
-      nextAction = {
-        title: "Verify your credentials",
-        description: "Connect verified achievements and evidence records to elevate your professional trust score.",
-        href: "/trust",
-        label: "Verify credentials →",
-      };
-    } else {
-      nextAction = {
-        title: "Explore your professional network",
-        description: "Review your career graph, skills relationships, and verified credentials across your passport.",
-        href: "/network/graph",
-        label: "Explore Network →",
-      };
-    }
-  }
+  const handleDelete = (id: string) => {
+    if (resumeList.length <= 1) return; // Don't delete last resume
+    deleteResume(id);
+  };
 
-  const scorePercentage = Math.min(Math.max(data.score, 0), 100);
-  const circleCircumference = 2 * Math.PI * 42;
-  const strokeDashoffset = circleCircumference - (scorePercentage / 100) * circleCircumference;
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
+  };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-8">
-      
-      {/* ── HERO SECTION & IDENTITY SCORE ── */}
-      <section className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_285px] gap-8 items-center min-h-[260px] pb-4">
-        <div className="space-y-3.5">
-          <div className="text-[#60a5fa] text-[11px] font-extrabold tracking-[0.15em] uppercase">OVERVIEW</div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight text-[#f8fafc] leading-[1.05]">
-            Good morning, {firstName} 👋
+    <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-8">
+      {/* ── HERO ── */}
+      <section className="space-y-1">
+        <div className="flex items-center gap-3 mb-2">
+          <LayoutDashboard className="h-5 w-5 text-blue-500 dark:text-[#22d3ee]" />
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f8fafc]">
+            {getGreeting()}, {firstName}
           </h1>
-          <p className="text-base text-[#a9b9cf] font-light leading-relaxed max-w-xl">
-            Build, verify and grow your professional identity.
-          </p>
-          <div className="pt-2">
-            <Link
-              href="/resume-builder"
-              className="inline-flex items-center gap-2.5 px-5 py-3 rounded-xl bg-gradient-to-r from-[#0ea5e9] via-[#2563eb] to-[#9333ea] text-sm font-semibold text-white shadow-xl shadow-blue-500/20 hover:brightness-110 active:scale-[0.99] transition-all group"
-            >
-              Build your professional identity →
-            </Link>
-          </div>
         </div>
-
-        {/* Circular Identity Score Ring */}
-        <div className="flex items-center justify-center">
-          <div className="w-[205px] h-[205px] rounded-full grid place-items-center relative bg-[conic-gradient(from_220deg,#22d3ee,#3b82f6,#8b5cf6,#22d3ee)] shadow-[0_0_50px_rgba(34,211,238,0.1)] p-[2px]">
-            <div className="absolute inset-[7px] rounded-full bg-white dark:bg-[#070d18] flex flex-col items-center justify-center text-center z-10">
-              <b className="text-5xl font-extrabold leading-none text-white font-mono">{data.score}</b>
-              <span className="text-xs text-[#94a3b8] mt-1">/ 100</span>
-              <small className="text-[10px] text-[#cbd5e1] tracking-[0.12em] uppercase mt-2 font-bold">IDENTITY SCORE</small>
-            </div>
-          </div>
-        </div>
+        <p className="text-sm text-gray-500 dark:text-[#94a3b8] max-w-xl">
+          {hasResumes
+            ? "Pick up where you left off or create a new resume."
+            : "Create your first professional resume to get started."}
+        </p>
       </section>
 
-      {/* ── METRICS BLOCK ── */}
-      <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] overflow-hidden shadow-xl p-2">
-        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-[rgba(148,163,184,.14)]">
-          <div className="flex items-center gap-4 py-5 px-6">
-            <div className="w-11 h-11 border border-[rgba(34,211,238,.30)] rounded-xl grid place-items-center text-[#22d3ee] bg-[#22d3ee]/5 shrink-0">♢</div>
-            <div>
-              <b className="text-3xl font-extrabold text-white font-mono">{data.verifiedCredentials}</b>
-              <span className="block text-[#9fb0c6] text-xs mt-0.5">Verified credentials</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 py-5 px-6">
-            <div className="w-11 h-11 border border-[rgba(34,211,238,.30)] rounded-xl grid place-items-center text-[#22d3ee] bg-[#22d3ee]/5 shrink-0">▣</div>
-            <div>
-              <b className="text-3xl font-extrabold text-white font-mono">{data.passportClaims}</b>
-              <span className="block text-[#9fb0c6] text-xs mt-0.5">Passport claims</span>
-            </div>
-          </div>
-          <div className="flex items-center gap-4 py-5 px-6">
-            <div className="w-11 h-11 border border-[rgba(34,211,238,.30)] rounded-xl grid place-items-center text-[#22d3ee] bg-[#22d3ee]/5 shrink-0">◔</div>
-            <div>
-              <b className="text-3xl font-extrabold text-white font-mono">{data.resumeCompleteness}%</b>
-              <span className="block text-[#9fb0c6] text-xs mt-0.5">Resume completeness</span>
-            </div>
-          </div>
-        </div>
+      {/* ── PRIMARY ACTIONS ── */}
+      <section className="flex flex-wrap gap-3">
+        <button
+          onClick={handleCreateResume}
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 dark:from-[#0ea5e9] dark:to-[#2563eb] text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-[0.99] transition-all"
+        >
+          <Plus className="h-4 w-4" />
+          Create Resume
+        </button>
+        <Link
+          href="/resume-builder"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm font-medium text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-all"
+        >
+          <Upload className="h-4 w-4" />
+          Import Resume
+        </Link>
       </section>
 
-      {/* ── PROFESSIONAL SNAPSHOT ── */}
-      <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] overflow-hidden shadow-xl p-8">
-        <div className="flex justify-between items-start">
-          <div>
-            <div className="text-[#60a5fa] text-[11px] font-extrabold tracking-[0.15em] uppercase">PROFESSIONAL IDENTITY</div>
-            <h2 className="text-2xl font-bold tracking-tight text-white mt-1">Your professional snapshot</h2>
-          </div>
-          <Link href="/resume-builder" className="text-[#22d3ee] text-xs font-bold hover:underline mt-1.5">Edit profile →</Link>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_270px] gap-10 mt-7 items-center">
-          <div>
-            <div className="flex items-center gap-4 mb-8">
-              <div className="w-14 h-14 rounded-full grid place-items-center bg-gradient-to-br from-[#2563eb] to-[#7c3aed] text-white text-base font-extrabold shadow-lg shadow-blue-500/20">
-                {userInitials}
-              </div>
-              <div>
-                <h3 className="text-xl font-bold text-white mb-1">{professionalTitle}</h3>
-                <p className="text-[#94a3b8] text-xs">
-                  {experienceEntries.length > 0 ? `${experienceEntries.length}+ years of professional experience` : "Professional identity profile"}
-                </p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-11 gap-y-7">
-              <div>
-                <div className="text-[#71839b] text-[10px] font-extrabold tracking-[0.12em] uppercase mb-2">Domains</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {skills.length > 0 ? (
-                    skills.slice(0, 4).map((s, i) => (
-                      <span key={i} className="px-2.5 py-1.5 rounded-lg border border-[rgba(148,163,184,.13)] bg-[#0f172a]/62 text-[#cbd5e1] text-xs">
-                        {s.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="px-2.5 py-1.5 rounded-lg border border-[rgba(148,163,184,.13)] bg-[#0f172a]/62 text-[#cbd5e1] text-xs">Engineering · SaaS</span>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="text-[#71839b] text-[10px] font-extrabold tracking-[0.12em] uppercase mb-2">Skills</div>
-                <div className="flex flex-wrap gap-1.5">
-                  {skills.length > 0 ? (
-                    skills.slice(0, 5).map((s, i) => (
-                      <span key={i} className="px-2.5 py-1.5 rounded-lg border border-[rgba(148,163,184,.13)] bg-[#0f172a]/62 text-[#cbd5e1] text-xs">
-                        {s.name}
-                      </span>
-                    ))
-                  ) : (
-                    <span className="px-2.5 py-1.5 rounded-lg border border-[rgba(148,163,184,.13)] bg-[#0f172a]/62 text-[#cbd5e1] text-xs">TypeScript · React</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="col-span-1 sm:col-span-2 border-t border-[rgba(148,163,184,.09)] pt-5 mt-1">
-                <div className="text-[#71839b] text-[10px] font-extrabold tracking-[0.12em] uppercase mb-2">Professional summary</div>
-                <p className="max-w-[790px] text-[#aebdce] text-xs sm:text-sm leading-[1.75]">
-                  {resumeSummary || professionalTitle + " building intelligent systems and verified professional identity credentials across organizational history."}
-                </p>
-              </div>
-            </div>
+      {/* ── RESUMES ── */}
+      {hasResumes && (
+        <section className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+              Your resumes
+            </h2>
+            <span className="text-xs text-gray-400 dark:text-slate-500">
+              {resumeList.length} resume{resumeList.length !== 1 ? "s" : ""}
+            </span>
           </div>
 
-          <div className="min-h-[300px] relative flex items-center justify-center">
-            <div className="absolute w-[220px] h-[220px] rounded-full bg-[radial-gradient(circle,rgba(34,211,238,.12),transparent_66%)] blur-md pointer-events-none" />
-            <div className="w-[110px] h-[135px] border border-[rgba(34,211,238,.88)] rounded-[20px] relative z-10 bg-gradient-to-br from-[rgba(15,35,60,.72)] to-[rgba(8,17,31,.70)] shadow-[0_0_28px_rgba(34,211,238,.14),inset_0_0_28px_rgba(59,130,246,.08)] flex items-center justify-center text-[rgba(34,211,238,.62)] text-2xl font-extrabold">
-              P
-            </div>
-            <div className="absolute w-[240px] h-[75px] border border-[rgba(34,211,238,.23)] rounded-[50%] transform perspective-[350px] rotateX-[62deg] top-[195px]" />
-            <div className="absolute bottom-2 text-[#64748b] text-[10px] tracking-[0.12em] uppercase">Identity node</div>
-          </div>
-        </div>
-      </section>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {resumeList.map((r) => {
+              const resumeId = r.resumeId ?? "";
+              const isActive = resumeId === activeResumeId;
+              const resumeName = r.resumeName || "Untitled Resume";
+              const templateId = r.templateId || "modern";
+              const experienceCount = r.experience?.length || 0;
+              const skillCount = r.skills?.length || 0;
+              const hasContent = !!(r.name || r.summary || experienceCount > 0);
 
-      {/* ── CAREER JOURNEY ── */}
-      <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] overflow-hidden shadow-xl">
-        <div className="flex justify-between items-center px-8 pt-7 pb-2">
-          <h2 className="text-xl font-bold tracking-tight text-white">Career Journey</h2>
-          <Link href="/network/journey" className="text-[#22d3ee] text-xs font-bold hover:underline">View full timeline →</Link>
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_310px] gap-8 px-8 pb-8 pt-4">
-          <div>
-            {experienceEntries.length > 0 ? (
-              <div className="space-y-4">
-                {experienceEntries.map((exp, idx) => (
-                  <div key={exp.id || idx} className="grid grid-cols-[20px_145px_minmax(0,1fr)] gap-3 min-h-[75px]">
-                    <div className="relative mt-1">
-                      <div className="w-3 h-3 rounded-full bg-[#22d3ee] shadow-[0_0_12px_rgba(34,211,238,.65)]" />
-                      {idx !== experienceEntries.length - 1 && (
-                        <div className="absolute left-[5px] top-3 w-px h-[65px] bg-gradient-to-b from-[#22d3ee] to-transparent" />
+              return (
+                <div
+                  key={resumeId}
+                  className={`group relative rounded-xl border transition-all overflow-hidden ${
+                    isActive
+                      ? "border-blue-300 dark:border-[#22d3ee]/40 bg-blue-50/50 dark:bg-[#22d3ee]/[0.03]"
+                      : "border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-md"
+                  }`}
+                >
+                  {/* Preview area */}
+                  <div className="aspect-[8.5/11] bg-gray-50 dark:bg-[#0f172a] border-b border-gray-100 dark:border-white/[0.04] flex items-center justify-center relative overflow-hidden">
+                    {hasContent ? (
+                      <div className="p-4 space-y-2 w-full">
+                        {r.name && (
+                          <div className="h-3 bg-gray-300 dark:bg-white/20 rounded w-2/3" />
+                        )}
+                        {r.title && (
+                          <div className="h-2 bg-gray-200 dark:bg-white/10 rounded w-1/2" />
+                        )}
+                        <div className="pt-2 space-y-1">
+                          {Array.from({ length: Math.min(experienceCount, 3) }).map((_, i) => (
+                            <div key={i} className="h-1.5 bg-gray-200 dark:bg-white/[0.06] rounded w-full" />
+                          ))}
+                          {Array.from({ length: Math.min(skillCount, 4) }).map((_, i) => (
+                            <div key={i} className="h-1 bg-gray-200 dark:bg-white/[0.04] rounded w-3/4" />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <FileText className="h-8 w-8 text-gray-300 dark:text-white/10" />
+                    )}
+                    {/* Template badge */}
+                    <span className="absolute top-2 right-2 text-[10px] font-medium px-1.5 py-0.5 rounded bg-white/80 dark:bg-white/5 text-gray-500 dark:text-white/40 capitalize">
+                      {templateId}
+                    </span>
+                  </div>
+
+                  {/* Card body */}
+                  <div className="p-3 space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {resumeName}
+                        </h3>
+                        <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
+                          <Clock className="h-3 w-3" />
+                          Updated just now
+                        </p>
+                      </div>
+                      {/* Actions menu */}
+                      <div className="relative group/menu">
+                        <button
+                          className="rounded-lg p-1 text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
+                          aria-label="Resume actions"
+                        >
+                          <MoreHorizontal className="h-4 w-4" />
+                        </button>
+                        <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all">
+                          <button
+                            onClick={() => {
+                              switchResume(resumeId);
+                              window.location.href = "/resume-builder";
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                          >
+                            <Pencil className="h-3 w-3" />
+                            Edit
+                          </button>
+
+                          {resumeList.length > 1 && (
+                            <button
+                              onClick={() => handleDelete(resumeId)}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                              Delete
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Resume stats */}
+                    <div className="flex items-center gap-3 text-[11px] text-gray-400 dark:text-slate-500">
+                      {experienceCount > 0 && (
+                        <span>{experienceCount} experience</span>
+                      )}
+                      {skillCount > 0 && (
+                        <span>{skillCount} skills</span>
                       )}
                     </div>
-                    <div className="text-xs text-[#7f92aa] pt-0.5 font-mono">
-                      {exp.startDate || ""} {exp.startDate && (exp.endDate || exp.current) ? "—" : ""} {exp.current ? "Present" : (exp.endDate || "")}
-                    </div>
-                    <div>
-                      <div className="font-bold text-sm text-white">{exp.position || "Role"}</div>
-                      <div className="text-xs text-[#7dd3fc] mt-1">{exp.company || "Organization"}</div>
-                    </div>
+
+                    {/* Continue button */}
+                    <button
+                      onClick={() => {
+                        switchResume(resumeId);
+                        window.location.href = "/resume-builder";
+                      }}
+                      className="w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-medium text-blue-600 dark:text-[#22d3ee] hover:bg-blue-50 dark:hover:bg-[#22d3ee]/[0.06] transition-colors"
+                    >
+                      Continue editing
+                      <ArrowRight className="h-3 w-3" />
+                    </button>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <div className="py-6 text-center text-sm text-[#94a3b8]">
-                No career history added yet. Build your resume to populate your timeline.
-              </div>
-            )}
+                </div>
+              );
+            })}
           </div>
+        </section>
+      )}
 
-          <div className="min-h-[220px] rounded-xl bg-[radial-gradient(circle_at_70%_80%,rgba(139,92,246,.22),transparent_45%),#080d18] relative overflow-hidden border border-[rgba(139,92,246,.12)]">
-            <div className="absolute inset-x-0 bottom-0 h-28 bg-gradient-to-tr from-transparent via-[rgba(76,29,149,.4)] to-transparent" />
+      {/* ── EMPTY STATE ── */}
+      {!hasResumes && mounted && (
+        <section className="rounded-2xl border border-dashed border-gray-300 dark:border-white/[0.1] bg-gray-50 dark:bg-white/[0.01] p-12 text-center space-y-4">
+          <div className="w-14 h-14 rounded-2xl bg-blue-50 dark:bg-[#22d3ee]/[0.06] flex items-center justify-center mx-auto">
+            <FileText className="h-7 w-7 text-blue-500 dark:text-[#22d3ee]" />
           </div>
-        </div>
-      </section>
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+              No resumes yet
+            </h3>
+            <p className="text-sm text-gray-500 dark:text-[#94a3b8] max-w-sm mx-auto">
+              Create your first resume or import an existing one to get started.
+            </p>
+          </div>
+          <div className="flex justify-center gap-3 pt-2">
+            <button
+              onClick={handleCreateResume}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 dark:from-[#0ea5e9] dark:to-[#2563eb] text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:brightness-110 transition-all"
+            >
+              <Plus className="h-4 w-4" />
+              Create Resume
+            </button>
+            <Link
+              href="/resume-builder"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm font-medium text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-all"
+            >
+              <Upload className="h-4 w-4" />
+              Import Resume
+            </Link>
+          </div>
+        </section>
+      )}
 
-      {/* ── THREE FEATURE PANELS ── */}
-      <section className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <article className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 relative min-h-[210px] flex flex-col justify-between shadow-xl">
+      {/* ── QUICK LINKS ── */}
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <Link
+          href="/resume-builder"
+          className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-sm transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-500/[0.08] flex items-center justify-center text-blue-500 dark:text-[#60a5fa] shrink-0 group-hover:scale-105 transition-transform">
+            <FileText className="h-5 w-5" />
+          </div>
           <div>
-            <div className="w-11 h-11 border border-[rgba(34,211,238,.30)] rounded-xl grid place-items-center text-[#22d3ee] bg-[#22d3ee]/5 mb-4">♢</div>
-            <h3 className="text-base font-bold text-white mb-2">Professional Trust</h3>
-            <p className="text-[#94a3b8] text-xs leading-relaxed mb-6">Build trust by verifying your credentials and experience.</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">Resume Builder</p>
+            <p className="text-[11px] text-gray-400 dark:text-slate-500">Edit your resume</p>
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-[rgba(148,163,184,.1)]">
-            <span className="inline-block px-2.5 py-1 rounded-full bg-[#101b2c] text-[#cbd5e1] text-[10px] font-semibold">● Score {data.score}/100</span>
-            <Link href="/trust" className="text-[#22d3ee] text-xs font-bold hover:underline">Explore Trust →</Link>
-          </div>
-        </article>
+        </Link>
 
-        <article className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 relative min-h-[210px] flex flex-col justify-between shadow-xl">
+        <Link
+          href="/settings"
+          className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-sm transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-purple-50 dark:bg-purple-500/[0.08] flex items-center justify-center text-purple-500 dark:text-[#a78bfa] shrink-0 group-hover:scale-105 transition-transform">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
           <div>
-            <div className="w-11 h-11 border border-[rgba(167,139,250,.28)] rounded-xl grid place-items-center text-[#a78bfa] bg-[#a78bfa]/5 mb-4">▤</div>
-            <h3 className="text-base font-bold text-white mb-2">Active Resume</h3>
-            {hasActiveResume ? (
-              <p className="text-[#94a3b8] text-xs leading-relaxed mb-6">
-                <span className="font-semibold text-white">{actualResumeName}</span><br />
-                {actualCompleteness}% complete · Last updated {lastUpdatedDate}
-              </p>
-            ) : (
-              <p className="text-[#94a3b8] text-xs leading-relaxed mb-6">
-                No resume yet.<br />
-                Import your existing resume from the Resume Builder to build your professional identity.
-              </p>
-            )}
+            <p className="text-sm font-medium text-gray-900 dark:text-white">Settings</p>
+            <p className="text-[11px] text-gray-400 dark:text-slate-500">Account & preferences</p>
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-[rgba(148,163,184,.1)]">
-            {hasActiveResume ? (
-              <>
-                <span className="inline-block px-2.5 py-1 rounded-full bg-[#101b2c] text-[#cbd5e1] text-[10px] font-semibold">Completeness {actualCompleteness}%</span>
-                <Link href="/resume-builder" className="text-[#22d3ee] text-xs font-bold hover:underline whitespace-nowrap">Open Resume →</Link>
-              </>
-            ) : (
-              <>
-                <span className="inline-block px-2.5 py-1 rounded-full bg-[#101b2c] text-[#cbd5e1] text-[10px] font-semibold">No resume</span>
-                <Link href="/resume-builder" className="text-[#22d3ee] text-xs font-bold hover:underline whitespace-nowrap">Open Resume Builder →</Link>
-              </>
-            )}
-          </div>
-        </article>
+        </Link>
 
-        <article className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 relative min-h-[210px] flex flex-col justify-between shadow-xl">
+        <Link
+          href="/overview"
+          className="flex items-center gap-3 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-sm transition-all group"
+        >
+          <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/[0.08] flex items-center justify-center text-emerald-500 dark:text-[#10b981] shrink-0 group-hover:scale-105 transition-transform">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </div>
           <div>
-            <div className="w-11 h-11 border border-[rgba(96,165,250,.30)] rounded-xl grid place-items-center text-[#60a5fa] bg-[#60a5fa]/5 mb-4">♧</div>
-            <h3 className="text-base font-bold text-white mb-2">Professional Network</h3>
-            <p className="text-[#94a3b8] text-xs leading-relaxed mb-6">See how your experience, skills, credentials and professional relationships connect.</p>
+            <p className="text-sm font-medium text-gray-900 dark:text-white">Trust Score</p>
+            <p className="text-[11px] text-gray-400 dark:text-slate-500">Verify credentials</p>
           </div>
-          <div className="flex items-center justify-between pt-3 border-t border-[rgba(148,163,184,.1)]">
-            <span className="inline-block px-2.5 py-1 rounded-full bg-[#101b2c] text-[#cbd5e1] text-[10px] font-semibold">Identity network</span>
-            <Link href="/network/graph" className="text-[#22d3ee] text-xs font-bold hover:underline">Explore Network →</Link>
-          </div>
-        </article>
+        </Link>
       </section>
-
-      {/* ── NEXT STEP ── */}
-      <section className="rounded-2xl border border-[rgba(34,211,238,.24)] bg-gradient-to-r from-[rgba(7,27,42,.96)] to-[rgba(19,12,45,.92)] p-7 flex flex-col sm:flex-row sm:items-center justify-between gap-6 shadow-2xl">
-        <div className="space-y-1 max-w-2xl">
-          <div className="text-[#60a5fa] text-[10px] font-extrabold tracking-[0.15em] uppercase">NEXT STEP</div>
-          <h2 className="text-xl font-bold text-white">{nextAction.title}</h2>
-          <p className="text-[#a7b8cd] text-xs sm:text-sm leading-relaxed">{nextAction.description}</p>
-        </div>
-        <div className="shrink-0">
-          <Link
-            href={nextAction.href}
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-[#0ea5e9] to-[#2563eb] text-xs sm:text-sm font-bold text-white shadow-lg shadow-blue-500/20 hover:brightness-110 transition-all"
-          >
-            {nextAction.label}
-          </Link>
-        </div>
-      </section>
-
     </div>
   );
 }
