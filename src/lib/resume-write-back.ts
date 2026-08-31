@@ -75,6 +75,42 @@ export async function saveLocalResumeToServer(): Promise<void> {
       return;
     }
 
+    if (res.status === 404) {
+      // Resume does not exist on server yet — create it via POST.
+      // This happens when a resume was created locally (or imported)
+      // and the write-back runs before any server record exists.
+      console.log("[write-back] Resume not found on server — creating via POST");
+      try {
+        const createRes = await fetch("/api/resumes", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            resumeId: resume.resumeId,
+            resumeName: resume.resumeName || resume.name || "My Resume",
+            templateId: resume.templateId,
+            careerStage: resume.careerStage,
+            resume,
+          }),
+        });
+        if (createRes.ok) {
+          const created = await createRes.json() as { version?: number; resumeId?: string };
+          if (created.version !== undefined) {
+            state.setServerVersion(resume.resumeId, created.version);
+          }
+          state.setSaveStatus("saved");
+          return;
+        }
+        // POST also failed — fall through to generic error handling
+        const createBody = await createRes.json().catch(() => ({}));
+        const createMsg = (createBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
+        console.error("[write-back] Create failed:", createMsg);
+      } catch (createErr) {
+        console.error("[write-back] Create network error:", createErr);
+      }
+      state.setSaveStatus("sync-failed");
+      return;
+    }
+
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`;
@@ -251,6 +287,37 @@ export async function flushOfflineQueue(): Promise<void> {
         // Only set saved if this is the active resume
         if (state.activeResumeId === entry.resumeId) {
           state.setSaveStatus("saved");
+        }
+      } else if (res.status === 404) {
+        // Resume does not exist on server — create via POST
+        console.log(`[write-back] Queue flush: resume ${entry.resumeId} not found — creating via POST`);
+        try {
+          const createRes = await fetch("/api/resumes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              resumeId: entry.resumeId,
+              resumeName: (entry.resume.resumeName as string) || (entry.resume.name as string) || "My Resume",
+              templateId: entry.resume.templateId,
+              careerStage: entry.resume.careerStage,
+              resume: entry.resume,
+            }),
+          });
+          if (createRes.ok) {
+            await removeOfflineEntry(entry.resumeId);
+            const created = await createRes.json() as { version?: number };
+            const state = useResumeBuilder.getState();
+            if (created.version !== undefined) {
+              state.setServerVersion(entry.resumeId, created.version);
+            }
+            if (state.activeResumeId === entry.resumeId) {
+              state.setSaveStatus("saved");
+            }
+          } else {
+            console.error(`[write-back] Queue flush create failed for ${entry.resumeId}: HTTP ${createRes.status}`);
+          }
+        } catch (createErr) {
+          console.error(`[write-back] Queue flush create network error for ${entry.resumeId}:`, createErr);
         }
       } else if (res.status === 409) {
         // C7 conflict — remove from queue, let C7 handle it

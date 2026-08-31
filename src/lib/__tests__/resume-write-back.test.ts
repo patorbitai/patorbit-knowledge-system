@@ -206,6 +206,55 @@ describe("C6 — Resume Write-Back", () => {
 
       expect(mockSetSaveStatus).toHaveBeenCalledWith("sync-failed");
     });
+
+    it("creates resume via POST when PUT returns 404", async () => {
+      // First call is PUT → 404, second call is POST → 201
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          json: () => Promise.resolve({ error: "Resume not found" }),
+        })
+        .mockResolvedValueOnce({
+          ok: true,
+          status: 201,
+          json: () => Promise.resolve({ version: 1, resumeId: "resume-1" }),
+        });
+
+      await saveLocalResumeToServer();
+
+      // PUT was attempted first
+      expect(mockFetch).toHaveBeenNthCalledWith(1,
+        "/api/resumes/resume-1",
+        expect.objectContaining({ method: "PUT" })
+      );
+      // Then POST to create
+      expect(mockFetch).toHaveBeenNthCalledWith(2,
+        "/api/resumes",
+        expect.objectContaining({ method: "POST" })
+      );
+      // Should mark as saved after successful create
+      expect(mockSetServerVersion).toHaveBeenCalledWith("resume-1", 1);
+      expect(mockSetSaveStatus).toHaveBeenCalledWith("saved");
+    });
+
+    it("sets sync-failed when both PUT 404 and POST fail", async () => {
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          json: () => Promise.resolve({ error: "Resume not found" }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 500,
+          json: () => Promise.resolve({ error: "Internal Server Error" }),
+        });
+
+      await saveLocalResumeToServer();
+
+      expect(mockSetSaveStatus).toHaveBeenCalledWith("sync-failed");
+    });
   });
 
   describe("Debounced saving", () => {
