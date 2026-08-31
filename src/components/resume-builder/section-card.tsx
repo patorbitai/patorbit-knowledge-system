@@ -45,23 +45,23 @@ export function SectionCard({
       className={clsx(
         "group rounded-xl border transition-all duration-200 overflow-hidden",
         isActive
-          ? "border-[rgba(34,211,238,.3)] bg-[rgba(10,18,32,0.98)] shadow-[0_0_20px_rgba(34,211,238,0.06)]"
-          : "border-[rgba(148,163,184,.1)] bg-[rgba(10,18,32,0.96)] hover:border-[rgba(34,211,238,.2)]",
+          ? "border-cyan-500/30 bg-white dark:bg-[#0C1222] shadow-[0_0_20px_rgba(34,211,238,0.06)]"
+          : "border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0A0E1B] hover:border-cyan-500/20",
         className,
       )}
     >
       {/* Card header */}
-      <div className="flex items-center justify-between px-4 pt-3.5 pb-2.5 border-b border-[rgba(148,163,184,.06)]">
+      <div className="flex items-center justify-between px-4 pt-3 pb-2 border-b border-gray-100 dark:border-white/[0.06]">
         <div className="flex items-center gap-3">
           <motion.div
             whileHover={{ scale: 1.05, rotate: -3 }}
-            className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-500/15 to-blue-600/15 border border-cyan-500/20 text-[#22d3ee] shrink-0"
+            className="flex h-8 w-8 items-center justify-center rounded-lg bg-cyan-50 dark:bg-cyan-500/10 border border-cyan-500/20 text-cyan-600 dark:text-cyan-400 shrink-0"
           >
             {icon}
           </motion.div>
           <div>
             <div className="flex items-center gap-2">
-              <h3 className="text-[14px] font-semibold text-[#f8fafc]">{title}</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h3>
               {isValid !== undefined && (
                 <motion.span
                   initial={{ scale: 0 }}
@@ -73,7 +73,7 @@ export function SectionCard({
                 />
               )}
             </div>
-            <p className="text-[12px] text-[#94a3b8] mt-0.5">{description}</p>
+            <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{description}</p>
           </div>
         </div>
         <div className="flex items-center gap-3 shrink-0">
@@ -81,7 +81,7 @@ export function SectionCard({
           <button
             onClick={() => setCollapsed(!collapsed)}
             aria-label={collapsed ? "Expand section" : "Collapse section"}
-            className="p-1.5 rounded-lg text-[#94a3b8] hover:text-white hover:bg-white/[0.06] transition-all cursor-pointer"
+            className="p-1.5 rounded-lg text-gray-400 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all cursor-pointer"
           >
             {collapsed ? <ChevronDown className="w-4 h-4" /> : <ChevronUp className="w-4 h-4" />}
           </button>

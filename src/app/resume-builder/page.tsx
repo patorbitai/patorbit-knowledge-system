@@ -69,8 +69,7 @@ function ResumeSelector() {
       {isOpen && (
         <>
           <div className="fixed inset-0 z-50" onClick={() => setIsOpen(false)} />
-          <div role="listbox" aria-label="My Resumes"
-            className="absolute left-0 mt-1.5 w-64 rounded-xl bg-white dark:bg-[#0A0E1B] border border-gray-200 dark:border-white/[0.08] shadow-2xl py-1 z-50">
+          <div role="listbox" aria-label="My Resumes"             className="absolute left-0 mt-1.5 w-64 rounded-xl bg-white dark:bg-[#0C1222] border border-gray-200 dark:border-white/[0.08] shadow-2xl py-1 z-50">
             <div className="px-3 py-1.5 border-b border-gray-200 dark:border-white/[0.06] text-[10px] font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wider">
               My Resumes ({resumes.length})
             </div>
@@ -134,7 +133,7 @@ function ResumeSelector() {
 function RightPanel({ mode, onModeChange }: { mode: "preview" | "copilot"; onModeChange: (m: "preview" | "copilot") => void }) {
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center border-b border-gray-200 dark:border-[rgba(148,163,184,.14)] shrink-0 bg-gray-50 dark:bg-[#070d18]">
+      <div className="flex items-center border-b border-gray-200 dark:border-white/[0.08] shrink-0 bg-gray-50 dark:bg-[#0C1222]">
         <button onClick={() => onModeChange("preview")}
           className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-all cursor-pointer border-b-2 ${mode === "preview" ? "text-cyan-600 dark:text-cyan-300 border-cyan-500" : "text-gray-500 dark:text-slate-400 border-transparent hover:text-gray-700 dark:hover:text-white"}`}>
           <Eye className="w-3.5 h-3.5" /> Preview
@@ -164,7 +163,7 @@ function RightPanel({ mode, onModeChange }: { mode: "preview" | "copilot"; onMod
 /* ── Mobile Mode Toggle ── */
 function MobileModeToggle({ mode, onModeChange }: { mode: "edit" | "preview"; onModeChange: (m: "edit" | "preview") => void }) {
   return (
-    <div className="relative z-[60] flex md:hidden items-center border-t border-gray-200 dark:border-[rgba(148,163,184,.14)] bg-white dark:bg-[#070d18] shrink-0">
+    <div className="relative z-[60] flex md:hidden items-center border-t border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1222] shrink-0">
       <button onClick={() => onModeChange("edit")}
         className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-all cursor-pointer ${mode === "edit" ? "text-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-500/[0.08]" : "text-gray-500 dark:text-slate-400"}`}>
         <PenLine className="w-3.5 h-3.5" /> Edit
@@ -181,7 +180,7 @@ function MobileModeToggle({ mode, onModeChange }: { mode: "edit" | "preview"; on
 /* ── App Header ── */
 function AppHeader() {
   return (
-    <header className="sticky top-0 z-40 h-12 bg-white/90 dark:bg-[#070d18]/90 backdrop-blur-xl border-b border-gray-200 dark:border-[rgba(148,163,184,.14)]">
+    <header className="sticky top-0 z-40 h-12 bg-white/90 dark:bg-[#070d18]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08]">
       <div className="flex items-center justify-between h-full px-4">
         <div className="flex items-center gap-2.5">
           <Link href="/" className="flex items-center gap-2 shrink-0">
@@ -258,22 +257,22 @@ export default function ResumeBuilderPage() {
 
   return (
     <DndProvider backend={HTML5Backend}>
-      <div className="h-screen w-full bg-gray-50 dark:bg-[#070d18] text-gray-900 dark:text-[#f8fafc] font-sans antialiased flex flex-col overflow-hidden selection:bg-cyan-500/30">
+      <div className="h-screen w-full bg-gray-50 dark:bg-[#070d18] text-gray-900 dark:text-white font-sans antialiased flex flex-col overflow-hidden selection:bg-cyan-500/30">
         <AppHeader />
 
         <div className="flex-1 flex overflow-hidden">
           {/* Left sidebar — section navigation (hidden on mobile) */}
-          <div className="hidden md:block w-[20%] min-w-[240px] max-w-[300px] border-r border-gray-200 dark:border-[rgba(148,163,184,.14)] overflow-y-auto bg-white dark:bg-[#070d18]">
+          <div className="hidden md:block w-[20%] min-w-[240px] max-w-[300px] border-r border-gray-200 dark:border-white/[0.08] overflow-y-auto bg-white dark:bg-[#070d18]">
             <LeftSidebar />
           </div>
 
           {/* Center — editing forms */}
-          <div className={`flex-1 overflow-y-auto min-w-0 bg-gray-50 dark:bg-[#070d18] ${mobileMode === "preview" ? "hidden md:block" : ""}`}>
+          <div className={`flex-1 overflow-y-auto min-w-0 ${mobileMode === "preview" ? "hidden md:block" : ""}`}>
             <CenterWorkspace />
           </div>
 
           {/* Right panel — Preview or AI Copilot (desktop only) */}
-          <div className="hidden md:flex md:flex-col w-[35%] min-w-[320px] max-w-[520px] border-l border-gray-200 dark:border-[rgba(148,163,184,.14)] bg-white dark:bg-[#070d18]">
+          <div className="hidden md:flex md:flex-col w-[35%] min-w-[320px] max-w-[520px] border-l border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#070d18]">
             <RightPanel mode={rightMode} onModeChange={setRightMode} />
           </div>
         </div>
@@ -286,7 +285,7 @@ export default function ResumeBuilderPage() {
 
         {/* Mobile Preview overlay — only mounts when Preview is active */}
         {mobileMode === "preview" && (
-          <div className="md:hidden fixed inset-0 z-30 bg-gray-50 dark:bg-[#070d18] pt-12 pb-12">
+          <div className="md:hidden fixed inset-0 z-30 bg-gray-50 dark:bg-[#070d18] pt-12 pb-12 overflow-y-auto">
             <PreviewErrorBoundary>
               <MobilePreview />
             </PreviewErrorBoundary>
