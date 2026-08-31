@@ -13,9 +13,9 @@ export default function AppShell({
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="flex h-screen overflow-hidden bg-[#070911] text-slate-300">
+    <div className="flex h-screen overflow-hidden bg-gray-50 dark:bg-[#070911] text-gray-600 dark:text-slate-300">
       {/* Desktop sidebar */}
-      <aside className="hidden w-64 shrink-0 border-r border-white/[0.06] bg-[#080C18] lg:block">
+      <aside className="hidden w-64 shrink-0 border-r border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] lg:block">
         <SidebarNav />
       </aside>
 
@@ -26,7 +26,7 @@ export default function AppShell({
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
             onClick={() => setSidebarOpen(false)}
           />
-          <aside className="absolute inset-y-0 left-0 w-72 border-r border-white/[0.06] bg-[#080C18] shadow-2xl">
+          <aside className="absolute inset-y-0 left-0 w-72 border-r border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] shadow-2xl">
             <button
               onClick={() => setSidebarOpen(false)}
               aria-label="Close menu"

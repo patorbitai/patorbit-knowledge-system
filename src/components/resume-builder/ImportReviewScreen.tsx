@@ -382,8 +382,7 @@ function LanguagesPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resu
             value={lang.proficiency}
             onChange={e => update(i, "proficiency", e.target.value)}
           >
-            {["Native", "Fluent", "Professional", "Conversational", "Beginner"].map(p => (
-              <option key={p} value={p} className="bg-[#0A0E1B]">{p}</option>
+            {["Native", "Fluent", "Professional", "Conversational", "Beginner"].map(p => (               <option key={p} value={p} className="bg-white dark:bg-[#0A0E1B]">{p}</option>
             ))}
           </select>
           <button type="button" onClick={() => remove(i)} className="p-0.5 text-slate-700 hover:text-red-400 transition">
@@ -495,8 +494,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
       transition={{ duration: 0.18 }}
       className="fixed inset-0 z-[60] bg-[#070911] flex flex-col overflow-hidden"
     >
-      {/* Header */}
-      <header className="h-12 shrink-0 border-b border-white/[0.06] bg-[#080C18] flex items-center justify-between px-4 gap-4">
+      {/* Header */}       <header className="h-12 shrink-0 border-b border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] flex items-center justify-between px-4 gap-4">
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -534,8 +532,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
       {/* Body: sidebar + content (+ optional raw panel) */}
       <div className="flex-1 flex overflow-hidden">
 
-        {/* Section nav */}
-        <nav className="w-[260px] shrink-0 border-r border-white/[0.06] bg-[#080C18] overflow-y-auto py-4 px-3 space-y-1">
+        {/* Section nav */}         <nav className="w-[260px] shrink-0 border-r border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] overflow-y-auto py-4 px-3 space-y-1">
           {SECTIONS.map(({ key, label }, idx) => {
             const level = confidences[key];
             const isActive = activeSection === key;
@@ -580,8 +577,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 320, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="shrink-0 border-l border-white/[0.06] bg-[#080C18] overflow-hidden flex flex-col"
+              transition={{ duration: 0.2 }}               className="shrink-0 border-l border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] overflow-hidden flex flex-col"
             >
               <div className="px-4 py-3 border-b border-white/[0.06] flex items-center gap-2">
                 <FileText className="w-4 h-4 text-slate-400" />
@@ -600,8 +596,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
         </AnimatePresence>
       </div>
 
-      {/* Footer */}
-      <footer className="h-14 shrink-0 border-t border-white/[0.06] bg-[#080C18] flex items-center justify-between px-6">
+      {/* Footer */}       <footer className="h-14 shrink-0 border-t border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] flex items-center justify-between px-6">
         <div className="flex items-center gap-2 text-[12px] text-slate-500">
           <span>Overall confidence:</span>
           <span className={clsx("font-bold", {

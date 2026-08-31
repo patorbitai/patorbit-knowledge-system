@@ -114,7 +114,7 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
         {/* Circular Identity Score Ring */}
         <div className="flex items-center justify-center">
           <div className="w-[205px] h-[205px] rounded-full grid place-items-center relative bg-[conic-gradient(from_220deg,#22d3ee,#3b82f6,#8b5cf6,#22d3ee)] shadow-[0_0_50px_rgba(34,211,238,0.1)] p-[2px]">
-            <div className="absolute inset-[7px] rounded-full bg-[#070d18] flex flex-col items-center justify-center text-center z-10">
+            <div className="absolute inset-[7px] rounded-full bg-white dark:bg-[#070d18] flex flex-col items-center justify-center text-center z-10">
               <b className="text-5xl font-extrabold leading-none text-white font-mono">{data.score}</b>
               <span className="text-xs text-[#94a3b8] mt-1">/ 100</span>
               <small className="text-[10px] text-[#cbd5e1] tracking-[0.12em] uppercase mt-2 font-bold">IDENTITY SCORE</small>

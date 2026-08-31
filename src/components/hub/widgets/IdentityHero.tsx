@@ -63,7 +63,7 @@ export default function IdentityHero({ name, email, data }: Props) {
   return (
     <section
       aria-label="Professional Identity"
-      className="relative overflow-hidden rounded-2xl border border-white/[0.06] bg-[#080C18] p-6 sm:p-8"
+      className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] p-6 sm:p-8"
     >
       {/* Ambient glow */}
       <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-cyan-500/[0.05] blur-3xl" aria-hidden="true" />

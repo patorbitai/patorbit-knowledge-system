@@ -100,17 +100,42 @@
   color: var(--foreground);
 }
 
+/* ── Light mode: override ALL hardcoded dark backgrounds ── */
 .light .bg-\[\#030712\],
 .light .bg-\[\#070911\],
 .light .bg-\[\#070911\]\/40,
 .light .bg-\[\#0A0E1B\],
+.light .bg-\[\#0A0E1B\]\/95,
 .light .bg-\[\#0C1322\],
 .light .bg-\[\#080C18\],
+.light .bg-\[\#070d18\],
+.light .bg-\[\#070d18\]\/90,
+.light .bg-\[\#070d18\]\/95,
+.light .bg-\[\#070d18\]\/60,
+.light .bg-\[\#04070e\]\/95,
 .light .bg-slate-950,
 .light .bg-slate-900,
 .light .bg-slate-900\/40,
 .light .bg-slate-900\/50,
 .light .bg-slate-950\/40 {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Hardcoded rgba dark backgrounds */
+.light [class*="bg-[rgba(10,18,32"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+.light [class*="bg-[rgba(7,14,26"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+.light [class*="bg-[rgba(12,24,42"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+.light [class*="bg-[rgba(8,16,30"] {
   background-color: #ffffff !important;
   color: #0f172a !important;
 }
@@ -173,10 +198,54 @@
 }
 
 .light .text-\[\#f8fafc\] { color: #0f172a !important; }
+.light .text-\[\#f1f5f9\] { color: #0f172a !important; }
 .light .text-\[\#cbd5e1\] { color: #334155 !important; }
 .light .text-\[\#94a3b8\] { color: #64748b !important; }
+.light .text-\[\#64748b\] { color: #64748b !important; }
 .light .text-\[\#22d3ee\] { color: #0891b2 !important; }
 .light .text-slate-100 { color: #0f172a !important; }
+.light .text-slate-300 { color: #334155 !important; }
+.light .text-slate-400 { color: #64748b !important; }
+.light .text-emerald-400 { color: #059669 !important; }
+.light .text-cyan-300 { color: #0891b2 !important; }
+.light .text-cyan-400 { color: #0891b2 !important; }
+
+/* Fix hardcoded border colors */
+.light [class*="border-[rgba(148,163,184"] {
+  border-color: rgba(15, 23, 42, 0.12) !important;
+}
+.light [class*="border-white/[0."] {
+  border-color: rgba(15, 23, 42, 0.1) !important;
+}
+.light [class*="border-cyan-500"] {
+  border-color: rgba(8, 145, 178, 0.3) !important;
+}
+
+/* Fix hardcoded input backgrounds */
+.light input[class*="bg-[#070d18"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+.light input[class*="bg-[#0A0E1B"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+  border-color: rgba(15, 23, 42, 0.2) !important;
+}
+
+/* Fix select dropdowns */
+.light select[class*="bg-[#0A0E1B"] {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+
+/* Fix hardcoded shadow colors */
+.light [class*="shadow-black"] {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08) !important;
+}
+.light [class*="shadow-2xl"] {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1) !important;
+}
 
 /* White-alpha surfaces & borders — attribute-substring match covers the base
    classes AND their hover:/focus: variants in one rule. */

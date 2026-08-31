@@ -34,7 +34,7 @@ export function CenterWorkspace() {
   const ActiveComponent = sectionComponents[activeSection];
 
   return (
-    <div className="flex-1 bg-[#0A0E1B] overflow-y-auto">
+    <div className="flex-1 bg-white dark:bg-[#0A0E1B] overflow-y-auto">
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-6 py-4">
         <div className="space-y-4">
           {ActiveComponent ? (

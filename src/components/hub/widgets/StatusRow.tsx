@@ -47,7 +47,7 @@ export default function StatusRow({ data }: Props) {
           <div
             key={key}
             role="listitem"
-            className="flex items-center justify-between gap-3 rounded-xl border border-white/[0.06] bg-[#080C18] px-4 py-3.5"
+            className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] px-4 py-3.5"
           >
             <div className="flex items-center gap-3 min-w-0">
               <span

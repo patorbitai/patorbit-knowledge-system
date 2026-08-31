@@ -19,7 +19,7 @@ export default function WidgetCard({
   return (
     <section
       className={clsx(
-        "flex flex-col rounded-2xl border border-white/[0.06] bg-[#080C18] p-5",
+        "flex flex-col rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] p-5",
         className
       )}
     >

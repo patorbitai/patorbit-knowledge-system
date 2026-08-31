@@ -60,7 +60,7 @@ export default function AccountMenu() {
       {open && (
         <div
           role="menu"
-          className="absolute right-0 top-full z-[100] mt-2 w-64 overflow-hidden rounded-xl border border-slate-200 dark:border-white/[0.08] bg-white dark:bg-[#080C18] text-slate-900 dark:text-white shadow-2xl"
+          className="absolute right-0 top-full z-[100] mt-2 w-64 overflow-hidden rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#080C18] text-gray-900 dark:text-white shadow-2xl"
         >
           <div className="border-b border-slate-200 dark:border-white/[0.06] px-4 py-3">
             <p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{name}</p>
