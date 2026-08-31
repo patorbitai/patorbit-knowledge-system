@@ -597,6 +597,50 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
       };
   };
 
+/* ── Active Resume Reconciliation ───────────────────────────────────────── */
+
+/**
+ * Ensure `activeResumeId` references a valid resume in `resumes[]`.
+ * If the ID is missing or stale, falls back to the first available resume.
+ * Returns the corrected values WITHOUT mutating the store — the caller
+ * must call `setState()` if changes are needed.
+ */
+function reconcileActiveResumeValues(state: {
+  resumes: Resume[];
+  activeResumeId: string;
+  resume: Resume;
+}) {
+  let { resumes, activeResumeId, resume } = state;
+
+  // Guarantee resumes is a non-empty array
+  if (!Array.isArray(resumes) || resumes.length === 0) {
+    const fallback = { ...defaultResume, resumeId: uid(), resumeName: "My Resume" };
+    return { resumes: [fallback], activeResumeId: fallback.resumeId, resume: fallback };
+  }
+
+  // Ensure every resume has required fields
+  resumes = resumes.map((r) => ({
+    ...defaultResume,
+    ...r,
+    resumeId: r.resumeId || uid(),
+    resumeName: r.resumeName || r.name || "My Resume",
+  }));
+
+  // If activeResumeId is missing or doesn't match any resume, pick the first one
+  const idValid = activeResumeId && resumes.some((r) => r.resumeId === activeResumeId);
+  if (!idValid) {
+    activeResumeId = resumes[0].resumeId!;
+  }
+
+  // Derive the active resume object from the array
+  const found = resumes.find((r) => r.resumeId === activeResumeId);
+  if (found) {
+    resume = found;
+  }
+
+  return { resumes, activeResumeId, resume };
+}
+
 /**
  * Merge persisted state into the current store on rehydration.
  *
@@ -644,39 +688,86 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
       name: "patorbit-resume-v2",
       merge: mergePersistedResumeState,
       partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions }),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          let resumes = state.resumes;
-          if (!Array.isArray(resumes) || resumes.length === 0) {
-            const oldResume = (state as any).resume;
-            const base = oldResume ? { ...defaultResume, ...oldResume } : defaultResume;
-            resumes = [{
-              ...base,
-              resumeId: base.resumeId || uid(),
-              resumeName: base.resumeName || base.name || "My Resume",
-            }];
-          } else {
-            resumes = resumes.map((r) => ({ ...defaultResume, ...r, resumeId: r.resumeId || uid(), resumeName: r.resumeName || r.name || "My Resume" }));
-          }
-          const activeResumeId = state.activeResumeId && resumes.some((r) => r.resumeId === state.activeResumeId)
-            ? state.activeResumeId
-            : resumes[0].resumeId;
-          const resume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
-          // In Zustand v5, `state` is a snapshot — direct mutations do NOT
-          // propagate to the live store. Use setState() to apply all changes.
+      onRehydrateStorage: () => (snapshot) => {
+        // In Zustand v5 the `snapshot` parameter may be stale — the persist
+        // middleware's own internal setState(merged) may not have fired yet.
+        // We ALWAYS reconcile from the LIVE store to guarantee correctness.
+        //
+        // Strategy:
+        // 1. Immediate reconciliation from the snapshot (fast path)
+        // 2. Deferred reconciliation via setTimeout(0) from the LIVE store
+        //    (safety net against Zustand v5 timing issues)
+        //
+        const applyReconciled = () => {
+          const live = useResumeBuilder.getState();
+          const { resumes, activeResumeId, resume } = reconcileActiveResumeValues({
+            resumes: live.resumes,
+            activeResumeId: live.activeResumeId,
+            resume: live.resume,
+          });
           useResumeBuilder.setState({
             resumes,
-            activeResumeId: activeResumeId!,
+            activeResumeId,
             resume,
-            evidence: state.evidence ?? [],
-            styleConfigs: state.styleConfigs ?? {},
-            serverVersions: state.serverVersions ?? {},
+            evidence: live.evidence ?? [],
+            styleConfigs: live.styleConfigs ?? {},
+            serverVersions: live.serverVersions ?? {},
+            writeConflict: null,
+            saveStatus: "saved" as const,
+            hydrated: true,
+          });
+        };
+
+        // First pass: immediate reconciliation from snapshot
+        if (snapshot) {
+          const { resumes, activeResumeId, resume } = reconcileActiveResumeValues({
+            resumes: snapshot.resumes,
+            activeResumeId: snapshot.activeResumeId,
+            resume: (snapshot as any).resume ?? defaultResume,
+          });
+          useResumeBuilder.setState({
+            resumes,
+            activeResumeId,
+            resume,
+            evidence: snapshot.evidence ?? [],
+            styleConfigs: snapshot.styleConfigs ?? {},
+            serverVersions: snapshot.serverVersions ?? {},
             writeConflict: null,
             saveStatus: "saved" as const,
             hydrated: true,
           });
         }
+
+        // Safety net: re-reconcile from LIVE store after microtask
+        // This catches the case where Zustand v5's internal merge overwrites
+        // our correction, or the snapshot was stale.
+        setTimeout(applyReconciled, 0);
       },
     },
   ),
 );
+
+/* ── Self-healing subscription ───────────────────────────────────────────
+ *
+ * Keeps `resume` in sync with `activeResumeId` on every state change.
+ * This is a safety net that catches any case where:
+ * - Zustand v5's persist middleware overwrites the correction
+ * - Server sync changes activeResumeId
+ * - Resume deletion changes activeResumeId
+ * - Any other code path creates a mismatch
+ *
+ * The subscription is idempotent: if `resume` already matches,
+ * it does nothing.
+ */
+if (typeof window !== "undefined") {
+  useResumeBuilder.subscribe((state) => {
+    // Only reconcile after hydration
+    if (!state.hydrated) return;
+    // Check if the active resume object matches activeResumeId
+    const found = state.resumes.find((r) => r.resumeId === state.activeResumeId);
+    if (found && found !== state.resume) {
+      // Resume is out of sync — correct it
+      useResumeBuilder.setState({ resume: found });
+    }
+  });
+}
