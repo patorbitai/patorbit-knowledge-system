@@ -6,6 +6,14 @@ import type { Prisma, Resume } from "@prisma/client";
 /** Prisma row alias — avoids colliding with the domain `Resume` type. */
 export type ResumeRecord = Resume;
 
+/** C16: Cross-identity duplicate — resumeId belongs to another user. */
+export class ResumeIdConflictError extends Error {
+  constructor(public readonly resumeId: string) {
+    super(`Resume ID already exists for another user: ${resumeId}`);
+    this.name = "ResumeIdConflictError";
+  }
+}
+
 /**
  * ResumeRepository — persistence operations for the canonical server-side Resume.
  *
@@ -75,8 +83,12 @@ export const resumeRepository = {
       const errMsg = (err as { message?: string })?.message ?? "";
       const isP2002 = errCode === "P2002" || errMsg.includes("Unique constraint") || errMsg.includes("unique constraint");
       if (isP2002) {
+        // Check same identity first (concurrent duplicate)
         const afterRace = await this.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
         if (afterRace) return afterRace;
+        // C16: Cross-identity duplicate — resumeId belongs to another user.
+        // Throw a specific error so the service can handle it.
+        throw new ResumeIdConflictError(resumeId);
       }
       throw err;
     }

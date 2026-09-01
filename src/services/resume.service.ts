@@ -73,6 +73,10 @@ export class ResumeConflictError extends Error {
   }
 }
 
+// ResumeIdConflictError is re-exported from repository
+import { ResumeIdConflictError } from "@/repositories/resume.repository";
+export { ResumeIdConflictError };
+
 export class ResumeService {
   /** Validate an unknown resume document against the canonical payload schema. */
   validatePayload(data: unknown): ResumePayload {

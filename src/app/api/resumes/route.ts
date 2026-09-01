@@ -7,6 +7,7 @@ import { identityService } from "@/services/identity.service";
 import {
   resumeService,
   ResumeValidationError,
+  ResumeIdConflictError,
   type SaveResumeInput,
 } from "@/services/resume.service";
 
@@ -53,6 +54,14 @@ export async function POST(req: NextRequest) {
   } catch (err: unknown) {
     if (err instanceof ResumeValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    // C16: Cross-identity duplicate — resumeId belongs to another user.
+    // Return 409 so the client can generate a new resumeId.
+    if (err instanceof ResumeIdConflictError) {
+      return NextResponse.json(
+        { error: "resumeId_conflict", message: err.message, resumeId: err.resumeId },
+        { status: 409 },
+      );
     }
     const message =
       err instanceof Error ? err.message : "Failed to create resume";

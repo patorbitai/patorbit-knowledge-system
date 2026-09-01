@@ -131,6 +131,29 @@ export async function saveLocalResumeToServer(): Promise<void> {
             useResumeBuilder.getState().setSaveStatus("saved");
             return;
           }
+          // C16: Cross-identity duplicate — resumeId belongs to another user.
+          // Generate a new resumeId and update the store.
+          if (createRes.status === 409) {
+            const conflictBody = await createRes.json().catch(() => ({}));
+            if ((conflictBody as { error?: string }).error === "resumeId_conflict") {
+              console.log("[write-back] Cross-identity resumeId conflict — regenerating ID");
+              const newId = `id_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+              const st = useResumeBuilder.getState();
+              const oldResume = st.resume;
+              const newResume = { ...oldResume, resumeId: newId };
+              // Update the resumes array and active resume
+              const updatedResumes = st.resumes.map((r) =>
+                r.resumeId === rid ? newResume : r,
+              );
+              useResumeBuilder.setState({
+                resume: newResume,
+                resumes: updatedResumes,
+                activeResumeId: newId,
+                saveStatus: "unsaved",
+              });
+              return; // will trigger a new save cycle with the new ID
+            }
+          }
           // POST also failed — fall through to generic error handling
           const createBody = await createRes.json().catch(() => ({}));
           const createMsg = (createBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
