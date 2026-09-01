@@ -9,7 +9,13 @@ import { GALLERY_SAMPLE_RESUME } from "./gallery-sample-resume";
 // A4 at 96 dpi
 const RESUME_WIDTH = 794;
 
-export function MiniaturePreview({ templateId }: { templateId: string }) {
+interface MiniaturePreviewProps {
+  templateId: string;
+  /** Optional actual resume data. If not provided, uses gallery sample. */
+  resume?: Resume;
+}
+
+export function MiniaturePreview({ templateId, resume: resumeProp }: MiniaturePreviewProps) {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const [visible, setVisible] = useState(false);
   const [scale, setScale] = useState(0.25);
@@ -44,7 +50,9 @@ export function MiniaturePreview({ templateId }: { templateId: string }) {
   }, []);
 
   const template = TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0];
-  const resume: Resume = { ...GALLERY_SAMPLE_RESUME, templateId };
+  const resume: Resume = resumeProp
+    ? { ...resumeProp, templateId }
+    : { ...GALLERY_SAMPLE_RESUME, templateId };
 
   return (
     <div
