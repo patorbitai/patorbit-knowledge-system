@@ -205,19 +205,27 @@ export class ResumeService {
     }
 
     try {
-      const record = await resumeRepository.create({
-        id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
-        resumeId: data.resumeId,
+      const record = await resumeRepository.upsert(
+        data.resumeId,
         professionalIdentityId,
-        resumeName: data.resumeName,
-        templateId: data.templateId,
-        careerStage: data.careerStage,
-        payload: data.payload as Prisma.InputJsonValue,
-      });
+        {
+          id: `res_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+          resumeId: data.resumeId,
+          professionalIdentityId,
+          resumeName: data.resumeName,
+          templateId: data.templateId,
+          careerStage: data.careerStage,
+          payload: data.payload as Prisma.InputJsonValue,
+        },
+      );
       return this.toServerResume(record);
     } catch (err: unknown) {
-      // Concurrent duplicate (unique on resumeId): treat as idempotent success.
-      if ((err as { code?: string })?.code === "P2002") {
+      // C16: Robust duplicate detection — check both error code and message
+      // because Turbopack/Next.js may wrap Prisma errors differently.
+      const errCode = (err as { code?: string })?.code;
+      const errMsg = (err as { message?: string })?.message ?? "";
+      const isP2002 = errCode === "P2002" || errMsg.includes("Unique constraint") || errMsg.includes("unique constraint");
+      if (isP2002) {
         const existingAfterRace =
           await resumeRepository.findByResumeIdAndIdentity(
             data.resumeId,

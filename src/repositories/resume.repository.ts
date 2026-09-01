@@ -56,6 +56,33 @@ export const resumeRepository = {
   },
 
   /**
+   * C16 — Upsert a resume row by resumeId + professionalIdentityId.
+   * If a row with the same resumeId already exists, return it unchanged.
+   * This prevents duplicate resumeId errors from concurrent POST requests.
+   */
+  async upsert(
+    resumeId: string,
+    professionalIdentityId: string,
+    createData: ResumeCreateInput,
+  ): Promise<ResumeRecord> {
+    const existing = await this.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
+    if (existing) return existing;
+    try {
+      return await prisma.resume.create({ data: createData });
+    } catch (err: unknown) {
+      // Concurrent duplicate — return the existing row
+      const errCode = (err as { code?: string })?.code;
+      const errMsg = (err as { message?: string })?.message ?? "";
+      const isP2002 = errCode === "P2002" || errMsg.includes("Unique constraint") || errMsg.includes("unique constraint");
+      if (isP2002) {
+        const afterRace = await this.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
+        if (afterRace) return afterRace;
+      }
+      throw err;
+    }
+  },
+
+  /**
    * Update an existing resume row (scoped to its owner identity).
    * C6: If `baseVersion` is provided, the update is conditional on the
    * current version matching. Returns null when the version is stale

@@ -28,6 +28,13 @@ const pendingSaves = new Map<string, ReturnType<typeof setTimeout>>();
 const SAVE_DEBOUNCE_MS = 1500;
 
 /**
+ * In-flight POST guard — prevents duplicate POST requests for the same resumeId.
+ * When a POST is in flight for resumeId X, any subsequent write-back for X
+ * will skip the POST phase and wait for the in-flight request to complete.
+ */
+const inflightPosts = new Map<string, Promise<unknown>>();
+
+/**
  * Save the current local resume to the server.
  * Called internally by the debounced mechanism.
  */
@@ -89,34 +96,56 @@ export async function saveLocalResumeToServer(): Promise<void> {
       // This happens when a resume was created locally (or imported)
       // and the write-back runs before any server record exists.
       console.log("[write-back] Resume not found on server — creating via POST");
-      try {
-        const createRes = await fetch("/api/resumes", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            resumeId: resume.resumeId,
-            resumeName: resume.resumeName || resume.name || "My Resume",
-            templateId: resume.templateId,
-            careerStage: sanitizeCareerStage(resume.careerStage),
-            resume,
-          }),
-        });
-        if (createRes.ok) {
-          const created = await createRes.json() as { version?: number; resumeId?: string };
-          if (created.version !== undefined) {
-            state.setServerVersion(resume.resumeId, created.version);
-          }
-          state.setSaveStatus("saved");
-          return;
-        }
-        // POST also failed — fall through to generic error handling
-        const createBody = await createRes.json().catch(() => ({}));
-        const createMsg = (createBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
-        console.error("[write-back] Create failed:", createMsg);
-      } catch (createErr) {
-        console.error("[write-back] Create network error:", createErr);
+
+      // C16: Guard against duplicate POST — if a POST is already in flight
+      // for this resumeId, wait for it to complete instead of firing another.
+      const existingPost = inflightPosts.get(resume.resumeId);
+      if (existingPost) {
+        console.log("[write-back] POST already in flight for", resume.resumeId, "— waiting");
+        await existingPost;
+        // After the in-flight POST completes, re-check: try PUT again.
+        // If the server now has the resume, PUT will succeed.
+        state.setSaveStatus("unsaved"); // trigger a fresh save cycle
+        return;
       }
-      state.setSaveStatus("sync-failed");
+
+      const rid = resume.resumeId;
+      const postPromise = (async () => {
+        try {
+          const createRes = await fetch("/api/resumes", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              resumeId: rid,
+              resumeName: resume.resumeName || resume.name || "My Resume",
+              templateId: resume.templateId,
+              careerStage: sanitizeCareerStage(resume.careerStage),
+              resume,
+            }),
+          });
+          if (createRes.ok) {
+            const created = await createRes.json() as { version?: number; resumeId?: string };
+            if (created.version !== undefined && rid) {
+              useResumeBuilder.getState().setServerVersion(rid, created.version);
+            }
+            useResumeBuilder.getState().setSaveStatus("saved");
+            return;
+          }
+          // POST also failed — fall through to generic error handling
+          const createBody = await createRes.json().catch(() => ({}));
+          const createMsg = (createBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
+          console.error("[write-back] Create failed:", createMsg);
+          useResumeBuilder.getState().setSaveStatus("sync-failed");
+        } catch (createErr) {
+          console.error("[write-back] Create network error:", createErr);
+          useResumeBuilder.getState().setSaveStatus("sync-failed");
+        } finally {
+          if (rid) inflightPosts.delete(rid);
+        }
+      })();
+
+      if (rid) inflightPosts.set(rid, postPromise);
+      await postPromise;
       return;
     }
 
@@ -300,6 +329,14 @@ export async function flushOfflineQueue(): Promise<void> {
       } else if (res.status === 404) {
         // Resume does not exist on server — create via POST
         console.log(`[write-back] Queue flush: resume ${entry.resumeId} not found — creating via POST`);
+
+        // C16: Guard against duplicate POST from regular write-back
+        const existingPost = inflightPosts.get(entry.resumeId);
+        if (existingPost) {
+          console.log(`[write-back] Queue flush: POST already in flight for ${entry.resumeId} — skipping`);
+          continue;
+        }
+
         try {
           const createRes = await fetch("/api/resumes", {
             method: "POST",
