@@ -70,17 +70,14 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-8">
       {/* ── HERO ── */}
-      <section className="space-y-1">
-        <div className="flex items-center gap-3 mb-2">
-          <LayoutDashboard className="h-5 w-5 text-blue-500 dark:text-[#22d3ee]" />
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f8fafc]">
-            {getGreeting()}, {firstName}
-          </h1>
-        </div>
+      <section className="space-y-1.5">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f8fafc]">
+          {getGreeting()}, {firstName}
+        </h1>
         <p className="text-sm text-gray-500 dark:text-[#94a3b8] max-w-xl">
           {hasResumes
             ? "Pick up where you left off or create a new resume."
-            : "Create your first professional resume to get started."}
+            : "Build a professional resume in minutes."}
         </p>
       </section>
 
@@ -88,7 +85,7 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
       <section className="flex flex-wrap gap-3">
         <button
           onClick={handleCreateResume}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-blue-500 to-blue-600 dark:from-[#0ea5e9] dark:to-[#2563eb] text-sm font-semibold text-white shadow-lg shadow-blue-500/20 hover:brightness-110 active:scale-[0.99] transition-all"
+          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
         >
           <Plus className="h-4 w-4" />
           Create Resume
@@ -120,7 +117,10 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
               const isActive = resumeId === activeResumeId;
               const resumeName = r.resumeName || "Untitled Resume";
               const templateId = r.templateId || "modern-clean";
+              const professionalTitle = (r as any).title || "";
               const experienceCount = r.experience?.length || 0;
+              const educationCount = r.education?.length || 0;
+              const skillsCount = r.skills?.length || 0;
 
               return (
                 <div
@@ -184,13 +184,26 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
                       </div>
                     </div>
 
-                    {/* Template + experience info */}
+                    {/* Professional title */}
+                    {professionalTitle && (
+                      <p className="text-[11px] font-medium text-gray-500 dark:text-slate-400 truncate">
+                        {professionalTitle}
+                      </p>
+                    )}
+
+                    {/* Template + stats */}
                     <div className="flex items-center gap-2 text-[11px] text-gray-400 dark:text-slate-500">
                       <span className="truncate">{getTemplateName(templateId)}</span>
                       {experienceCount > 0 && (
                         <>
                           <span>·</span>
                           <span>{experienceCount} experience</span>
+                        </>
+                      )}
+                      {skillsCount > 0 && (
+                        <>
+                          <span>·</span>
+                          <span>{skillsCount} skills</span>
                         </>
                       )}
                     </div>
@@ -214,17 +227,26 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
 
       {/* ── EMPTY STATE ── */}
       {!hasResumes && mounted && (
-        <section className="text-center py-12 space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-gray-100 dark:bg-white/[0.04] flex items-center justify-center">
-            <FileText className="h-8 w-8 text-gray-300 dark:text-white/20" />
+        <section className="text-center py-16 space-y-5">
+          <div className="mx-auto w-14 h-14 rounded-2xl bg-gray-50 dark:bg-white/[0.03] flex items-center justify-center border border-gray-100 dark:border-white/[0.04]">
+            <FileText className="h-6 w-6 text-gray-300 dark:text-white/15" />
           </div>
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              No resumes yet
+            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
+              Build your professional resume
             </h3>
-            <p className="text-sm text-gray-500 dark:text-slate-400 max-w-sm mx-auto">
-              Create your first resume or import an existing one to get started.
+            <p className="text-sm text-gray-400 dark:text-slate-500 max-w-xs mx-auto">
+              Choose a template, add your experience, and export a polished resume in minutes.
             </p>
+          </div>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={handleCreateResume}
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
+            >
+              <Plus className="h-4 w-4" />
+              Create Resume
+            </button>
           </div>
         </section>
       )}
