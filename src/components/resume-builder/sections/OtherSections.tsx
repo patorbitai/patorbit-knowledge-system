@@ -262,7 +262,7 @@ export function ReviewSection() {
         <div className="space-y-6">
           {/* Run Analysis CTA */}
           {!analysis && (
-            <div className="flex flex-col items-center justify-center py-10 text-center bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]">
+            <div className="flex flex-col items-center justify-center py-10 text-center bg-gray-50 dark:bg-white/[0.02] rounded-xl border border-dashed border-gray-200 dark:border-white/[0.06]">
               <Eye className="w-10 h-10 text-gray-400 dark:text-slate-600 mb-3" />
               <p className="text-sm text-gray-900 dark:text-slate-300 font-medium mb-1">Ready to review?</p>
               <p className="text-xs text-gray-500 dark:text-slate-500 mb-5">Run a full analysis to check your resume quality before previewing.</p>

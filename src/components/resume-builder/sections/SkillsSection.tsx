@@ -98,7 +98,7 @@ export function SkillsSection() {
           className="flex flex-col items-center justify-center py-14 text-center bg-gray-50 dark:bg-white/[0.02] rounded-xl border border-dashed border-gray-200 dark:border-white/[0.06]"
         >
           <ZapIcon />
-          <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-4">No skills added yet</p>
+          <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-4">Highlight your expertise</p>
           <p className="text-xs text-gray-400 dark:text-slate-500 mb-5">Add your key technical and professional skills</p>
           <div className="flex gap-2">
             <AIActionButton label="Add Skill" onClick={addSkill} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />

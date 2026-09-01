@@ -62,11 +62,11 @@ export function EducationSection() {
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-14 text-center bg-white/[0.02] rounded-xl border border-dashed border-white/[0.06]"
+            className="flex flex-col items-center justify-center py-14 text-center bg-gray-50 dark:bg-white/[0.02] rounded-xl border border-dashed border-gray-200 dark:border-white/[0.06]"
           >
             <GraduationCapIcon />
-            <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-4">No education entries yet</p>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-5">Add your degrees and academic achievements</p>
+            <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-4">Showcase your academic background</p>
+            <p className="text-xs text-gray-400 dark:text-slate-500 mb-5">Add your degrees, certifications, and academic achievements</p>
             <AIActionButton label="Add Education" onClick={handleAddEducation} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
           </motion.div>
         ) : (
@@ -117,7 +117,7 @@ export function EducationSection() {
                   </div>
                   <AnimatePresence>
                     {isExpanded && (
-                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-white/[0.06]">
+                      <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-gray-100 dark:border-white/[0.06]">
                         <div className="px-4 py-4 space-y-4">
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <FieldInput label="School / University" placeholder="Stanford University" value={edu.school} onChange={(v) => updateEducation(edu.id, "school", v)} onBlur={() => touch(`education.${idx}.school`)} error={getFieldError("education", "school", idx)} />

@@ -19,7 +19,6 @@ export function PersonalSection() {
   const aiActions = useResumeBuilder((s) => s.aiActions);
   const { touch, getFieldError } = useValidation();
 
-  const [collapsed, setCollapsed] = useState(false);
   const [summarySuggestion, setSummarySuggestion] = useState<string | null>(null);
   const [toneSuggestion, setToneSuggestion] = useState<string | null>(null);
 
@@ -72,20 +71,10 @@ export function PersonalSection() {
       description="Your basic contact details and professional summary"
       icon="👤"
       isValid={!!(resume.name && resume.email && resume.phone)}
-      actions={
-        <div className="flex items-center gap-1.5">
-          <button
-            onClick={() => setCollapsed(!collapsed)}
-            className="text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white text-xs px-2 py-1 rounded-lg hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all"
-          >
-            {collapsed ? "Expand" : "Collapse"}
-          </button>
-        </div>
-      }
     >
-      <SectionContent isCollapsed={collapsed}>
-        {/* Name & Title */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <SectionContent>
+        {/* Identity */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FieldInput
             label="Full Name"
             placeholder="Alex Johnson"
@@ -105,7 +94,7 @@ export function PersonalSection() {
         </div>
 
         {/* Contact */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <FieldInput
             label="Email"
             placeholder="alex@example.com"
@@ -134,7 +123,7 @@ export function PersonalSection() {
         {/* Professional Summary */}
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <label className="text-[11px] font-medium text-slate-400">Professional Summary</label>
+            <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">Professional Summary</label>
             <div className="flex items-center gap-1.5">
               <AIActionButton
                 label="Generate"
@@ -200,7 +189,7 @@ export function PersonalSection() {
 
         {/* Social Links */}
         <div className="space-y-2">
-          <label className="text-[11px] font-medium text-slate-400">Online Presence</label>
+          <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">Online Presence</label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <FieldInput
               label="LinkedIn"
