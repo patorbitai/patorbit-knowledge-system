@@ -8,7 +8,7 @@ import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { ai } from "@/lib/ai/client";
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
+import { Trash2, ChevronUp, ChevronDown, Plus, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
@@ -23,8 +23,6 @@ export function ProjectsSection() {
   const aiActions = useResumeBuilder((s) => s.aiActions);
   const { touch, getFieldError } = useValidation();
 
-  // Map a project entry to its claim (via sourceActivityId "projects-<n>") so
-  // the VerificationBadge reflects the claim's real evidence state.
   const claimForProject = (id: string, index: number) =>
     claims.find(
       (c) => c.sourceActivityId === id || c.sourceActivityId === `projects-${index}`,
@@ -88,54 +86,83 @@ export function ProjectsSection() {
               const projSug = projectSuggestions.get(proj.id);
 
               return (
-                <motion.div key={proj.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, height: 0 }} className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] overflow-hidden">
-                  <div className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/[0.02] transition-colors" onClick={() => toggleExpand(proj.id)}>
-                    <GripVertical className="w-3.5 h-3.5 text-gray-400 dark:text-slate-600 shrink-0 cursor-grab" />
+                <motion.div key={proj.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8, height: 0 }}
+                  className={`rounded-xl border overflow-hidden transition-colors ${
+                    isExpanded
+                      ? "border-cyan-500/20 bg-white dark:bg-[#0C1222]"
+                      : "border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.03]"
+                  }`}
+                >
+                  {/* ── Collapsed card header ── */}
+                  <div className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/[0.02] transition-colors" onClick={(e) => { e.stopPropagation(); toggleExpand(proj.id); }}>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{proj.name || "New Project"}</span>
-                        {proj.tech && <><span className="text-gray-400 dark:text-slate-600">·</span><span className="text-xs text-gray-500 dark:text-slate-500 truncate">{proj.tech}</span></>}
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{proj.name || "New Project"}</span>
+                        {proj.tech && (
+                          <>
+                            <span className="text-gray-300 dark:text-slate-600">·</span>
+                            <span className="text-xs text-gray-500 dark:text-slate-500 truncate">{proj.tech}</span>
+                          </>
+                        )}
                       </div>
-                      {proj.status && <span className="text-[11px] text-gray-400 dark:text-slate-500">{proj.status}</span>}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {(proj.startDate || proj.endDate) && (
+                          <span className="text-[11px] text-gray-400 dark:text-slate-500">
+                            {proj.startDate || "Start"} — {proj.endDate || "End"}
+                          </span>
+                        )}
+                        {proj.role && (
+                          <>
+                            <span className="text-gray-300 dark:text-slate-600">·</span>
+                            <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{proj.role}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 shrink-0">
                       {(() => {
                         const claim = claimForProject(proj.id, idx);
-                        return claim ? (
-                          <VerificationBadge claim={claim} size="sm" />
-                        ) : (
-                          <span className="text-[10px] text-gray-400 dark:text-slate-600 italic">No claim yet</span>
-                        );
+                        return claim ? <VerificationBadge claim={claim} size="sm" /> : null;
                       })()}
                       <div className="flex items-center gap-0.5">
                         <button onClick={(e) => { e.stopPropagation(); moveProject(proj.id, -1); }} disabled={idx === 0} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
                         <button onClick={(e) => { e.stopPropagation(); moveProject(proj.id, 1); }} disabled={idx === projects.length - 1} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); removeProject(proj.id); }} className="p-1.5 text-red-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); toggleExpand(proj.id); }} className="p-1 text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 rounded-md hover:bg-cyan-50 dark:hover:bg-cyan-500/10" title="Edit"><Pencil className="w-3 h-3" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); removeProject(proj.id); }} className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10" title="Delete"><Trash2 className="w-3 h-3" /></button>
                     </div>
                   </div>
+
+                  {/* ── Expanded content ── */}
                   <AnimatePresence>
                     {isExpanded && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-gray-100 dark:border-white/[0.06]">
-                        <div className="px-4 py-4 space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput label="Project Name" placeholder="AI Chat Platform" value={proj.name} onChange={(v) => updateProject(proj.id, "name", v)} onBlur={() => touch(`projects.${idx}.name`)} error={getFieldError("projects", "name", idx)} />
-                            <FieldInput label="Technologies Used" placeholder="React, Node.js, OpenAI" value={proj.tech} onChange={(v) => updateProject(proj.id, "tech", v)} />
-                            <FieldInput label="Role" placeholder="Lead Developer" value={proj.role} onChange={(v) => updateProject(proj.id, "role", v)} />
-                            <FieldInput label="Project Link" placeholder="https://github.com/..." value={proj.link} onChange={(v) => updateProject(proj.id, "link", v)} type="url" />
-                            <FieldInput label="Start Date" placeholder="Jan 2024" value={proj.startDate} onChange={(v) => updateProject(proj.id, "startDate", v)} />
-                            <FieldInput label="End Date" placeholder="Jun 2024" value={proj.endDate} onChange={(v) => updateProject(proj.id, "endDate", v)} />
+                        <div className="px-4 py-4 space-y-5">
+                          {/* ── Project Details ── */}
+                          <div>
+                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Project Details</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <FieldInput label="Project Name" placeholder="AI Chat Platform" value={proj.name} onChange={(v) => updateProject(proj.id, "name", v)} onBlur={() => touch(`projects.${idx}.name`)} error={getFieldError("projects", "name", idx)} />
+                              <FieldInput label="Technologies Used" placeholder="React, Node.js, OpenAI" value={proj.tech} onChange={(v) => updateProject(proj.id, "tech", v)} />
+                              <FieldInput label="Role" placeholder="Lead Developer" value={proj.role} onChange={(v) => updateProject(proj.id, "role", v)} />
+                              <FieldInput label="Project Link" placeholder="https://github.com/..." value={proj.link} onChange={(v) => updateProject(proj.id, "link", v)} type="url" />
+                              <FieldInput label="Start Date" placeholder="Jan 2024" value={proj.startDate} onChange={(v) => updateProject(proj.id, "startDate", v)} />
+                              <FieldInput label="End Date" placeholder="Jun 2024" value={proj.endDate} onChange={(v) => updateProject(proj.id, "endDate", v)} />
+                            </div>
                           </div>
 
-                          <div className="flex items-center flex-wrap gap-1.5">
-                            <AIActionButton label="Generate Description" onClick={() => handleGenerateDescription(proj.id)} isLoading={aiActions[`proj-${proj.id}-gen`]?.status === "loading"} variant="ghost" />
-                            {proj.description && <AIActionButton label="Improve Description" onClick={() => handleGenerateDescription(proj.id)} isLoading={aiActions[`proj-${proj.id}-gen`]?.status === "loading"} variant="ghost" />}
+                          {/* ── Description ── */}
+                          <div>
+                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Description</h4>
+                            <div className="flex items-center flex-wrap gap-1.5 mb-3">
+                              <AIActionButton label="Generate Description" onClick={() => handleGenerateDescription(proj.id)} isLoading={aiActions[`proj-${proj.id}-gen`]?.status === "loading"} variant="ghost" />
+                              {proj.description && <AIActionButton label="Improve Description" onClick={() => handleGenerateDescription(proj.id)} isLoading={aiActions[`proj-${proj.id}-gen`]?.status === "loading"} variant="ghost" />}
+                            </div>
+                            {aiActions[`proj-${proj.id}-gen`]?.status === "error" && (
+                              <p className="text-[11px] text-red-400 mb-2">{aiActions[`proj-${proj.id}-gen`].error || "AI request failed. Please try again."}</p>
+                            )}
+                            <FieldInput label="" placeholder="Describe the project and your contributions..." value={proj.description} onChange={(v) => updateProject(proj.id, "description", v)} type="textarea" rows={4} />
                           </div>
-                          {aiActions[`proj-${proj.id}-gen`]?.status === "error" && (
-                            <p className="text-[11px] text-red-400">{aiActions[`proj-${proj.id}-gen`].error || "AI request failed. Please try again."}</p>
-                          )}
-
-                          <FieldInput label="Description" placeholder="Describe the project and your contributions..." value={proj.description} onChange={(v) => updateProject(proj.id, "description", v)} type="textarea" rows={6} />
 
                           {projSug && (
                             <SmartSuggestion

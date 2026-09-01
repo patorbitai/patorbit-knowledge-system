@@ -8,7 +8,7 @@ import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton, AIActionDropdown } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { ai } from "@/lib/ai/client";
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
+import { Trash2, ChevronUp, ChevronDown, Plus, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
@@ -22,8 +22,6 @@ export function ExperienceSection() {
   const setAIAction = useResumeBuilder((s) => s.setAIAction);
   const aiActions = useResumeBuilder((s) => s.aiActions);
 
-  // Map an experience entry to its claim (via sourceActivityId "experience-<n>") so
-  // the VerificationBadge reflects the claim's real evidence state.
   const claimForExperience = (id: string, index: number) =>
     claims.find(
       (c) => c.sourceActivityId === id || c.sourceActivityId === `experience-${index}`,
@@ -60,7 +58,6 @@ export function ExperienceSection() {
         tone === "ats"
           ? await ai.atsOptimization(inputText)
           : await ai.rewrite(inputText, tone);
-      // Downstream SmartSuggestion expects { description, bulletPoints }
       const content = { description: result.content, bulletPoints: [result.content] };
       setSuggestions((prev) => {
         const next = new Map(prev);
@@ -181,7 +178,7 @@ export function ExperienceSection() {
             />
           </motion.div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3">
             {experience.map((exp, idx) => {
               const isExpanded = expandedIds.has(exp.id);
               const expSuggestion = suggestions.get(exp.id);
@@ -198,38 +195,49 @@ export function ExperienceSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8, height: 0 }}
-                  className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] overflow-hidden"
+                  className={`rounded-xl border overflow-hidden transition-colors ${
+                    isExpanded
+                      ? "border-cyan-500/20 bg-white dark:bg-[#0C1222]"
+                      : "border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.03]"
+                  }`}
                 >
-                  {/* Entry header */}
+                  {/* ── Collapsed card header ── */}
                   <div
                     className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/[0.02] transition-colors"
-                    onClick={() => toggleExpand(exp.id)}
+                    onClick={(e) => { e.stopPropagation(); toggleExpand(exp.id); }}
                   >
-                    <GripVertical className="w-3.5 h-3.5 text-gray-400 dark:text-slate-600 shrink-0 cursor-grab" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                           {exp.position || "New Position"}
                         </span>
                         {exp.company && (
                           <>
-                            <span className="text-gray-400 dark:text-slate-600">·</span>
+                            <span className="text-gray-300 dark:text-slate-600">·</span>
                             <span className="text-sm text-gray-500 dark:text-slate-400 truncate">{exp.company}</span>
                           </>
                         )}
                       </div>
-                      {exp.duration && (
-                        <span className="text-[11px] text-gray-400 dark:text-slate-500">{exp.duration}</span>
-                      )}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {(exp.startDate || exp.endDate) && (
+                          <span className="text-[11px] text-gray-400 dark:text-slate-500">
+                            {exp.startDate || "Start"} — {exp.endDate || "End"}
+                          </span>
+                        )}
+                        {exp.location && (
+                          <>
+                            <span className="text-gray-300 dark:text-slate-600">·</span>
+                            <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{exp.location}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
+
+                    {/* Right side: minimal actions */}
+                    <div className="flex items-center gap-1 shrink-0">
                       {(() => {
                         const claim = claimForExperience(exp.id, idx);
-                        return claim ? (
-                          <VerificationBadge claim={claim} size="sm" />
-                        ) : (
-                          <span className="text-[10px] text-gray-400 dark:text-slate-600 italic">No claim yet</span>
-                        );
+                        return claim ? <VerificationBadge claim={claim} size="sm" /> : null;
                       })()}
                       <div className="flex items-center gap-0.5">
                         <button
@@ -248,15 +256,23 @@ export function ExperienceSection() {
                         </button>
                       </div>
                       <button
+                        onClick={(e) => { e.stopPropagation(); toggleExpand(exp.id); }}
+                        className="p-1 text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 rounded-md hover:bg-cyan-50 dark:hover:bg-cyan-500/10"
+                        title="Edit"
+                      >
+                        <Pencil className="w-3 h-3" />
+                      </button>
+                      <button
                         onClick={(e) => { e.stopPropagation(); removeExperience(exp.id); }}
-                        className="p-1.5 text-red-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10"
+                        className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10"
+                        title="Delete"
                       >
                         <Trash2 className="w-3 h-3" />
                       </button>
                     </div>
                   </div>
 
-                  {/* Expanded content */}
+                  {/* ── Expanded content ── */}
                   <AnimatePresence>
                     {isExpanded && (
                       <motion.div
@@ -264,49 +280,66 @@ export function ExperienceSection() {
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="border-t border-gray-200 dark:border-white/[0.06]"
+                        className="border-t border-gray-100 dark:border-white/[0.06]"
                       >
-                        <div className="px-4 py-4 space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput
-                              label="Company"
-                              placeholder="Company Name"
-                              value={exp.company}
-                              onChange={(v) => updateExperience(exp.id, "company", v)}
-                              onBlur={() => touch(`experience.${idx}.company`)}
-                              error={getFieldError("experience", "company", idx)}
-                            />
-                            <FieldInput
-                              label="Position"
-                              placeholder="Senior Software Engineer"
-                              value={exp.position}
-                              onChange={(v) => updateExperience(exp.id, "position", v)}
-                              onBlur={() => touch(`experience.${idx}.position`)}
-                              error={getFieldError("experience", "position", idx)}
-                            />
-                            <FieldInput
-                              label="Location"
-                              placeholder="San Francisco, CA"
-                              value={exp.location}
-                              onChange={(v) => updateExperience(exp.id, "location", v)}
-                            />
-                            <div className="grid grid-cols-2 gap-4">
+                        <div className="px-4 py-4 space-y-5">
+                          {/* ── Role Details ── */}
+                          <div>
+                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Role Details</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <FieldInput
-                                label="Start Date"
-                                placeholder="Jan 2020"
-                                value={exp.startDate}
-                                onChange={(v) => updateExperience(exp.id, "startDate", v)}
+                                label="Position"
+                                placeholder="Senior Software Engineer"
+                                value={exp.position}
+                                onChange={(v) => updateExperience(exp.id, "position", v)}
+                                onBlur={() => touch(`experience.${idx}.position`)}
+                                error={getFieldError("experience", "position", idx)}
                               />
                               <FieldInput
-                                label="End Date"
-                                placeholder="Present"
-                                value={exp.endDate}
-                                onChange={(v) => updateExperience(exp.id, "endDate", v)}
+                                label="Company"
+                                placeholder="Company Name"
+                                value={exp.company}
+                                onChange={(v) => updateExperience(exp.id, "company", v)}
+                                onBlur={() => touch(`experience.${idx}.company`)}
+                                error={getFieldError("experience", "company", idx)}
                               />
+                              <FieldInput
+                                label="Location"
+                                placeholder="San Francisco, CA"
+                                value={exp.location}
+                                onChange={(v) => updateExperience(exp.id, "location", v)}
+                              />
+                              <div className="grid grid-cols-2 gap-3">
+                                <FieldInput
+                                  label="Start Date"
+                                  placeholder="Jan 2020"
+                                  value={exp.startDate}
+                                  onChange={(v) => updateExperience(exp.id, "startDate", v)}
+                                />
+                                <FieldInput
+                                  label="End Date"
+                                  placeholder="Present"
+                                  value={exp.endDate}
+                                  onChange={(v) => updateExperience(exp.id, "endDate", v)}
+                                />
+                              </div>
                             </div>
                           </div>
 
-                          {/* AI actions row */}
+                          {/* ── Description ── */}
+                          <div>
+                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Description</h4>
+                            <FieldInput
+                              label=""
+                              placeholder="Describe your role and key responsibilities..."
+                              value={exp.description}
+                              onChange={(v) => updateExperience(exp.id, "description", v)}
+                              type="textarea"
+                              rows={4}
+                            />
+                          </div>
+
+                          {/* ── AI Actions ── */}
                           <div className="flex items-center flex-wrap gap-1.5">
                             <AIActionDropdown
                               label="Rewrite with AI"
@@ -319,7 +352,7 @@ export function ExperienceSection() {
                               ]}
                             />
                             <AIActionButton
-                              label="Generate Bullet Points"
+                              label="Generate Bullets"
                               onClick={() => handleGenerateBullets(exp.id)}
                               isLoading={aiActions[`exp-${exp.id}-bullets`]?.status === "loading"}
                               variant="ghost"
@@ -337,43 +370,33 @@ export function ExperienceSection() {
                             <p className="text-[11px] text-red-400">{expAIError}</p>
                           )}
 
-                          {/* Description */}
-                          <FieldInput
-                            label="Description"
-                            placeholder="Describe your role and key responsibilities..."
-                            value={exp.description}
-                            onChange={(v) => updateExperience(exp.id, "description", v)}
-                            type="textarea"
-                            rows={6}
-                          />
-
-                          {/* Bullet points */}
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <label className="text-[11px] font-medium text-gray-500 dark:text-slate-400">
-                                Bullet Points ({exp.bulletPoints?.length || 0})
-                              </label>
+                          {/* ── Achievements / Bullet Points ── */}
+                          <div>
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+                                Achievements ({exp.bulletPoints?.length || 0})
+                              </h4>
                               <button
                                 onClick={() => handleAddBullet(exp.id)}
-                                className="text-[10px] text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 font-medium flex items-center gap-1"
+                                className="text-[11px] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 font-medium flex items-center gap-1"
                               >
-                                <Plus className="w-2.5 h-2.5" /> Add Bullet
+                                <Plus className="w-3 h-3" /> Add
                               </button>
                             </div>
                             {(!exp.bulletPoints || exp.bulletPoints.length === 0) ? (
-                              <div className="text-[11px] text-gray-400 dark:text-slate-500 italic">
-                                No bullet points yet. Add detailed achievements for ATS optimization.
-                              </div>
+                              <p className="text-[11px] text-gray-400 dark:text-slate-500 italic">
+                                Add bullet points to highlight your achievements and impact.
+                              </p>
                             ) : (
-                              <div className="space-y-1.5">
+                              <div className="space-y-1">
                                 {exp.bulletPoints.map((bp, bpIdx) => (
                                   <div key={bpIdx} className="flex items-start gap-2 group/bullet">
-                                    <span className="text-gray-400 dark:text-slate-500 mt-2 shrink-0">•</span>
+                                    <span className="text-gray-300 dark:text-slate-600 mt-2.5 shrink-0 text-xs">•</span>
                                     <div className="flex-1">
                                       <textarea
                                         value={bp}
                                         onChange={(e) => handleUpdateBullet(exp.id, bpIdx, e.target.value)}
-                                        className="w-full bg-transparent text-[15px] text-gray-900 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-600 border-b border-transparent hover:border-gray-300 dark:hover:border-white/[0.08] focus:border-blue-500/50 outline-none py-1.5 transition-colors resize-none leading-relaxed"
+                                        className="w-full bg-transparent text-sm text-gray-900 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-600 border-b border-transparent hover:border-gray-300 dark:hover:border-white/[0.08] focus:border-cyan-500/50 outline-none py-1.5 transition-colors resize-none leading-relaxed"
                                         placeholder="Describe an achievement or responsibility..."
                                         rows={2}
                                       />
@@ -406,7 +429,7 @@ export function ExperienceSection() {
                             )}
                           </div>
 
-                          {/* AI Suggestions */}
+                          {/* ── AI Suggestions ── */}
                           {expSuggestion?.type === "bullets" && (
                             <SmartSuggestion
                               original=""

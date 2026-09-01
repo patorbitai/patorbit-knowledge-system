@@ -6,7 +6,7 @@ import { SectionCard } from "../section-card";
 import { FieldInput } from "../fields/FieldInput";
 import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton } from "../AIActionButton";
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus } from "lucide-react";
+import { Trash2, ChevronUp, ChevronDown, Plus, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
@@ -18,8 +18,6 @@ export function EducationSection() {
   const moveEducation = useResumeBuilder((s) => s.moveEducation);
   const { touch, getFieldError } = useValidation();
 
-  // Map an education entry to its claim (via sourceActivityId "education-<n>") so
-  // the VerificationBadge reflects the claim's real evidence state.
   const claimForEducation = (id: string, index: number) =>
     resume.claims.find(
       (c) => c.sourceActivityId === id || c.sourceActivityId === `education-${index}`,
@@ -80,60 +78,76 @@ export function EducationSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8, height: 0 }}
-                  className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] overflow-hidden"
+                  className={`rounded-xl border overflow-hidden transition-colors ${
+                    isExpanded
+                      ? "border-cyan-500/20 bg-white dark:bg-[#0C1222]"
+                      : "border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.03]"
+                  }`}
                 >
+                  {/* ── Collapsed card header ── */}
                   <div
                     className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/[0.02] transition-colors"
-                    onClick={() => toggleExpand(edu.id)}
+                    onClick={(e) => { e.stopPropagation(); toggleExpand(edu.id); }}
                   >
-                    <GripVertical className="w-3.5 h-3.5 text-gray-400 dark:text-slate-600 shrink-0 cursor-grab" />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-white truncate">{edu.school || "New Education"}</span>
+                        <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{edu.school || "New Education"}</span>
                         {edu.degree && (
                           <>
-                            <span className="text-gray-400 dark:text-slate-600">·</span>
+                            <span className="text-gray-300 dark:text-slate-600">·</span>
                             <span className="text-sm text-gray-500 dark:text-slate-400 truncate">{edu.degree}</span>
                           </>
                         )}
                       </div>
-                      {edu.year && <span className="text-[11px] text-gray-400 dark:text-slate-500">{edu.year}</span>}
+                      <div className="flex items-center gap-2 mt-0.5">
+                        {edu.year && <span className="text-[11px] text-gray-400 dark:text-slate-500">{edu.year}</span>}
+                        {edu.field && (
+                          <>
+                            <span className="text-gray-300 dark:text-slate-600">·</span>
+                            <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{edu.field}</span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1 shrink-0">
                       {(() => {
                         const claim = claimForEducation(edu.id, idx);
-                        return claim ? (
-                          <VerificationBadge claim={claim} size="sm" />
-                        ) : (
-                          <span className="text-[10px] text-gray-400 dark:text-slate-600 italic">No claim yet</span>
-                        );
+                        return claim ? <VerificationBadge claim={claim} size="sm" /> : null;
                       })()}
                       <div className="flex items-center gap-0.5">
                         <button onClick={(e) => { e.stopPropagation(); moveEducation(edu.id, -1); }} disabled={idx === 0} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
                         <button onClick={(e) => { e.stopPropagation(); moveEducation(edu.id, 1); }} disabled={idx === resume.education.length - 1} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); removeEducation(edu.id); }} className="p-1.5 text-red-400 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10"><Trash2 className="w-3 h-3" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); toggleExpand(edu.id); }} className="p-1 text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 rounded-md hover:bg-cyan-50 dark:hover:bg-cyan-500/10" title="Edit"><Pencil className="w-3 h-3" /></button>
+                      <button onClick={(e) => { e.stopPropagation(); removeEducation(edu.id); }} className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10" title="Delete"><Trash2 className="w-3 h-3" /></button>
                     </div>
                   </div>
+
+                  {/* ── Expanded content ── */}
                   <AnimatePresence>
                     {isExpanded && (
                       <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="border-t border-gray-100 dark:border-white/[0.06]">
-                        <div className="px-4 py-4 space-y-4">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput label="School / University" placeholder="Stanford University" value={edu.school} onChange={(v) => updateEducation(edu.id, "school", v)} onBlur={() => touch(`education.${idx}.school`)} error={getFieldError("education", "school", idx)} />
-                            <FieldInput label="Degree" placeholder="Bachelor of Science" value={edu.degree} onChange={(v) => updateEducation(edu.id, "degree", v)} onBlur={() => touch(`education.${idx}.degree`)} error={getFieldError("education", "degree", idx)} />
+                        <div className="px-4 py-4 space-y-5">
+                          {/* ── Academic Details ── */}
+                          <div>
+                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Academic Details</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <FieldInput label="School / University" placeholder="Stanford University" value={edu.school} onChange={(v) => updateEducation(edu.id, "school", v)} onBlur={() => touch(`education.${idx}.school`)} error={getFieldError("education", "school", idx)} />
+                              <FieldInput label="Degree" placeholder="Bachelor of Science" value={edu.degree} onChange={(v) => updateEducation(edu.id, "degree", v)} onBlur={() => touch(`education.${idx}.degree`)} error={getFieldError("education", "degree", idx)} />
+                              <FieldInput label="Field of Study" placeholder="Computer Science" value={edu.field} onChange={(v) => updateEducation(edu.id, "field", v)} />
+                              <FieldInput label="Year" placeholder="2020" value={edu.year} onChange={(v) => updateEducation(edu.id, "year", v)} />
+                              <FieldInput label="GPA" placeholder="3.8 / 4.0" value={edu.gpa} onChange={(v) => updateEducation(edu.id, "gpa", v)} />
+                              <FieldInput label="Location" placeholder="Stanford, CA" value={edu.location} onChange={(v) => updateEducation(edu.id, "location", v)} />
+                            </div>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput label="Field of Study" placeholder="Computer Science" value={edu.field} onChange={(v) => updateEducation(edu.id, "field", v)} />
-                            <FieldInput label="Year" placeholder="2020" value={edu.year} onChange={(v) => updateEducation(edu.id, "year", v)} />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput label="GPA" placeholder="3.8 / 4.0" value={edu.gpa} onChange={(v) => updateEducation(edu.id, "gpa", v)} />
-                            <FieldInput label="Location" placeholder="Stanford, CA" value={edu.location} onChange={(v) => updateEducation(edu.id, "location", v)} />
-                          </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <FieldInput label="Honors" placeholder="Cum Laude, Dean's List" value={edu.honors} onChange={(v) => updateEducation(edu.id, "honors", v)} />
-                            <FieldInput label="Activities" placeholder="Robotics Club, Hackathon Organizer" value={edu.activities} onChange={(v) => updateEducation(edu.id, "activities", v)} />
+
+                          {/* ── Additional Info ── */}
+                          <div>
+                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Additional Info</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              <FieldInput label="Honors" placeholder="Cum Laude, Dean's List" value={edu.honors} onChange={(v) => updateEducation(edu.id, "honors", v)} />
+                              <FieldInput label="Activities" placeholder="Robotics Club, Hackathon Organizer" value={edu.activities} onChange={(v) => updateEducation(edu.id, "activities", v)} />
+                            </div>
                           </div>
                         </div>
                       </motion.div>
