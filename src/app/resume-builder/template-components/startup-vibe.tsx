@@ -3,7 +3,13 @@ import { generateTemplate } from "./_template-factory";
 import { fontFamilies } from "@/lib/resume-design-system";
 
 export const StartupVibePreview = generateTemplate({
-  theme: { ink: "#0f172a", body: "#334155", muted: "#64748b", light: "#94a3b8", accent: "#10b981", border: "#d1fae5", bulletChar: "▸" },
+  theme: { ink: "#064e3b", body: "#374151", muted: "#6b7280", light: "#9ca3af", accent: "#059669", border: "#d1fae5", bulletChar: "▸" },
   fontFamily: fontFamilies.jakarta,
-  header: "centered",
+  header: "split-contact",
+  layout: "two-column-sidebar",
+  sidebarPosition: "left",
+  sectionOrder: ["summary", "experience", "projects", "certs", "achievements", "languages", "interests", "skills", "education"],
+  sectionTitleStyle: "minimal",
+  skillStyle: "chips",
+  bullet: "▸",
 });

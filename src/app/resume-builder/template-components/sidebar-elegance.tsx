@@ -3,7 +3,13 @@ import { generateTemplate } from "./_template-factory";
 import { fontFamilies } from "@/lib/resume-design-system";
 
 export const SidebarElegancePreview = generateTemplate({
-  theme: { ink: "#0f172a", body: "#334155", muted: "#64748b", light: "#94a3b8", accent: "#6366f1", border: "#e2e8f0", bulletChar: "▸" },
-  fontFamily: fontFamilies.jakarta,
-  header: "left",
+  theme: { ink: "#1e1b4b", body: "#374151", muted: "#6b7280", light: "#9ca3af", accent: "#7c3aed", border: "#e5e7eb", bulletChar: "▸" },
+  fontFamily: fontFamilies.sans,
+  header: "split-contact",
+  layout: "two-column-sidebar",
+  sidebarPosition: "right",
+  sectionOrder: ["summary", "experience", "projects", "certs", "achievements", "languages", "interests", "skills", "education"],
+  sectionTitleStyle: "minimal",
+  skillStyle: "chips",
+  bullet: "▸",
 });

@@ -3,7 +3,13 @@ import { generateTemplate } from "./_template-factory";
 import { fontFamilies } from "@/lib/resume-design-system";
 
 export const CreativePortfolioPreview = generateTemplate({
-  theme: { ink: "#0f172a", body: "#334155", muted: "#64748b", light: "#94a3b8", accent: "#ec4899", border: "#f3e8ff", bulletChar: "◆" },
+  theme: { ink: "#1e1b4b", body: "#374151", muted: "#6b7280", light: "#9ca3af", accent: "#7c3aed", border: "#e5e7eb", bulletChar: "✦" },
   fontFamily: fontFamilies.jakarta,
-  header: "left",
+  header: "centered",
+  layout: "two-column-sidebar",
+  sidebarPosition: "left",
+  sectionOrder: ["summary", "experience", "projects", "certs", "achievements", "languages", "interests", "skills", "education"],
+  sectionTitleStyle: "boxed",
+  skillStyle: "chips",
+  bullet: "✦",
 });

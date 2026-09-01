@@ -3,7 +3,13 @@ import { generateTemplate } from "./_template-factory";
 import { fontFamilies } from "@/lib/resume-design-system";
 
 export const ConsultingElitePreview = generateTemplate({
-  theme: { ink: "#1f2937", body: "#374151", muted: "#6b7280", light: "#9ca3af", accent: "#92400e", border: "#d1d5db", bulletChar: "◆" },
-  fontFamily: fontFamilies.garamond,
-  header: "gold-accent",
+  theme: { ink: "#0d1b2a", body: "#1e293b", muted: "#52637a", light: "#94a3b8", accent: "#1d4ed8", border: "#dde3ea", bulletChar: "▸" },
+  fontFamily: fontFamilies.jakarta,
+  header: "left",
+  layout: "compact",
+  density: "compact",
+  sectionOrder: ["summary", "experience", "skills", "education", "certs", "projects"],
+  sectionTitleStyle: "minimal",
+  skillStyle: "grouped",
+  bullet: "▸",
 });

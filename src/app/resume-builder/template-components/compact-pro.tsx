@@ -3,7 +3,13 @@ import { generateTemplate } from "./_template-factory";
 import { fontFamilies } from "@/lib/resume-design-system";
 
 export const CompactProPreview = generateTemplate({
-  theme: { ink: "#111827", body: "#374151", muted: "#6b7280", light: "#9ca3af", accent: "#059669", border: "#d1d5db", bulletChar: "–" },
+  theme: { ink: "#1e293b", body: "#334155", muted: "#64748b", light: "#94a3b8", accent: "#475569", border: "#e2e8f0", bulletChar: "–" },
   fontFamily: fontFamilies.sans,
-  header: "minimal",
+  header: "left",
+  layout: "compact",
+  density: "compact",
+  sectionOrder: ["experience", "skills", "projects", "education", "certs", "achievements", "languages", "summary"],
+  sectionTitleStyle: "underline",
+  skillStyle: "grouped",
+  bullet: "–",
 });
