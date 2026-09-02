@@ -146,7 +146,7 @@ export default function PreviewPage() {
         {/* Content — resume is the hero */}
         <div className="flex-1 min-h-0 overflow-hidden bg-[#060a14]">
           {activeTab === "resume" ? (
-            <LiveStylePreview fitMode="contain" maxFit={1} />
+            <LiveStylePreview fitMode="width" maxFit={1} />
           ) : (
             <div className="h-full overflow-y-auto flex items-start justify-center px-6 sm:px-10 py-8">
               {activeTab === "passport" && <Passport />}
