@@ -495,7 +495,7 @@ function splitOverTall(
     const startPage = state.page;
     const collected: HTMLElement[][] = [];
     const subState: DistState = { page: startPage, used: state.used, lastMB: state.lastMB };
-    distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx);
+    distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx, 0, true);
     for (let k = startPage; k <= subState.page; k++) {
       const clone = item.cloneNode(false) as HTMLElement;
       for (const b of collected[k] ?? []) clone.appendChild(b.cloneNode(true));
@@ -549,6 +549,10 @@ function distribute(
   chromeB: number,
   ctx: Ctx,
   firstTopExtra = 0,
+  /** When true, headings are placed independently (no keepsWithNext). 
+   *  Used inside splitOverTall so section titles don't force their entire 
+   *  section to the next page, leaving blank gaps. */
+  independentHeadings = false,
 ): void {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -566,7 +570,7 @@ function distribute(
     // next unit is the block's first atomic child, not the whole wrapper — a
     // `space-y-5 > article×4` container must not force its heading off the
     // page just because the full container is taller than the page.
-    if (fits && i + 1 < items.length && keepsWithNext(item)) {
+    if (!independentHeadings && fits && i + 1 < items.length && keepsWithNext(item)) {
       const n = nextUnitMetrics(items[i + 1], ctx.zoom);
       const gap2 = Math.max(m.mb, n.mt);
       const bothNeed = gap + m.h + m.mb + gap2 + n.h + n.mb;
