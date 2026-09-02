@@ -254,6 +254,55 @@ describe("Pagination — Semantic Item Atomicity", () => {
   });
 });
 
+describe("Pagination — Atomic Item Algorithm", () => {
+  it("splitOverTall passes atomicItems=true to distribute", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../PaginatedResumeSheet.tsx"),
+      "utf-8"
+    );
+    // The entire file must contain this exact call in splitOverTall
+    expect(content).toContain("distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx, 0, true, true)");
+  });
+
+  it("distribute has atomicItems parameter", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../PaginatedResumeSheet.tsx"),
+      "utf-8"
+    );
+    expect(content).toContain("atomicItems = false");
+  });
+
+  it("atomic mode moves items whole instead of splitting", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../PaginatedResumeSheet.tsx"),
+      "utf-8"
+    );
+    const idx = content.indexOf("if (atomicItems)");
+    const block = content.slice(idx, idx + 800);
+    expect(block).toContain("MOVE_TO_NEXT_PAGE");
+    expect(block).toContain("nextPage(state)");
+    expect(block).toContain("place(state, out, item, m.mt, m.mb, m.h)");
+  });
+
+  it("atomic mode only splits items taller than entire page", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../PaginatedResumeSheet.tsx"),
+      "utf-8"
+    );
+    const idx = content.indexOf("if (atomicItems)");
+    const block = content.slice(idx, idx + 800);
+    expect(block).toContain("splitOverTall(item, state, out, chromeT, chromeB, ctx)");
+  });
+});
+
 describe("Pagination — Preview/PDF Parity", () => {
   it("PaginatedResumeSheet is the single source of truth for all previews", async () => {
     const fs = await import("fs");

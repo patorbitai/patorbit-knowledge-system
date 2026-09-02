@@ -546,7 +546,7 @@ function splitOverTall(
     const startPage = state.page;
     const collected: HTMLElement[][] = [];
     const subState: DistState = { page: startPage, used: state.used, lastMB: state.lastMB };
-    distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx, 0, true);
+    distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx, 0, true, true);
     for (let k = startPage; k <= subState.page; k++) {
       const clone = item.cloneNode(false) as HTMLElement;
       for (const b of collected[k] ?? []) clone.appendChild(b.cloneNode(true));
@@ -604,6 +604,12 @@ function distribute(
    *  Used inside splitOverTall so section titles don't force their entire 
    *  section to the next page, leaving blank gaps. */
   independentHeadings = false,
+  /** When true, every item is treated as a semantic pagination unit.
+   *  Items that don't fit are moved WHOLE to the next page, never split.
+   *  Only an item taller than the ENTIRE page may be split (single-item
+   *  exception). Used inside splitOverTall so Experience/Education/Project
+   *  entries are never fragmented across pages. */
+  atomicItems = false,
 ): void {
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
@@ -611,16 +617,8 @@ function distribute(
     const usable = usableFor(state.page, chromeT, chromeB, ctx, firstTopExtra);
     const first = state.used === 0;
     const gap = first ? m.mt : Math.max(state.lastMB, m.mt);
-    // The item's own margin-bottom must fit too — it is part of the block's
-    // total footprint (the true page total is used + lastMB). Without it,
-    // pages whose last block carries a bottom margin overflow and clip.
     const fits = state.used + gap + m.h + m.mb <= usable;
 
-    // A heading must not be orphaned at the page bottom: if the next SEMANTIC
-    // unit won't fit after it, move the heading to the next page with it. The
-    // next unit is the block's first atomic child, not the whole wrapper — a
-    // `space-y-5 > article×4` container must not force its heading off the
-    // page just because the full container is taller than the page.
     const blockLabel = debugLabel(item);
     const remaining = usable - state.used;
 
@@ -642,10 +640,30 @@ function distribute(
       continue;
     }
 
-    // Does not fit here. Move the block to the next page WHOLE when it fits
-    // there — atomic keep-together units (an experience article) and small
-    // blocks alike.
+    // Does not fit on the current page.
     const nextUsable = usableFor(state.page + 1, chromeT, chromeB, ctx, firstTopExtra);
+
+    // ── ATOMIC ITEMS MODE ──────────────────────────────────────────────
+    // When atomicItems is true (called from splitOverTall distributing a
+    // section's children), every child is a semantic pagination unit
+    // (e.g. one Experience entry). Move it WHOLE to the next page.
+    // Only split if the item itself is taller than the entire page.
+    if (atomicItems) {
+      if (m.mt + m.h + m.mb <= nextUsable) {
+        debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "MOVE_TO_NEXT_PAGE" });
+        nextPage(state);
+        place(state, out, item, m.mt, m.mb, m.h);
+        continue;
+      }
+      // Item is taller than the entire page — single-item exception.
+      // Allow splitOverTall to break it, but this is ONLY for items
+      // that physically cannot fit on any single page.
+      debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "SPLIT" });
+      splitOverTall(item, state, out, chromeT, chromeB, ctx);
+      continue;
+    }
+
+    // ── NORMAL MODE ────────────────────────────────────────────────────
     if (m.mt + m.h + m.mb <= nextUsable && isAtomicLeaf(item)) {
       debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "MOVE_TO_NEXT_PAGE" });
       nextPage(state);
@@ -653,7 +671,6 @@ function distribute(
       continue;
     }
 
-    // Small splittable containers (< half page) with 0-1 children stay intact.
     const childCount = elementChildren(item).length;
     if (m.mt + m.h + m.mb <= nextUsable && m.h <= nextUsable / 2 && childCount <= 1) {
       debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "MOVE_TO_NEXT_PAGE" });
