@@ -9,7 +9,7 @@ import { TrustTimelineView } from "@/components/identity/TrustTimelineView";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
 import { CustomizePanel } from "@/components/resume-builder/CustomizePanel";
 import { LiveStylePreview } from "@/components/resume-builder/LiveStylePreview";
-import { ArrowLeft, FileText, CreditCard, Network, Clock, LayoutTemplate, Download, SlidersHorizontal } from "lucide-react";
+import { ArrowLeft, FileText, CreditCard, Network, Clock, Palette, Download, Paintbrush } from "lucide-react";
 import Link from "next/link";
 import { clsx } from "clsx";
 
@@ -93,7 +93,7 @@ export default function PreviewPage() {
             aria-label="Browse templates"
             className="flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-xl text-[10px] font-medium text-slate-500 hover:text-cyan-300 hover:bg-white/[0.04] transition-all w-full"
           >
-            <LayoutTemplate className="w-[18px] h-[18px]" />
+            <Palette className="w-[18px] h-[18px]" />
             <span>Templates</span>
           </Link>
 
@@ -102,7 +102,7 @@ export default function PreviewPage() {
             aria-label="Customize style"
             className="flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-xl text-[10px] font-medium text-slate-500 hover:text-cyan-300 hover:bg-white/[0.04] transition-all w-full cursor-pointer"
           >
-            <SlidersHorizontal className="w-[18px] h-[18px]" />
+            <Paintbrush className="w-[18px] h-[18px]" />
             <span>Style</span>
           </button>
 
