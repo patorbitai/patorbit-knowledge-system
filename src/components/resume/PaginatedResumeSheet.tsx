@@ -482,18 +482,20 @@ function splitOverTall(
       return;
     }
     // Chrome-split: every page gets a shallow clone of `item` carrying its
-    // padding/background, with that page's slice of children inside. The
-    // container's own margins render on EVERY page clone, so reserve them in
-    // the per-page chrome (not just the first page).
+    // padding/background, with that page's slice of children inside.
+    //
+    // IMPORTANT: only add the container's PADDING to chrome, not its margins.
+    // Margins are already accounted for by the parent distribute() call —
+    // adding them again here double-counts them, shrinking the available
+    // space for children and pushing content to the next page unnecessarily.
+    // This was the root cause of large blank gaps at the bottom of pages.
     const cs = getComputedStyle(item);
     const bPadT = px(cs.paddingTop);
     const bPadB = px(cs.paddingBottom);
-    const bMt = px(cs.marginTop);
-    const bMb = px(cs.marginBottom);
     const startPage = state.page;
     const collected: HTMLElement[][] = [];
     const subState: DistState = { page: startPage, used: state.used, lastMB: state.lastMB };
-    distribute(sub, subState, collected, chromeT + bPadT + bMt, chromeB + bPadB + bMb, ctx);
+    distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx);
     for (let k = startPage; k <= subState.page; k++) {
       const clone = item.cloneNode(false) as HTMLElement;
       for (const b of collected[k] ?? []) clone.appendChild(b.cloneNode(true));
@@ -501,8 +503,8 @@ function splitOverTall(
       out[k].push(clone);
     }
     state.page = subState.page;
-    state.used = subState.used + bPadB + bMb;
-    state.lastMB = bMb;
+    state.used = subState.used + bPadB;
+    state.lastMB = 0;
     return;
   }
 
