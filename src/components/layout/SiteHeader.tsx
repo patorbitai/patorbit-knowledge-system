@@ -6,6 +6,8 @@ import { useState, useEffect } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
+import { useTheme } from "@/components/providers/ThemeProvider";
+import { Sun, Moon } from "lucide-react";
 
 const navLinks = [
   { href: "/platform", label: "Platform" },
@@ -21,6 +23,7 @@ export default function SiteHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { data: session } = useSession();
+  const { theme, toggleTheme } = useTheme();
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -91,6 +94,19 @@ export default function SiteHeader() {
 
         {/* ── Actions & Mobile Toggle ── */}
         <div className="flex items-center gap-3">
+          {/* Theme Toggle */}
+          <button
+            onClick={toggleTheme}
+            className="relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] transition-colors hover:bg-white/[0.06]"
+            aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+          >
+            {theme === "dark" ? (
+              <Sun className="h-4 w-4 text-slate-300" />
+            ) : (
+              <Moon className="h-4 w-4 text-slate-600" />
+            )}
+          </button>
+
           {session ? (
             <>
               <Link
@@ -189,6 +205,30 @@ export default function SiteHeader() {
                   </motion.div>
                 );
               })}
+
+              {/* Mobile Theme Toggle */}
+              <motion.div
+                initial={{ opacity: 0, x: -12 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: navLinks.length * 0.05, duration: 0.2 }}
+              >
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center gap-3 rounded-xl px-4 py-3 text-base font-medium text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition-all duration-200 w-full"
+                >
+                  {theme === "dark" ? (
+                    <>
+                      <span className="h-1.5 w-1.5 rounded-full bg-white/[0.08] shrink-0" />
+                      Light Mode
+                    </>
+                  ) : (
+                    <>
+                      <span className="h-1.5 w-1.5 rounded-full bg-white/[0.08] shrink-0" />
+                      Dark Mode
+                    </>
+                  )}
+                </button>
+              </motion.div>
 
               <motion.div
                 initial={{ opacity: 0, x: -12 }}
