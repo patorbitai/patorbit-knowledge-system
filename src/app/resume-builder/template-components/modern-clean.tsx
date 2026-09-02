@@ -2,6 +2,9 @@
 import { Resume, FormattedDescription, ContactRow } from "./shared";
 import { fontFamilies } from "@/lib/resume-design-system";
 import { useResumeStyle } from "@/components/resume/StyleScope";
+import { FONT_OPTIONS, DEFAULT_STYLE_CONFIG, type ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+
+const FONT_MAP: Record<string, string> = Object.fromEntries(FONT_OPTIONS.map(f => [f.id, f.stack]));
 
 /**
  * Modern Clean — Professional single-column resume template.
@@ -38,7 +41,8 @@ const C = {
 };
 
 // ── Section Heading ────────────────────────────────────────────────────────
-function SectionTitle({ children }: { children: React.ReactNode }) {
+function SectionTitle({ children, accent }: { children: React.ReactNode; accent?: string }) {
+  const color = accent || C.accent;
   return (
     <div style={{ marginBottom: 8 }}>
       <h2
@@ -47,10 +51,10 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
           fontWeight: 700,
           letterSpacing: "0.15em",
           textTransform: "uppercase",
-          color: C.accent,
+          color,
           margin: 0,
           paddingBottom: 4,
-          borderBottom: `1.5px solid ${C.accent}`,
+          borderBottom: `1.5px solid ${color}`,
           lineHeight: 1,
         }}
       >
@@ -210,13 +214,14 @@ function ProjectEntry({ proj, bulletChar: bChar }: { proj: Resume["projects"][0]
 
 // ── Skills Section (consumes style context for presentation) ──────────────
 function SkillsSection({ skills }: { skills: Resume["skills"] }) {
-  const { config: styleConfig } = useResumeStyle();
-  const presentation = styleConfig.skillPresentation;
+  const { config: sc, supported } = useResumeStyle();
+  const presentation = sc.skillPresentation;
+  const accent = sc.accentColor && supported.has("accentColor") && sc.accentColor !== DEFAULT_STYLE_CONFIG.accentColor ? sc.accentColor : C.accent;
 
   if (presentation === "inline" || presentation === "list") {
     return (
       <section style={{ marginBottom: 16 }}>
-        <SectionTitle>Technical Skills</SectionTitle>
+        <SectionTitle accent={accent}>Technical Skills</SectionTitle>
         <p style={{ fontSize: 10, color: C.body, lineHeight: 1.6 }}>
           {skills.map((s) => s.name).join(" · ")}
         </p>
@@ -228,7 +233,7 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
   const isPills = presentation === "pills";
   return (
     <section style={{ marginBottom: 16 }}>
-      <SectionTitle>Technical Skills</SectionTitle>
+      <SectionTitle accent={accent}>Technical Skills</SectionTitle>
       <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : 4 }}>
         {skills.map((s) => (
           <span
@@ -257,6 +262,21 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
 
 // ── Main Component ─────────────────────────────────────────────────────────
 export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { resume: Resume; bulletChar?: string }) {
+  const { config: sc, supported } = useResumeStyle();
+
+  // Compute effective values from user style config
+  const font = sc.fontFamily && supported.has("fontFamily") ? (FONT_MAP[sc.fontFamily] || fontFamilies.sans) : fontFamilies.sans;
+  const bodyColor = sc.bodyColor && supported.has("bodyColor") && sc.bodyColor !== DEFAULT_STYLE_CONFIG.bodyColor ? sc.bodyColor : C.body;
+  const accentColor = sc.accentColor && supported.has("accentColor") && sc.accentColor !== DEFAULT_STYLE_CONFIG.accentColor ? sc.accentColor : C.accent;
+  const headingColor = sc.headingColor && supported.has("headingColor")
+    ? (sc.headingColor === "accent" ? accentColor : sc.headingColor === "ink" ? C.ink : sc.headingColor)
+    : C.ink;
+  const sectionGap = sc.sectionSpacing && supported.has("sectionSpacing") && sc.sectionSpacing !== DEFAULT_STYLE_CONFIG.sectionSpacing ? sc.sectionSpacing : 16;
+  const entryGap = sc.entrySpacing && supported.has("entrySpacing") && sc.entrySpacing !== DEFAULT_STYLE_CONFIG.entrySpacing ? sc.entrySpacing : 12;
+
+  // Effective colors object (replaces hardcoded C)
+  const EC = { ...C, body: bodyColor, accent: accentColor, ink: headingColor };
+
   const contactParts = [
     resume.email,
     resume.phone,
@@ -266,8 +286,8 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
   return (
     <div
       style={{
-        fontFamily: fontFamilies.sans,
-        color: C.body,
+        fontFamily: font,
+        color: EC.body,
         maxWidth: 794,
         padding: "40px 32px 20px",
         backgroundColor: C.white,
@@ -293,9 +313,9 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
             style={{
               fontSize: 13,
               fontWeight: 500,
-              color: C.accent,
-              marginTop: 3,
-              letterSpacing: "0.01em",
+          color: EC.accent,
+          marginTop: 3,
+          letterSpacing: "0.01em",
             }}
           >
             {resume.title}
@@ -306,12 +326,12 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         <div
           style={{
             fontSize: 9,
-            color: C.muted,
-            marginTop: 6,
-            lineHeight: 1.6,
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "0 12px",
+          color: C.muted,
+          marginTop: 6,
+          lineHeight: 1.6,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: "0 12px",
           }}
         >
           {resume.email && <span>{resume.email}</span>}
@@ -332,7 +352,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {/* ── SUMMARY ────────────────────────────────────────────── */}
       {resume.summary && (
         <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Professional Summary</SectionTitle>
+          <SectionTitle accent={EC.accent}>Professional Summary</SectionTitle>
           <div style={{ fontSize: 10, lineHeight: 1.65, color: C.body }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
           </div>
@@ -342,7 +362,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {/* ── EXPERIENCE ─────────────────────────────────────────── */}
       {resume.experience.length > 0 && (
         <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Professional Experience</SectionTitle>
+          <SectionTitle accent={EC.accent}>Professional Experience</SectionTitle>
           {resume.experience.map((exp) => (
             <ExperienceEntry key={exp.id} exp={exp} bulletChar={bulletCharProp} />
           ))}
@@ -352,7 +372,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {/* ── PROJECTS ────────────────────────────────────────────── */}
       {resume.projects.length > 0 && (
         <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Projects</SectionTitle>
+          <SectionTitle accent={EC.accent}>Projects</SectionTitle>
           {resume.projects.map((p) => (
             <ProjectEntry key={p.id} proj={p} bulletChar={bulletCharProp} />
           ))}
@@ -367,7 +387,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {/* ── EDUCATION ──────────────────────────────────────────── */}
       {resume.education.length > 0 && (
         <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Education</SectionTitle>
+          <SectionTitle accent={EC.accent}>Education</SectionTitle>
           {resume.education.map((edu) => (
             <EducationEntry key={edu.id} edu={edu} />
           ))}
@@ -377,7 +397,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {/* ── CERTIFICATIONS ─────────────────────────────────────── */}
       {resume.certifications.length > 0 && (
         <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Certifications</SectionTitle>
+          <SectionTitle accent={EC.accent}>Certifications</SectionTitle>
           {resume.certifications.map((c) => (
             <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
               <div>
@@ -393,7 +413,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {/* ── ACHIEVEMENTS ────────────────────────────────────────── */}
       {resume.achievements.length > 0 && (
         <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Achievements</SectionTitle>
+          <SectionTitle accent={EC.accent}>Achievements</SectionTitle>
           {resume.achievements.map((a) => (
             <div key={a.id} style={{ fontSize: 10, color: C.body, marginBottom: 3 }}>
               {a.title && <span style={{ fontWeight: 600 }}>{a.title}</span>}
@@ -408,7 +428,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {/* ── LANGUAGES ──────────────────────────────────────────── */}
       {resume.languages.length > 0 && (
         <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Languages</SectionTitle>
+          <SectionTitle accent={EC.accent}>Languages</SectionTitle>
           <div style={{ fontSize: 10, color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
             {resume.languages.map((l) => (
               <span key={l.id}>
@@ -423,7 +443,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {/* ── INTERESTS ──────────────────────────────────────────── */}
       {resume.interests.length > 0 && (
         <section>
-          <SectionTitle>Interests</SectionTitle>
+          <SectionTitle accent={EC.accent}>Interests</SectionTitle>
           <p style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
             {resume.interests.map((i) => i.name).join(" · ")}
           </p>
