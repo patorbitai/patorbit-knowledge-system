@@ -355,6 +355,11 @@ export function buildStyleVars(config: ResumeStyleConfig): Record<string, string
     "--rs-section-spacing": `${config.sectionSpacing}px`,
     "--rs-entry-spacing": `${config.entrySpacing}px`,
     "--rs-page-margin": `${config.pageMargin}px`,
+    "--rs-section-title-transform": config.sectionTitleStyle === "uppercase" ? "uppercase" : config.sectionTitleStyle === "bold" ? "none" : "none",
+    "--rs-section-title-weight": config.sectionTitleStyle === "bold" ? "800" : "",
+    "--rs-section-title-border": config.sectionTitleStyle === "minimal" ? "none" : config.dividerStyle === "none" ? "none" : config.dividerStyle === "dots" ? "1px dotted var(--rs-accent)" : config.dividerStyle === "gradient" ? "2px solid var(--rs-accent)" : "",
+    "--rs-skill-gap": config.skillPresentation === "tags" ? "6px" : config.skillPresentation === "pills" ? "6px" : "0 16px",
+    "--rs-skill-display": config.skillPresentation === "inline" ? "inline" : config.skillPresentation === "list" ? "block" : "inline-flex",
   };
 }
 
@@ -410,6 +415,39 @@ export function buildStyleRules(config: ResumeStyleConfig, supported: Set<StyleO
   }
   if (supported.has("pageMargin") && config.pageMargin !== DEFAULT_STYLE_CONFIG.pageMargin) {
     rules.push(`[data-rs-scope] > * { padding: var(--rs-page-margin) !important; }`);
+  }
+
+  // Section title overrides — target h2 elements used as section titles
+  if (supported.has("sectionTitleStyle") && config.sectionTitleStyle !== DEFAULT_STYLE_CONFIG.sectionTitleStyle) {
+    if (config.sectionTitleStyle === "uppercase") {
+      rules.push(`[data-rs-scope] h2 { text-transform: uppercase !important; letter-spacing: 0.1em !important; }`);
+    } else if (config.sectionTitleStyle === "bold") {
+      rules.push(`[data-rs-scope] h2 { font-weight: 800 !important; }`);
+    } else if (config.sectionTitleStyle === "minimal") {
+      rules.push(`[data-rs-scope] h2 { border-bottom: none !important; padding-bottom: 0 !important; font-weight: 600 !important; font-size: 10px !important; color: var(--rs-heading) !important; }`);
+    }
+  }
+
+  // Divider overrides — affect section border-bottom styles
+  if (supported.has("dividerStyle") && config.dividerStyle !== DEFAULT_STYLE_CONFIG.dividerStyle) {
+    if (config.dividerStyle === "none") {
+      rules.push(`[data-rs-scope] h2 { border-bottom: none !important; padding-bottom: 0 !important; }`);
+    } else if (config.dividerStyle === "dots") {
+      rules.push(`[data-rs-scope] h2 { border-bottom: 1px dotted var(--rs-accent) !important; }`);
+    } else if (config.dividerStyle === "gradient") {
+      rules.push(`[data-rs-scope] h2 { border-bottom: 2px solid var(--rs-accent) !important; border-image: linear-gradient(to right, var(--rs-accent), transparent) 1 !important; }`);
+    }
+  }
+
+  // Skill presentation — affect skill container layout
+  if (supported.has("skillPresentation") && config.skillPresentation !== DEFAULT_STYLE_CONFIG.skillPresentation) {
+    if (config.skillPresentation === "pills") {
+      rules.push(`[data-rs-scope] [data-rs-skills] > span, [data-rs-scope] [data-rs-skills] > div { display: inline-flex !important; padding: 2px 10px !important; border-radius: 9999px !important; background: rgba(0,0,0,0.04) !important; font-size: inherit !important; }`);
+    } else if (config.skillPresentation === "tags") {
+      rules.push(`[data-rs-scope] [data-rs-skills] > span, [data-rs-scope] [data-rs-skills] > div { display: inline-flex !important; padding: 2px 8px !important; border-radius: 4px !important; background: rgba(0,0,0,0.04) !important; border: 1px solid rgba(0,0,0,0.08) !important; font-size: inherit !important; }`);
+    } else if (config.skillPresentation === "list") {
+      rules.push(`[data-rs-scope] [data-rs-skills] { display: block !important; } [data-rs-scope] [data-rs-skills] > span, [data-rs-scope] [data-rs-skills] > div { display: block !important; padding: 1px 0 !important; }`);
+    }
   }
 
   return rules.join("\n");

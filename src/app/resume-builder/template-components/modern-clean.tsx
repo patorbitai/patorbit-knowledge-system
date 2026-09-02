@@ -1,6 +1,7 @@
 "use client";
 import { Resume, FormattedDescription, ContactRow } from "./shared";
 import { fontFamilies } from "@/lib/resume-design-system";
+import { useResumeStyle } from "@/components/resume/StyleScope";
 
 /**
  * Modern Clean — Professional single-column resume template.
@@ -207,6 +208,53 @@ function ProjectEntry({ proj, bulletChar: bChar }: { proj: Resume["projects"][0]
   );
 }
 
+// ── Skills Section (consumes style context for presentation) ──────────────
+function SkillsSection({ skills }: { skills: Resume["skills"] }) {
+  const { config: styleConfig } = useResumeStyle();
+  const presentation = styleConfig.skillPresentation;
+
+  if (presentation === "inline" || presentation === "list") {
+    return (
+      <section style={{ marginBottom: 16 }}>
+        <SectionTitle>Technical Skills</SectionTitle>
+        <p style={{ fontSize: 10, color: C.body, lineHeight: 1.6 }}>
+          {skills.map((s) => s.name).join(" · ")}
+        </p>
+      </section>
+    );
+  }
+
+  // Tags or pills (default)
+  const isPills = presentation === "pills";
+  return (
+    <section style={{ marginBottom: 16 }}>
+      <SectionTitle>Technical Skills</SectionTitle>
+      <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : 4 }}>
+        {skills.map((s) => (
+          <span
+            key={s.id}
+            style={{
+              fontSize: 9,
+              fontWeight: 500,
+              color: C.body,
+              backgroundColor: "#f1f5f9",
+              border: `1px solid ${C.border}`,
+              padding: isPills ? "3px 12px" : "2px 8px",
+              borderRadius: isPills ? 9999 : 4,
+              lineHeight: 1.5,
+            }}
+          >
+            {s.name}
+            {s.level && s.level !== "Intermediate" && (
+              <span style={{ color: C.muted, fontWeight: 400 }}> · {s.level}</span>
+            )}
+          </span>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 // ── Main Component ─────────────────────────────────────────────────────────
 export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { resume: Resume; bulletChar?: string }) {
   const contactParts = [
@@ -313,31 +361,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
 
       {/* ── SKILLS ──────────────────────────────────────────────── */}
       {resume.skills.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Technical Skills</SectionTitle>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-            {resume.skills.map((s) => (
-              <span
-                key={s.id}
-                style={{
-                  fontSize: 9,
-                  fontWeight: 500,
-                  color: C.body,
-                  backgroundColor: "#f1f5f9",
-                  border: `1px solid ${C.border}`,
-                  padding: "2px 8px",
-                  borderRadius: 4,
-                  lineHeight: 1.5,
-                }}
-              >
-                {s.name}
-                {s.level && s.level !== "Intermediate" && (
-                  <span style={{ color: C.muted, fontWeight: 400 }}> · {s.level}</span>
-                )}
-              </span>
-            ))}
-          </div>
-        </section>
+        <SkillsSection skills={resume.skills} />
       )}
 
       {/* ── EDUCATION ──────────────────────────────────────────── */}

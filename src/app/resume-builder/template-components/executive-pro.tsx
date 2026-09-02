@@ -9,6 +9,7 @@ import {
   layout,
   formatDuration,
 } from "@/lib/resume-design-system";
+import { useResumeStyle } from "@/components/resume/StyleScope";
 
 /**
  * Executive Pro — Premium executive resume template.
@@ -58,6 +59,43 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
     >
       {children}
     </h2>
+  );
+}
+
+// ── Skills Section ─────────────────────────────────────────────────────────
+function SkillsSection({ skills }: { skills: Resume["skills"] }) {
+  const { config: styleConfig } = useResumeStyle();
+  const presentation = styleConfig.skillPresentation;
+
+  if (presentation === "inline" || presentation === "list") {
+    return (
+      <section style={{ marginBottom: 16 }}>
+        <SectionTitle>Core Competencies</SectionTitle>
+        <p style={{ fontSize: 10, color: C.body, lineHeight: 1.6 }}>
+          {skills.map((s) => s.name).join(" · ")}
+        </p>
+      </section>
+    );
+  }
+
+  const isPills = presentation === "pills";
+  return (
+    <section style={{ marginBottom: 16 }}>
+      <SectionTitle>Core Competencies</SectionTitle>
+      <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : "4px 16px" }}>
+        {skills.map((s) => (
+          <span key={s.id} style={{
+            fontSize: 10,
+            color: C.body,
+            padding: isPills ? "2px 10px" : 0,
+            borderRadius: isPills ? 9999 : 0,
+            backgroundColor: isPills ? C.goldLight : "transparent",
+          }}>
+            {s.name}
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -164,16 +202,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
 
       {/* ── SKILLS ──────────────────────────────────────────────── */}
       {resume.skills.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
-          <SectionTitle>Core Competencies</SectionTitle>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
-            {resume.skills.map((s) => (
-              <span key={s.id} style={{ fontSize: 10, color: C.body }}>
-                {s.name}
-              </span>
-            ))}
-          </div>
-        </section>
+        <SkillsSection skills={resume.skills} />
       )}
 
       {/* ── PROJECTS ────────────────────────────────────────────── */}

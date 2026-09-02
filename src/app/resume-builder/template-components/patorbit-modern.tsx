@@ -9,6 +9,7 @@ import {
   layout,
   formatDuration,
 } from "@/lib/resume-design-system";
+import { useResumeStyle } from "@/components/resume/StyleScope";
 
 /**
  * Patorbit Modern — Premium single-column resume template.
@@ -86,6 +87,52 @@ function SkillChip({ skill }: { skill: Resume["skills"][0] }) {
     >
       {skill.name}
     </span>
+  );
+}
+
+// ── Skills Section ─────────────────────────────────────────────────────────
+function SkillsSection({ skills }: { skills: Resume["skills"] }) {
+  const { config: styleConfig } = useResumeStyle();
+  const presentation = styleConfig.skillPresentation;
+
+  if (presentation === "inline" || presentation === "list") {
+    return (
+      <section style={{ marginBottom: 16 }}>
+        <SectionTitle>Technical Skills</SectionTitle>
+        <p style={{ fontSize: 10, color: C.body, lineHeight: 1.6 }}>
+          {skills.map((s) => s.name).join(" · ")}
+        </p>
+      </section>
+    );
+  }
+
+  const isPills = presentation === "pills";
+  return (
+    <section style={{ marginBottom: 16 }}>
+      <SectionTitle>Technical Skills</SectionTitle>
+      <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : 0 }}>
+        {skills.map((s) => (
+          <span
+            key={s.id}
+            style={{
+              display: "inline-block",
+              fontSize: 9,
+              fontWeight: 500,
+              color: C.navy,
+              backgroundColor: "#f1f5f9",
+              border: `1px solid ${C.border}`,
+              padding: isPills ? "3px 12px" : "2px 8px",
+              borderRadius: isPills ? 9999 : 4,
+              lineHeight: 1.5,
+              marginRight: isPills ? 0 : 4,
+              marginBottom: isPills ? 0 : 4,
+            }}
+          >
+            {s.name}
+          </span>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -258,14 +305,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
 
         {/* Skills */}
         {resume.skills.length > 0 && (
-          <section style={{ marginBottom: 16 }}>
-            <SectionTitle>Technical Skills</SectionTitle>
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 0 }}>
-              {resume.skills.map((s) => (
-                <SkillChip key={s.id} skill={s} />
-              ))}
-            </div>
-          </section>
+          <SkillsSection skills={resume.skills} />
         )}
 
         {/* Projects */}

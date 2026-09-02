@@ -14,6 +14,7 @@ import {
   type SectionTheme,
 } from "./shared";
 import { fontFamilies, layout } from "@/lib/resume-design-system";
+import { useResumeStyle } from "@/components/resume/StyleScope";
 
 /**
  * Enhanced Template Factory — generates structurally diverse resume templates.
@@ -277,11 +278,12 @@ function SectionTitleBoxed({ children, color }: { children: React.ReactNode; col
 
 // ── Skill Presentation Variants ────────────────────────────────────────────
 
-function SkillsChips({ skills, theme }: { skills: Resume["skills"]; theme: SectionTheme }) {
+function SkillsChips({ skills, theme, skillPresentation }: { skills: Resume["skills"]; theme: SectionTheme; skillPresentation?: string }) {
+  const isPills = skillPresentation === "pills";
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+    <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : 4 }}>
       {skills.map((s) => (
-        <span key={s.id} style={{ fontSize: 9, fontWeight: 500, color: theme.body, backgroundColor: theme.border ? theme.border + "40" : "#f1f5f9", border: `1px solid ${theme.border || "#e2e8f0"}`, padding: "2px 8px", borderRadius: 4, lineHeight: 1.5 }}>
+        <span key={s.id} style={{ fontSize: 9, fontWeight: 500, color: theme.body, backgroundColor: theme.border ? theme.border + "40" : "#f1f5f9", border: `1px solid ${theme.border || "#e2e8f0"}`, padding: isPills ? "3px 12px" : "2px 8px", borderRadius: isPills ? 9999 : 4, lineHeight: 1.5 }}>
           {s.name}
           {s.level && s.level !== "Intermediate" && <span style={{ color: theme.muted, fontWeight: 400 }}> · {s.level}</span>}
         </span>
@@ -363,9 +365,18 @@ export function generateTemplate(config: TemplateConfig) {
     const density = config.density || "normal";
     const spacing = SPACING[density];
     const layoutVariant = config.layout || "single";
-    const skillStyle = config.skillStyle || "chips";
     const sectionOrder = config.sectionOrder || ["summary", "experience", "skills", "projects", "education", "certs", "achievements", "languages", "interests"];
     const sectionTitleStyle = config.sectionTitleStyle || "underline";
+
+    // Read user's skillPresentation from style context (overrides template default)
+    const { config: styleConfig } = useResumeStyle();
+    const userSkillPresentation = styleConfig.skillPresentation;
+
+    // User's skill presentation overrides template's skillStyle
+    // "tags" and "pills" both use SkillsChips; "list" and "inline" use SkillsInline
+    const skillStyle = (userSkillPresentation === "tags" || userSkillPresentation === "pills" || userSkillPresentation === "list" || userSkillPresentation === "inline")
+      ? userSkillPresentation
+      : (config.skillStyle || "chips");
 
     // bulletChar override from style config takes precedence over template default
     const themedSection = { ...theme, bulletChar: bulletCharOverride || bullet };
@@ -386,7 +397,7 @@ export function generateTemplate(config: TemplateConfig) {
       SectionTitleUnderline;
 
     const SkillsComp =
-      skillStyle === "inline" ? SkillsInline :
+      skillStyle === "inline" || skillStyle === "list" ? SkillsInline :
       skillStyle === "grouped" ? SkillsGrouped :
       skillStyle === "dots" ? SkillsDots :
       SkillsChips;
@@ -415,7 +426,7 @@ export function generateTemplate(config: TemplateConfig) {
           return resume.skills.length > 0 ? (
             <section key="skills" style={{ marginBottom: spacing.sectionGap }}>
               <SectionTitle color={theme.accent || theme.muted}>{TITLES.skills}</SectionTitle>
-              <SkillsComp skills={resume.skills} theme={theme} />
+              <SkillsComp skills={resume.skills} theme={theme} skillPresentation={userSkillPresentation} />
             </section>
           ) : null;
         case "projects":

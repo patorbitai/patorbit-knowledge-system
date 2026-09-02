@@ -9,6 +9,7 @@ import {
   layout,
   formatDuration,
 } from "@/lib/resume-design-system";
+import { useResumeStyle } from "@/components/resume/StyleScope";
 
 /**
  * Engineering Clean — Professional engineering resume template.

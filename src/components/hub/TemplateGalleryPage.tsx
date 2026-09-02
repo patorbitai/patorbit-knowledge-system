@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useCallback } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import {
   Search,
@@ -181,8 +182,8 @@ function TemplateCard({
             Current
           </div>
         )}
-        {/* Hover actions */}
-        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-all duration-200 flex items-end justify-center pb-4 opacity-0 group-hover:opacity-100 pointer-events-none group-hover:pointer-events-auto">
+        {/* Hover actions — always visible on mobile, hover-only on desktop */}
+        <div className="absolute inset-0 bg-black/40 md:bg-black/0 md:group-hover:bg-black/40 transition-all duration-200 flex items-end justify-center pb-4 opacity-100 md:opacity-0 md:group-hover:opacity-100 pointer-events-auto md:pointer-events-none md:group-hover:pointer-events-auto">
           <div className="flex gap-2">
             <button
               onClick={() => onPreview(template)}
@@ -228,6 +229,7 @@ function TemplateCard({
  * ══════════════════════════════════════════════════════════════════════════ */
 
 export function TemplateGalleryPage() {
+  const router = useRouter();
   const resume = useResumeBuilder((s) => s.resume);
   const applyTemplate = useResumeBuilder((s) => s.applyTemplate);
 
@@ -253,8 +255,9 @@ export function TemplateGalleryPage() {
     (templateId: string) => {
       applyTemplate(templateId);
       setPreviewTemplate(null);
+      router.push("/resume-builder");
     },
-    [applyTemplate]
+    [applyTemplate, router]
   );
 
   const handlePreview = useCallback((template: ResumeTemplate) => {
