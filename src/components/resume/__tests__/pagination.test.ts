@@ -196,6 +196,64 @@ describe("Pagination — Break Behavior", () => {
 
 // ── Preview/PDF parity ────────────────────────────────────────────────────
 
+describe("Pagination — Semantic Item Atomicity", () => {
+  it("ExperienceEntry has break-inside: avoid", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../../../app/resume-builder/template-components/shared.tsx"),
+      "utf-8"
+    );
+    // ExperienceEntry root div must have breakInside: avoid
+    const expMatch = content.match(/function ExperienceEntry[\s\S]*?return\s*\(\s*<div[^>]*breakInside/);
+    expect(expMatch).not.toBeNull();
+  });
+
+  it("EducationEntry has break-inside: avoid", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../../../app/resume-builder/template-components/shared.tsx"),
+      "utf-8"
+    );
+    const eduMatch = content.match(/function EducationEntry[\s\S]*?return\s*\(\s*<div[^>]*breakInside/);
+    expect(eduMatch).not.toBeNull();
+  });
+
+  it("ProjectEntry has break-inside: avoid", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../../../app/resume-builder/template-components/shared.tsx"),
+      "utf-8"
+    );
+    const projMatch = content.match(/function ProjectEntry[\s\S]*?return\s*\(\s*<div[^>]*breakInside/);
+    expect(projMatch).not.toBeNull();
+  });
+
+  it("Certification items have break-inside: avoid", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../../../app/resume-builder/template-components/shared.tsx"),
+      "utf-8"
+    );
+    const certMatch = content.match(/function CertificationsList[\s\S]*?certs\.map[\s\S]*?breakInside/);
+    expect(certMatch).not.toBeNull();
+  });
+
+  it("Achievement items have break-inside: avoid", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const content = fs.readFileSync(
+      path.resolve(__dirname, "../../../app/resume-builder/template-components/shared.tsx"),
+      "utf-8"
+    );
+    const achMatch = content.match(/function AchievementsList[\s\S]*?achievements\.map[\s\S]*?breakInside/);
+    expect(achMatch).not.toBeNull();
+  });
+});
+
 describe("Pagination — Preview/PDF Parity", () => {
   it("PaginatedResumeSheet is the single source of truth for all previews", async () => {
     const fs = await import("fs");

@@ -175,7 +175,7 @@ export function ExperienceEntry({ exp, theme }: { exp: Resume["experience"][0]; 
   const b = t.bulletChar || "▸";
   const dateStr = fmtDate(exp);
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 12, breakInside: "avoid" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: t.ink, lineHeight: 1.3 }}>{exp.company}</span>
         {dateStr && <span style={{ fontSize: 9, fontWeight: 500, color: t.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{dateStr}</span>}
@@ -215,7 +215,7 @@ export function ExperienceEntry({ exp, theme }: { exp: Resume["experience"][0]; 
 export function EducationEntry({ edu, theme }: { edu: Resume["education"][0]; theme: SectionTheme }) {
   const t = theme;
   return (
-    <div style={{ marginBottom: 8 }}>
+    <div style={{ marginBottom: 8, breakInside: "avoid" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: t.ink }}>{edu.school}</span>
         {edu.year && <span style={{ fontSize: 9, color: t.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
@@ -236,7 +236,7 @@ export function ProjectEntry({ proj, theme }: { proj: Resume["projects"][0]; the
   const b = t.bulletChar || "▸";
   const dateStr = [proj.startDate, proj.endDate].filter(Boolean).join(" – ");
   return (
-    <div style={{ marginBottom: 10 }}>
+    <div style={{ marginBottom: 10, breakInside: "avoid" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: t.ink }}>{proj.name}</span>
         {dateStr && <span style={{ fontSize: 9, color: t.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
@@ -274,7 +274,7 @@ export function CertificationsList({ certs, theme }: { certs: Resume["certificat
   return (
     <>
       {certs.map((c) => (
-        <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+        <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4, breakInside: "avoid" }}>
           <div>
             <span style={{ fontSize: 10, fontWeight: 600, color: t.ink }}>{c.name}</span>
             {c.issuer && <span style={{ fontSize: 9, color: t.muted }}> — {c.issuer}</span>}
@@ -292,7 +292,7 @@ export function AchievementsList({ achievements, theme }: { achievements: Resume
   return (
     <>
       {achievements.map((a) => (
-        <div key={a.id} style={{ fontSize: 10, color: t.body, marginBottom: 3 }}>
+        <div key={a.id} style={{ fontSize: 10, color: t.body, marginBottom: 3, breakInside: "avoid" }}>
           {a.title && <span style={{ fontWeight: 600 }}>{a.title}</span>}
           {a.title && a.description && <span> — </span>}
           {a.description && <span>{a.description}</span>}
