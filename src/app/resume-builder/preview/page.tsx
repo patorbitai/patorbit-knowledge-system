@@ -7,7 +7,6 @@ import { Passport } from "@/components/identity/Passport";
 import { NetworkView } from "@/components/identity/NetworkView";
 import { TrustTimelineView } from "@/components/identity/TrustTimelineView";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
-import { TemplateGallery } from "@/components/resume-builder/TemplateGallery";
 import { CustomizePanel } from "@/components/resume-builder/CustomizePanel";
 import { LiveStylePreview } from "@/components/resume-builder/LiveStylePreview";
 import { ArrowLeft, FileText, IdCard, Share2, Shield, Layout, Download, SlidersHorizontal } from "lucide-react";
@@ -33,7 +32,6 @@ export default function PreviewPage() {
   const resume = useResumeBuilder((s) => s.resume);
   const saveStatus = useResumeBuilder((s) => s.saveStatus);
   const [activeTab, setActiveTab] = useState<typeof tabs[number]["id"]>("resume");
-  const [showTemplates, setShowTemplates] = useState(false);
   const [showExport, setShowExport] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const template = getActiveTemplate(resume);
@@ -81,14 +79,14 @@ export default function PreviewPage() {
 
         {/* Action buttons */}
         <div className="flex flex-col items-center gap-1 mb-2">
-          <button
-            onClick={() => setShowTemplates(true)}
-            aria-label="Change template"
-            className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-[10px] text-slate-500 hover:text-cyan-300 hover:bg-white/[0.06] transition-colors cursor-pointer"
+          <Link
+            href="/templates"
+            aria-label="Browse templates"
+            className="flex flex-col items-center gap-1 px-2 py-2 rounded-lg text-[10px] text-slate-500 hover:text-cyan-300 hover:bg-white/[0.06] transition-colors"
           >
             <Layout className="w-4 h-4" />
             <span>Template</span>
-          </button>
+          </Link>
 
           <button
             onClick={() => setShowCustomize(true)}
@@ -146,7 +144,6 @@ export default function PreviewPage() {
       </div>
 
       {/* Modals */}
-      <TemplateGallery open={showTemplates} onClose={() => setShowTemplates(false)} />
       <ExportModal open={showExport} onClose={() => setShowExport(false)} />
       <CustomizePanel open={showCustomize} onClose={() => setShowCustomize(false)} />
     </main>
