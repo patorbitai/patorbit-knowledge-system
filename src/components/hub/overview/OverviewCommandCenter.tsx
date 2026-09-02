@@ -110,7 +110,8 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {/* Single resume: full-width featured card. Multiple: 2-column grid. */}
+          <div className={resumeList.length === 1 ? "" : "grid grid-cols-1 md:grid-cols-2 gap-4"}>
             {resumeList.map((r) => {
               const resumeId = r.resumeId ?? "";
               const isActive = resumeId === activeResumeId;
@@ -119,18 +120,23 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
               const professionalTitle = (r as any).title || "";
               const experienceCount = r.experience?.length || 0;
               const skillsCount = r.skills?.length || 0;
+              const educationCount = r.education?.length || 0;
+              const projectsCount = r.projects?.length || 0;
+              const isSingle = resumeList.length === 1;
 
               return (
                 <div
                   key={resumeId}
                   className={`group relative rounded-xl border transition-all overflow-hidden flex ${
+                    isSingle ? "flex-row sm:flex-row" : ""
+                  } ${
                     isActive
                       ? "border-blue-200 dark:border-cyan-500/30 bg-blue-50/40 dark:bg-cyan-500/[0.03]"
                       : "border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.1] hover:shadow-md dark:hover:shadow-black/20"
                   }`}
                 >
-                  {/* Thumbnail */}
-                  <div className="w-[130px] sm:w-[150px] shrink-0 border-r border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02]">
+                  {/* Thumbnail — larger for single resume */}
+                  <div className={`${isSingle ? "w-[180px] sm:w-[220px]" : "w-[140px] sm:w-[160px]"} shrink-0 border-r border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02]`}>
                     <MiniaturePreview
                       templateId={templateId}
                       resume={r}
@@ -138,10 +144,10 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
                   </div>
 
                   {/* Metadata */}
-                  <div className="flex-1 min-w-0 px-4 py-3.5 flex flex-col justify-between">
-                    <div className="space-y-1">
+                  <div className="flex-1 min-w-0 px-5 py-4 flex flex-col justify-between">
+                    <div className="space-y-1.5">
                       <div className="flex items-start justify-between gap-2">
-                        <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
+                        <h3 className={`${isSingle ? "text-lg" : "text-[15px]"} font-semibold text-gray-900 dark:text-white truncate leading-tight`}>
                           {resumeName}
                         </h3>
                         <div className="relative shrink-0 group/menu">
@@ -149,7 +155,7 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
                             className="rounded-md p-1 text-gray-300 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
                             aria-label="Resume actions"
                           >
-                            <MoreHorizontal className="h-3.5 w-3.5" />
+                            <MoreHorizontal className="h-4 w-4" />
                           </button>
                           <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all">
                             <button
@@ -176,34 +182,37 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
                       </div>
 
                       {professionalTitle && (
-                        <p className="text-[13px] text-gray-500 dark:text-[#94a3b8] truncate">
+                        <p className={`${isSingle ? "text-[14px]" : "text-[13px]"} text-gray-500 dark:text-[#94a3b8] truncate`}>
                           {professionalTitle}
                         </p>
                       )}
 
-                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-[#64748b]">
-                        <span>{getTemplateName(templateId)}</span>
-                        {(experienceCount > 0 || skillsCount > 0) && (
-                          <span className="text-gray-300 dark:text-[#475569]">·</span>
-                        )}
+                      <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-gray-400 dark:text-[#64748b]">
+                        <span className="font-medium">{getTemplateName(templateId)}</span>
                         {experienceCount > 0 && <span>{experienceCount} experience</span>}
-                        {skillsCount > 0 && (
-                          <>
-                            {experienceCount > 0 && <span className="text-gray-300 dark:text-[#475569]">·</span>}
-                            <span>{skillsCount} skills</span>
-                          </>
-                        )}
+                        {skillsCount > 0 && <span>{skillsCount} skills</span>}
+                        {educationCount > 0 && <span>{educationCount} education</span>}
+                        {projectsCount > 0 && <span>{projectsCount} projects</span>}
                       </div>
                     </div>
 
-                    <Link
-                      href="/resume-builder"
-                      onClick={() => switchResume(resumeId)}
-                      className="mt-2.5 inline-flex items-center gap-1 text-[12px] font-medium text-blue-600 dark:text-cyan-400 hover:underline"
-                    >
-                      Edit resume
-                      <ArrowRight className="h-3 w-3" />
-                    </Link>
+                    <div className="mt-3 flex items-center gap-3">
+                      <Link
+                        href="/resume-builder"
+                        onClick={() => switchResume(resumeId)}
+                        className="inline-flex items-center gap-1.5 text-[13px] font-medium text-blue-600 dark:text-cyan-400 hover:underline"
+                      >
+                        Edit resume
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                      <Link
+                        href="/templates"
+                        className="inline-flex items-center gap-1 text-[12px] text-gray-400 dark:text-[#64748b] hover:text-gray-600 dark:hover:text-[#94a3b8] transition-colors"
+                      >
+                        <Palette className="h-3 w-3" />
+                        Templates
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );
@@ -235,19 +244,6 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
               Create Resume
             </button>
           </div>
-        </section>
-      )}
-
-      {/* ── QUICK LINKS ── */}
-      {hasResumes && (
-        <section className="pt-2">
-          <Link
-            href="/templates"
-            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-gray-400 dark:text-[#64748b] hover:text-gray-600 dark:hover:text-[#94a3b8] transition-colors"
-          >
-            <Palette className="h-3 w-3" />
-            Browse templates
-          </Link>
         </section>
       )}
     </div>
