@@ -418,6 +418,12 @@ function parseExperienceSection(lines: string[]): ParsedResume["experience"] {
           // update the current entry instead of creating a new one.
           // e.g. line1: "PystackJs  Jan 2024" → current has company+date
           //      line2: "ML Engineer · Pune" → should set position+location on current
+          // Also handle: company + duration already set, but position still missing
+          if (current && current.company && current.duration && !current.position && position) {
+            current.position = position;
+            if (location) current.location = location;
+            continue;
+          }
           if (current && !current.duration && current.company && !current.position && position) {
             current.position = position;
             if (location) current.location = location;
