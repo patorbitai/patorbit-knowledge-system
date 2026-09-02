@@ -6,12 +6,11 @@ import {
   Plus,
   Upload,
   FileText,
-  Clock,
   MoreHorizontal,
   Trash2,
   Pencil,
   ArrowRight,
-  LayoutDashboard,
+  Palette,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { IdentityScoreData } from "@/lib/identity-score";
@@ -51,7 +50,7 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
   };
 
   const handleDelete = (id: string) => {
-    if (resumeList.length <= 1) return; // Don't delete last resume
+    if (resumeList.length <= 1) return;
     deleteResume(id);
   };
 
@@ -68,50 +67,50 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-8">
+    <div className="mx-auto max-w-5xl px-6 py-8 lg:px-10 space-y-8">
       {/* ── HERO ── */}
-      <section className="space-y-1.5">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f8fafc]">
-          {getGreeting()}, {firstName}
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-[#94a3b8] max-w-xl">
-          {hasResumes
-            ? "Pick up where you left off or create a new resume."
-            : "Build a professional resume in minutes."}
-        </p>
-      </section>
-
-      {/* ── PRIMARY ACTIONS ── */}
-      <section className="flex flex-wrap gap-3">
-        <button
-          onClick={handleCreateResume}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
-        >
-          <Plus className="h-4 w-4" />
-          Create Resume
-        </button>
-        <Link
-          href="/resume-builder"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm font-medium text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-all"
-        >
-          <Upload className="h-4 w-4" />
-          Import Resume
-        </Link>
+      <section className="space-y-4">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f1f5f9]">
+            {getGreeting()}, {firstName}
+          </h1>
+          <p className="mt-1.5 text-[15px] text-gray-500 dark:text-[#94a3b8]">
+            {hasResumes
+              ? "Pick up where you left off."
+              : "Build a professional resume in minutes."}
+          </p>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={handleCreateResume}
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-blue-600 dark:bg-[#0ea5e9] text-[13px] font-semibold text-white shadow-sm hover:bg-blue-700 dark:hover:bg-[#0891b2] active:scale-[0.98] transition-all"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            Create Resume
+          </button>
+          <Link
+            href="/resume-builder"
+            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-[13px] font-medium text-gray-600 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-all"
+          >
+            <Upload className="h-3.5 w-3.5" />
+            Import
+          </Link>
+        </div>
       </section>
 
       {/* ── RESUMES ── */}
       {hasResumes && (
-        <section className="space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+        <section className="space-y-3.5">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-[13px] font-semibold uppercase tracking-wider text-gray-400 dark:text-[#64748b]">
               Your resumes
             </h2>
-            <span className="text-xs text-gray-400 dark:text-slate-500">
-              {resumeList.length} resume{resumeList.length !== 1 ? "s" : ""}
+            <span className="text-[12px] text-gray-400 dark:text-[#64748b]">
+              {resumeList.length}
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {resumeList.map((r) => {
               const resumeId = r.resumeId ?? "";
               const isActive = resumeId === activeResumeId;
@@ -119,102 +118,90 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
               const templateId = r.templateId || "modern-clean";
               const professionalTitle = (r as any).title || "";
               const experienceCount = r.experience?.length || 0;
-              const educationCount = r.education?.length || 0;
               const skillsCount = r.skills?.length || 0;
 
               return (
                 <div
                   key={resumeId}
-                  className={`group relative rounded-xl border transition-all overflow-hidden ${
+                  className={`group relative rounded-xl border transition-all overflow-hidden flex ${
                     isActive
-                      ? "border-blue-300 dark:border-[#22d3ee]/40 bg-blue-50/50 dark:bg-[#22d3ee]/[0.03]"
-                      : "border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-md"
+                      ? "border-blue-200 dark:border-cyan-500/30 bg-blue-50/40 dark:bg-cyan-500/[0.03]"
+                      : "border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.1] hover:shadow-md dark:hover:shadow-black/20"
                   }`}
                 >
-                  {/* Real miniature resume preview */}
-                  <div className="border-b border-gray-100 dark:border-white/[0.04]">
+                  {/* Thumbnail */}
+                  <div className="w-[130px] sm:w-[150px] shrink-0 border-r border-gray-100 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02]">
                     <MiniaturePreview
                       templateId={templateId}
                       resume={r}
                     />
                   </div>
 
-                  {/* Card body */}
-                  <div className="p-3 space-y-2">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                  {/* Metadata */}
+                  <div className="flex-1 min-w-0 px-4 py-3.5 flex flex-col justify-between">
+                    <div className="space-y-1">
+                      <div className="flex items-start justify-between gap-2">
+                        <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white truncate leading-tight">
                           {resumeName}
                         </h3>
-                        <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Updated just now
-                        </p>
-                      </div>
-                      {/* Actions menu */}
-                      <div className="relative group/menu">
-                        <button
-                          className="rounded-lg p-1 text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
-                          aria-label="Resume actions"
-                        >
-                          <MoreHorizontal className="h-4 w-4" />
-                        </button>
-                        <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all">
+                        <div className="relative shrink-0 group/menu">
                           <button
-                            onClick={() => {
-                              switchResume(resumeId);
-                              window.location.href = "/resume-builder";
-                            }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                            className="rounded-md p-1 text-gray-300 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
+                            aria-label="Resume actions"
                           >
-                            <Pencil className="h-3 w-3" />
-                            Edit
+                            <MoreHorizontal className="h-3.5 w-3.5" />
                           </button>
-
-                          {resumeList.length > 1 && (
+                          <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all">
                             <button
-                              onClick={() => handleDelete(resumeId)}
-                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                              onClick={() => {
+                                switchResume(resumeId);
+                                window.location.href = "/resume-builder";
+                              }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
                             >
-                              <Trash2 className="h-3 w-3" />
-                              Delete
+                              <Pencil className="h-3 w-3" />
+                              Edit
                             </button>
-                          )}
+                            {resumeList.length > 1 && (
+                              <button
+                                onClick={() => handleDelete(resumeId)}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
+
+                      {professionalTitle && (
+                        <p className="text-[13px] text-gray-500 dark:text-[#94a3b8] truncate">
+                          {professionalTitle}
+                        </p>
+                      )}
+
+                      <div className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-[#64748b]">
+                        <span>{getTemplateName(templateId)}</span>
+                        {(experienceCount > 0 || skillsCount > 0) && (
+                          <span className="text-gray-300 dark:text-[#475569]">·</span>
+                        )}
+                        {experienceCount > 0 && <span>{experienceCount} experience</span>}
+                        {skillsCount > 0 && (
+                          <>
+                            {experienceCount > 0 && <span className="text-gray-300 dark:text-[#475569]">·</span>}
+                            <span>{skillsCount} skills</span>
+                          </>
+                        )}
+                      </div>
                     </div>
 
-                    {/* Professional title */}
-                    {professionalTitle && (
-                      <p className="text-[11px] font-medium text-gray-500 dark:text-slate-400 truncate">
-                        {professionalTitle}
-                      </p>
-                    )}
-
-                    {/* Template + stats */}
-                    <div className="flex items-center gap-2 text-[11px] text-gray-400 dark:text-slate-500">
-                      <span className="truncate">{getTemplateName(templateId)}</span>
-                      {experienceCount > 0 && (
-                        <>
-                          <span>·</span>
-                          <span>{experienceCount} experience</span>
-                        </>
-                      )}
-                      {skillsCount > 0 && (
-                        <>
-                          <span>·</span>
-                          <span>{skillsCount} skills</span>
-                        </>
-                      )}
-                    </div>
-
-                    {/* Edit button */}
                     <Link
                       href="/resume-builder"
                       onClick={() => switchResume(resumeId)}
-                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg bg-gray-50 dark:bg-white/[0.04] text-xs font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.08] transition-colors"
+                      className="mt-2.5 inline-flex items-center gap-1 text-[12px] font-medium text-blue-600 dark:text-cyan-400 hover:underline"
                     >
-                      Continue editing
+                      Edit resume
                       <ArrowRight className="h-3 w-3" />
                     </Link>
                   </div>
@@ -228,68 +215,41 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
       {/* ── EMPTY STATE ── */}
       {!hasResumes && mounted && (
         <section className="text-center py-16 space-y-5">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-gray-50 dark:bg-white/[0.03] flex items-center justify-center border border-gray-100 dark:border-white/[0.04]">
-            <FileText className="h-6 w-6 text-gray-300 dark:text-white/15" />
+          <div className="mx-auto w-14 h-14 rounded-xl bg-gray-100 dark:bg-white/[0.04] flex items-center justify-center border border-gray-200 dark:border-white/[0.06]">
+            <FileText className="h-6 w-6 text-gray-300 dark:text-white/20" />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1.5">
             <h3 className="text-base font-semibold text-gray-900 dark:text-white">
               Build your professional resume
             </h3>
-            <p className="text-sm text-gray-400 dark:text-slate-500 max-w-xs mx-auto">
+            <p className="text-sm text-gray-400 dark:text-[#64748b] max-w-sm mx-auto">
               Choose a template, add your experience, and export a polished resume in minutes.
             </p>
           </div>
-          <div className="flex items-center justify-center gap-3">
+          <div className="flex items-center justify-center gap-2.5">
             <button
               onClick={handleCreateResume}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-lg bg-blue-600 dark:bg-[#0ea5e9] text-[13px] font-semibold text-white shadow-sm hover:bg-blue-700 dark:hover:bg-[#0891b2] active:scale-[0.98] transition-all"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-3.5 w-3.5" />
               Create Resume
             </button>
           </div>
         </section>
       )}
 
-      {/* ── QUICK ACTIONS ── */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Link
-          href="/templates"
-          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] transition-all"
-        >
-          <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center">
-            <LayoutDashboard className="h-4 w-4 text-purple-500 dark:text-purple-400" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-900 dark:text-white">Templates</p>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">Browse 29 designs</p>
-          </div>
-        </Link>
-        <Link
-          href="/resume-builder"
-          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] transition-all"
-        >
-          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-            <Pencil className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-900 dark:text-white">Resume Builder</p>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">Edit your resume</p>
-          </div>
-        </Link>
-        <Link
-          href="/trust"
-          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] transition-all"
-        >
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-            <FileText className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-900 dark:text-white">Trust Score</p>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">Verify credentials</p>
-          </div>
-        </Link>
-      </section>
+      {/* ── QUICK LINKS ── */}
+      {hasResumes && (
+        <section className="pt-2">
+          <Link
+            href="/templates"
+            className="inline-flex items-center gap-1.5 text-[12px] font-medium text-gray-400 dark:text-[#64748b] hover:text-gray-600 dark:hover:text-[#94a3b8] transition-colors"
+          >
+            <Palette className="h-3 w-3" />
+            Browse templates
+          </Link>
+        </section>
+      )}
     </div>
   );
 }

@@ -37,26 +37,26 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
   };
 
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-[#070d18] text-gray-600 dark:text-[#a7bad3]">
+    <div className="flex h-full flex-col bg-white dark:bg-[#080C18]">
       {/* Brand */}
-      <div className="flex items-center gap-3 px-4 py-5">
+      <div className="px-4 pt-5 pb-4">
         <Link
           href="/"
           onClick={onNavigate}
           aria-label="Go to Patorbit home"
-          className="flex items-center gap-3 rounded-xl px-2 py-1 transition-all hover:bg-gray-100 dark:hover:bg-white/[0.04] group w-full"
+          className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.04] group"
         >
-          <div className="h-[38px] w-[38px] rounded-[12px] bg-gradient-to-br from-[#08c9ee] to-[#7355ff] shadow-[0_8px_24px_rgba(59,130,246,.18)] flex items-center justify-center font-black text-white text-base transition-transform group-hover:scale-105 shrink-0">
+          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#08c9ee] to-[#0ea5e9] flex items-center justify-center text-[13px] font-bold text-white shrink-0">
             P
           </div>
-          <span className="text-[21px] font-extrabold tracking-tight text-gray-900 dark:text-white group-hover:text-cyan-500 dark:group-hover:text-cyan-300 transition-colors">
+          <span className="text-[17px] font-bold tracking-tight text-gray-900 dark:text-white">
             Patorbit
           </span>
         </Link>
       </div>
 
       {/* Primary nav */}
-      <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-2 font-sans">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 font-sans">
         <ul className="space-y-0.5">
           {PRIMARY_ITEMS.map(({ label, href, icon: Icon }) => {
             const active = isActive(href);
@@ -66,13 +66,13 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
                   href={href}
                   onClick={onNavigate}
                   className={clsx(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
                     active
-                      ? "bg-blue-50 dark:bg-gradient-to-r dark:from-[rgba(14,165,233,.18)] dark:to-[rgba(59,130,246,.08)] text-blue-600 dark:text-white shadow-[inset_3px_0_0] shadow-blue-500 dark:shadow-[#22d3ee]"
-                      : "text-gray-500 dark:text-[#a7bad3] hover:bg-gray-50 dark:hover:bg-[rgba(14,165,233,.10)] hover:text-gray-900 dark:hover:text-[#f8fafc]"
+                      ? "bg-gray-100 dark:bg-white/[0.07] text-gray-900 dark:text-white border-l-[2.5px] border-cyan-500 dark:border-cyan-400 pl-[9px]"
+                      : "text-gray-500 dark:text-[#8e99af] hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-800 dark:hover:text-[#cbd5e1]"
                   )}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon className={clsx("h-4 w-4 shrink-0", active && "text-cyan-600 dark:text-cyan-400")} />
                   {label}
                 </Link>
               </li>
@@ -81,7 +81,7 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
         </ul>
 
         {/* Divider */}
-        <div className="my-3 border-t border-gray-200 dark:border-white/[0.06]" />
+        <div className="my-3 border-t border-gray-100 dark:border-white/[0.05]" />
 
         {/* Secondary nav */}
         <ul className="space-y-0.5">
@@ -93,13 +93,13 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
                   href={href}
                   onClick={onNavigate}
                   className={clsx(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-2.5 text-sm font-medium transition-all",
+                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
                     active
-                      ? "bg-blue-50 dark:bg-gradient-to-r dark:from-[rgba(14,165,233,.18)] dark:to-[rgba(59,130,246,.08)] text-blue-600 dark:text-white shadow-[inset_3px_0_0] shadow-blue-500 dark:shadow-[#22d3ee]"
-                      : "text-gray-500 dark:text-[#a7bad3] hover:bg-gray-50 dark:hover:bg-[rgba(14,165,233,.10)] hover:text-gray-900 dark:hover:text-[#f8fafc]"
+                      ? "bg-gray-100 dark:bg-white/[0.07] text-gray-900 dark:text-white border-l-[2.5px] border-cyan-500 dark:border-cyan-400 pl-[9px]"
+                      : "text-gray-500 dark:text-[#8e99af] hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-800 dark:hover:text-[#cbd5e1]"
                   )}
                 >
-                  <Icon className="h-4 w-4 shrink-0" />
+                  <Icon className={clsx("h-4 w-4 shrink-0", active && "text-cyan-600 dark:text-cyan-400")} />
                   {label}
                 </Link>
               </li>
@@ -109,10 +109,11 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.06]">
-        <p className="text-[11px] text-gray-400 dark:text-slate-600 text-center">
-          Auto-saving enabled
-        </p>
+      <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.05]">
+        <div className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-[#64748b]">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
+          Auto-saving
+        </div>
       </div>
     </div>
   );
