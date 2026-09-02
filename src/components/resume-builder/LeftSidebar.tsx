@@ -61,7 +61,7 @@ export function LeftSidebar() {
           value={hydrated ? progress() : 0}
           color="#22d3ee"
         />
-        <div className="flex items-center justify-between text-[10px]">
+        <div className="flex items-center justify-between text-[11px]">
           <span className="text-gray-500 dark:text-slate-400">Sections complete</span>
           <span className="text-gray-900 dark:text-white font-medium">
             {hydrated ? sections.filter((s) => s.id !== "review" && sectionComplete(s.id)).length : 0} / 9
@@ -80,19 +80,19 @@ export function LeftSidebar() {
               key={id}
               onClick={() => setActiveSection(id)}
               className={clsx(
-                "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-150 text-left cursor-pointer",
+                "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium transition-all duration-150 text-left cursor-pointer",
                 "focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/40",
                 isActive
                   ? "bg-gray-100 dark:bg-white/[0.06] text-gray-900 dark:text-white"
                   : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/[0.03]",
               )}
             >
-              <Icon className={clsx("w-4 h-4 shrink-0", isActive ? "text-cyan-600 dark:text-cyan-400" : "text-gray-400 dark:text-slate-500")} />
+              <Icon className={clsx("w-[18px] h-[18px] shrink-0", isActive ? "text-cyan-600 dark:text-cyan-400" : "text-gray-400 dark:text-slate-500")} />
               <span className="flex-1 truncate">
                 {label}
               </span>
               {hydrated && sectionCounts[id] !== undefined && sectionCounts[id] > 0 && (
-                <span className="text-[10px] text-gray-400 dark:text-slate-500 tabular-nums">
+                <span className="text-[11px] text-gray-400 dark:text-slate-500 tabular-nums">
                   {sectionCounts[id]}
                 </span>
               )}
@@ -106,7 +106,7 @@ export function LeftSidebar() {
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.08]">
-        <div className="flex items-center gap-2 text-[11px] text-gray-400 dark:text-slate-500">
+        <div className="flex items-center gap-2 text-[12px] text-gray-400 dark:text-slate-500">
           <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           Auto-saving
         </div>
