@@ -14,6 +14,7 @@ import {
   Link2,
   Eye,
   ChevronRight,
+  Trash2,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ProgressIndicator } from "./ProgressIndicator";
@@ -105,7 +106,18 @@ export function LeftSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.08]">
+      <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.08] space-y-2">
+        <button
+          onClick={() => {
+            if (window.confirm("Clear this resume?\n\nThis will remove the content from the currently selected resume. Your other resumes will not be affected.")) {
+              useResumeBuilder.getState().resetResume();
+            }
+          }}
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 dark:text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer"
+        >
+          <Trash2 className="w-3 h-3" />
+          Clear Resume Data
+        </button>
         <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
           <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
           Auto-saving
