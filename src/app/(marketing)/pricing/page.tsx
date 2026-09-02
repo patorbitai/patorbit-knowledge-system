@@ -251,11 +251,13 @@ export default function PricingPage() {
     }
 
     try {
-      const res = await fetch("/api/stripe/checkout", {
+      // 1. Create subscription on server
+      const res = await fetch("/api/razorpay/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ plan: planName, interval: yearly ? "yearly" : "monthly" }),
+        body: JSON.stringify({ interval: yearly ? "yearly" : "monthly" }),
       });
+
       if (res.status === 401) {
         window.location.href = `/login?callbackUrl=/pricing`;
         return;
@@ -265,9 +267,45 @@ export default function PricingPage() {
         alert(err.error || "Failed to start checkout");
         return;
       }
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
+
+      const { subscriptionId, razorpayKeyId } = await res.json();
+
+      // 2. Open Razorpay checkout modal
+      const options = {
+        key: razorpayKeyId,
+        subscription_id: subscriptionId,
+        name: "Patorbit",
+        description: `${planName} Plan (${yearly ? "Yearly" : "Monthly"})`,
+        handler: function (response: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) {
+          // Payment successful — redirect to billing portal
+          window.location.href = "/account/billing?status=success";
+        },
+        prefill: {},
+        theme: {
+          color: "#0891b2",
+          backdrop_color: "rgba(0, 0, 0, 0.6)"
+        },
+        modal: {
+          ondismiss: function () {
+            // User closed the modal
+            console.log("Checkout dismissed");
+          }
+        }
+      };
+
+      // Load Razorpay script if not loaded
+      const w = window as unknown as { Razorpay?: new (opts: typeof options) => { open: () => void } };
+      if (typeof window !== "undefined" && !w.Razorpay) {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => {
+          const rzp = new w.Razorpay!(options);
+          rzp.open();
+        };
+        document.body.appendChild(script);
+      } else if (w.Razorpay) {
+        const rzp = new w.Razorpay(options);
+        rzp.open();
       }
     } catch {
       alert("Network error. Please try again.");
