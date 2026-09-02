@@ -15,6 +15,11 @@ import {
 } from "./shared";
 import { fontFamilies, layout } from "@/lib/resume-design-system";
 import { useResumeStyle } from "@/components/resume/StyleScope";
+import { FONT_OPTIONS, DEFAULT_STYLE_CONFIG } from "@/lib/resume-design-system/style-config";
+
+/** Map font ID to CSS font stack */
+const FONT_MAP: Record<string, string> = Object.fromEntries(FONT_OPTIONS.map(f => [f.id, f.stack]));
+const DEFAULT_STYLE = DEFAULT_STYLE_CONFIG;
 
 /**
  * Enhanced Template Factory — generates structurally diverse resume templates.
@@ -368,18 +373,41 @@ export function generateTemplate(config: TemplateConfig) {
     const sectionOrder = config.sectionOrder || ["summary", "experience", "skills", "projects", "education", "certs", "achievements", "languages", "interests"];
     const sectionTitleStyle = config.sectionTitleStyle || "underline";
 
-    // Read user's skillPresentation from style context (overrides template default)
-    const { config: styleConfig } = useResumeStyle();
-    const userSkillPresentation = styleConfig.skillPresentation;
+    // Read ALL user style settings from context — these override template defaults
+    const { config: sc, supported } = useResumeStyle();
 
-    // User's skill presentation overrides template's skillStyle
-    // "tags" and "pills" both use SkillsChips; "list" and "inline" use SkillsInline
+    // Resolve effective values: user overrides template defaults when supported
+    const effectiveFont = sc.fontFamily && supported.has("fontFamily")
+      ? (FONT_MAP[sc.fontFamily] || fontFamily)
+      : fontFamily;
+    const effectiveBodyColor = sc.bodyColor && supported.has("bodyColor") && sc.bodyColor !== DEFAULT_STYLE.bodyColor ? sc.bodyColor : theme.body;
+    const effectiveHeadingColor: string = sc.headingColor && supported.has("headingColor")
+      ? (sc.headingColor === "accent" ? (sc.accentColor || theme.accent || theme.ink) : sc.headingColor === "ink" ? theme.ink : sc.headingColor)
+      : theme.ink;
+    const effectiveAccent: string = sc.accentColor && supported.has("accentColor") && sc.accentColor !== DEFAULT_STYLE.accentColor ? sc.accentColor : theme.accent || theme.muted;
+    const effectiveTheme: SectionTheme = { ...theme, body: effectiveBodyColor, ink: effectiveHeadingColor, accent: effectiveAccent, bulletChar: bulletCharOverride || bullet };
+
+    // Skill presentation: user overrides template default
+    const userSkillPresentation = sc.skillPresentation;
     const skillStyle = (userSkillPresentation === "tags" || userSkillPresentation === "pills" || userSkillPresentation === "list" || userSkillPresentation === "inline")
       ? userSkillPresentation
       : (config.skillStyle || "chips");
 
-    // bulletChar override from style config takes precedence over template default
-    const themedSection = { ...theme, bulletChar: bulletCharOverride || bullet };
+    // Section title style: user overrides template default
+    const effectiveSectionTitleStyle = sc.sectionTitleStyle && supported.has("sectionTitleStyle") && sc.sectionTitleStyle !== DEFAULT_STYLE.sectionTitleStyle ? sc.sectionTitleStyle : sectionTitleStyle;
+
+    // Heading style: user overrides
+    const effectiveHeadingTransform = sc.headingStyle && supported.has("headingStyle") && sc.headingStyle !== DEFAULT_STYLE.headingStyle
+      ? (sc.headingStyle === "uppercase" ? "uppercase" : sc.headingStyle === "title-case" ? "capitalize" : "none")
+      : undefined;
+    const effectiveHeadingSpacing = sc.headingStyle === "uppercase" ? "0.08em" : undefined;
+
+    // Spacing overrides from user config
+    const effectiveSectionGap = sc.sectionSpacing && supported.has("sectionSpacing") && sc.sectionSpacing !== DEFAULT_STYLE.sectionSpacing ? sc.sectionSpacing : spacing.sectionGap;
+    const effectiveEntryGap = sc.entrySpacing && supported.has("entrySpacing") && sc.entrySpacing !== DEFAULT_STYLE.entrySpacing ? sc.entrySpacing : spacing.entryGap;
+
+    const themedSection = effectiveTheme;
+    const themedSpacing = { ...spacing, sectionGap: effectiveSectionGap, entryGap: effectiveEntryGap };
 
     const HeaderComp =
       header === "centered" ? HeaderCentered :
@@ -391,9 +419,9 @@ export function generateTemplate(config: TemplateConfig) {
       HeaderLeft;
 
     const SectionTitle =
-      sectionTitleStyle === "bordered" ? SectionTitleBordered :
-      sectionTitleStyle === "minimal" ? SectionTitleMinimal :
-      sectionTitleStyle === "boxed" ? SectionTitleBoxed :
+      effectiveSectionTitleStyle === "bordered" ? SectionTitleBordered :
+      effectiveSectionTitleStyle === "minimal" ? SectionTitleMinimal :
+      effectiveSectionTitleStyle === "boxed" ? SectionTitleBoxed :
       SectionTitleUnderline;
 
     const SkillsComp =
@@ -403,20 +431,21 @@ export function generateTemplate(config: TemplateConfig) {
       SkillsChips;
 
     const renderSection = (key: string) => {
+      const secColor = effectiveTheme.accent || effectiveTheme.muted;
       switch (key) {
         case "summary":
           return resume.summary ? (
-            <section key="summary" style={{ marginBottom: spacing.sectionGap }}>
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.summary}</SectionTitle>
-              <div style={{ fontSize: 10, lineHeight: 1.65, color: theme.body }}>
-                <FormattedDescription text={resume.summary} color={theme.body} mutedColor={theme.muted} size="xs" />
+            <section key="summary" style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={secColor}>{TITLES.summary}</SectionTitle>
+              <div style={{ fontSize: 10, lineHeight: 1.65, color: effectiveTheme.body }}>
+                <FormattedDescription text={resume.summary} color={effectiveTheme.body} mutedColor={effectiveTheme.muted} size="xs" />
               </div>
             </section>
           ) : null;
         case "experience":
           return resume.experience.length > 0 ? (
-            <section key="experience" style={{ marginBottom: spacing.sectionGap }}>
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.experience}</SectionTitle>
+            <section key="experience" style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={secColor}>{TITLES.experience}</SectionTitle>
               {resume.experience.map((exp) => (
                 <ExperienceEntry key={exp.id} exp={exp} theme={themedSection} />
               ))}
@@ -424,15 +453,15 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "skills":
           return resume.skills.length > 0 ? (
-            <section key="skills" style={{ marginBottom: spacing.sectionGap }}>
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.skills}</SectionTitle>
-              <SkillsComp skills={resume.skills} theme={theme} skillPresentation={userSkillPresentation} />
+            <section key="skills" style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={secColor}>{TITLES.skills}</SectionTitle>
+              <SkillsComp skills={resume.skills} theme={effectiveTheme} skillPresentation={userSkillPresentation} />
             </section>
           ) : null;
         case "projects":
           return resume.projects.length > 0 ? (
-            <section key="projects" style={{ marginBottom: spacing.sectionGap }}>
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.projects}</SectionTitle>
+            <section key="projects" style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={secColor}>{TITLES.projects}</SectionTitle>
               {resume.projects.map((p) => (
                 <ProjectEntry key={p.id} proj={p} theme={themedSection} />
               ))}
@@ -440,8 +469,8 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "education":
           return resume.education.length > 0 ? (
-            <section key="education" style={{ marginBottom: spacing.sectionGap }}>
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.education}</SectionTitle>
+            <section key="education" style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={secColor}>{TITLES.education}</SectionTitle>
               {resume.education.map((edu) => (
                 <EducationEntry key={edu.id} edu={edu} theme={themedSection} />
               ))}
@@ -449,30 +478,30 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "certs":
           return resume.certifications.length > 0 ? (
-            <section key="certs" style={{ marginBottom: spacing.sectionGap }}>
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.certs}</SectionTitle>
+            <section key="certs" style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={secColor}>{TITLES.certs}</SectionTitle>
               <CertificationsList certs={resume.certifications} theme={themedSection} />
             </section>
           ) : null;
         case "achievements":
           return resume.achievements.length > 0 ? (
-            <section key="achievements" style={{ marginBottom: spacing.sectionGap }}>
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.achievements}</SectionTitle>
+            <section key="achievements" style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={secColor}>{TITLES.achievements}</SectionTitle>
               <AchievementsList achievements={resume.achievements} theme={themedSection} />
             </section>
           ) : null;
         case "languages":
           return resume.languages.length > 0 ? (
-            <section key="languages" style={{ marginBottom: spacing.sectionGap }}>
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.languages}</SectionTitle>
+            <section key="languages" style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={secColor}>{TITLES.languages}</SectionTitle>
               <LanguagesList languages={resume.languages} theme={themedSection} />
             </section>
           ) : null;
         case "interests":
           return resume.interests.length > 0 ? (
             <section key="interests">
-              <SectionTitle color={theme.accent || theme.muted}>{TITLES.interests}</SectionTitle>
-              <InterestsInline interests={resume.interests} theme={theme} />
+              <SectionTitle color={secColor}>{TITLES.interests}</SectionTitle>
+              <InterestsInline interests={resume.interests} theme={effectiveTheme} />
             </section>
           ) : null;
         default:
@@ -490,16 +519,16 @@ export function generateTemplate(config: TemplateConfig) {
       const sideContent = <>{sideSections.map(renderSection)}</>;
 
       return (
-        <div style={{ fontFamily, color: theme.body, maxWidth: layout.pageWidth, padding: spacing.padding, backgroundColor, display: "flex", gap: 20 }}>
+        <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: themedSpacing.padding, backgroundColor, display: "flex", gap: 20 }}>
           {sidebarOnRight ? (
             <>
-              <div style={{ flex: 1 }}>{HeaderComp ? <HeaderComp resume={resume} theme={theme} /> : null}{mainContent}</div>
-              <div style={{ width: 180, borderLeft: `1px solid ${theme.border || "#e2e8f0"}`, paddingLeft: 16 }}>{sideContent}</div>
+              <div style={{ flex: 1 }}>{HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}{mainContent}</div>
+              <div style={{ width: 180, borderLeft: `1px solid ${effectiveTheme.border || "#e2e8f0"}`, paddingLeft: 16 }}>{sideContent}</div>
             </>
           ) : (
             <>
-              <div style={{ width: 180, borderRight: `1px solid ${theme.border || "#e2e8f0"}`, paddingRight: 16 }}>{sideContent}</div>
-              <div style={{ flex: 1 }}>{HeaderComp ? <HeaderComp resume={resume} theme={theme} /> : null}{mainContent}</div>
+              <div style={{ width: 180, borderRight: `1px solid ${effectiveTheme.border || "#e2e8f0"}`, paddingRight: 16 }}>{sideContent}</div>
+              <div style={{ flex: 1 }}>{HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}{mainContent}</div>
             </>
           )}
         </div>
@@ -509,9 +538,9 @@ export function generateTemplate(config: TemplateConfig) {
     // Banner layout (full-width colored header)
     if (layoutVariant === "banner") {
       return (
-        <div style={{ fontFamily, color: theme.body, maxWidth: layout.pageWidth, backgroundColor }}>
-          <HeaderComp resume={resume} theme={theme} />
-          <div style={{ padding: spacing.padding }}>
+        <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, backgroundColor }}>
+          <HeaderComp resume={resume} theme={effectiveTheme} />
+          <div style={{ padding: themedSpacing.padding }}>
             {sectionOrder.map(renderSection)}
           </div>
         </div>
@@ -522,8 +551,8 @@ export function generateTemplate(config: TemplateConfig) {
     if (layoutVariant === "compact") {
       const compactSpacing = SPACING.compact;
       return (
-        <div style={{ fontFamily, color: theme.body, maxWidth: layout.pageWidth, padding: compactSpacing.padding, backgroundColor, fontSize: 9 }}>
-          {HeaderComp ? <HeaderComp resume={resume} theme={theme} /> : null}
+        <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: compactSpacing.padding, backgroundColor, fontSize: 9 }}>
+          {HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}
           {sectionOrder.map(renderSection)}
         </div>
       );
@@ -531,8 +560,8 @@ export function generateTemplate(config: TemplateConfig) {
 
     // Default: single column
     return (
-      <div style={{ fontFamily, color: theme.body, maxWidth: layout.pageWidth, padding: spacing.padding, backgroundColor }}>
-        {HeaderComp ? <HeaderComp resume={resume} theme={theme} /> : null}
+      <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: themedSpacing.padding, backgroundColor }}>
+        {HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}
         {sectionOrder.map(renderSection)}
       </div>
     );
