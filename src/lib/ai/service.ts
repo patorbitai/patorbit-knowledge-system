@@ -276,7 +276,19 @@ export class AIService {
     const result = await this.complete(system, user, { maxTokens: 1024, jsonMode: true });
     const parsed = JSON.parse(result) as { claims?: unknown };
 
-    const raw = Array.isArray(parsed.claims) ? (parsed.claims as SuggestedClaim[]) : [];
+    // Gemini JSON mode sometimes returns arrays as objects with numeric keys
+    // (e.g. { "0": {...}, "1": {...} } instead of [{...}, {...}]).
+    // Normalize both cases into a real array.
+    let raw: SuggestedClaim[] = [];
+    if (Array.isArray(parsed.claims)) {
+      raw = parsed.claims as SuggestedClaim[];
+    } else if (parsed.claims && typeof parsed.claims === "object") {
+      const obj = parsed.claims as Record<string, unknown>;
+      const numericKeys = Object.keys(obj).filter((k) => /^\d+$/.test(k)).sort((a, b) => Number(a) - Number(b));
+      if (numericKeys.length > 0) {
+        raw = numericKeys.map((k) => obj[k] as SuggestedClaim);
+      }
+    }
     const claims = raw
       .filter((c) => c && typeof c.assertionText === "string" && c.assertionText.trim().length > 0)
       .map((c) => ({

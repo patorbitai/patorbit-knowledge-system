@@ -11,7 +11,7 @@
  * - Deletion behavior
  */
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 import { useResumeBuilder, defaultResume } from "../resume-builder";
 import type { Resume } from "@/types/resume";
 
@@ -416,6 +416,443 @@ describe("Resume Lifecycle Reliability", () => {
       state.switchResume(idB);
       expect(useResumeBuilder.getState().resume.name).toBe("Bob");
       expect(useResumeBuilder.getState().resume.email).toBe("bob@test.com");
+    });
+  });
+
+  describe("C28 — Server-First Hydration (hydrateFromServer)", () => {
+    it("hydrates server resumes when local state is empty (default resume)", () => {
+      // Start with the default (empty) resume
+      const defaultId = useResumeBuilder.getState().activeResumeId;
+      expect(useResumeBuilder.getState().resumes).toHaveLength(1);
+
+      const serverResumes = [
+        {
+          resumeId: "server-a",
+          resumeName: "Server Resume A",
+          templateId: "executive-pro",
+          careerStage: "working-professional",
+          resume: {
+            name: "Alice Server",
+            email: "alice@server.com",
+            title: "Engineer",
+            experience: [],
+            education: [],
+            skills: [],
+            projects: [],
+            certifications: [],
+            languages: [],
+            interests: [],
+            achievements: [],
+            references: [],
+            portfolio: [],
+            claims: [],
+          },
+          version: 3,
+        },
+      ];
+
+      useResumeBuilder.getState().hydrateFromServer(serverResumes);
+
+      const state = useResumeBuilder.getState();
+      expect(state.resumes).toHaveLength(1);
+      expect(state.resumes[0].resumeId).toBe("server-a");
+      expect(state.resumes[0].name).toBe("Alice Server");
+      expect(state.resumes[0].email).toBe("alice@server.com");
+      expect(state.resumes[0].templateId).toBe("executive-pro");
+      expect(state.activeResumeId).toBe("server-a");
+      expect(state.resume.name).toBe("Alice Server");
+      expect(state.serverVersions["server-a"]).toBe(3);
+    });
+
+    it("hydrates multiple server resumes when local is empty", () => {
+      const serverResumes = [
+        {
+          resumeId: "server-a",
+          resumeName: "Resume A",
+          templateId: "modern-clean",
+          careerStage: "working-professional",
+          resume: { name: "Alice", email: "a@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 1,
+        },
+        {
+          resumeId: "server-b",
+          resumeName: "Resume B",
+          templateId: "executive-pro",
+          careerStage: "manager",
+          resume: { name: "Bob", email: "b@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 2,
+        },
+        {
+          resumeId: "server-c",
+          resumeName: "Resume C",
+          templateId: "consulting-elite",
+          careerStage: "freelancer",
+          resume: { name: "Charlie", email: "c@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 1,
+        },
+      ];
+
+      useResumeBuilder.getState().hydrateFromServer(serverResumes);
+
+      const state = useResumeBuilder.getState();
+      expect(state.resumes).toHaveLength(3);
+      expect(state.resumes.map((r) => r.resumeId)).toEqual(["server-a", "server-b", "server-c"]);
+      expect(state.activeResumeId).toBe("server-a");
+    });
+
+    it("preserves local resumes that are not on server (LOCAL_ONLY)", () => {
+      // Create a real local resume with content (replacing the default)
+      const defaultId = useResumeBuilder.getState().activeResumeId;
+      const localId = useResumeBuilder.getState().createResume("My Local Resume");
+      useResumeBuilder.getState().updateField("name", "Local User");
+      useResumeBuilder.getState().updateField("email", "local@test.com");
+      // Remove the default empty resume so only the real one remains
+      useResumeBuilder.getState().deleteResume(defaultId);
+
+      // Server only has a different resume
+      const serverResumes = [
+        {
+          resumeId: "server-a",
+          resumeName: "Server Resume",
+          templateId: "modern-clean",
+          careerStage: "working-professional",
+          resume: { name: "Server User", email: "server@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 1,
+        },
+      ];
+
+      useResumeBuilder.getState().hydrateFromServer(serverResumes);
+
+      const state = useResumeBuilder.getState();
+      expect(state.resumes).toHaveLength(2);
+      // Local resume preserved
+      const localResume = state.resumes.find((r) => r.resumeId === localId);
+      expect(localResume).toBeDefined();
+      expect(localResume!.name).toBe("Local User");
+      // Server resume added
+      const serverResume = state.resumes.find((r) => r.resumeId === "server-a");
+      expect(serverResume).toBeDefined();
+      expect(serverResume!.name).toBe("Server User");
+    });
+
+    it("does not duplicate when local and server share a resumeId", () => {
+      // Create local resume with content (replacing the default)
+      const defaultId = useResumeBuilder.getState().activeResumeId;
+      const localId = useResumeBuilder.getState().createResume("My Resume");
+      useResumeBuilder.getState().updateField("name", "Shared User");
+      useResumeBuilder.getState().updateField("email", "shared@test.com");
+      useResumeBuilder.getState().deleteResume(defaultId);
+
+      // Server has the same resume
+      const serverResumes = [
+        {
+          resumeId: localId,
+          resumeName: "My Resume",
+          templateId: "modern-clean",
+          careerStage: "working-professional",
+          resume: { name: "Shared User", email: "shared@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 5,
+        },
+      ];
+
+      useResumeBuilder.getState().hydrateFromServer(serverResumes);
+
+      const state = useResumeBuilder.getState();
+      expect(state.resumes).toHaveLength(1);
+      expect(state.resumes[0].resumeId).toBe(localId);
+      expect(state.serverVersions[localId]).toBe(5);
+    });
+
+    it("does nothing when local state is non-empty and server is empty", () => {
+      // Create a real local resume
+      useResumeBuilder.getState().createResume("My Resume");
+      useResumeBuilder.getState().updateField("name", "Real User");
+
+      const before = useResumeBuilder.getState();
+      const beforeResumes = [...before.resumes];
+
+      useResumeBuilder.getState().hydrateFromServer([]);
+
+      const after = useResumeBuilder.getState();
+      expect(after.resumes).toEqual(beforeResumes);
+    });
+
+    it("sets saveStatus to saved after hydration (prevents write-back)", () => {
+      useResumeBuilder.setState({ saveStatus: "unsaved" });
+
+      const serverResumes = [
+        {
+          resumeId: "server-a",
+          resumeName: "Resume A",
+          templateId: "modern-clean",
+          careerStage: "working-professional",
+          resume: { name: "A", email: "a@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 1,
+        },
+      ];
+
+      useResumeBuilder.getState().hydrateFromServer(serverResumes);
+
+      expect(useResumeBuilder.getState().saveStatus).toBe("saved");
+    });
+
+    it("sets hydratingFromServer false after hydration completes", () => {
+      const serverResumes = [
+        {
+          resumeId: "server-a",
+          resumeName: "Resume A",
+          templateId: "modern-clean",
+          careerStage: "working-professional",
+          resume: { name: "A", email: "a@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 1,
+        },
+      ];
+
+      useResumeBuilder.getState().hydrateFromServer(serverResumes);
+
+      expect(useResumeBuilder.getState().hydratingFromServer).toBe(false);
+    });
+
+    it("preserves all resume fields from server payload", () => {
+      const serverResumes = [
+        {
+          resumeId: "server-full",
+          resumeName: "Full Resume",
+          templateId: "executive-pro",
+          careerStage: "manager",
+          resume: {
+            name: "Full User",
+            title: "Director",
+            email: "full@test.com",
+            phone: "+1-555-0100",
+            address: "Test City",
+            summary: "Experienced professional.",
+            experience: [{ id: "e1", company: "ACME", position: "Director", location: "NYC", employmentType: "Full-time", industry: "Tech", startDate: "2020", endDate: "", current: true, duration: "4 years", description: "Led team", achievements: "", techUsed: "", bulletPoints: ["Led 10-person team"] }],
+            education: [{ id: "ed1", school: "MIT", degree: "MS", year: "2018", field: "CS", gpa: "3.9", minor: "", honors: "", activities: "", location: "Cambridge" }],
+            skills: [{ id: "s1", name: "Leadership", level: "Expert", category: "Soft Skills", years: "10" }],
+            projects: [],
+            certifications: [],
+            languages: [],
+            interests: [],
+            achievements: [],
+            references: [],
+            portfolio: [],
+            claims: [],
+          },
+          version: 7,
+        },
+      ];
+
+      useResumeBuilder.getState().hydrateFromServer(serverResumes);
+
+      const r = useResumeBuilder.getState().resume;
+      expect(r.name).toBe("Full User");
+      expect(r.title).toBe("Director");
+      expect(r.email).toBe("full@test.com");
+      expect(r.phone).toBe("+1-555-0100");
+      expect(r.summary).toBe("Experienced professional.");
+      expect(r.experience).toHaveLength(1);
+      expect(r.experience[0].company).toBe("ACME");
+      expect(r.experience[0].bulletPoints).toEqual(["Led 10-person team"]);
+      expect(r.education).toHaveLength(1);
+      expect(r.education[0].school).toBe("MIT");
+      expect(r.skills).toHaveLength(1);
+      expect(r.skills[0].name).toBe("Leadership");
+      expect(r.templateId).toBe("executive-pro");
+      expect(r.careerStage).toBe("manager");
+      expect(r.resumeName).toBe("Full Resume");
+    });
+  });
+
+  describe("C29 — Server-Side Delete Propagation", () => {
+    beforeEach(() => {
+      // Mock fetch to prevent real network calls
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({}) }));
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("deletes inactive resume and preserves active", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+
+      // Switch to A and delete B
+      state.switchResume(idA);
+      state.deleteResume(idB);
+
+      const after = useResumeBuilder.getState();
+      expect(after.resumes).toHaveLength(2); // initial + A
+      expect(after.activeResumeId).toBe(idA);
+      expect(after.resume.name).toBe("Alice");
+      expect(after.resumes.find((r) => r.resumeId === idB)).toBeUndefined();
+    });
+
+    it("deletes active resume and switches to another", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+
+      // Delete A while A is active
+      state.switchResume(idA);
+      state.deleteResume(idA);
+
+      const after = useResumeBuilder.getState();
+      expect(after.resumes).toHaveLength(2); // initial + B
+      expect(after.activeResumeId).not.toBe(idA);
+      expect(after.resumes.find((r) => r.resumeId === idA)).toBeUndefined();
+    });
+
+    it("adds resumeId to pendingDeletes after deletion", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Resume A");
+      const idB = state.createResume("Resume B");
+
+      state.deleteResume(idB);
+
+      const after = useResumeBuilder.getState();
+      expect(after.pendingDeletes).toContain(idB);
+    });
+
+    it("removes from pendingDeletes after server confirms (clearPendingDelete)", () => {
+      const state = useResumeBuilder.getState();
+      const idB = state.createResume("Resume B");
+
+      state.deleteResume(idB);
+      expect(useResumeBuilder.getState().pendingDeletes).toContain(idB);
+
+      useResumeBuilder.getState().clearPendingDelete(idB);
+      expect(useResumeBuilder.getState().pendingDeletes).not.toContain(idB);
+    });
+
+    it("fires DELETE to server when deleteResume is called", async () => {
+      const state = useResumeBuilder.getState();
+      const idB = state.createResume("Resume B");
+
+      state.deleteResume(idB);
+
+      // Wait for async fetch
+      await new Promise((r) => setTimeout(r, 10));
+
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        `/api/resumes/${idB}`,
+        expect.objectContaining({ method: "DELETE" })
+      );
+    });
+
+    it("skips hydration of pending-deleted resumes", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+
+      // Delete B (adds to pendingDeletes)
+      state.deleteResume(idB);
+
+      // Verify pendingDeletes is set
+      expect(useResumeBuilder.getState().pendingDeletes).toContain(idB);
+
+      // Server returns both A and B
+      const serverResumes = [
+        { resumeId: idA, resumeName: "Resume A", templateId: "modern-clean", careerStage: "working-professional", resume: { name: "Alice", email: "a@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] }, version: 1 },
+        { resumeId: idB, resumeName: "Resume B", templateId: "modern-clean", careerStage: "working-professional", resume: { name: "Bob", email: "b@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] }, version: 1 },
+      ];
+
+      useResumeBuilder.getState().hydrateFromServer(serverResumes);
+
+      const after = useResumeBuilder.getState();
+      // B should NOT be in resumes (pending delete)
+      expect(after.resumes.find((r) => r.resumeId === idB)).toBeUndefined();
+      // A should still be there
+      expect(after.resumes.find((r) => r.resumeId === idA)).toBeDefined();
+    });
+
+    it("multiple resume isolation: deleting B preserves A and C", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+      const idC = state.createResume("Resume C");
+      state.updateField("name", "Charlie");
+
+      state.deleteResume(idB);
+
+      const after = useResumeBuilder.getState();
+      expect(after.resumes).toHaveLength(3); // initial + A + C (B deleted)
+      expect(after.resumes.find((r) => r.resumeId === idA)?.name).toBe("Alice");
+      expect(after.resumes.find((r) => r.resumeId === idC)?.name).toBe("Charlie");
+      expect(after.resumes.find((r) => r.resumeId === idB)).toBeUndefined();
+    });
+
+    it("active resume is always valid after deletion", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Resume A");
+      const idB = state.createResume("Resume B");
+      const idC = state.createResume("Resume C");
+
+      // Delete each possible active resume
+      state.switchResume(idA);
+      state.deleteResume(idA);
+      expect(useResumeBuilder.getState().resumes.some((r) => r.resumeId === useResumeBuilder.getState().activeResumeId)).toBe(true);
+
+      state.switchResume(idB);
+      state.deleteResume(idB);
+      expect(useResumeBuilder.getState().resumes.some((r) => r.resumeId === useResumeBuilder.getState().activeResumeId)).toBe(true);
+    });
+  });
+
+  describe("C30 — Explicit Server-Side Resume Creation", () => {
+    it("local resume is immediately available after createResume", () => {
+      const id = useResumeBuilder.getState().createResume("Immediate Test");
+
+      const state = useResumeBuilder.getState();
+      expect(state.resumes.some((r) => r.resumeId === id)).toBe(true);
+      expect(state.activeResumeId).toBe(id);
+      expect(state.resume.resumeId).toBe(id);
+    });
+
+    it("multiple creates produce independent resumes", () => {
+      const id1 = useResumeBuilder.getState().createResume("Resume 1");
+      const id2 = useResumeBuilder.getState().createResume("Resume 2");
+      const id3 = useResumeBuilder.getState().createResume("Resume 3");
+
+      const state = useResumeBuilder.getState();
+      expect(id1).not.toBe(id2);
+      expect(id2).not.toBe(id3);
+      expect(state.resumes.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("create → delete clears server version and adds pendingDeletes", () => {
+      // Simulate server version being set
+      useResumeBuilder.getState().setServerVersion("test-c30", 1);
+      expect(useResumeBuilder.getState().serverVersions["test-c30"]).toBe(1);
+
+      // Create a resume with that ID
+      useResumeBuilder.setState((s) => {
+        const r = { ...s.resume, resumeId: "test-c30", resumeName: "Delete Test" };
+        return { resumes: [...s.resumes, r], activeResumeId: "test-c30", resume: r };
+      });
+
+      useResumeBuilder.getState().deleteResume("test-c30");
+
+      expect(useResumeBuilder.getState().serverVersions["test-c30"]).toBeUndefined();
+      expect(useResumeBuilder.getState().pendingDeletes).toContain("test-c30");
+    });
+
+    it("createResume generates unique IDs", () => {
+      const ids = new Set<string>();
+      for (let i = 0; i < 10; i++) {
+        ids.add(useResumeBuilder.getState().createResume(`Test ${i}`));
+      }
+      expect(ids.size).toBe(10);
     });
   });
 });

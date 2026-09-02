@@ -1020,20 +1020,29 @@ function reflowPages(
       out[k].push(block); // no strict progress — give up
       break;
     }
-    if (fit >= origKids.length) {
-      // Every child fits, but the block's own chrome (margins/padding) still
-      // overflows the page — carry the whole block so nothing clips.
-      if (!out[k + 1]) out.push([]);
-      out[k + 1].unshift(block);
-      continue;
-    }
 
-    const n = Math.min(fit, origKids.length);
+    // Helper to build a slice of the deepest container's children.
     const makeLeaf = (from: number, to: number): HTMLElement => {
       const leaf = deepest.orig.cloneNode(false) as HTMLElement;
       for (let i = from; i < to; i++) leaf.appendChild(origKids[i].cloneNode(true));
       return leaf;
     };
+
+    if (fit >= origKids.length) {
+      // Every child's measured footprint fits within the page boundary, but the
+      // block's own chrome (margins/padding) causes the page to overflow A4.
+      // Instead of carrying the ENTIRE block to the next page (which creates
+      // a massive blank gap on the current page), split off the last child to
+      // reduce the block's height. This keeps all other content on the current
+      // page and only moves the smallest necessary portion forward.
+      const n = Math.max(1, origKids.length - 1);
+      out[k].push(rebuildChain(makeLeaf(0, n)));
+      if (!out[k + 1]) out.push([]);
+      out[k + 1].unshift(rebuildChain(makeLeaf(n, origKids.length)));
+      continue;
+    }
+
+    const n = Math.min(fit, origKids.length);
     // Keep any blocks that fit on this page; only the crossing block is
     // replaced by its measured fit slice, and its tail leads the next page.
     out[k].push(rebuildChain(makeLeaf(0, n)));

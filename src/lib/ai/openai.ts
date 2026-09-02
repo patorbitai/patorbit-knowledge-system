@@ -104,6 +104,34 @@ export class OpenAIProvider implements AIProvider {
       throw normalizeError(err);
     }
   }
+
+  async *completeStream(
+    messages: AIChatMessage[],
+    options?: AIProviderOptions,
+  ): AsyncGenerator<string, void, unknown> {
+    const client = this.getClient();
+
+    const body = {
+      model: MODEL,
+      messages: messages as never,
+      temperature: options?.temperature ?? 0.8,
+      max_tokens: options?.maxTokens ?? 512,
+      stream: true,
+      ...(options?.jsonMode ? { response_format: { type: "json_object" } as const } : {}),
+    };
+
+    try {
+      const stream = await client.chat.completions.create(body as never) as unknown as AsyncIterable<{ choices: { delta?: { content?: string } }[] }>;
+      for await (const chunk of stream) {
+        const delta = chunk.choices[0]?.delta?.content;
+        if (typeof delta === "string" && delta.length > 0) {
+          yield delta;
+        }
+      }
+    } catch (err) {
+      throw normalizeError(err);
+    }
+  }
 }
 
 /** Flatten possibly-array message content to plain text. */

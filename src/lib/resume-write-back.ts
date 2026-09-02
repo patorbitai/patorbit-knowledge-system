@@ -35,6 +35,27 @@ const SAVE_DEBOUNCE_MS = 1500;
 const inflightPosts = new Map<string, Promise<unknown>>();
 
 /**
+ * C30 — Resumes currently being created via explicit POST.
+ * Prevents the write-back subscription from also trying to POST.
+ */
+const creatingResumeIds = new Set<string>();
+
+/** Mark a resume as being created (C30). */
+export function markCreating(resumeId: string): void {
+  creatingResumeIds.add(resumeId);
+}
+
+/** Clear a resume from the creating set (C30). */
+export function clearCreating(resumeId: string): void {
+  creatingResumeIds.delete(resumeId);
+}
+
+/** Check if a resume is currently being created (C30). */
+export function isCreating(resumeId: string): boolean {
+  return creatingResumeIds.has(resumeId);
+}
+
+/**
  * Save the current local resume to the server.
  * Called internally by the debounced mechanism.
  */
@@ -43,6 +64,12 @@ export async function saveLocalResumeToServer(): Promise<void> {
   const { resume, activeResumeId, serverVersions } = state;
 
   if (!activeResumeId || !resume.resumeId) return;
+
+  // C29: Skip save for resumes that have been deleted locally (prevents resurrection)
+  if (state.pendingDeletes?.includes(resume.resumeId)) return;
+
+  // C30: Skip save for resumes that are currently being created via explicit POST
+  if (creatingResumeIds.has(resume.resumeId)) return;
 
   // Set saving status
   state.setSaveStatus("saving");
@@ -112,6 +139,12 @@ export async function saveLocalResumeToServer(): Promise<void> {
       const rid = resume.resumeId;
       const postPromise = (async () => {
         try {
+          // C29: Check if this resume has been deleted while the POST was pending
+          const currentPendingDeletes = useResumeBuilder.getState().pendingDeletes ?? [];
+          if (currentPendingDeletes.includes(rid)) {
+            console.log("[write-back] Resume deleted during pending POST — skipping");
+            return;
+          }
           const createRes = await fetch("/api/resumes", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -125,6 +158,19 @@ export async function saveLocalResumeToServer(): Promise<void> {
           });
           if (createRes.ok) {
             const created = await createRes.json() as { version?: number; resumeId?: string };
+            // C29: If resume was deleted while POST was in flight, clean up the server row
+            const postCreateDeletes = useResumeBuilder.getState().pendingDeletes ?? [];
+            if (postCreateDeletes.includes(rid)) {
+              console.log("[write-back] Resume deleted after POST succeeded — cleaning up server row");
+              fetch(`/api/resumes/${rid}`, { method: "DELETE" })
+                .then((delRes) => {
+                  if (delRes.ok || delRes.status === 404) {
+                    useResumeBuilder.getState().clearPendingDelete(rid);
+                  }
+                })
+                .catch(() => {});
+              return;
+            }
             if (created.version !== undefined && rid) {
               useResumeBuilder.getState().setServerVersion(rid, created.version);
             }
@@ -262,6 +308,10 @@ function handleBeforeUnload(): void {
   const state = useResumeBuilder.getState();
   const { resume, activeResumeId, serverVersions } = state;
   if (!activeResumeId || !resume.resumeId || state.saveStatus !== "unsaved") return;
+  // C29: Skip save for pending deletes
+  if (state.pendingDeletes?.includes(resume.resumeId)) return;
+  // C30: Skip save for resumes being created (POST in flight)
+  if (creatingResumeIds.has(resume.resumeId)) return;
 
   // Cancel the debounced timer — we're saving NOW
   const existing = pendingSaves.get(activeResumeId);
@@ -323,6 +373,12 @@ export async function flushOfflineQueue(): Promise<void> {
   console.log(`[write-back] Flushing ${entries.length} offline queue entries`);
 
   for (const entry of entries) {
+    // C29: Skip entries for resumes that have been deleted locally
+    const currentPendingDeletes = useResumeBuilder.getState().pendingDeletes ?? [];
+    if (currentPendingDeletes.includes(entry.resumeId)) {
+      await removeOfflineEntry(entry.resumeId);
+      continue;
+    }
     try {
       const res = await fetch(`/api/resumes/${entry.resumeId}`, {
         method: "PUT",
@@ -447,6 +503,8 @@ export function hookWriteBackToStore(): void {
     // reliably to the live store. Use a robust fallback check.
     const isHydrated = state.hydrated || (Array.isArray(state.resumes) && state.resumes.length > 0 && state.activeResumeId);
     if (!isHydrated) return;
+    // C28: Skip write-back during server-first hydration to prevent loops.
+    if (state.hydratingFromServer || prevState.hydratingFromServer) return;
     // Only save when resume content actually changed
     if (state.resume === prevState.resume) return;
     // Don't trigger during active saving

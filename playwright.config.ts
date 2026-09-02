@@ -10,12 +10,15 @@ export default defineConfig({
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
-    viewport: { width: 320, height: 800 },
   },
   projects: [
     {
       name: "responsive",
       use: { ...devices["Desktop Chrome"], viewport: { width: 320, height: 800 } },
+    },
+    {
+      name: "desktop-pagination",
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1440, height: 900 } },
     },
   ],
   webServer: {

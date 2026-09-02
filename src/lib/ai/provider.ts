@@ -10,11 +10,12 @@
  */
 import type { AIProvider } from "./types";
 import { OpenAIProvider } from "./openai";
+import { GeminiProvider } from "./gemini";
 
 const providers: Record<string, AIProvider> = {
   openai: new OpenAIProvider(),
+  gemini: new GeminiProvider(),
   // anthropic: new AnthropicProvider(),  // future
-  // gemini: new GeminiProvider(),        // future
 };
 
 export function getAIProvider(providerName?: string): AIProvider {

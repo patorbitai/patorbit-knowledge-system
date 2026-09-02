@@ -58,6 +58,13 @@ export interface AIProvider {
     messages: AIChatMessage[],
     options?: AIProviderOptions,
   ): Promise<AIProviderResult>;
+
+  /** Optional streaming completion. Yields text chunks as they arrive.
+   *  If not implemented, callers should fall back to complete(). */
+  completeStream?(
+    messages: AIChatMessage[],
+    options?: AIProviderOptions,
+  ): AsyncGenerator<string, void, unknown>;
 }
 
 // ── Milestone 3: AI Resume Optimization ──────────────────────────────────────

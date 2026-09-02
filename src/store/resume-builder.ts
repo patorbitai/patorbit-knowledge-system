@@ -61,8 +61,12 @@ export interface ResumeBuilderState {
   activeSection: SectionId;  saveStatus: SaveStatus;
   /** True after Zustand persist has rehydrated from localStorage. */
   hydrated: boolean;
+  /** True while server-first hydration is in progress (prevents write-back loop). */
+  hydratingFromServer: boolean;
   /** Server version per resume — populated by sync, used by write-back. */
   serverVersions: Record<string, number>;
+  /** Resume IDs that have been deleted locally and are pending server-side deletion. */
+  pendingDeletes: string[];
   /** Conflict state: set when a write-back gets 409 CONFLICT. */
   writeConflict: {
     resumeId: string;
@@ -103,6 +107,9 @@ export interface ResumeBuilderState {
   setEvidenceVisibility: (id: string, visibility: EvidenceVisibility) => void;
   markClaimReadyForReview: (claimId: string) => void;
   evidenceForClaim: (claimId: string) => Evidence[];
+  hydrateFromServer: (serverResumes: Array<{ resumeId: string; resumeName: string; templateId: string; careerStage: string; resume: Record<string, unknown>; version: number }>) => void;
+  /** Remove a resume ID from the pending deletes list (after server confirms deletion). */
+  clearPendingDelete: (resumeId: string) => void;
   setResume: (resume: Resume) => void;
   updateField: <K extends keyof Resume>(key: K, value: Resume[K]) => void;
   updateSocial: (key: keyof typeof defaultSocial, value: string) => void;
@@ -214,6 +221,54 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             const resumes = [...s.resumes, newResume];
             return { resumes, activeResumeId: id, resume: newResume, saveStatus: "unsaved" };
           });
+
+          // C30: Fire explicit POST to create the resume on the server
+          import("@/lib/resume-write-back").then(({ markCreating, clearCreating }) => {
+            markCreating(id);
+            fetch("/api/resumes", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                resumeId: id,
+                resumeName: newName,
+                templateId: newResume.templateId,
+                careerStage: newResume.careerStage,
+                resume: newResume,
+              }),
+            })
+              .then((res) => {
+                if (res.ok) {
+                  return res.json().then((data: { version?: number }) => {
+                    if (data.version !== undefined) {
+                      get().setServerVersion(id, data.version);
+                    }
+                    get().setSaveStatus("saved");
+                  });
+                }
+                // 409 cross-identity conflict — regenerate ID
+                if (res.status === 409) {
+                  return res.json().then((body: { error?: string }) => {
+                    if (body.error === "resumeId_conflict") {
+                      const newId = `id_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
+                      const st = get();
+                      const updated = { ...st.resume, resumeId: newId };
+                      const resumes = st.resumes.map((r) => r.resumeId === id ? updated : r);
+                      set({ resume: updated, resumes, activeResumeId: newId, saveStatus: "unsaved" });
+                    }
+                  });
+                }
+                // Other errors — leave as unsaved, write-back will retry
+              })
+              .catch(() => {
+                // Network error — leave as unsaved, write-back will retry
+              })
+              .finally(() => {
+                clearCreating(id);
+              });
+          }).catch(() => {
+            // Module not available (test env) — safe to skip
+          });
+
           return id;
         },
         switchResume: (resumeId: string) => {
@@ -231,18 +286,60 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           });
         },
         deleteResume: (resumeId: string) => {
+          const state = get();
+          if (state.resumes.length <= 1) return;
+
+          // 1. Immediately update local state (fast UI response)
           set((s) => {
-            if (s.resumes.length <= 1) return s;
             const resumes = s.resumes.filter((r) => r.resumeId !== resumeId);
             const activeResumeId = s.activeResumeId === resumeId ? resumes[0].resumeId : s.activeResumeId;
             const resume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
             return { resumes, activeResumeId, resume, saveStatus: "unsaved" };
           });
+
+          // 2. Cancel any pending write-back for this resume (prevents resurrection)
+          // Uses dynamic import to avoid circular dependency; gracefully handles test environments
+          import("@/lib/resume-write-back").then(({ cancelPendingSave }) => {
+            cancelPendingSave(resumeId);
+          }).catch(() => {
+            // Module not available (test environment) — safe to skip
+          });
+
+          // 3. Remove from serverVersions
+          set((s) => {
+            const sv = { ...s.serverVersions };
+            delete sv[resumeId];
+            return { serverVersions: sv };
+          });
+
+          // 4. Track as pending delete (for hydration + write-back guards)
+          set((s) => ({
+            pendingDeletes: s.pendingDeletes.includes(resumeId)
+              ? s.pendingDeletes
+              : [...s.pendingDeletes, resumeId],
+          }));
+
+          // 5. Fire server DELETE (async, best-effort)
+          fetch(`/api/resumes/${resumeId}`, { method: "DELETE" })
+            .then((res) => {
+              if (res.ok) {
+                // Server confirmed deletion — remove from pending deletes
+                get().clearPendingDelete(resumeId);
+              }
+              // 404 = already deleted on server — also safe to clear
+              if (res.status === 404) {
+                get().clearPendingDelete(resumeId);
+              }
+              // Other errors: keep in pendingDeletes for retry on next hydration
+            })
+            .catch(() => {
+              // Network error — keep in pendingDeletes, will be retried on next hydration
+            });
         },
 
         analysis: null, activeSection: "personal", saveStatus: "unsaved",
-        hydrated: false,
-        serverVersions: {}, writeConflict: null,
+        hydrated: false, hydratingFromServer: false,
+        serverVersions: {}, pendingDeletes: [], writeConflict: null,
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
         qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
@@ -382,6 +479,93 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           // Imported dynamically to avoid circular imports
           import("@/lib/resume-write-back").then(({ debouncedSave }) => {
             debouncedSave();
+          });
+        },
+        clearPendingDelete: (resumeId: string) => {
+          set((s) => ({
+            pendingDeletes: s.pendingDeletes.filter((id) => id !== resumeId),
+          }));
+        },
+        hydrateFromServer: (serverResumes) => {
+          const state = get();
+          const localResumes = state.resumes;
+
+          // Determine if local state is effectively empty:
+          // a single resume that matches the default (blank name, no sections, default template)
+          const isLocalEmpty = localResumes.length === 1 && (() => {
+            const r = localResumes[0];
+            return (
+              !r.name && !r.title && !r.email && !r.summary &&
+              r.experience.length === 0 && r.education.length === 0 &&
+              r.skills.length === 0 && r.projects.length === 0 &&
+              r.templateId === "modern-clean"
+            );
+          })();
+
+          if (!isLocalEmpty && serverResumes.length === 0) return;
+
+          // Set flag to prevent write-back loop during hydration
+          set({ hydratingFromServer: true });
+
+          const pendingDeleteSet = new Set(state.pendingDeletes);
+          const eligibleServerResumes = serverResumes.filter((s) => !pendingDeleteSet.has(s.resumeId));
+          const serverById = new Map(eligibleServerResumes.map((s) => [s.resumeId, s]));
+          const localById = new Map(localResumes.map((r) => [r.resumeId ?? "", r]));
+
+          const mergedResumes: Resume[] = [];
+          const newVersions: Record<string, number> = { ...state.serverVersions };
+
+          // Process each eligible server resume (excluding pending deletes)
+          for (const server of eligibleServerResumes) {
+            newVersions[server.resumeId] = server.version;
+            const local = localById.get(server.resumeId);
+
+            if (local && !isLocalEmpty) {
+              // Both exist — preserve local (it may have unsaved edits)
+              mergedResumes.push(local);
+            } else {
+              // Server-only or local is empty — hydrate from server
+              const serverDoc = server.resume as Record<string, unknown>;
+              const hydrated: Resume = {
+                ...defaultResume,
+                ...(serverDoc as Partial<Resume>),
+                resumeId: server.resumeId,
+                resumeName: server.resumeName,
+                templateId: server.templateId,
+                careerStage: server.careerStage as Resume["careerStage"],
+              };
+              mergedResumes.push(hydrated);
+            }
+          }
+
+          // Add LOCAL_ONLY resumes (not on server) — but only if local state was not empty.
+          // When local is empty, the default placeholder should not survive hydration.
+          if (!isLocalEmpty) {
+            for (const local of localResumes) {
+              const lid = local.resumeId ?? "";
+              if (!serverById.has(lid)) {
+                mergedResumes.push(local);
+              }
+            }
+          }
+
+          // Select active resume
+          let activeResumeId = state.activeResumeId;
+          const hasActive = mergedResumes.some((r) => r.resumeId === activeResumeId);
+          if (!hasActive) {
+            activeResumeId = mergedResumes[0]?.resumeId ?? uid();
+          }
+
+          const activeResume = mergedResumes.find((r) => r.resumeId === activeResumeId) ?? mergedResumes[0];
+
+          // Batch update: set all state at once, then clear hydration flag
+          set({
+            resumes: mergedResumes,
+            activeResumeId,
+            resume: activeResume,
+            serverVersions: newVersions,
+            saveStatus: "saved" as const,
+            hydratingFromServer: false,
           });
         },
         setAnalysis: (analysis) => set({ analysis }), setAnalysisLoading: (loading) => set({ analysisLoading: loading }),
@@ -687,7 +871,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     {
       name: "patorbit-resume-v2",
       merge: mergePersistedResumeState,
-      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions }),
+      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes }),
       onRehydrateStorage: () => (snapshot) => {
         // In Zustand v5 the `snapshot` parameter may be stale — the persist
         // middleware's own internal setState(merged) may not have fired yet.
@@ -712,6 +896,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
             evidence: live.evidence ?? [],
             styleConfigs: live.styleConfigs ?? {},
             serverVersions: live.serverVersions ?? {},
+            pendingDeletes: live.pendingDeletes ?? [],
             writeConflict: null,
             saveStatus: "saved" as const,
             hydrated: true,
@@ -732,6 +917,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
             evidence: snapshot.evidence ?? [],
             styleConfigs: snapshot.styleConfigs ?? {},
             serverVersions: snapshot.serverVersions ?? {},
+            pendingDeletes: snapshot.pendingDeletes ?? [],
             writeConflict: null,
             saveStatus: "saved" as const,
             hydrated: true,
@@ -770,4 +956,9 @@ if (typeof window !== "undefined") {
       useResumeBuilder.setState({ resume: found });
     }
   });
+}
+
+// Expose store for E2E testing (dev/staging only — stripped from production builds)
+if (typeof window !== "undefined" && process.env.NODE_ENV !== "production") {
+  (window as any).__resumeStore__ = useResumeBuilder;
 }
