@@ -79,11 +79,11 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
             );
           })}
         </ul>
+      </nav>
 
-        {/* Divider */}
-        <div className="my-3 border-t border-gray-100 dark:border-white/[0.05]" />
-
-        {/* Secondary nav */}
+      {/* Settings pinned to bottom */}
+      <div className="px-3 pb-1">
+        <div className="mb-2 border-t border-gray-100 dark:border-white/[0.05]" />
         <ul className="space-y-0.5">
           {SECONDARY_ITEMS.map(({ label, href, icon: Icon }) => {
             const active = isActive(href);
@@ -106,7 +106,7 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
             );
           })}
         </ul>
-      </nav>
+      </div>
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.05]">

@@ -68,7 +68,7 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
   };
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 lg:px-8 space-y-8">
+    <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10 space-y-8">
       {/* ── HERO ── */}
       <section className="space-y-1.5">
         <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f8fafc]">
@@ -111,7 +111,7 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
             {resumeList.map((r) => {
               const resumeId = r.resumeId ?? "";
               const isActive = resumeId === activeResumeId;
@@ -125,36 +125,39 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
               return (
                 <div
                   key={resumeId}
-                  className={`group relative rounded-xl border transition-all overflow-hidden ${
+                  className={`group relative rounded-2xl border transition-all overflow-hidden ${
                     isActive
-                      ? "border-blue-300 dark:border-[#22d3ee]/40 bg-blue-50/50 dark:bg-[#22d3ee]/[0.03]"
-                      : "border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-md"
+                      ? "border-blue-300 dark:border-[#22d3ee]/40 bg-blue-50/50 dark:bg-[#22d3ee]/[0.03] shadow-sm"
+                      : "border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-lg"
                   }`}
                 >
-                  {/* Real miniature resume preview */}
-                  <div className="border-b border-gray-100 dark:border-white/[0.04]">
-                    <MiniaturePreview
-                      templateId={templateId}
-                      resume={r}
-                    />
+                  {/* Real miniature resume preview — taller */}
+                  <div className="border-b border-gray-100 dark:border-white/[0.04] bg-gray-50 dark:bg-white/[0.01]">
+                    <div className="px-6 pt-5 pb-3">
+                      <MiniaturePreview
+                        templateId={templateId}
+                        resume={r}
+                      />
+                    </div>
                   </div>
 
-                  {/* Card body */}
-                  <div className="p-3 space-y-2">
+                  {/* Card body — richer metadata */}
+                  <div className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                        <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
                           {resumeName}
                         </h3>
-                        <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5 flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          Updated just now
-                        </p>
+                        {professionalTitle && (
+                          <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5 truncate">
+                            {professionalTitle}
+                          </p>
+                        )}
                       </div>
                       {/* Actions menu */}
                       <div className="relative group/menu">
                         <button
-                          className="rounded-lg p-1 text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
+                          className="rounded-lg p-1.5 text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
                           aria-label="Resume actions"
                         >
                           <MoreHorizontal className="h-4 w-4" />
@@ -176,47 +179,42 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
                               onClick={() => handleDelete(resumeId)}
                               className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
                             >
-                              <Trash2 className="h-3 w-3" />
-                              Delete
-                            </button>
+                            <Trash2 className="h-3 w-3" />
+                            Delete
+                          </button>
                           )}
                         </div>
                       </div>
                     </div>
 
-                    {/* Professional title */}
-                    {professionalTitle && (
-                      <p className="text-[11px] font-medium text-gray-500 dark:text-slate-400 truncate">
-                        {professionalTitle}
-                      </p>
-                    )}
-
-                    {/* Template + stats */}
-                    <div className="flex items-center gap-2 text-[11px] text-gray-400 dark:text-slate-500">
-                      <span className="truncate">{getTemplateName(templateId)}</span>
+                    {/* Stats row */}
+                    <div className="flex items-center gap-3 text-xs text-gray-400 dark:text-slate-500">
+                      <span className="flex items-center gap-1">
+                        <FileText className="h-3 w-3" />
+                        {getTemplateName(templateId)}
+                      </span>
                       {experienceCount > 0 && (
-                        <>
-                          <span>·</span>
-                          <span>{experienceCount} experience</span>
-                        </>
+                        <span>{experienceCount} experience</span>
+                      )}
+                      {educationCount > 0 && (
+                        <span>{educationCount} education</span>
                       )}
                       {skillsCount > 0 && (
-                        <>
-                          <span>·</span>
-                          <span>{skillsCount} skills</span>
-                        </>
+                        <span>{skillsCount} skills</span>
                       )}
                     </div>
 
-                    {/* Edit button */}
-                    <Link
-                      href="/resume-builder"
-                      onClick={() => switchResume(resumeId)}
-                      className="flex items-center justify-center gap-1.5 w-full py-2 rounded-lg bg-gray-50 dark:bg-white/[0.04] text-xs font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.08] transition-colors"
-                    >
-                      Continue editing
-                      <ArrowRight className="h-3 w-3" />
-                    </Link>
+                    {/* Actions row */}
+                    <div className="flex gap-2 pt-1">
+                      <Link
+                        href="/resume-builder"
+                        onClick={() => switchResume(resumeId)}
+                        className="flex-1 flex items-center justify-center gap-1.5 py-2.5 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-xs font-semibold text-white hover:brightness-110 transition-all"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit Resume
+                      </Link>
+                    </div>
                   </div>
                 </div>
               );
