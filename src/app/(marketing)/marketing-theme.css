@@ -44,8 +44,12 @@
 [data-theme="light"] section [class*="bg-slate-950"] { background-color: #ffffff !important; background-image: none !important; }
 [data-theme="light"] section [class*="bg-slate-800"] { background-color: #f1f5f9 !important; background-image: none !important; }
 [data-theme="light"] section [class*="bg-[#070B14]"] { background-color: #ffffff !important; background-image: none !important; }
+/* ── Dark gradient cards in light mode — clear ALL gradient backgrounds on dark cards ── */
 [data-theme="light"] section [class*="from-slate-9"] { background-image: none !important; background-color: #f8fafc !important; }
 [data-theme="light"] section [class*="to-slate-9"] { background-image: none !important; background-color: #f8fafc !important; }
+[data-theme="light"] section [class*="bg-gradient-to-b"][class*="slate"] { background-image: none !important; background-color: #f8fafc !important; }
+[data-theme="light"] section [class*="bg-gradient-to-br"][class*="slate"] { background-image: none !important; background-color: #f8fafc !important; }
+[data-theme="light"] section [class*="bg-gradient-to-t"][class*="slate"] { background-image: none !important; background-color: #f8fafc !important; }
 
 /* ── Borders ── */
 [data-theme="light"] .border-slate-800 { border-color: rgba(15, 23, 42, 0.1) !important; }
