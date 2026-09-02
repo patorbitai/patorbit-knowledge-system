@@ -90,7 +90,7 @@ function SkillChip({ skill }: { skill: Resume["skills"][0] }) {
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────
-export function PatorbitModernPreview({ resume }: { resume: Resume }) {
+export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: Resume; bulletChar?: string }) {
   return (
     <div
       style={{
@@ -223,7 +223,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
                             marginBottom: 2,
                           }}
                         >
-                          <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>●</span>
+                          <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>{bChar || "●"}</span>
                           {bp}
                         </li>
                       ))}
@@ -297,7 +297,7 @@ export function PatorbitModernPreview({ resume }: { resume: Resume }) {
                     <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
                       {p.bulletPoints.map((bp, i) => (
                         <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
-                          <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>●</span>
+                          <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>{bChar || "●"}</span>
                           {bp}
                         </li>
                       ))}

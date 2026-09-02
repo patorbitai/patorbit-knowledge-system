@@ -105,7 +105,7 @@ function groupSkills(skills: Resume["skills"]): [string, string[]][] {
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────
-export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
+export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume: Resume; bulletChar?: string }) {
   const skillGroups = groupSkills(resume.skills);
 
   return (
@@ -190,7 +190,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
                   <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
                     {exp.bulletPoints.map((bp, i) => (
                       <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
-                        <span style={{ position: "absolute", left: 0, color: C.muted, fontSize: 8, top: 2 }}>▸</span>
+                        <span style={{ position: "absolute", left: 0, color: C.muted, fontSize: 8, top: 2 }}>{bChar || "▸"}</span>
                         {bp}
                       </li>
                     ))}
@@ -238,7 +238,7 @@ export function EngineeringCleanPreview({ resume }: { resume: Resume }) {
                   <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
                     {p.bulletPoints.map((bp, i) => (
                       <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
-                        <span style={{ position: "absolute", left: 0, color: C.muted, fontSize: 8, top: 2 }}>▸</span>
+                        <span style={{ position: "absolute", left: 0, color: C.muted, fontSize: 8, top: 2 }}>{bChar || "▸"}</span>
                         {bp}
                       </li>
                     ))}

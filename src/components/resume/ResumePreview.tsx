@@ -2,6 +2,7 @@ import { ExecutivePreview, ExecutiveProPreview, MinimalAtsPreview, EngineeringCl
 import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
 import type { ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+import { bulletStyleToChar, DEFAULT_STYLE_CONFIG } from "@/lib/resume-design-system/style-config";
 import { StyleScope } from "@/components/resume/StyleScope";
 
 export function getActiveTemplate(resume: Resume): ResumeTemplate {
@@ -10,6 +11,9 @@ export function getActiveTemplate(resume: Resume): ResumeTemplate {
 
 export function ResumePreview({ resume, template, styleConfig }: { resume: Resume; template: ResumeTemplate; styleConfig?: Partial<ResumeStyleConfig> }) {
   const empty = !resume.name && !resume.title && !resume.email && !resume.summary;
+
+  // Compute bullet character from style config
+  const bulletChar = bulletStyleToChar(styleConfig?.bulletStyle ?? DEFAULT_STYLE_CONFIG.bulletStyle);
 
   const sheet = (() => {
     if (empty) {
@@ -27,36 +31,36 @@ export function ResumePreview({ resume, template, styleConfig }: { resume: Resum
     }
 
     switch (template.id) {
-    case "executive": return <ExecutivePreview resume={resume} />;
-    case "executive-pro": return <ExecutiveProPreview resume={resume} />;
-    case "minimal-ats": return <MinimalAtsPreview resume={resume} />;
-    case "engineering-clean": return <EngineeringCleanPreview resume={resume} />;
-    case "modern-clean": return <ModernCleanPreview resume={resume} />;
-    case "patorbit-modern": return <PatorbitModernPreview resume={resume} />;
-    case "classic-serif": return <ClassicSerifPreview resume={resume} />;
-    case "tech-mono": return <TechMonoPreview resume={resume} />;
-    case "creative-burst": return <CreativeBurstPreview resume={resume} />;
-    case "compact-pro": return <CompactProPreview resume={resume} />;
-    case "corporate-blue": return <CorporateBluePreview resume={resume} />;
-    case "minimal-edge": return <MinimalEdgePreview resume={resume} />;
-    case "banner-bold": return <BannerBoldPreview resume={resume} />;
-    case "sidebar-elegance": return <SidebarElegancePreview resume={resume} />;
-    case "gradient-flow": return <GradientFlowPreview resume={resume} />;
-    case "academic-formal": return <AcademicFormalPreview resume={resume} />;
-    case "startup-vibe": return <StartupVibePreview resume={resume} />;
-    case "dark-elegance": return <DarkElegancePreview resume={resume} />;
-    case "timeline-pro": return <TimelineProPreview resume={resume} />;
-    case "premium-slate": return <PremiumSlatePreview resume={resume} />;
-    case "nature-green": return <NatureGreenPreview resume={resume} />;
-    case "luxury-gold": return <LuxuryGoldPreview resume={resume} />;
-    case "swiss-design": return <SwissDesignPreview resume={resume} />;
-    case "scientific": return <ScientificPreview resume={resume} />;
-    case "creative-portfolio": return <CreativePortfolioPreview resume={resume} />;
-    case "consulting-elite": return <ConsultingElitePreview resume={resume} />;
-    case "product-manager": return <ProductManagerPreview resume={resume} />;
-    case "creative-professional": return <CreativeProfessionalPreview resume={resume} />;
-    case "academic-cv": return <AcademicCvPreview resume={resume} />;
-    default: return <ModernCleanPreview resume={resume} />;
+    case "executive": return <ExecutivePreview resume={resume} bulletChar={bulletChar} />;
+    case "executive-pro": return <ExecutiveProPreview resume={resume} bulletChar={bulletChar} />;
+    case "minimal-ats": return <MinimalAtsPreview resume={resume} bulletChar={bulletChar} />;
+    case "engineering-clean": return <EngineeringCleanPreview resume={resume} bulletChar={bulletChar} />;
+    case "modern-clean": return <ModernCleanPreview resume={resume} bulletChar={bulletChar} />;
+    case "patorbit-modern": return <PatorbitModernPreview resume={resume} bulletChar={bulletChar} />;
+    case "classic-serif": return <ClassicSerifPreview resume={resume} bulletChar={bulletChar} />;
+    case "tech-mono": return <TechMonoPreview resume={resume} bulletChar={bulletChar} />;
+    case "creative-burst": return <CreativeBurstPreview resume={resume} bulletChar={bulletChar} />;
+    case "compact-pro": return <CompactProPreview resume={resume} bulletChar={bulletChar} />;
+    case "corporate-blue": return <CorporateBluePreview resume={resume} bulletChar={bulletChar} />;
+    case "minimal-edge": return <MinimalEdgePreview resume={resume} bulletChar={bulletChar} />;
+    case "banner-bold": return <BannerBoldPreview resume={resume} bulletChar={bulletChar} />;
+    case "sidebar-elegance": return <SidebarElegancePreview resume={resume} bulletChar={bulletChar} />;
+    case "gradient-flow": return <GradientFlowPreview resume={resume} bulletChar={bulletChar} />;
+    case "academic-formal": return <AcademicFormalPreview resume={resume} bulletChar={bulletChar} />;
+    case "startup-vibe": return <StartupVibePreview resume={resume} bulletChar={bulletChar} />;
+    case "dark-elegance": return <DarkElegancePreview resume={resume} bulletChar={bulletChar} />;
+    case "timeline-pro": return <TimelineProPreview resume={resume} bulletChar={bulletChar} />;
+    case "premium-slate": return <PremiumSlatePreview resume={resume} bulletChar={bulletChar} />;
+    case "nature-green": return <NatureGreenPreview resume={resume} bulletChar={bulletChar} />;
+    case "luxury-gold": return <LuxuryGoldPreview resume={resume} bulletChar={bulletChar} />;
+    case "swiss-design": return <SwissDesignPreview resume={resume} bulletChar={bulletChar} />;
+    case "scientific": return <ScientificPreview resume={resume} bulletChar={bulletChar} />;
+    case "creative-portfolio": return <CreativePortfolioPreview resume={resume} bulletChar={bulletChar} />;
+    case "consulting-elite": return <ConsultingElitePreview resume={resume} bulletChar={bulletChar} />;
+    case "product-manager": return <ProductManagerPreview resume={resume} bulletChar={bulletChar} />;
+    case "creative-professional": return <CreativeProfessionalPreview resume={resume} bulletChar={bulletChar} />;
+    case "academic-cv": return <AcademicCvPreview resume={resume} bulletChar={bulletChar} />;
+    default: return <ModernCleanPreview resume={resume} bulletChar={bulletChar} />;
     }
   })();
 

@@ -358,7 +358,7 @@ function InterestsInline({ interests, theme }: { interests: Resume["interests"];
 // ── Main Template Generator ────────────────────────────────────────────────
 
 export function generateTemplate(config: TemplateConfig) {
-  return function TemplatePreview({ resume }: { resume: Resume }) {
+  return function TemplatePreview({ resume, bulletChar: bulletCharOverride }: { resume: Resume; bulletChar?: string }) {
     const { theme, fontFamily, header, bullet, backgroundColor = "#ffffff" } = config;
     const density = config.density || "normal";
     const spacing = SPACING[density];
@@ -367,7 +367,8 @@ export function generateTemplate(config: TemplateConfig) {
     const sectionOrder = config.sectionOrder || ["summary", "experience", "skills", "projects", "education", "certs", "achievements", "languages", "interests"];
     const sectionTitleStyle = config.sectionTitleStyle || "underline";
 
-    const themedSection = { ...theme, bulletChar: bullet };
+    // bulletChar override from style config takes precedence over template default
+    const themedSection = { ...theme, bulletChar: bulletCharOverride || bullet };
 
     const HeaderComp =
       header === "centered" ? HeaderCentered :

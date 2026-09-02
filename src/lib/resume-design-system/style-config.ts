@@ -327,6 +327,17 @@ export function resolveHeadingHex(config: Pick<ResumeStyleConfig, "accentColor" 
 
 /* ── CSS custom properties (inline on the scope root) ── */
 
+/** Map a bulletStyle option to the actual character rendered in template bullet spans. */
+export function bulletStyleToChar(bulletStyle: BulletStyle): string {
+  switch (bulletStyle) {
+    case "bullet": return "\u2022";  // •
+    case "circle": return "\u25CB";  // ○
+    case "dash":   return "\u2013";  // –
+    case "square": return "\u25AA";  // ▪
+    default:        return "\u2022";  // •
+  }
+}
+
 export function buildStyleVars(config: ResumeStyleConfig): Record<string, string> {
   const font = FONT_OPTIONS.find((f) => f.id === config.fontFamily);
   return {

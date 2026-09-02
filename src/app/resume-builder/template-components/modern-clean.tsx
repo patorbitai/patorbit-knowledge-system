@@ -60,7 +60,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 // ── Experience Entry ───────────────────────────────────────────────────────
-function ExperienceEntry({ exp }: { exp: Resume["experience"][0] }) {
+function ExperienceEntry({ exp, bulletChar: bChar }: { exp: Resume["experience"][0]; bulletChar?: string }) {
   const dateStr = exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
   return (
     <div style={{ marginBottom: 12 }}>
@@ -109,7 +109,7 @@ function ExperienceEntry({ exp }: { exp: Resume["experience"][0] }) {
                 marginBottom: 2,
               }}
             >
-              <span style={{ position: "absolute", left: 0, color: C.accent, fontSize: 10 }}>▸</span>
+              <span style={{ position: "absolute", left: 0, color: C.accent, fontSize: 10 }}>{bChar || "▸"}</span>
               {bp}
             </li>
           ))}
@@ -166,7 +166,7 @@ function EducationEntry({ edu }: { edu: Resume["education"][0] }) {
 }
 
 // ── Project Entry ──────────────────────────────────────────────────────────
-function ProjectEntry({ proj }: { proj: Resume["projects"][0] }) {
+function ProjectEntry({ proj, bulletChar: bChar }: { proj: Resume["projects"][0]; bulletChar?: string }) {
   const dateStr = [proj.startDate, proj.endDate].filter(Boolean).join(" – ");
   return (
     <div style={{ marginBottom: 10 }}>
@@ -197,7 +197,7 @@ function ProjectEntry({ proj }: { proj: Resume["projects"][0] }) {
         <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
           {proj.bulletPoints.map((bp, i) => (
             <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
-              <span style={{ position: "absolute", left: 0, color: C.accent, fontSize: 10 }}>▸</span>
+              <span style={{ position: "absolute", left: 0, color: C.accent, fontSize: 10 }}>{bChar || "▸"}</span>
               {bp}
             </li>
           ))}
@@ -208,7 +208,7 @@ function ProjectEntry({ proj }: { proj: Resume["projects"][0] }) {
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────
-export function ModernCleanPreview({ resume }: { resume: Resume }) {
+export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { resume: Resume; bulletChar?: string }) {
   const contactParts = [
     resume.email,
     resume.phone,
@@ -296,7 +296,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
         <section style={{ marginBottom: 16 }}>
           <SectionTitle>Professional Experience</SectionTitle>
           {resume.experience.map((exp) => (
-            <ExperienceEntry key={exp.id} exp={exp} />
+            <ExperienceEntry key={exp.id} exp={exp} bulletChar={bulletCharProp} />
           ))}
         </section>
       )}
@@ -306,7 +306,7 @@ export function ModernCleanPreview({ resume }: { resume: Resume }) {
         <section style={{ marginBottom: 16 }}>
           <SectionTitle>Projects</SectionTitle>
           {resume.projects.map((p) => (
-            <ProjectEntry key={p.id} proj={p} />
+            <ProjectEntry key={p.id} proj={p} bulletChar={bulletCharProp} />
           ))}
         </section>
       )}

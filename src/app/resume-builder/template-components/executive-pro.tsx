@@ -62,7 +62,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
 }
 
 // ── Main Component ─────────────────────────────────────────────────────────
-export function ExecutiveProPreview({ resume }: { resume: Resume }) {
+export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Resume; bulletChar?: string }) {
   return (
     <div
       style={{
@@ -145,7 +145,7 @@ export function ExecutiveProPreview({ resume }: { resume: Resume }) {
                   <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
                     {exp.bulletPoints.map((bp, i) => (
                       <li key={i} style={{ fontSize: 10, lineHeight: 1.55, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
-                        <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>◆</span>
+                        <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>{bChar || "◆"}</span>
                         {bp}
                       </li>
                     ))}
@@ -198,7 +198,7 @@ export function ExecutiveProPreview({ resume }: { resume: Resume }) {
                   <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
                     {p.bulletPoints.map((bp, i) => (
                       <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
-                        <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>◆</span>
+                        <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>{bChar || "◆"}</span>
                         {bp}
                       </li>
                     ))}
