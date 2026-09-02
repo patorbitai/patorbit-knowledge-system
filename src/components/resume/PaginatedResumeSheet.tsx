@@ -675,6 +675,10 @@ function detectScale(scope: HTMLElement): number {
 function paginateRoot(root: HTMLElement, scope: HTMLElement): string[] {
   const zoom = detectScale(scope);
   const cs = getComputedStyle(root);
+  // Use the template's own padding as the safe area — this matches what
+  // applyPageFrame will actually set on the rendered page clone. The PAGE_FRAME
+  // safe values act as minimums so templates with tiny padding still get
+  // adequate space.
   const safeTop1 = Math.max(px(cs.paddingTop), SAFE_TOP);
   const safeRight = Math.max(px(cs.paddingRight), PAGE_FRAME.safe.right);
   const safeBottom = Math.max(px(cs.paddingBottom), SAFE_BOTTOM);
@@ -682,10 +686,7 @@ function paginateRoot(root: HTMLElement, scope: HTMLElement): string[] {
   const ctx: Ctx = {
     pageHeight: PAGE_H,
     safeTop1,
-    // Continuation pages use a compact top safe area — the template's full
-    // header padding is only needed on page 1. Continuation pages get a
-    // small consistent margin instead, so content fills the page properly.
-    safeTopN: 12,
+    safeTopN: safeTop1,
     safeBottom,
     safeLeft,
     safeRight,
