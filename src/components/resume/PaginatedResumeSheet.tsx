@@ -962,19 +962,6 @@ function reflowPages(
   return pageRoots;
 }
 
-/**
- * Inject a compact continuation header into a page's serialized HTML.
- * The header is prepended inside the page's first child element (the template
- * root clone) so it inherits the page's font family and inherits the page
- * scope's CSS custom properties.
- */
-function injectContinuationHeader(pageHtml: string, headerHtml: string): string {
-  // Insert the header right after the pageRoot opening tag (the first >)
-  const firstClose = pageHtml.indexOf(">");
-  if (firstClose === -1) return pageHtml;
-  return pageHtml.slice(0, firstClose + 1) + headerHtml + pageHtml.slice(firstClose + 1);
-}
-
 /* ════════════════════════════════════════════════════════════════════════════
  * Component
  * ════════════════════════════════════════════════════════════════════════════ */
@@ -1005,26 +992,11 @@ export function PaginatedResumeSheet({ resume, template, styleConfig }: Paginate
       // Never lose content: fall back to a single page with the sheet as-is.
       result = [serializePage(scope, root.cloneNode(true) as HTMLElement)];
     }
-    // Inject a compact continuation header on pages 2+ so multi-page resumes
-    // look like a single document rather than disconnected fragments.
-    if (result.length > 1 && resume) {
-      const contactParts = [resume.email, resume.phone, resume.address].filter(Boolean);
-      const headerHtml = [
-        `<div style="padding-bottom:6px;margin-bottom:8px;border-bottom:1px solid #e2e8f0;font-family:inherit">`,
-        `  <div style="display:flex;justify-content:space-between;align-items:baseline">`,
-        `    <span style="font-size:11px;font-weight:700;color:#0f172a">${resume.name || ""}</span>`,
-        `    ${resume.title ? `<span style="font-size:9px;color:#64748b;font-style:italic">${resume.title}</span>` : ""}`,
-        `  </div>`,
-        `  ${contactParts.length ? `<div style="font-size:8px;color:#94a3b8;margin-top:1px">${contactParts.join(" · ")}</div>` : ""}`,
-        `</div>`,
-      ].join("");
-      result = result.map((html, i) => i === 0 ? html : injectContinuationHeader(html, headerHtml));
-    }
     setPagesHtml((prev) => {
       if (prev.length === result.length && prev.every((p, i) => p === result[i])) return prev;
       return result;
     });
-  }, [resume]);
+  }, []);
 
   useLayoutEffect(() => {
     paginate();
