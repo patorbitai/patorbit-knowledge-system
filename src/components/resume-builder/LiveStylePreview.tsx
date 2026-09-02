@@ -101,7 +101,7 @@ export function LiveStylePreview({
     setZoom(null);
   }
 
-  const defaultZoom = Math.round(fitScale * 100);
+  const defaultZoom = Math.round(Math.min(maxFit, fitScale) * 100);
   const effectiveZoom = zoom ?? defaultZoom;
   const scale = effectiveZoom / 100;
 
