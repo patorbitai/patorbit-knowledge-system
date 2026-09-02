@@ -99,7 +99,7 @@ export function LanguagesSection() {
       <SectionContent>
         {resume.languages.length === 0 ? (            <EmptyState icon={<Globe className="w-8 h-8 text-gray-400 dark:text-slate-600" />} message="No languages added" submessage="Add languages to showcase your multilingual skills" action={() => addLanguage()} actionLabel="Add Language" />
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
             {resume.languages.map((lang, idx) => (
               <motion.div
                 key={lang.id}
@@ -107,7 +107,7 @@ export function LanguagesSection() {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] p-3.5 flex items-center gap-3"
+                className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] p-3 flex items-center gap-3"
               >
                 <div className="flex-1 min-w-0">
                   <input

@@ -182,6 +182,40 @@
   border-color: rgba(15, 23, 42, 0.2) !important;
 }
 
+/* Native <select> dropdown options — dark mode readability */
+.dark select,
+.dark select option {
+  background-color: #0C1322 !important;
+  color: #e2e8f0 !important;
+}
+.dark select option:hover,
+.dark select option:focus,
+.dark select option:active {
+  background-color: #1e293b !important;
+  color: #ffffff !important;
+}
+.dark select option:checked {
+  background-color: #0ea5e9 !important;
+  color: #ffffff !important;
+}
+
+/* Native <select> dropdown options — light mode readability */
+.light select,
+.light select option {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+.light select option:hover,
+.light select option:focus,
+.light select option:active {
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+.light select option:checked {
+  background-color: #0ea5e9 !important;
+  color: #ffffff !important;
+}
+
 /* ── Resume Builder / Professional Preview chrome ─────────────────────────
    The Builder, Preview, Gallery, and Customize workspaces use additional
    dark surfaces not covered above (#070d18 page backgrounds, hex text
