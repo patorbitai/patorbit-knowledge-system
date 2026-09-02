@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Type, Palette, Heading1, List, SlidersHorizontal, RotateCcw, Check, type LucideIcon } from "lucide-react";
+import { X, Type, Palette, Heading1, List, SlidersHorizontal, RotateCcw, Check, Layout, Contact, Minus, Tag, Calendar, type LucideIcon } from "lucide-react";
 import { useMemo, useEffect, useRef } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { LiveStylePreview } from "./LiveStylePreview";
@@ -22,6 +22,11 @@ import {
   BULLET_SIZE_OPTIONS,
   DENSITY_OPTIONS,
   SECTION_SPACING_TIERS,
+  SECTION_TITLE_STYLE_OPTIONS,
+  CONTACT_LAYOUT_OPTIONS,
+  DIVIDER_STYLE_OPTIONS,
+  SKILL_PRESENTATION_OPTIONS,
+  DATE_FORMAT_OPTIONS,
   ENTRY_SPACING_TIERS,
   PAGE_MARGIN_TIERS,
   spacingTier,
@@ -307,6 +312,84 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
                       {density.name} density · {density.section}px between sections, {density.entry}px between entries.
                     </p>
                   )}
+                </Section>
+
+                <Section icon={Heading1} title="Section Titles" description="How section headers look">
+                  <OptionRow label="Title style" option="sectionTitleStyle" supported={supported}>
+                    <div className="grid grid-cols-2 gap-2">
+                      {SECTION_TITLE_STYLE_OPTIONS.map((o) => {
+                        const selected = config.sectionTitleStyle === o.value;
+                        return (
+                          <button
+                            key={o.value}
+                            onClick={() => patch({ sectionTitleStyle: o.value })}
+                            aria-label={o.name}
+                            aria-pressed={selected}
+                            className={`rounded-lg border px-3 py-2 text-center transition-all ${FOCUS_CLASS} ${selected ? SELECTED_CLASS : NEUTRAL_CLASS}`}
+                          >
+                            <span className="block text-sm font-semibold text-slate-200">{o.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </OptionRow>
+                  <OptionRow label="Divider" option="dividerStyle" supported={supported}>
+                    <div className="grid grid-cols-2 gap-2">
+                      {DIVIDER_STYLE_OPTIONS.map((o) => {
+                        const selected = config.dividerStyle === o.value;
+                        return (
+                          <button
+                            key={o.value}
+                            onClick={() => patch({ dividerStyle: o.value })}
+                            aria-label={o.name}
+                            aria-pressed={selected}
+                            className={`flex items-center gap-2 rounded-lg border px-3 py-2 transition-all ${FOCUS_CLASS} ${selected ? SELECTED_CLASS : NEUTRAL_CLASS}`}
+                          >
+                            <span className="text-sm text-slate-300">{o.glyph}</span>
+                            <span className="text-[11px] text-slate-300">{o.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </OptionRow>
+                </Section>
+
+                <Section icon={Layout} title="Layout" description="Contact and content arrangement">
+                  <OptionRow label="Contact layout" option="contactLayout" supported={supported}>
+                    <Segmented
+                      options={CONTACT_LAYOUT_OPTIONS.map((o) => ({ value: o.value, label: o.name }))}
+                      value={config.contactLayout}
+                      onSelect={(v) => patch({ contactLayout: v as ResumeStyleConfig["contactLayout"] })}
+                    />
+                  </OptionRow>
+                  <OptionRow label="Date format" option="dateFormat" supported={supported}>
+                    <Segmented
+                      options={DATE_FORMAT_OPTIONS.map((o) => ({ value: o.value, label: o.name }))}
+                      value={config.dateFormat}
+                      onSelect={(v) => patch({ dateFormat: v as ResumeStyleConfig["dateFormat"] })}
+                    />
+                  </OptionRow>
+                </Section>
+
+                <Section icon={Tag} title="Skills" description="How skills are presented">
+                  <OptionRow label="Presentation" option="skillPresentation" supported={supported}>
+                    <div className="grid grid-cols-2 gap-2">
+                      {SKILL_PRESENTATION_OPTIONS.map((o) => {
+                        const selected = config.skillPresentation === o.value;
+                        return (
+                          <button
+                            key={o.value}
+                            onClick={() => patch({ skillPresentation: o.value })}
+                            aria-label={o.name}
+                            aria-pressed={selected}
+                            className={`rounded-lg border px-3 py-2 text-center transition-all ${FOCUS_CLASS} ${selected ? SELECTED_CLASS : NEUTRAL_CLASS}`}
+                          >
+                            <span className="block text-sm font-medium text-slate-200">{o.name}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </OptionRow>
                 </Section>
               </div>
 

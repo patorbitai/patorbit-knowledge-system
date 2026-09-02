@@ -20,6 +20,11 @@ export type HeadingWeight = "auto" | "semibold" | "bold";
 export type BulletStyle = "bullet" | "circle" | "dash" | "square";
 export type BulletSize = "auto" | "small" | "normal";
 export type Density = "comfortable" | "compact";
+export type SectionTitleStyle = "underline" | "uppercase" | "bold" | "minimal";
+export type ContactLayout = "inline" | "stacked" | "grid";
+export type DividerStyle = "none" | "line" | "dots" | "gradient";
+export type SkillPresentation = "tags" | "list" | "pills" | "inline";
+export type DateFormat = "mm-yyyy" | "month-year" | "short-month" | "year-only";
 
 export interface ResumeStyleConfig {
   /** Curated font id (must map to a font actually loaded via next/font). */
@@ -45,6 +50,16 @@ export interface ResumeStyleConfig {
   entrySpacing: number;
   /** Page margin (content padding), px. */
   pageMargin: number;
+  /** Section title style */
+  sectionTitleStyle: SectionTitleStyle;
+  /** Contact info layout */
+  contactLayout: ContactLayout;
+  /** Divider style between sections */
+  dividerStyle: DividerStyle;
+  /** How skills are presented */
+  skillPresentation: SkillPresentation;
+  /** Date format */
+  dateFormat: DateFormat;
 }
 
 export type StyleOptionKey = keyof ResumeStyleConfig;
@@ -143,6 +158,42 @@ export type SectionSpacingTier = (typeof SECTION_SPACING_TIERS)[number]["value"]
 export type EntrySpacingTier = (typeof ENTRY_SPACING_TIERS)[number]["value"];
 export type PageMarginTier = (typeof PAGE_MARGIN_TIERS)[number]["value"];
 
+/* ── New style options ── */
+
+export const SECTION_TITLE_STYLE_OPTIONS: { value: SectionTitleStyle; name: string }[] = [
+  { value: "underline", name: "Underline" },
+  { value: "uppercase", name: "Uppercase" },
+  { value: "bold",      name: "Bold" },
+  { value: "minimal",   name: "Minimal" },
+];
+
+export const CONTACT_LAYOUT_OPTIONS: { value: ContactLayout; name: string }[] = [
+  { value: "inline",  name: "Inline" },
+  { value: "stacked", name: "Stacked" },
+  { value: "grid",    name: "Grid" },
+];
+
+export const DIVIDER_STYLE_OPTIONS: { value: DividerStyle; name: string; glyph: string }[] = [
+  { value: "none",     name: "None",     glyph: "—" },
+  { value: "line",     name: "Line",     glyph: "─" },
+  { value: "dots",     name: "Dots",     glyph: "···" },
+  { value: "gradient", name: "Gradient", glyph: "▓" },
+];
+
+export const SKILL_PRESENTATION_OPTIONS: { value: SkillPresentation; name: string }[] = [
+  { value: "tags",   name: "Tags" },
+  { value: "list",   name: "List" },
+  { value: "pills",  name: "Pills" },
+  { value: "inline", name: "Inline" },
+];
+
+export const DATE_FORMAT_OPTIONS: { value: DateFormat; name: string }[] = [
+  { value: "mm-yyyy",    name: "MM/YYYY" },
+  { value: "month-year", name: "Month YYYY" },
+  { value: "short-month", name: "Mon YYYY" },
+  { value: "year-only",  name: "YYYY" },
+];
+
 /** Resolve the tier whose px matches a stored config value (falls back to "normal"). */
 export function spacingTier<T extends { px: number; name: string }>(tiers: readonly T[], px: number): T {
   return tiers.find((t) => t.px === px) ?? tiers.find((t) => t.name === "Normal") ?? tiers[0];
@@ -182,6 +233,11 @@ export const DEFAULT_STYLE_CONFIG: ResumeStyleConfig = {
   sectionSpacing: 24,
   entrySpacing: 16,
   pageMargin: 40,
+  sectionTitleStyle: "underline",
+  contactLayout: "inline",
+  dividerStyle: "line",
+  skillPresentation: "tags",
+  dateFormat: "mm-yyyy",
 };
 
 /* ── Per-template capability map ──
@@ -197,6 +253,7 @@ const ALL_OPTIONS: StyleOptionKey[] = [
   "accentColor", "headingColor", "bodyColor",
   "headingStyle", "headingWeight", "bulletStyle", "bulletSize",
   "density", "sectionSpacing", "entrySpacing", "pageMargin",
+  "sectionTitleStyle", "contactLayout", "dividerStyle", "skillPresentation", "dateFormat",
 ];
 
 export function getTemplateStyleSupport(templateId: string): Set<StyleOptionKey> {
