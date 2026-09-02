@@ -57,6 +57,7 @@ export interface ResumeBuilderState {
   switchResume: (resumeId: string) => void;
   renameResume: (resumeId: string, name: string) => void;
   deleteResume: (resumeId: string) => void;
+  duplicateResume: (sourceResumeId: string) => string;
 
   activeSection: SectionId;  saveStatus: SaveStatus;
   /** True after Zustand persist has rehydrated from localStorage. */
@@ -335,6 +336,64 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             .catch(() => {
               // Network error — keep in pendingDeletes, will be retried on next hydration
             });
+        },
+        duplicateResume: (sourceResumeId: string) => {
+          const state = get();
+          const source = state.resumes.find((r) => r.resumeId === sourceResumeId);
+          if (!source) return "";
+
+          // Generate new identity
+          const newId = uid();
+          const originalName = source.resumeName || source.name || "Resume";
+          const newName = `${originalName} (Copy)`;
+
+          // Deep clone resume content (avoid shared mutable references)
+          const duplicate: Resume = {
+            ...JSON.parse(JSON.stringify(source)),
+            resumeId: newId,
+            resumeName: newName,
+          };
+
+          // Insert locally and make active
+          set((s) => {
+            const resumes = [...s.resumes, duplicate];
+            // Copy style configuration from source
+            const newStyleConfigs = { ...s.styleConfigs };
+            if (s.styleConfigs[sourceResumeId]) {
+              newStyleConfigs[newId] = JSON.parse(JSON.stringify(s.styleConfigs[sourceResumeId]));
+            }
+            return { resumes, activeResumeId: newId, resume: duplicate, saveStatus: "unsaved" as const, styleConfigs: newStyleConfigs };
+          });
+
+          // Explicit POST to server (C30 pattern)
+          import("@/lib/resume-write-back").then(({ markCreating, clearCreating }) => {
+            markCreating(newId);
+            fetch("/api/resumes", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                resumeId: newId,
+                resumeName: newName,
+                templateId: duplicate.templateId,
+                careerStage: duplicate.careerStage,
+                resume: duplicate,
+              }),
+            })
+              .then((res) => {
+                if (res.ok) {
+                  return res.json().then((data: { version?: number }) => {
+                    if (data.version !== undefined) {
+                      get().setServerVersion(newId, data.version);
+                    }
+                    get().setSaveStatus("saved");
+                  });
+                }
+              })
+              .catch(() => {}) // leave as unsaved, write-back will retry
+              .finally(() => { clearCreating(newId); });
+          }).catch(() => {});
+
+          return newId;
         },
 
         analysis: null, activeSection: "personal", saveStatus: "unsaved",

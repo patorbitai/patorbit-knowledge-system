@@ -855,4 +855,138 @@ describe("Resume Lifecycle Reliability", () => {
       expect(ids.size).toBe(10);
     });
   });
+
+  describe("C31 — Duplicate Resume", () => {
+    it("duplicate gets a new resumeId", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original A");
+      state.updateField("name", "Alice");
+
+      const idB = state.duplicateResume(idA);
+
+      expect(idB).not.toBe(idA);
+      expect(idB).toBeTruthy();
+    });
+
+    it("duplicate copies resume content", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original A");
+      state.updateField("name", "Alice");
+      state.updateField("email", "alice@test.com");
+      state.updateField("summary", "Experienced engineer.");
+      state.applyTemplate("executive-pro");
+
+      const idB = state.duplicateResume(idA);
+      const dup = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idB);
+
+      expect(dup).toBeDefined();
+      expect(dup!.name).toBe("Alice");
+      expect(dup!.email).toBe("alice@test.com");
+      expect(dup!.summary).toBe("Experienced engineer.");
+      expect(dup!.templateId).toBe("executive-pro");
+      expect(dup!.resumeName).toContain("(Copy)");
+    });
+
+    it("duplicate is independently mutable", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original A");
+      state.updateField("name", "Alice");
+
+      const idB = state.duplicateResume(idA);
+
+      // Edit B
+      useResumeBuilder.getState().switchResume(idB);
+      useResumeBuilder.getState().updateField("name", "Bob");
+
+      // A should be unchanged
+      const a = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idA);
+      expect(a!.name).toBe("Alice");
+
+      // B should have the new name
+      const b = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idB);
+      expect(b!.name).toBe("Bob");
+    });
+
+    it("duplicate becomes active", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original A");
+
+      const idB = state.duplicateResume(idA);
+
+      expect(useResumeBuilder.getState().activeResumeId).toBe(idB);
+    });
+
+    it("duplicate uses C30 explicit create pattern (not debounced write-back)", async () => {
+      // Verify the duplicate is marked as unsaved (triggers C30 POST via write-back)
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original A");
+      const idB = state.duplicateResume(idA);
+
+      // Duplicate should have saveStatus "unsaved" which triggers explicit POST
+      expect(useResumeBuilder.getState().saveStatus).toBe("unsaved");
+      // Duplicate should be in the resumes list with a new ID
+      const dup = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idB);
+      expect(dup).toBeDefined();
+      expect(dup!.resumeId).not.toBe(idA);
+      expect(dup!.resumeName).toContain("(Copy)");
+    });
+
+    it("delete isolation: deleting duplicate preserves original", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original A");
+      state.updateField("name", "Alice");
+
+      const idB = state.duplicateResume(idA);
+
+      // Delete B
+      useResumeBuilder.getState().deleteResume(idB);
+
+      // A should remain
+      const a = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idA);
+      expect(a).toBeDefined();
+      expect(a!.name).toBe("Alice");
+      expect(a!.resumeId).toBe(idA);
+
+      // B should be gone
+      expect(useResumeBuilder.getState().resumes.find((r) => r.resumeId === idB)).toBeUndefined();
+    });
+
+    it("style isolation: changing duplicate style does not affect original", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original A");
+
+      // Set a style for A
+      state.setStyleConfig(idA, { accentColor: "#ff0000" });
+
+      const idB = state.duplicateResume(idA);
+
+      // Change B's style
+      useResumeBuilder.getState().setStyleConfig(idB, { accentColor: "#0000ff" });
+
+      // A's style should be unchanged
+      const aStyle = useResumeBuilder.getState().styleConfigs[idA];
+      expect(aStyle).toBeDefined();
+
+      // B's style should be different
+      const bStyle = useResumeBuilder.getState().styleConfigs[idB];
+      expect(bStyle).toBeDefined();
+    });
+
+    it("multiple duplicates produce unique IDs", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original A");
+
+      const idB = state.duplicateResume(idA);
+      const idC = state.duplicateResume(idA);
+
+      expect(idA).not.toBe(idB);
+      expect(idB).not.toBe(idC);
+      expect(idA).not.toBe(idC);
+
+      const resumes = useResumeBuilder.getState().resumes;
+      expect(resumes.some((r) => r.resumeId === idA)).toBe(true);
+      expect(resumes.some((r) => r.resumeId === idB)).toBe(true);
+      expect(resumes.some((r) => r.resumeId === idC)).toBe(true);
+    });
+  });
 });

@@ -10,6 +10,7 @@ import {
   MoreHorizontal,
   Trash2,
   Pencil,
+  Copy,
   ArrowRight,
   LayoutDashboard,
 } from "lucide-react";
@@ -39,6 +40,7 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
   const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
   const createResume = useResumeBuilder((s) => s.createResume);
   const deleteResume = useResumeBuilder((s) => s.deleteResume);
+  const duplicateResume = useResumeBuilder((s) => s.duplicateResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
 
   const resumeList = mounted && resumes ? resumes : [];
@@ -172,6 +174,19 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
                           >
                             <Pencil className="h-3 w-3" />
                             Edit
+                          </button>
+
+                          <button
+                            onClick={() => {
+                              const newId = duplicateResume(resumeId);
+                              if (newId) {
+                                switchResume(newId);
+                              }
+                            }}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                          >
+                            <Copy className="h-3 w-3" />
+                            Duplicate
                           </button>
 
                           {resumeList.length > 1 && (
