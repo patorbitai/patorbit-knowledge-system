@@ -46,6 +46,57 @@ const SLACK = 6;
 const HOLDER_CSS =
   "position:fixed;left:-99999px;top:0;width:794px;visibility:hidden;pointer-events:none";
 
+/* ── Debug mode ────────────────────────────────────────────────────────────── */
+
+export interface PaginationDecision {
+  pageIndex: number;
+  blockLabel: string;
+  blockHeight: number;
+  remaining: number;
+  decision: "FIT" | "KEEPS_WITH_NEXT" | "MOVE_TO_NEXT_PAGE" | "SPLIT";
+}
+
+export interface PaginationDebugLog {
+  pages: { pageIndex: number; available: number; used: number }[];
+  decisions: PaginationDecision[];
+  totalPages: number;
+}
+
+let _debugLog: PaginationDebugLog | null = null;
+let _debugEnabled = false;
+
+/** Enable pagination debug logging. Call `getPaginationDebugLog()` after
+ *  paginateRoot() to retrieve the log. Development-only — never active
+ *  in production builds. */
+export function enablePaginationDebug(): void {
+  _debugEnabled = true;
+  _debugLog = { pages: [], decisions: [], totalPages: 0 };
+}
+
+export function disablePaginationDebug(): void {
+  _debugEnabled = false;
+  _debugLog = null;
+}
+
+export function getPaginationDebugLog(): PaginationDebugLog | null {
+  return _debugLog;
+}
+
+function debugLogDecision(d: PaginationDecision): void {
+  if (_debugEnabled && _debugLog) _debugLog.decisions.push(d);
+}
+
+function debugLogPage(pageIndex: number, available: number, used: number): void {
+  if (_debugEnabled && _debugLog) _debugLog.pages.push({ pageIndex, available, used });
+}
+
+function debugLabel(el: HTMLElement): string {
+  const tag = el.tagName.toLowerCase();
+  const key = el.getAttribute("key") || el.getAttribute("data-key") || "";
+  const cls = el.className?.toString().slice(0, 30) || "";
+  return key || cls || tag;
+}
+
 /* ── Geometry helpers ──────────────────────────────────────────────────────── */
 
 function px(v: string): number {
@@ -570,11 +621,15 @@ function distribute(
     // next unit is the block's first atomic child, not the whole wrapper — a
     // `space-y-5 > article×4` container must not force its heading off the
     // page just because the full container is taller than the page.
+    const blockLabel = debugLabel(item);
+    const remaining = usable - state.used;
+
     if (!independentHeadings && fits && i + 1 < items.length && keepsWithNext(item)) {
       const n = nextUnitMetrics(items[i + 1], ctx.zoom);
       const gap2 = Math.max(m.mb, n.mt);
       const bothNeed = gap + m.h + m.mb + gap2 + n.h + n.mb;
       if (state.used + bothNeed > usable) {
+        debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "KEEPS_WITH_NEXT" });
         nextPage(state);
         place(state, out, item, m.mt, m.mb, m.h);
         continue;
@@ -582,38 +637,32 @@ function distribute(
     }
 
     if (fits) {
+      debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "FIT" });
       place(state, out, item, m.mt, m.mb, m.h);
       continue;
     }
 
     // Does not fit here. Move the block to the next page WHOLE when it fits
     // there — atomic keep-together units (an experience article) and small
-    // blocks alike. The only exception is a LARGE splittable container (taller
-    // than half a page): splitting it between its children fills the current
-    // page instead of leaving a large blank gap, while small containers (a
-    // two-column languages grid, a two-entry education section) stay intact
-    // rather than fragmenting across pages.
-    //
-    // C18.1 FIX: splittable containers with multiple children should always
-    // be split to fill the current page — moving them whole leaves large
-    // blank gaps at the bottom of pages (e.g. a 400px experience section
-    // pushed to page 2 when 200px remains on page 1).
+    // blocks alike.
     const nextUsable = usableFor(state.page + 1, chromeT, chromeB, ctx, firstTopExtra);
     if (m.mt + m.h + m.mb <= nextUsable && isAtomicLeaf(item)) {
+      debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "MOVE_TO_NEXT_PAGE" });
       nextPage(state);
       place(state, out, item, m.mt, m.mb, m.h);
       continue;
     }
 
-    // Small splittable containers (< half page) that have only 0-1 children
-    // should stay intact rather than being split into trivial fragments.
+    // Small splittable containers (< half page) with 0-1 children stay intact.
     const childCount = elementChildren(item).length;
     if (m.mt + m.h + m.mb <= nextUsable && m.h <= nextUsable / 2 && childCount <= 1) {
+      debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "MOVE_TO_NEXT_PAGE" });
       nextPage(state);
       place(state, out, item, m.mt, m.mb, m.h);
       continue;
     }
 
+    debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "SPLIT" });
     splitOverTall(item, state, out, chromeT, chromeB, ctx);
   }
 }
@@ -725,6 +774,16 @@ function paginateRoot(root: HTMLElement, scope: HTMLElement): string[] {
   const pageRoots = reflowPages(out, root, decor, ctx, columnarRoot, holder);
   const html = pageRoots.map((p) => serializePage(scope, p));
   holder.remove();
+
+  // Debug: log final page summary
+  if (_debugEnabled && _debugLog) {
+    _debugLog.totalPages = html.length;
+    for (let i = 0; i < html.length; i++) {
+      const available = usableFor(i, 0, 0, ctx);
+      debugLogPage(i, available, 0);
+    }
+  }
+
   return html;
 }
 
