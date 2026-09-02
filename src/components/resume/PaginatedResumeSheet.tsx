@@ -587,8 +587,22 @@ function distribute(
     // page instead of leaving a large blank gap, while small containers (a
     // two-column languages grid, a two-entry education section) stay intact
     // rather than fragmenting across pages.
+    //
+    // C18.1 FIX: splittable containers with multiple children should always
+    // be split to fill the current page — moving them whole leaves large
+    // blank gaps at the bottom of pages (e.g. a 400px experience section
+    // pushed to page 2 when 200px remains on page 1).
     const nextUsable = usableFor(state.page + 1, chromeT, chromeB, ctx, firstTopExtra);
-    if (m.mt + m.h + m.mb <= nextUsable && (isAtomicLeaf(item) || m.h <= nextUsable / 2)) {
+    if (m.mt + m.h + m.mb <= nextUsable && isAtomicLeaf(item)) {
+      nextPage(state);
+      place(state, out, item, m.mt, m.mb, m.h);
+      continue;
+    }
+
+    // Small splittable containers (< half page) that have only 0-1 children
+    // should stay intact rather than being split into trivial fragments.
+    const childCount = elementChildren(item).length;
+    if (m.mt + m.h + m.mb <= nextUsable && m.h <= nextUsable / 2 && childCount <= 1) {
       nextPage(state);
       place(state, out, item, m.mt, m.mb, m.h);
       continue;
