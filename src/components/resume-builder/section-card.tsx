@@ -42,7 +42,7 @@ export function SectionCard({
       initial="hidden"
       animate="visible"
       className={clsx(
-        "group rounded-xl border transition-all duration-200 overflow-hidden",
+        "group rounded-xl border transition-all duration-200",
         isActive
           ? "border-cyan-500/20 bg-white dark:bg-[#0C1222] shadow-sm"
           : "border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0A0E1B]",

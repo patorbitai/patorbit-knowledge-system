@@ -108,7 +108,7 @@ export function AIActionDropdown({
         <ChevronDown className={clsx("w-2.5 h-2.5 transition-transform", open && "rotate-180")} />
       </button>
       {open && (
-        <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-2xl shadow-black/50 py-1 backdrop-blur-xl">
+        <div className="absolute left-0 top-full mt-1 z-50 min-w-[200px] rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-2xl shadow-black/50 py-1 backdrop-blur-xl">
           {items.map((item, i) => (
             <button
               key={i}

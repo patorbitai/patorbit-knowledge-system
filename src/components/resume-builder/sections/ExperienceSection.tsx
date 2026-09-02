@@ -195,7 +195,7 @@ export function ExperienceSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8, height: 0 }}
-                  className={`rounded-xl border overflow-hidden transition-colors ${
+                  className={`rounded-xl border transition-colors ${
                     isExpanded
                       ? "border-cyan-500/20 bg-white dark:bg-[#0C1222]"
                       : "border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.03]"
