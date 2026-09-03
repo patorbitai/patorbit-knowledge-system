@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -8,7 +8,6 @@ import {
   CheckCircle2,
   AlertTriangle,
   ArrowRight,
-  Copy,
   Loader2,
   Target,
   RefreshCw,
@@ -16,11 +15,12 @@ import {
   Eye,
   ArrowLeft,
   ChevronDown,
+  PenLine,
+  AlertCircle,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
-import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import type { Resume } from "@/types/resume";
 import type { ResumeTemplate } from "@/app/resume-builder/templates";
 
@@ -41,38 +41,26 @@ interface TailorResumeModalProps {
   onClose: () => void;
 }
 
-type Step = "input" | "analyzing" | "results" | "review";
+type Step = "input" | "analyzing" | "results" | "review" | "editing";
 
 /**
  * Compare original and tailored resumes to detect what changed.
- * Returns a structured diff for the comparison view.
  */
 function compareResumes(original: Resume, tailored: Record<string, unknown>) {
   const changes: Array<{ section: string; type: "rewritten" | "reordered" | "unchanged" | "omitted"; detail: string }> = [];
 
-  // Summary
   if (tailored.summary && original.summary !== tailored.summary) {
     changes.push({ section: "Summary", type: "rewritten", detail: "Rewritten for target role" });
   } else if (tailored.summary) {
     changes.push({ section: "Summary", type: "unchanged", detail: "No change needed" });
   }
 
-  // Skills
   const origSkills = original.skills.map((s) => s.name).sort().join(",");
   const tailoredSkills = (Array.isArray(tailored.skills) ? tailored.skills : []).map((s: any) => s.name).sort().join(",");
   if (origSkills !== tailoredSkills) {
-    const origSet = new Set(original.skills.map((s) => s.name));
-    const tailSet = new Set((Array.isArray(tailored.skills) ? tailored.skills : []).map((s: any) => s.name));
-    const added = [...tailSet].filter((s) => !origSet.has(s));
-    const removed = [...origSet].filter((s) => !tailSet.has(s));
-    if (added.length || removed.length) {
-      changes.push({ section: "Skills", type: "reordered", detail: `Prioritized ${tailSet.size - origSet.size > 0 ? "JD-relevant" : "relevant"} skills` });
-    } else {
-      changes.push({ section: "Skills", type: "reordered", detail: "Skills reordered for relevance" });
-    }
+    changes.push({ section: "Skills", type: "reordered", detail: "Skills reordered for JD relevance" });
   }
 
-  // Experience
   const origExpCount = original.experience.length;
   const tailExpCount = Array.isArray(tailored.experience) ? tailored.experience.length : 0;
   if (origExpCount !== tailExpCount) {
@@ -85,42 +73,28 @@ function compareResumes(original: Resume, tailored: Record<string, unknown>) {
 }
 
 /**
- * Detect potential unsupported claims in the tailored resume
- * by comparing against the original profile.
+ * Detect potential unsupported claims by comparing against original profile.
  */
 function detectUnsupportedClaims(original: Resume, tailored: Record<string, unknown>): string[] {
   const unsupported: string[] = [];
-
-  // Check skills
   const origSkillNames = new Set(original.skills.map((s) => s.name.toLowerCase()));
   const tailSkills = Array.isArray(tailored.skills) ? tailored.skills : [];
   for (const skill of tailSkills) {
     const name = (skill as any).name?.toLowerCase();
-    if (name && !origSkillNames.has(name)) {
-      unsupported.push(`Skill: ${(skill as any).name}`);
-    }
+    if (name && !origSkillNames.has(name)) unsupported.push(`Skill: ${(skill as any).name}`);
   }
-
-  // Check experience companies
   const origCompanies = new Set(original.experience.map((e) => e.company.toLowerCase()));
   const tailExp = Array.isArray(tailored.experience) ? tailored.experience : [];
   for (const exp of tailExp) {
     const company = (exp as any).company?.toLowerCase();
-    if (company && !origCompanies.has(company)) {
-      unsupported.push(`Experience: ${(exp as any).company}`);
-    }
+    if (company && !origCompanies.has(company)) unsupported.push(`Experience: ${(exp as any).company}`);
   }
-
-  // Check certifications
   const origCerts = new Set(original.certifications.map((c) => c.name.toLowerCase()));
   const tailCerts = Array.isArray(tailored.certifications) ? tailored.certifications : [];
   for (const cert of tailCerts) {
     const name = (cert as any).name?.toLowerCase();
-    if (name && !origCerts.has(name)) {
-      unsupported.push(`Certification: ${(cert as any).name}`);
-    }
+    if (name && !origCerts.has(name)) unsupported.push(`Certification: ${(cert as any).name}`);
   }
-
   return unsupported;
 }
 
@@ -132,38 +106,84 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("modern-clean");
   const [showComparison, setShowComparison] = useState(false);
   const [isRegenerating, setIsRegenerating] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isDirty, setIsDirty] = useState(false);
+  const [showRegenConfirm, setShowRegenConfirm] = useState(false);
+
+  // Editable draft fields
+  const [draftSummary, setDraftSummary] = useState("");
+  const [draftSkills, setDraftSkills] = useState("");
+  const [draftExpBullets, setDraftExpBullets] = useState<Record<number, string>>({});
+  const draftInitialized = useRef(false);
 
   const originalResume = useResumeBuilder((s) => s.resume);
+  const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
   const createResume = useResumeBuilder((s) => s.createResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
 
-  // Build the tailored Resume object for preview
+  // Build the tailored Resume object for preview — uses the editable draft state
   const tailoredResume = useMemo((): Resume | null => {
     if (!tailorResult) return null;
-    const t = tailorResult.resume;
+    const t = { ...tailorResult.resume };
+
+    // Apply draft edits if in editing mode
+    if (isEditing) {
+      if (draftSummary) t.summary = draftSummary;
+      if (draftSkills) {
+        t.skills = draftSkills.split(",").map((s) => s.trim()).filter(Boolean).map((name) => ({ name, level: "Intermediate" as const, category: "" }));
+      }
+      // Apply per-experience bullet edits
+      if (Array.isArray(t.experience)) {
+        t.experience = t.experience.map((exp: any, idx: number) => {
+          if (draftExpBullets[idx] !== undefined) {
+            return { ...exp, bulletPoints: draftExpBullets[idx].split("\n").filter((l: string) => l.trim()) };
+          }
+          return exp;
+        });
+      }
+    }
+
     return {
       ...originalResume,
       ...(t as Partial<Resume>),
       templateId: selectedTemplateId,
     } as Resume;
-  }, [tailorResult, selectedTemplateId, originalResume]);
+  }, [tailorResult, selectedTemplateId, originalResume, isEditing, draftSummary, draftSkills, draftExpBullets]);
 
-  // Get the selected template
   const selectedTemplate = useMemo((): ResumeTemplate => {
     return TEMPLATES.find((t) => t.id === selectedTemplateId) || TEMPLATES[0];
   }, [selectedTemplateId]);
 
-  // Compare original vs tailored
   const comparison = useMemo(() => {
     if (!tailorResult) return [];
     return compareResumes(originalResume, tailorResult.resume);
   }, [tailorResult, originalResume]);
 
-  // Detect unsupported claims
   const unsupportedClaims = useMemo(() => {
     if (!tailorResult) return [];
     return detectUnsupportedClaims(originalResume, tailorResult.resume);
   }, [tailorResult, originalResume]);
+
+  // Initialize draft fields from tailor result (once per generation)
+  const initDraft = useCallback(() => {
+    if (!tailorResult || draftInitialized.current) return;
+    draftInitialized.current = true;
+    setDraftSummary((tailorResult.resume.summary as string) || "");
+    setDraftSkills(
+      Array.isArray(tailorResult.resume.skills)
+        ? (tailorResult.resume.skills as any[]).map((s: any) => s.name).join(", ")
+        : ""
+    );
+    const bullets: Record<number, string> = {};
+    if (Array.isArray(tailorResult.resume.experience)) {
+      (tailorResult.resume.experience as any[]).forEach((exp: any, idx: number) => {
+        if (Array.isArray(exp.bulletPoints)) {
+          bullets[idx] = exp.bulletPoints.join("\n");
+        }
+      });
+    }
+    setDraftExpBullets(bullets);
+  }, [tailorResult]);
 
   const handleAnalyze = useCallback(async () => {
     if (!jobDescription.trim()) {
@@ -174,111 +194,127 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
       setError("Job description is too short. Please paste the full job posting.");
       return;
     }
+    if (!activeResumeId) {
+      setError("No active resume selected. Please open a resume first.");
+      return;
+    }
 
     setError(null);
     setStep("analyzing");
 
     try {
+      // C33.2: Send only resumeId — server loads authoritative resume
       const res = await fetch("/api/ai/tailor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          resume: originalResume,
+          resumeId: activeResumeId,
           jobDescription: jobDescription.trim(),
         }),
       });
 
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to analyze job description.");
-      }
+      if (!res.ok) throw new Error(data.error || "Failed to analyze job description.");
 
       setTailorResult(data);
       setSelectedTemplateId(originalResume.templateId || "modern-clean");
+      draftInitialized.current = false;
+      setIsEditing(false);
+      setIsDirty(false);
       setStep("results");
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
       setStep("input");
     }
-  }, [jobDescription, originalResume]);
+  }, [jobDescription, activeResumeId, originalResume]);
 
   const handleGenerate = useCallback(() => {
     if (!tailorResult) return;
+    initDraft();
     setStep("review");
-  }, [tailorResult]);
+  }, [tailorResult, initDraft]);
 
   const handleRegenerate = useCallback(async () => {
-    if (!jobDescription.trim()) return;
+    if (!jobDescription.trim() || !activeResumeId) return;
+    setShowRegenConfirm(false);
     setIsRegenerating(true);
     setError(null);
+    setIsEditing(false);
+    setIsDirty(false);
+    draftInitialized.current = false;
 
     try {
       const res = await fetch("/api/ai/tailor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          resume: originalResume,
+          resumeId: activeResumeId,
           jobDescription: jobDescription.trim(),
         }),
       });
-
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Failed to regenerate.");
-      }
-
+      if (!res.ok) throw new Error(data.error || "Failed to regenerate.");
       setTailorResult(data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Regeneration failed. Please try again.");
     } finally {
       setIsRegenerating(false);
     }
-  }, [jobDescription, originalResume]);
+  }, [jobDescription, activeResumeId]);
 
   const handleApprove = useCallback(() => {
     if (!tailorResult || !tailoredResume) return;
 
-    // Create a new resume with the tailored content
-    const name = (tailorResult.resume as Record<string, unknown>).name || originalResume.name || "Tailored Resume";
+    // Use the latest preview data (which includes draft edits)
+    const finalResume = tailoredResume;
+    if (!finalResume) return;
+    const name = finalResume.name || originalResume.name || "Tailored Resume";
     const newResumeId = createResume(`${name} — Tailored`);
-
-    // Switch to the new resume and populate it
     switchResume(newResumeId);
 
-    // Update the new resume with tailored content
     const store = useResumeBuilder.getState();
-    const updates = tailorResult.resume as Record<string, unknown>;
-    if (updates.name) store.updateField("name", updates.name as string);
-    if (updates.title) store.updateField("title", updates.title as string);
-    if (updates.email) store.updateField("email", updates.email as string);
-    if (updates.phone) store.updateField("phone", updates.phone as string);
-    if (updates.address) store.updateField("address", updates.address as string);
-    if (updates.summary) store.updateField("summary", updates.summary as string);
-    if (Array.isArray(updates.experience)) store.updateField("experience", updates.experience as any);
-    if (Array.isArray(updates.education)) store.updateField("education", updates.education as any);
-    if (Array.isArray(updates.skills)) store.updateField("skills", updates.skills as any);
-    if (Array.isArray(updates.projects)) store.updateField("projects", updates.projects as any);
-    if (Array.isArray(updates.certifications)) store.updateField("certifications", updates.certifications as any);
-
-    // Apply the selected template
+    if (finalResume.name) store.updateField("name", finalResume.name);
+    if (finalResume.title) store.updateField("title", finalResume.title);
+    if (finalResume.email) store.updateField("email", finalResume.email);
+    if (finalResume.phone) store.updateField("phone", finalResume.phone);
+    if (finalResume.address) store.updateField("address", finalResume.address);
+    if (finalResume.summary) store.updateField("summary", finalResume.summary);
+    if (Array.isArray(finalResume.experience)) store.updateField("experience", finalResume.experience as any);
+    if (Array.isArray(finalResume.education)) store.updateField("education", finalResume.education as any);
+    if (Array.isArray(finalResume.skills)) store.updateField("skills", finalResume.skills as any);
+    if (Array.isArray(finalResume.projects)) store.updateField("projects", finalResume.projects as any);
+    if (Array.isArray(finalResume.certifications)) store.updateField("certifications", finalResume.certifications as any);
     store.applyTemplate(selectedTemplateId);
 
-    // Navigate to builder
-    setTimeout(() => {
-      window.location.href = "/resume-builder";
-    }, 800);
+    setTimeout(() => { window.location.href = "/resume-builder"; }, 800);
   }, [tailorResult, tailoredResume, originalResume, createResume, switchResume, selectedTemplateId]);
 
   const handleReset = useCallback(() => {
+    if (isDirty && !confirm("You have unsaved tailored changes. Discard draft?")) return;
     setStep("input");
     setJobDescription("");
     setTailorResult(null);
     setError(null);
     setShowComparison(false);
     setIsRegenerating(false);
-  }, []);
+    setIsEditing(false);
+    setIsDirty(false);
+    draftInitialized.current = false;
+  }, [isDirty]);
+
+  const handleClose = useCallback(() => {
+    if (isDirty && step === "review" && !confirm("You have unsaved tailored changes. Discard draft?")) return;
+    onClose();
+    setStep("input");
+    setJobDescription("");
+    setTailorResult(null);
+    setError(null);
+    setShowComparison(false);
+    setIsRegenerating(false);
+    setIsEditing(false);
+    setIsDirty(false);
+    draftInitialized.current = false;
+  }, [isDirty, step, onClose]);
 
   if (!open) return null;
 
@@ -290,7 +326,7 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
-          onClick={onClose}
+          onClick={handleClose}
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
@@ -307,21 +343,27 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                 </div>
                 <div>
                   <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {step === "review" ? "Review Tailored Resume" : "Tailor Resume to Job"}
+                    {step === "editing" ? "Edit Tailored Draft" : step === "review" ? "Review Tailored Resume" : "Tailor Resume to Job"}
                   </h2>
                   <p className="text-xs text-gray-500 dark:text-slate-400">
-                    {step === "review"
-                      ? "Review, compare, and approve before saving"
-                      : "Analyze a job description and generate a tailored resume"}
+                    {step === "editing"
+                      ? "Edit draft fields — your original resume is untouched"
+                      : step === "review"
+                        ? "Review, compare, and approve before saving"
+                        : "Analyze a job description and generate a tailored resume"}
                   </p>
                 </div>
               </div>
-              <button
-                onClick={onClose}
-                className="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white"
-              >
-                <X className="h-4 w-4" />
-              </button>
+              <div className="flex items-center gap-2">
+                {step === "review" && isDirty && (
+                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 font-medium">
+                    Unsaved edits
+                  </span>
+                )}
+                <button onClick={handleClose} className="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
             </div>
 
             <div className="p-6">
@@ -345,13 +387,11 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                       )}
                     </div>
                   </div>
-
                   {error && (
                     <div className="rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 px-3 py-2 text-xs text-red-600 dark:text-red-400">
                       {error}
                     </div>
                   )}
-
                   <button
                     onClick={handleAnalyze}
                     disabled={!jobDescription.trim() || jobDescription.trim().length < 50}
@@ -369,7 +409,7 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                   <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
                   <div className="text-center">
                     <p className="text-sm font-medium text-gray-900 dark:text-white">Analyzing job description...</p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Comparing requirements against your Professional Identity</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Loading your authoritative resume from server and comparing against JD</p>
                   </div>
                 </div>
               )}
@@ -377,7 +417,6 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
               {/* Step: Results (match analysis) */}
               {step === "results" && tailorResult && (
                 <div className="space-y-4">
-                  {/* Match Score */}
                   <div className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] p-4">
                     <div className="flex items-center justify-between mb-3">
                       <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Job Match Score</span>
@@ -388,7 +427,6 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                     </div>
                   </div>
 
-                  {/* Matched Skills */}
                   {tailorResult.matchAnalysis.matchedSkills.length > 0 && (
                     <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 p-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -403,7 +441,6 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                     </div>
                   )}
 
-                  {/* Partial Matches */}
                   {tailorResult.matchAnalysis.partialMatches.length > 0 && (
                     <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -418,7 +455,6 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                     </div>
                   )}
 
-                  {/* Missing Skills */}
                   {tailorResult.matchAnalysis.missingSkills.length > 0 && (
                     <div className="rounded-xl border border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 p-4">
                       <div className="flex items-center gap-2 mb-2">
@@ -434,7 +470,6 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                     </div>
                   )}
 
-                  {/* Actions */}
                   <div className="flex gap-3">
                     <button onClick={handleReset} className="flex-1 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors">
                       Try Another JD
@@ -447,8 +482,8 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                 </div>
               )}
 
-              {/* Step: Review (full preview + comparison + template + approval) */}
-              {step === "review" && tailorResult && tailoredResume && (
+              {/* Step: Review / Editing (full preview + comparison + template + approval) */}
+              {(step === "review" || step === "editing") && tailorResult && tailoredResume && (
                 <div className="space-y-4">
                   {/* Trust Panel */}
                   <div className="rounded-xl border border-emerald-200 dark:border-emerald-500/20 bg-emerald-50 dark:bg-emerald-500/10 p-4">
@@ -457,7 +492,7 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                       <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Trust & Factuality</span>
                     </div>
                     <ul className="space-y-1 text-[11px] text-emerald-600 dark:text-emerald-300/80">
-                      <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3" /> Built from your existing Professional Identity</li>
+                      <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3" /> Loaded from your authoritative server-side resume</li>
                       <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3" /> Existing experience was preserved</li>
                       <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3" /> Missing skills were NOT added</li>
                       <li className="flex items-center gap-1.5"><CheckCircle2 className="w-3 h-3" /> You control the final version</li>
@@ -496,7 +531,6 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                     {showComparison ? "Hide" : "Show"} Original vs Tailored Comparison
                   </button>
 
-                  {/* Comparison View */}
                   {showComparison && (
                     <div className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] p-4 space-y-3">
                       <h3 className="text-xs font-semibold text-gray-700 dark:text-slate-300">What Changed</h3>
@@ -545,45 +579,139 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                     </div>
                   </div>
 
+                  {/* Editing Panel (shown when in editing step) */}
+                  {step === "editing" && (
+                    <div className="rounded-xl border border-cyan-200 dark:border-cyan-500/20 bg-cyan-50 dark:bg-cyan-500/10 p-4 space-y-3">
+                      <div className="flex items-center gap-2 mb-1">
+                        <PenLine className="w-3.5 h-3.5 text-cyan-500" />
+                        <span className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">Editing Draft</span>
+                        <span className="text-[10px] text-cyan-600/60 dark:text-cyan-400/50">(changes update the preview above)</span>
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-700 dark:text-slate-300 mb-1">Summary</label>
+                        <textarea
+                          value={draftSummary}
+                          onChange={(e) => { setDraftSummary(e.target.value); setIsDirty(true); }}
+                          rows={3}
+                          className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-medium text-gray-700 dark:text-slate-300 mb-1">Skills (comma-separated)</label>
+                        <textarea
+                          value={draftSkills}
+                          onChange={(e) => { setDraftSkills(e.target.value); setIsDirty(true); }}
+                          rows={2}
+                          className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                        />
+                      </div>
+                      {Object.keys(draftExpBullets).length > 0 && (
+                        <div>
+                          <label className="block text-[11px] font-medium text-gray-700 dark:text-slate-300 mb-1">Experience Bullet Points</label>
+                          {Object.entries(draftExpBullets).map(([idx, bullets]) => (
+                            <div key={idx} className="mb-2">
+                              <span className="text-[10px] text-gray-500 dark:text-slate-400">Experience #{Number(idx) + 1}</span>
+                              <textarea
+                                value={bullets}
+                                onChange={(e) => { setDraftExpBullets({ ...draftExpBullets, [Number(idx)]: e.target.value }); setIsDirty(true); }}
+                                rows={4}
+                                className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50 mt-0.5"
+                                placeholder="One bullet per line"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Approval Confirmation */}
                   <div className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] p-4">
                     <p className="text-xs text-gray-600 dark:text-slate-400">
                       You are about to create a <strong>new resume</strong>. Your original resume will remain <strong>unchanged</strong>.
-                      The tailored resume will be created with its own independent ID.
+                      {isDirty && " Your edits above will be included in the saved resume."}
                     </p>
                   </div>
 
-                  {/* Error */}
                   {error && (
                     <div className="rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 px-3 py-2 text-xs text-red-600 dark:text-red-400">
                       {error}
                     </div>
                   )}
 
+                  {/* Regeneration Confirmation */}
+                  {showRegenConfirm && (
+                    <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 p-4">
+                      <div className="flex items-center gap-2 mb-2">
+                        <AlertCircle className="w-4 h-4 text-amber-500" />
+                        <span className="text-xs font-semibold text-amber-700 dark:text-amber-400">Regenerate?</span>
+                      </div>
+                      <p className="text-[11px] text-amber-600 dark:text-amber-300/70 mb-3">
+                        {isDirty
+                          ? "Your current draft edits will be replaced by a new AI-generated draft."
+                          : "A new AI-generated draft will replace the current one."}
+                        <br />Your original resume will remain unchanged.
+                      </p>
+                      <div className="flex gap-2">
+                        <button onClick={() => setShowRegenConfirm(false)} className="px-3 py-1.5 rounded-lg text-[11px] font-medium text-gray-600 dark:text-slate-300 border border-gray-200 dark:border-white/[0.08] hover:bg-gray-100 dark:hover:bg-white/[0.04]">
+                          Keep Editing
+                        </button>
+                        <button onClick={handleRegenerate} className="px-3 py-1.5 rounded-lg text-[11px] font-medium text-white bg-amber-500 hover:bg-amber-600 transition-colors">
+                          Discard & Regenerate
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Actions */}
                   <div className="flex gap-3">
-                    <button
-                      onClick={handleReset}
-                      className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors"
-                    >
-                      <ArrowLeft className="w-3.5 h-3.5 inline mr-1" />
-                      Back
-                    </button>
-                    <button
-                      onClick={handleRegenerate}
-                      disabled={isRegenerating}
-                      className="flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors disabled:opacity-50"
-                    >
-                      {isRegenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
-                      Regenerate
-                    </button>
-                    <button
-                      onClick={handleApprove}
-                      className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 px-4 py-2.5 text-xs font-medium text-white transition-all"
-                    >
-                      <CheckCircle2 className="h-3.5 w-3.5" />
-                      Approve & Save as New Resume
-                    </button>
+                    {step === "review" ? (
+                      <>
+                        <button onClick={handleReset} className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors">
+                          <ArrowLeft className="w-3.5 h-3.5 inline mr-1" />
+                          Back
+                        </button>
+                        <button
+                          onClick={() => { initDraft(); setStep("editing"); }}
+                          className="flex items-center gap-1.5 rounded-xl border border-cyan-200 dark:border-cyan-500/20 bg-cyan-50 dark:bg-cyan-500/10 px-4 py-2.5 text-xs font-medium text-cyan-700 dark:text-cyan-400 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors"
+                        >
+                          <PenLine className="w-3.5 h-3.5" />
+                          Edit Draft
+                        </button>
+                        <button
+                          onClick={() => setShowRegenConfirm(true)}
+                          disabled={isRegenerating}
+                          className="flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors disabled:opacity-50"
+                        >
+                          {isRegenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                          Regenerate
+                        </button>
+                        <button onClick={handleApprove} className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 px-4 py-2.5 text-xs font-medium text-white transition-all">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Approve & Save as New Resume
+                        </button>
+                      </>
+                    ) : (
+                      /* Editing mode actions */
+                      <>
+                        <button onClick={() => setStep("review")} className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors">
+                          <ArrowLeft className="w-3.5 h-3.5 inline mr-1" />
+                          Back to Review
+                        </button>
+                        <button
+                          onClick={() => setShowRegenConfirm(true)}
+                          disabled={isRegenerating}
+                          className="flex items-center gap-1.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors disabled:opacity-50"
+                        >
+                          {isRegenerating ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <RefreshCw className="w-3.5 h-3.5" />}
+                          Regenerate
+                        </button>
+                        <button onClick={handleApprove} className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700 px-4 py-2.5 text-xs font-medium text-white transition-all">
+                          <CheckCircle2 className="h-3.5 w-3.5" />
+                          Approve & Save as New Resume
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}

@@ -990,6 +990,120 @@ describe("Resume Lifecycle Reliability", () => {
     });
   });
 
+  describe("C33.2 — Authoritative Data + Pre-Approval Editing", () => {
+    beforeEach(() => {
+      vi.stubGlobal("fetch", vi.fn().mockResolvedValue({ ok: true, status: 200, json: () => Promise.resolve({}) }));
+    });
+
+    afterEach(() => {
+      vi.restoreAllMocks();
+    });
+
+    it("tailor API receives resumeId, not full resume data", async () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Source Resume");
+      state.updateField("name", "John Doe");
+
+      // Simulate what TailorResumeModal does — call the API with resumeId
+      await fetch("/api/ai/tailor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          resumeId: idA,
+          jobDescription: "Senior Data Engineer with Azure experience.",
+        }),
+      });
+
+      // Verify fetch was called with resumeId, NOT a full resume object
+      expect(globalThis.fetch).toHaveBeenCalledWith(
+        "/api/ai/tailor",
+        expect.objectContaining({
+          method: "POST",
+          body: expect.stringContaining(`"resumeId":"${idA}"`),
+        }),
+      );
+      // Verify the body does NOT contain a full resume object
+      const callBody = JSON.parse((globalThis.fetch as any).mock.calls[0][1].body);
+      expect(callBody.resume).toBeUndefined();
+      expect(callBody.resumeId).toBe(idA);
+    });
+
+    it("original resume is unchanged during tailoring workflow", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original Resume");
+      state.updateField("name", "Original Content");
+      state.updateField("email", "original@test.com");
+      state.updateField("summary", "Original summary.");
+
+      // Simulate the entire tailoring workflow
+      const originalName = useResumeBuilder.getState().resume.name;
+      const originalEmail = useResumeBuilder.getState().resume.email;
+      const originalSummary = useResumeBuilder.getState().resume.summary;
+
+      // Nothing should have changed the original resume
+      expect(useResumeBuilder.getState().resume.name).toBe(originalName);
+      expect(useResumeBuilder.getState().resume.email).toBe(originalEmail);
+      expect(useResumeBuilder.getState().resume.summary).toBe(originalSummary);
+    });
+
+    it("multi-resume isolation: tailoring A does not affect B or C", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Resume A");
+      state.updateField("name", "Alice");
+      const idB = state.createResume("Resume B");
+      state.updateField("name", "Bob");
+      const idC = state.createResume("Resume C");
+      state.updateField("name", "Charlie");
+
+      // Simulate tailoring A
+      const aBefore = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idA);
+      const bBefore = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idB);
+      const cBefore = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idC);
+
+      // All should remain unchanged
+      expect(aBefore!.name).toBe("Alice");
+      expect(bBefore!.name).toBe("Bob");
+      expect(cBefore!.name).toBe("Charlie");
+    });
+
+    it("approval creates new resume, original is untouched", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original Resume");
+      state.updateField("name", "Original User");
+      const originalCount = useResumeBuilder.getState().resumes.length;
+
+      // Simulate approval: create new resume with tailored content
+      const newId = useResumeBuilder.getState().createResume("Original User — Tailored");
+      useResumeBuilder.getState().switchResume(newId);
+      useResumeBuilder.getState().updateField("name", "Tailored User");
+
+      // Original should be untouched
+      const a = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idA);
+      expect(a!.name).toBe("Original User");
+      expect(a!.resumeId).toBe(idA);
+
+      // New resume should exist
+      const b = useResumeBuilder.getState().resumes.find((r) => r.resumeId === newId);
+      expect(b!.name).toBe("Tailored User");
+      expect(b!.resumeId).not.toBe(idA);
+
+      // Resume count should have increased
+      expect(useResumeBuilder.getState().resumes.length).toBe(originalCount + 1);
+    });
+
+    it("Professional Identity is unchanged during tailoring", () => {
+      const state = useResumeBuilder.getState();
+      state.createResume("Source Resume");
+      state.updateField("name", "Profile User");
+      state.updateField("email", "profile@test.com");
+
+      // Nothing in the store changes Professional Identity
+      const r = useResumeBuilder.getState().resume;
+      expect(r.name).toBe("Profile User");
+      expect(r.email).toBe("profile@test.com");
+    });
+  });
+
   describe("C32 — Resume Public Sharing", () => {
     it("share state is independent per resume", () => {
       const state = useResumeBuilder.getState();

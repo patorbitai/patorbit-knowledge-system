@@ -3,6 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { identityService } from "@/services/identity.service";
+import { resumeService } from "@/services/resume.service";
 import { checkAIRateLimit } from "@/lib/rate-limit";
 import { getAIService } from "@/lib/ai/service";
 import { AIError } from "@/lib/ai/types";
@@ -13,10 +15,6 @@ export const maxDuration = 90;
 
 const MAX_BODY_BYTES = 150 * 1024;
 const TIMEOUT_MS = 85_000;
-
-function isValidResume(value: unknown): boolean {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 async function withTimeout<T>(promise: Promise<T>): Promise<T> {
   let timer: ReturnType<typeof setTimeout> | undefined;
@@ -36,8 +34,10 @@ async function withTimeout<T>(promise: Promise<T>): Promise<T> {
 /**
  * POST /api/ai/tailor
  *
- * Takes a resume + job description, calls the AI to generate a tailored
- * resume, and returns the tailored resume payload + match analysis.
+ * C33.2: Server-authoritative tailoring.
+ * Client sends { resumeId, jobDescription }.
+ * Server loads the authoritative resume from the database.
+ * AI receives server-sourced data — client cannot tamper with the source.
  */
 export async function POST(req: NextRequest): Promise<NextResponse> {
   // 1. Auth
@@ -81,10 +81,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   const payload = body as Record<string, unknown>;
 
-  // 5. Validate required fields
-  if (!("resume" in payload) || !isValidResume(payload.resume)) {
+  // 5. Validate resumeId (client must supply resumeId, NOT full resume data)
+  if (typeof payload.resumeId !== "string" || payload.resumeId.trim().length === 0) {
     return NextResponse.json(
-      { success: false, error: "Missing or invalid required field: resume." },
+      { success: false, error: "Missing or invalid required field: resumeId." },
       { status: 400 },
     );
   }
@@ -103,19 +103,29 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
+  const resumeId = payload.resumeId.trim();
   const jobDescription = payload.jobDescription.trim();
 
-  // 6. Call AI
+  // 6. Load authoritative resume from the database
   try {
+    const identity = await identityService.ensureProfessionalIdentity(session.user.id);
+
+    // Load the resume owned by this ProfessionalIdentity — ownership is enforced.
+    const serverResume = await resumeService.get(identity.id, resumeId);
+
+    // Server-sourced authoritative data — NOT client-supplied.
+    const authoritativeResume = serverResume.resume;
+
+    // 7. Call AI with authoritative source
     const ai = getAIService();
     const result = await withTimeout(
       ai.tailorResume({
-        resume: payload.resume as any,
+        resume: authoritativeResume as any,
         jobDescription,
       }),
     );
 
-    // 7. Validate the AI response has essential fields
+    // 8. Validate the AI response has essential fields
     if (typeof result !== "object" || result === null) {
       throw new AIError("AI returned an unexpected response.", "UPSTREAM", { status: 502 });
     }
@@ -149,6 +159,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json(
         { success: false, error: err.message, code: err.code },
         { status: err.status },
+      );
+    }
+
+    // If the resume was not found (or belongs to another user), return a safe error.
+    const message = err instanceof Error ? err.message : "";
+    if (message.includes("not found") || message.includes("NotFound")) {
+      return NextResponse.json(
+        { success: false, error: "Resume not found." },
+        { status: 404 },
       );
     }
 
