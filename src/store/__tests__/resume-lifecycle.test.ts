@@ -12,7 +12,8 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { useResumeBuilder, defaultResume, seedResumeFromProfile } from "../resume-builder";
+import { useResumeBuilder, defaultResume } from "../resume-builder";
+import { mapProfileToResume } from "@/lib/resume-seeding";
 import type { Resume } from "@/types/resume";
 
 describe("Resume Lifecycle Reliability", () => {
@@ -1203,8 +1204,8 @@ describe("Resume Lifecycle Reliability", () => {
     };
 
     it("maps all profile fields to resume correctly", () => {
-      // seedResumeFromProfile is imported from the store
-      const seeded = seedResumeFromProfile({ ...defaultResume }, mockProfile);
+      // mapProfileToResume is imported from @/lib/resume-seeding
+      const seeded = mapProfileToResume({ ...defaultResume }, mockProfile);
 
       expect(seeded.name).toBe("Jane Smith");
       expect(seeded.title).toBe("Senior Data Engineer");
@@ -1232,16 +1233,16 @@ describe("Resume Lifecycle Reliability", () => {
     });
 
     it("creates independent deep copy — mutations do not affect source", () => {
-      // seedResumeFromProfile is imported from the store
+      // mapProfileToResume is imported from @/lib/resume-seeding
       const base = { ...defaultResume };
-      const seeded = seedResumeFromProfile(base, mockProfile);
+      const seeded = mapProfileToResume(base, mockProfile);
 
       // Mutate the seeded resume
       seeded.name = "Modified";
       seeded.experience[0].company = "Modified Corp";
 
       // Create another seed from the same profile
-      const seeded2 = seedResumeFromProfile({ ...defaultResume }, mockProfile);
+      const seeded2 = mapProfileToResume({ ...defaultResume }, mockProfile);
 
       // Should be independent
       expect(seeded2.name).toBe("Jane Smith");
@@ -1249,26 +1250,26 @@ describe("Resume Lifecycle Reliability", () => {
     });
 
     it("returns base resume unchanged for null profile", () => {
-      // seedResumeFromProfile is imported from the store
+      // mapProfileToResume is imported from @/lib/resume-seeding
       const base = { ...defaultResume, name: "Existing" };
-      const result = seedResumeFromProfile(base, null);
+      const result = mapProfileToResume(base, null);
 
       expect(result.name).toBe("Existing");
       expect(result.experience).toHaveLength(0);
     });
 
     it("returns base resume unchanged for undefined profile", () => {
-      // seedResumeFromProfile is imported from the store
+      // mapProfileToResume is imported from @/lib/resume-seeding
       const base = { ...defaultResume, name: "Existing" };
-      const result = seedResumeFromProfile(base, undefined);
+      const result = mapProfileToResume(base, undefined);
 
       expect(result.name).toBe("Existing");
     });
 
     it("handles partial profile — only fills available fields", () => {
-      // seedResumeFromProfile is imported from the store
+      // mapProfileToResume is imported from @/lib/resume-seeding
       const partial = { fullName: "Jane", email: "jane@test.com" };
-      const seeded = seedResumeFromProfile({ ...defaultResume }, partial);
+      const seeded = mapProfileToResume({ ...defaultResume }, partial);
 
       expect(seeded.name).toBe("Jane");
       expect(seeded.email).toBe("jane@test.com");
@@ -1277,9 +1278,9 @@ describe("Resume Lifecycle Reliability", () => {
     });
 
     it("preserves resume-specific fields (templateId, careerStage)", () => {
-      // seedResumeFromProfile is imported from the store
+      // mapProfileToResume is imported from @/lib/resume-seeding
       const base = { ...defaultResume, templateId: "executive-classic", careerStage: "manager" as const };
-      const seeded = seedResumeFromProfile(base, mockProfile);
+      const seeded = mapProfileToResume(base, mockProfile);
 
       expect(seeded.templateId).toBe("executive-classic");
       expect(seeded.careerStage).toBe("manager");
@@ -1287,9 +1288,9 @@ describe("Resume Lifecycle Reliability", () => {
     });
 
     it("handles empty experience/education arrays in profile", () => {
-      // seedResumeFromProfile is imported from the store
+      // mapProfileToResume is imported from @/lib/resume-seeding
       const emptyProfile = { fullName: "Test", experience: [], education: [], skills: [] };
-      const seeded = seedResumeFromProfile({ ...defaultResume }, emptyProfile);
+      const seeded = mapProfileToResume({ ...defaultResume }, emptyProfile);
 
       expect(seeded.name).toBe("Test");
       expect(seeded.experience).toHaveLength(0);
@@ -1298,9 +1299,9 @@ describe("Resume Lifecycle Reliability", () => {
     });
 
     it("filters empty strings from skills", () => {
-      // seedResumeFromProfile is imported from the store
+      // mapProfileToResume is imported from @/lib/resume-seeding
       const profile = { skills: ["Python", "", "SQL", "  ", "Azure"] };
-      const seeded = seedResumeFromProfile({ ...defaultResume }, profile);
+      const seeded = mapProfileToResume({ ...defaultResume }, profile);
 
       // Empty and whitespace-only strings are filtered out
       expect(seeded.skills).toHaveLength(3);

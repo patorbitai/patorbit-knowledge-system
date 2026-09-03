@@ -10,6 +10,7 @@ import {
   ResumeIdConflictError,
   type SaveResumeInput,
 } from "@/services/resume.service";
+import { mapProfileToResume, isEmptyResumePayload, type ProfileData } from "@/lib/resume-seeding";
 
 /**
  * /api/resumes — list and create the authenticated user's resumes.
@@ -49,6 +50,17 @@ export async function POST(req: NextRequest) {
     const identity = await identityService.ensureProfessionalIdentity(
       session.user.id,
     );
+
+    // C36.1: Server-authoritative resume seeding.
+    // If the client sends an empty resume payload, seed it from the
+    // authenticated user's ProfessionalIdentity profile data.
+    if (body.resume && typeof body.resume === "object" && isEmptyResumePayload(body.resume as Record<string, unknown>)) {
+      const profileData = (identity.profileData as ProfileData | null) || null;
+      if (profileData && typeof profileData === "object") {
+        body.resume = mapProfileToResume(body.resume as Record<string, any>, profileData);
+      }
+    }
+
     const resume = await resumeService.create(identity.id, body);
     return NextResponse.json(resume, { status: 201 });
   } catch (err: unknown) {
