@@ -74,7 +74,7 @@ function Spinner() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = "/overview";
+  const callbackUrl = "/solutions";
   const registered = searchParams.get("registered") === "1";
 
   const [email, setEmail] = useState("");

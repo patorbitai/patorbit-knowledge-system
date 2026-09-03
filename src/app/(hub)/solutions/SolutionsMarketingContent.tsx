@@ -127,7 +127,7 @@ const audiences = [
   },
 ];
 
-export default function SolutionsPage() {
+export default function SolutionsMarketingContent() {
   const [activeTab, setActiveTab] = useState("students");
 
   const active = audiences.find((a) => a.id === activeTab) || audiences[0];

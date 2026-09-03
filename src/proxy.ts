@@ -17,10 +17,10 @@ export async function proxy(request: NextRequest) {
     console.error("[proxy] getToken threw:", err);
   }
 
-  // Auth pages — redirect to overview if already authenticated
+  // Auth pages — redirect to solutions if already authenticated
   if (pathname === "/login" || pathname === "/register") {
     if (token) {
-      return NextResponse.redirect(new URL("/overview", request.url));
+      return NextResponse.redirect(new URL("/solutions", request.url));
     }
     return NextResponse.next();
   }
@@ -28,6 +28,7 @@ export async function proxy(request: NextRequest) {
   // Protected routes — redirect to login if not authenticated
   const protectedPaths = [
     "/overview",
+    "/solutions",
     "/resume",
     "/passport",
     "/trust",
@@ -55,6 +56,7 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/overview/:path*",
+    "/solutions/:path*",
     "/resume/:path*",
     "/passport/:path*",
     "/trust/:path*",
