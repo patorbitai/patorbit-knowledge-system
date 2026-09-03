@@ -35,10 +35,12 @@ export function buildPhases(): AnalysisPhase[] {
 
 /** Compute real resume score based on actual data */
 export function computeResumeScoreDetail(resume: Resume): ResumeScoreDetail {
+  // C44.1: Defensive — handle partially hydrated or malformed resume data
+  if (!resume) return { grammar: null, readability: null, keywordMatch: null, structure: null, overall: null };
   const hasSummary = !!resume.summary;
-  const expCount = resume.experience.length;
-  const skillCount = resume.skills.length;
-  const eduCount = resume.education.length;
+  const expCount = resume.experience?.length ?? 0;
+  const skillCount = resume.skills?.length ?? 0;
+  const eduCount = resume.education?.length ?? 0;
 
   const grammar = hasSummary ? Math.min(100, 60 + resume.summary.split(" ").length) : null;
   const readability = hasSummary ? Math.min(100, 65 + Math.round(resume.summary.length / 20)) : null;
@@ -49,8 +51,8 @@ export function computeResumeScoreDetail(resume: Resume): ResumeScoreDetail {
     if (expCount > 0) score += 30;
     if (eduCount > 0) score += 15;
     if (skillCount > 0) score += 15;
-    if (resume.projects.length > 0) score += 10;
-    if (resume.certifications.length > 0) score += 10;
+    if ((resume.projects?.length ?? 0) > 0) score += 10;
+    if ((resume.certifications?.length ?? 0) > 0) score += 10;
     return score > 0 ? score : null;
   })();
 
@@ -144,7 +146,7 @@ function scoreIdentity(resume: Resume): ScoreComponent {
   if (resume.name) { score += 30; parts.push("Name"); }
   if (resume.email) { score += 25; parts.push("Email"); }
   if (resume.phone) { score += 25; parts.push("Phone"); }
-  if (resume.social.linkedin) { score += 20; parts.push("LinkedIn"); }
+  if (resume?.social?.linkedin) { score += 20; parts.push("LinkedIn"); }
   if (score === 0) return { label: "Identity Verification", score: null, maxScore: 100, weight: 0, status: "missing", explanation: "No identity information provided.", improvementTip: "Add your name, email, and phone number.", potentialGain: 100 };
   return { label: "Identity Verification", score, maxScore: 100, weight: 0, status: "scored", explanation: `Verified: ${parts.join(", ")}.`, improvementTip: score < 100 ? "Add your phone number and LinkedIn to complete identity verification." : undefined, potentialGain: score < 100 ? 100 - score : undefined };
 }
@@ -262,6 +264,8 @@ const scorers: Record<string, (resume: Resume) => ScoreComponent> = {
 
 /** Compute stage-aware trust score with full explanations */
 export function computeTrustScoreDetail(resume: Resume): TrustScoreDetail {
+  // C44.1: Defensive — handle partially hydrated or malformed resume data
+  if (!resume) return { careerStage: "working-professional", components: [], overall: null, improvementSuggestions: [] };
   const stage = resume.careerStage || "working-professional";
   const config = stageConfigs[stage];
   if (!config) return { careerStage: "working-professional", components: [], overall: null, improvementSuggestions: [] };
@@ -272,7 +276,12 @@ export function computeTrustScoreDetail(resume: Resume): TrustScoreDetail {
     }
     const scorer = scorers[comp.key];
     if (!scorer) return { label: comp.label, score: null, maxScore: comp.maxScore, weight: 0, status: "pending", explanation: "Evaluation not available." };
-    return scorer(resume);
+    // C44.1: Wrap individual scorer in try-catch to prevent one scorer from crashing the whole trust score
+    try {
+      return scorer(resume);
+    } catch {
+      return { label: comp.label, score: null, maxScore: comp.maxScore, weight: 0, status: "pending", explanation: "Evaluation temporarily unavailable." };
+    }
   });
 
   // Calculate weighted overall

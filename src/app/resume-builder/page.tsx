@@ -152,9 +152,11 @@ function RightPanel({ mode, onModeChange }: { mode: "preview" | "copilot"; onMod
             </Suspense>
           </PreviewErrorBoundary>
         ) : (
-          <Suspense fallback={<div className="flex items-center justify-center h-full text-xs text-gray-400">Loading…</div>}>
-            <RightCopilot />
-          </Suspense>
+          <PreviewErrorBoundary>
+            <Suspense fallback={<div className="flex items-center justify-center h-full text-xs text-gray-400">Loading…</div>}>
+              <RightCopilot />
+            </Suspense>
+          </PreviewErrorBoundary>
         )}
       </div>
     </div>

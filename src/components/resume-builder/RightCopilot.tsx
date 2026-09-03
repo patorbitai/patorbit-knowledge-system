@@ -102,17 +102,30 @@ export function RightCopilot() {
   const progress = useResumeBuilder((s) => s.progress);
   const startAnalysis = useResumeBuilder((s) => s.startAnalysis);
 
-  const hasLinkedIn = !!resume.social.linkedin;
-  const hasGitHub = !!resume.social.github;
-  const hasPortfolio = !!resume.social.website;
-  const hasSummary = !!resume.summary;
-  const hasCertifications = resume.certifications.length > 0;
-  const sufficient = hasSufficientData(resume);
+  // C44.1: Defensive checks — resume may be partially hydrated during store rehydration
+  const social = resume?.social ?? {};
+  const hasLinkedIn = !!social.linkedin;
+  const hasGitHub = !!social.github;
+  const hasPortfolio = !!social.website;
+  const hasSummary = !!resume?.summary;
+  const hasCertifications = (resume?.certifications?.length ?? 0) > 0;
+  const sufficient = resume ? hasSufficientData(resume) : false;
   const completed = isAnalysisComplete(analysis);
   const inProgress = isAnalysisInProgress(analysis) || analysisLoading;
 
-  const localResumeScore = computeResumeScoreDetail(resume);
-  const localTrustScore = computeTrustScoreDetail(resume);
+  // C44.1: Wrap scoring in try-catch — scoring functions may throw on malformed resume data
+  let localResumeScore = null;
+  let localTrustScore = null;
+  try {
+    if (resume) {
+      localResumeScore = computeResumeScoreDetail(resume);
+      localTrustScore = computeTrustScoreDetail(resume);
+    }
+  } catch {
+    // Scoring failure should not crash the builder — fall back to null scores
+    localResumeScore = null;
+    localTrustScore = null;
+  }
   const activeResumeScore = (analysis?.resumeScore?.overall !== null && analysis?.resumeScore?.overall !== undefined) ? analysis.resumeScore : localResumeScore;
   const activeTrustScore = (analysis?.trustScore?.overall !== null && analysis?.trustScore?.overall !== undefined) ? analysis.trustScore : localTrustScore;
 
@@ -127,9 +140,9 @@ export function RightCopilot() {
     if (hasLinkedIn && (lower.includes("linkedin") || lower.includes("profile"))) return false;
     if (hasGitHub && (lower.includes("github") || lower.includes("profile"))) return false;
     if (hasSummary && (lower.includes("summary") || lower.includes("professional summary"))) return false;
-    if (resume.education.length > 0 && lower.includes("education")) return false;
-    if (resume.experience.length > 0 && lower.includes("experience")) return false;
-    if (resume.certifications.length > 0 && lower.includes("certification")) return false;
+    if ((resume?.education?.length ?? 0) > 0 && lower.includes("education")) return false;
+    if ((resume?.experience?.length ?? 0) > 0 && lower.includes("experience")) return false;
+    if ((resume?.certifications?.length ?? 0) > 0 && lower.includes("certification")) return false;
     return true;
   });
 
