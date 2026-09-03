@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { ProfessionalIdentity } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 
 /**
  * IdentityRepository — persistence operations for ProfessionalIdentity.
@@ -21,5 +22,24 @@ export const identityRepository = {
 
   async create(userId: string): Promise<ProfessionalIdentity> {
     return prisma.professionalIdentity.create({ data: { userId } });
+  },
+
+  /** Update the canonical professional profile data. */
+  async updateProfileData(
+    id: string,
+    profileData: Prisma.InputJsonValue,
+  ): Promise<ProfessionalIdentity> {
+    return prisma.professionalIdentity.update({
+      where: { id },
+      data: { profileData },
+    });
+  },
+
+  /** Mark onboarding as completed. */
+  async completeOnboarding(id: string): Promise<ProfessionalIdentity> {
+    return prisma.professionalIdentity.update({
+      where: { id },
+      data: { onboardingCompleted: true },
+    });
   },
 };

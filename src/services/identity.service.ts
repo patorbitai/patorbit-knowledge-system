@@ -1,4 +1,5 @@
 import type { ProfessionalIdentity } from "@prisma/client";
+import type { Prisma } from "@prisma/client";
 import { identityRepository } from "@/repositories/identity.repository";
 
 /**
@@ -47,6 +48,29 @@ export class IdentityService {
     // ──────────────────────────────────────────────────────────────
 
     return created;
+  }
+
+  /** Get the authenticated user's ProfessionalIdentity. */
+  async getIdentity(userId: string): Promise<ProfessionalIdentity | null> {
+    return identityRepository.findByUserId(userId);
+  }
+
+  /** Update the canonical professional profile data. */
+  async updateProfileData(
+    userId: string,
+    profileData: unknown,
+  ): Promise<ProfessionalIdentity> {
+    const identity = await this.ensureProfessionalIdentity(userId);
+    return identityRepository.updateProfileData(
+      identity.id,
+      profileData as Prisma.InputJsonValue,
+    );
+  }
+
+  /** Mark onboarding as completed. */
+  async completeOnboarding(userId: string): Promise<ProfessionalIdentity> {
+    const identity = await this.ensureProfessionalIdentity(userId);
+    return identityRepository.completeOnboarding(identity.id);
   }
 }
 

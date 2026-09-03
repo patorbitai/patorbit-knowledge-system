@@ -20,16 +20,19 @@ import type { IdentityScoreData } from "@/lib/identity-score";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { ShareResumeModal } from "@/components/resume-builder/ShareResumeModal";
+import { OnboardingModal } from "@/components/hub/OnboardingModal";
 
 type Props = {
   name: string;
   email: string;
   data: IdentityScoreData;
+  onboardingCompleted?: boolean;
 };
 
-export function OverviewCommandCenter({ name, email, data }: Props) {
+export function OverviewCommandCenter({ name, email, data, onboardingCompleted = true }: Props) {
   const [mounted, setMounted] = useState(false);
   const [shareModalResume, setShareModalResume] = useState<{ id: string; name: string } | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(!onboardingCompleted);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -324,6 +327,12 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
           resumeName={shareModalResume.name}
         />
       )}
+
+      {/* C35: Onboarding Modal for first-time users */}
+      <OnboardingModal
+        open={showOnboarding}
+        onComplete={() => setShowOnboarding(false)}
+      />
     </div>
   );
 }

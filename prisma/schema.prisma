@@ -83,6 +83,8 @@ model ProfessionalIdentity {
   trustReportCache     String?  @db.Text
   passportShareEnabled Boolean  @default(false)
   passportDataCache    String?  @db.Text
+  profileData          Json?
+  onboardingCompleted  Boolean  @default(false)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
