@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
 import {
   Plus,
@@ -54,11 +54,42 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   const [mounted, setMounted] = useState(false);
   const [shareModalResume, setShareModalResume] = useState<{ id: string; name: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(!onboardingCompleted);
+  // C46: State-driven menu instead of CSS hover
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const menuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
   }, []);
+
+  // C46: Close menu on outside click
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setOpenMenuId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [openMenuId]);
+
+  // C46: Close menu on Escape
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpenMenuId(null);
+    };
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, [openMenuId]);
+
+  const toggleMenu = useCallback((id: string) => {
+    setOpenMenuId((prev) => (prev === id ? null : id));
+  }, []);
+
+  const closeMenu = useCallback(() => setOpenMenuId(null), []);
 
   const firstName = name.split(" ")[0] || "there";
 
@@ -89,6 +120,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   const handleDelete = (id: string) => {
     if (resumeList.length <= 1) return; // Don't delete last resume
     deleteResume(id);
+    closeMenu();
   };
 
   const getGreeting = () => {
@@ -216,6 +248,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
               const skillsCount = r.skills?.length || 0;
               const updatedAt = (r as any).updatedAt || (r as any).createdAt;
               const timeAgo = formatRelativeTime(updatedAt);
+              const isMenuOpen = openMenuId === resumeId;
 
               return (
                 <div
@@ -249,57 +282,74 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
                           </p>
                         )}
                       </div>
-                      {/* Actions menu */}
-                      <div className="relative group/menu">
+                      {/* C46: Actions menu — click/tap driven, not hover */}
+                      <div className="relative" ref={isMenuOpen ? menuRef : undefined}>
                         <button
-                          className="rounded-lg p-1.5 text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
-                          aria-label="Resume actions"
+                          onClick={() => toggleMenu(resumeId)}
+                          className="rounded-lg p-1.5 text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors cursor-pointer"
+                          aria-label={`Actions for ${resumeName}`}
+                          aria-expanded={isMenuOpen}
+                          aria-haspopup="menu"
                         >
                           <MoreHorizontal className="h-4 w-4" />
                         </button>
-                        <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-xl opacity-0 invisible group-hover/menu:opacity-100 group-hover/menu:visible transition-all">
-                          <button
-                            onClick={() => {
-                              switchResume(resumeId);
-                              window.location.href = "/resume-builder";
-                            }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                        {isMenuOpen && (
+                          <div
+                            role="menu"
+                            className="absolute right-0 top-full z-10 mt-1 w-40 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-xl"
                           >
-                            <Pencil className="h-3 w-3" />
-                            Edit
-                          </button>
-
-                          <button
-                            onClick={() => {
-                              const newId = duplicateResume(resumeId);
-                              if (newId) {
-                                switchResume(newId);
-                              }
-                            }}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
-                          >
-                            <Copy className="h-3 w-3" />
-                            Duplicate
-                          </button>
-
-                          <button
-                            onClick={() => setShareModalResume({ id: resumeId, name: resumeName })}
-                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
-                          >
-                            <Share2 className="h-3 w-3" />
-                            Share
-                          </button>
-
-                          {resumeList.length > 1 && (
                             <button
-                              onClick={() => handleDelete(resumeId)}
-                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10"
+                              role="menuitem"
+                              onClick={() => {
+                                closeMenu();
+                                switchResume(resumeId);
+                                window.location.href = "/resume-builder";
+                              }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04] rounded-t-xl"
                             >
-                            <Trash2 className="h-3 w-3" />
-                            Delete
-                          </button>
-                          )}
-                        </div>
+                              <Pencil className="h-3 w-3" />
+                              Edit
+                            </button>
+
+                            <button
+                              role="menuitem"
+                              onClick={() => {
+                                closeMenu();
+                                const newId = duplicateResume(resumeId);
+                                if (newId) {
+                                  switchResume(newId);
+                                }
+                              }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                            >
+                              <Copy className="h-3 w-3" />
+                              Duplicate
+                            </button>
+
+                            <button
+                              role="menuitem"
+                              onClick={() => {
+                                closeMenu();
+                                setShareModalResume({ id: resumeId, name: resumeName });
+                              }}
+                              className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                            >
+                              <Share2 className="h-3 w-3" />
+                              Share
+                            </button>
+
+                            {resumeList.length > 1 && (
+                              <button
+                                role="menuitem"
+                                onClick={() => handleDelete(resumeId)}
+                                className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-b-xl"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                Delete
+                              </button>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
 
