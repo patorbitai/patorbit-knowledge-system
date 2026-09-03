@@ -229,7 +229,7 @@ export default function PricingPage() {
 
   const handleUpgrade = async (planName: string) => {
     if (planName === "Starter") {
-      window.location.href = "/resume-builder";
+      window.location.href = "/solutions";
       return;
     }
     if (planName === "Enterprise") {
