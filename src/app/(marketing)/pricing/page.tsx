@@ -46,8 +46,8 @@ const plans: Plan[] = [
   {
     name: "Professional",
     tagline: "For career professionals ready to stand out.",
-    monthly: 29,
-    yearly: 23,
+    monthly: 149,
+    yearly: 119,
     badges: ["Most Popular", "Best Value"],
     features: [
       "Unlimited resumes",
@@ -166,7 +166,7 @@ function PriceDisplay({ plan, yearly }: { plan: Plan; yearly: boolean }) {
   const price = yearly && plan.yearly !== null ? plan.yearly : plan.monthly;
   return (
     <div className="flex items-baseline justify-center gap-1 mb-2">
-      <span className="text-4xl font-bold text-white tabular-nums">${price}</span>
+      <span className="text-4xl font-bold text-white tabular-nums">₹{price}</span>
       <span className="text-sm text-slate-400">/month</span>
     </div>
   );
@@ -469,7 +469,7 @@ export default function PricingPage() {
                     {plan.monthly !== null && (
                       <p className="text-xs text-slate-400 text-center">
                         {plan.yearly !== null && yearly
-                          ? `billed annually ($${plan.yearly * 12}/yr)`
+                          ? `billed annually (₹${plan.yearly * 12}/yr)`
                           : "billed monthly"}
                       </p>
                     )}

@@ -139,8 +139,8 @@ export default function BillingPage() {
             </h2>
             {!isPro && (
               <CheckoutButton
-                amount={2900}
-                label="Upgrade to Pro — ₹29"
+                amount={14900}
+                label="Upgrade to Pro — ₹149"
                 description="Patorbit Professional Plan (Monthly)"
                 className="text-xs font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-1.5 rounded-lg hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/20"
                 onSuccess={() => {

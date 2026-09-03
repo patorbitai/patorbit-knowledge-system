@@ -33,7 +33,7 @@ interface RazorpayResponse {
 }
 
 interface CheckoutButtonProps {
-  /** Amount in paise (e.g. 2900 for ₹29) */
+  /** Amount in paise (e.g. 14900 for ₹149) */
   amount: number;
   /** Currency code */
   currency?: string;

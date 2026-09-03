@@ -11,16 +11,16 @@ test.describe("Pricing page responsive QA", () => {
     const starter = card(page, "Starter");
     const ent = card(page, "Enterprise");
 
-    // Professional defaults to yearly billing => $23
-    await expect(pro).toContainText("$23");
+    // Professional defaults to yearly billing => ₹119
+    await expect(pro).toContainText("₹119");
     // Starter is free
-    await expect(starter).toContainText("$0");
+    await expect(starter).toContainText("₹0");
     // Enterprise is custom
     await expect(ent).toContainText("Custom");
 
-    // Switch to Monthly => Professional shows $29 (not bare "29")
+    // Switch to Monthly => Professional shows ₹149 (not bare "149")
     await page.getByRole("radio", { name: "Monthly" }).click();
-    await expect(pro).toContainText("$29");
+    await expect(pro).toContainText("₹149");
   });
 
   test("comparison table scrolls on 320px without page overflow or clipped columns", async ({ page }) => {
