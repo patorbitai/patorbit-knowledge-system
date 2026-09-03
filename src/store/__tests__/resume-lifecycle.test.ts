@@ -1324,5 +1324,29 @@ describe("Resume Lifecycle Reliability", () => {
       expect(rB.name).toBe("Custom Name");
       expect(rB.title).toBe("Custom Title");
     });
+
+    it("createResume with initialPayload sends non-empty payload (bypasses server seeding)", () => {
+      const state = useResumeBuilder.getState();
+      const tailored = {
+        name: "Tailored Name",
+        title: "Tailored Title",
+        email: "tailored@test.com",
+        summary: "Tailored summary",
+        experience: [{ id: "e1", company: "Corp", position: "Eng", location: "", employmentType: "", industry: "", startDate: "", endDate: "", current: false, duration: "", description: "", achievements: "", techUsed: "", bulletPoints: [] }],
+        education: [],
+        skills: [{ id: "s1", name: "React", level: "Advanced" as const, category: "", years: "" }],
+      };
+      const id = state.createResume("Tailored", tailored as any);
+      const r = useResumeBuilder.getState().resumes.find((r) => r.resumeId === id)!;
+
+      // Should contain the tailored data, not empty defaults
+      expect(r.name).toBe("Tailored Name");
+      expect(r.title).toBe("Tailored Title");
+      expect(r.email).toBe("tailored@test.com");
+      expect(r.experience).toHaveLength(1);
+      expect(r.experience[0].company).toBe("Corp");
+      expect(r.skills).toHaveLength(1);
+      expect(r.skills[0].name).toBe("React");
+    });
   });
 });

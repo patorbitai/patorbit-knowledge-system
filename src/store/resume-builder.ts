@@ -53,7 +53,7 @@ export interface ResumeBuilderState {
   resume: Resume;
   resumes: Resume[];
   activeResumeId: string;
-  createResume: (name?: string) => string;
+  createResume: (name?: string, initialPayload?: Partial<Resume>) => string;
   switchResume: (resumeId: string) => void;
   renameResume: (resumeId: string, name: string) => void;
   deleteResume: (resumeId: string) => void;
@@ -215,11 +215,12 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         resumes: [initialResume],
         activeResumeId: initialId,
 
-        createResume: (name?: string) => {
+        createResume: (name?: string, initialPayload?: Partial<Resume>) => {
           const id = uid();
           const newName = name || `Resume ${get().resumes.length + 1}`;
           const baseResume: Resume = {
             ...defaultResume,
+            ...initialPayload,
             resumeId: id,
             resumeName: newName,
           };
@@ -229,8 +230,9 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           });
 
           // C30/C36.1: Fire explicit POST to create the resume on the server.
-          // The server seeds from ProfessionalIdentity.profileData when the payload
-          // is empty, then returns the complete seeded Resume.
+          // When initialPayload is provided (tailoring/import), the payload is non-empty
+          // so the server skips profile seeding. When empty, the server seeds from
+          // ProfessionalIdentity.profileData.
           import("@/lib/resume-write-back").then(({ markCreating, clearCreating }) => {
             markCreating(id);
             fetch("/api/resumes", {

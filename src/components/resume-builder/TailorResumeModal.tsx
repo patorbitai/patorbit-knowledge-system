@@ -269,22 +269,15 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
     const finalResume = tailoredResume;
     if (!finalResume) return;
     const name = finalResume.name || originalResume.name || "Tailored Resume";
-    const newResumeId = createResume(`${name} — Tailored`);
-    switchResume(newResumeId);
 
-    const store = useResumeBuilder.getState();
-    if (finalResume.name) store.updateField("name", finalResume.name);
-    if (finalResume.title) store.updateField("title", finalResume.title);
-    if (finalResume.email) store.updateField("email", finalResume.email);
-    if (finalResume.phone) store.updateField("phone", finalResume.phone);
-    if (finalResume.address) store.updateField("address", finalResume.address);
-    if (finalResume.summary) store.updateField("summary", finalResume.summary);
-    if (Array.isArray(finalResume.experience)) store.updateField("experience", finalResume.experience as any);
-    if (Array.isArray(finalResume.education)) store.updateField("education", finalResume.education as any);
-    if (Array.isArray(finalResume.skills)) store.updateField("skills", finalResume.skills as any);
-    if (Array.isArray(finalResume.projects)) store.updateField("projects", finalResume.projects as any);
-    if (Array.isArray(finalResume.certifications)) store.updateField("certifications", finalResume.certifications as any);
-    store.applyTemplate(selectedTemplateId);
+    // C37: Pass tailored data as initialPayload so the server does NOT
+    // trigger profile seeding (the payload is already non-empty).
+    // This avoids the race: server seeds → client overwrites.
+    const newResumeId = createResume(`${name} — Tailored`, {
+      ...finalResume,
+      templateId: selectedTemplateId,
+    } as Partial<Resume>);
+    switchResume(newResumeId);
 
     setTimeout(() => { window.location.href = "/resume-builder"; }, 800);
   }, [tailorResult, tailoredResume, originalResume, createResume, switchResume, selectedTemplateId]);
