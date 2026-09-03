@@ -45,6 +45,113 @@ export const defaultResume: Resume = {
   claims: [],
 };
 
+/* ── C36: Profile → Resume seeding ──────────────────────────────────── */
+
+/** Profile data shape from ProfessionalIdentity.profileData (JSONB). */
+interface ProfileData {
+  fullName?: string;
+  headline?: string;
+  summary?: string;
+  email?: string;
+  phone?: string;
+  location?: string;
+  linkedin?: string;
+  github?: string;
+  website?: string;
+  experience?: Array<{ company?: string; position?: string; duration?: string; description?: string }>;
+  education?: Array<{ school?: string; degree?: string; field?: string; year?: string }>;
+  skills?: string[];
+}
+
+/**
+ * C36: Seed a new Resume from the user's canonical Professional Identity.
+ *
+ * Returns an independent deep copy — no shared mutable references with profileData.
+ * Fields not present in profileData remain as defaultResume defaults.
+ * Resume-specific fields (templateId, careerStage, etc.) are never overwritten.
+ */
+export function seedResumeFromProfile(base: Resume, profileData: ProfileData | null | undefined): Resume {
+  if (!profileData || typeof profileData !== "object") return { ...base };
+
+  const expItems = Array.isArray(profileData.experience)
+    ? profileData.experience.map((e) => ({
+        id: `seed_exp_${Math.random().toString(36).slice(2, 8)}`,
+        company: e.company || "",
+        position: e.position || "",
+        location: "",
+        employmentType: "",
+        industry: "",
+        startDate: "",
+        endDate: "",
+        current: false,
+        duration: e.duration || "",
+        description: e.description || "",
+        achievements: "",
+        techUsed: "",
+        bulletPoints: [],
+      }))
+    : [];
+
+  const eduItems = Array.isArray(profileData.education)
+    ? profileData.education.map((e) => ({
+        id: `seed_edu_${Math.random().toString(36).slice(2, 8)}`,
+        school: e.school || "",
+        degree: e.degree || "",
+        year: e.year || "",
+        field: e.field || "",
+        gpa: "",
+        minor: "",
+        honors: "",
+        activities: "",
+        location: "",
+      }))
+    : [];
+
+  const skillItems = Array.isArray(profileData.skills)
+    ? profileData.skills.map((s) => s.trim()).filter(Boolean).map((s) => ({
+        id: `seed_skill_${Math.random().toString(36).slice(2, 8)}`,
+        name: s,
+        level: "Intermediate" as const,
+        category: "",
+        years: "",
+      }))
+    : [];
+
+  return {
+    ...base,
+    name: profileData.fullName || base.name,
+    title: profileData.headline || base.title,
+    email: profileData.email || base.email,
+    phone: profileData.phone || base.phone,
+    address: profileData.location || base.address,
+    summary: profileData.summary || base.summary,
+    social: {
+      ...base.social,
+      linkedin: profileData.linkedin || base.social.linkedin,
+      github: profileData.github || base.social.github,
+      website: profileData.website || base.social.website,
+    },
+    experience: expItems.length > 0 ? expItems : base.experience,
+    education: eduItems.length > 0 ? eduItems : base.education,
+    skills: skillItems.length > 0 ? skillItems : base.skills,
+  };
+}
+
+/**
+ * C36: Fetch the user's Professional Identity profileData from the server.
+ * Returns null if not available (graceful degradation).
+ */
+async function fetchProfileData(): Promise<ProfileData | null> {
+  try {
+    const res = await fetch("/api/identity");
+    if (!res.ok) return null;
+    const data = await res.json();
+    return (data?.profileData as ProfileData) || null;
+  } catch {
+    return null;
+  }
+}
+
 /* ── Store types ── */
 
 export type SaveStatus = "saved" | "saving" | "unsaved" | "offline" | "sync-failed";
@@ -218,14 +325,30 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         createResume: (name?: string) => {
           const id = uid();
           const newName = name || `Resume ${get().resumes.length + 1}`;
-          const newResume: Resume = {
+          const baseResume: Resume = {
             ...defaultResume,
             resumeId: id,
             resumeName: newName,
           };
           set((s) => {
-            const resumes = [...s.resumes, newResume];
-            return { resumes, activeResumeId: id, resume: newResume, saveStatus: "unsaved" };
+            const resumes = [...s.resumes, baseResume];
+            return { resumes, activeResumeId: id, resume: baseResume, saveStatus: "unsaved" };
+          });
+
+          // C36: Fetch profile data and seed the resume asynchronously
+          fetchProfileData().then((profileData) => {
+            if (!profileData) return;
+            const seeded = seedResumeFromProfile(baseResume, profileData);
+            set((s) => {
+              const resumes = s.resumes.map((r) => r.resumeId === id ? seeded : r);
+              const isStillActive = s.activeResumeId === id;
+              return {
+                resumes,
+                ...(isStillActive ? { resume: seeded } : {}),
+              };
+            });
+          }).catch(() => {
+            // Profile not available — resume remains empty, which is fine
           });
 
           // C30: Fire explicit POST to create the resume on the server
@@ -237,9 +360,9 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
               body: JSON.stringify({
                 resumeId: id,
                 resumeName: newName,
-                templateId: newResume.templateId,
-                careerStage: newResume.careerStage,
-                resume: newResume,
+                templateId: baseResume.templateId,
+                careerStage: baseResume.careerStage,
+                resume: baseResume,
               }),
             })
               .then((res) => {

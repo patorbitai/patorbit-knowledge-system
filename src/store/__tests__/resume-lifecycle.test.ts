@@ -12,7 +12,7 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
-import { useResumeBuilder, defaultResume } from "../resume-builder";
+import { useResumeBuilder, defaultResume, seedResumeFromProfile } from "../resume-builder";
 import type { Resume } from "@/types/resume";
 
 describe("Resume Lifecycle Reliability", () => {
@@ -1177,6 +1177,151 @@ describe("Resume Lifecycle Reliability", () => {
       expect(useResumeBuilder.getState().shareStates[idA]?.shareToken).toBe("token_a_multi");
       expect(useResumeBuilder.getState().shareStates[idB]?.shareToken).toBe("token_b_multi");
       expect(useResumeBuilder.getState().shareStates[idC]).toBeUndefined();
+    });
+  });
+
+  // ── C36 — Professional Identity → Resume Seeding ───────────────────
+  describe("C36 — Professional Identity → Resume Seeding", () => {
+    const mockProfile = {
+      fullName: "Jane Smith",
+      headline: "Senior Data Engineer",
+      summary: "Experienced data engineer with 5+ years.",
+      email: "jane@example.com",
+      phone: "+1 555 1234",
+      location: "San Francisco, CA",
+      linkedin: "https://linkedin.com/in/janesmith",
+      github: "https://github.com/janesmith",
+      website: "https://janesmith.com",
+      experience: [
+        { company: "Acme Corp", position: "Data Engineer", duration: "2021-Present", description: "Built pipelines" },
+        { company: "Beta Inc", position: "Junior Engineer", duration: "2019-2021", description: "Data analysis" },
+      ],
+      education: [
+        { school: "MIT", degree: "BS", field: "Computer Science", year: "2019" },
+      ],
+      skills: ["Python", "SQL", "Azure"],
+    };
+
+    it("maps all profile fields to resume correctly", () => {
+      // seedResumeFromProfile is imported from the store
+      const seeded = seedResumeFromProfile({ ...defaultResume }, mockProfile);
+
+      expect(seeded.name).toBe("Jane Smith");
+      expect(seeded.title).toBe("Senior Data Engineer");
+      expect(seeded.email).toBe("jane@example.com");
+      expect(seeded.phone).toBe("+1 555 1234");
+      expect(seeded.address).toBe("San Francisco, CA");
+      expect(seeded.summary).toBe("Experienced data engineer with 5+ years.");
+      expect(seeded.social.linkedin).toBe("https://linkedin.com/in/janesmith");
+      expect(seeded.social.github).toBe("https://github.com/janesmith");
+      expect(seeded.social.website).toBe("https://janesmith.com");
+      expect(seeded.experience).toHaveLength(2);
+      expect(seeded.experience[0].company).toBe("Acme Corp");
+      expect(seeded.experience[0].position).toBe("Data Engineer");
+      expect(seeded.experience[0].duration).toBe("2021-Present");
+      expect(seeded.experience[0].description).toBe("Built pipelines");
+      expect(seeded.experience[0].id).toContain("seed_exp_");
+      expect(seeded.education).toHaveLength(1);
+      expect(seeded.education[0].school).toBe("MIT");
+      expect(seeded.education[0].degree).toBe("BS");
+      expect(seeded.education[0].id).toContain("seed_edu_");
+      expect(seeded.skills).toHaveLength(3);
+      expect(seeded.skills[0].name).toBe("Python");
+      expect(seeded.skills[0].level).toBe("Intermediate");
+      expect(seeded.skills[0].id).toContain("seed_skill_");
+    });
+
+    it("creates independent deep copy — mutations do not affect source", () => {
+      // seedResumeFromProfile is imported from the store
+      const base = { ...defaultResume };
+      const seeded = seedResumeFromProfile(base, mockProfile);
+
+      // Mutate the seeded resume
+      seeded.name = "Modified";
+      seeded.experience[0].company = "Modified Corp";
+
+      // Create another seed from the same profile
+      const seeded2 = seedResumeFromProfile({ ...defaultResume }, mockProfile);
+
+      // Should be independent
+      expect(seeded2.name).toBe("Jane Smith");
+      expect(seeded2.experience[0].company).toBe("Acme Corp");
+    });
+
+    it("returns base resume unchanged for null profile", () => {
+      // seedResumeFromProfile is imported from the store
+      const base = { ...defaultResume, name: "Existing" };
+      const result = seedResumeFromProfile(base, null);
+
+      expect(result.name).toBe("Existing");
+      expect(result.experience).toHaveLength(0);
+    });
+
+    it("returns base resume unchanged for undefined profile", () => {
+      // seedResumeFromProfile is imported from the store
+      const base = { ...defaultResume, name: "Existing" };
+      const result = seedResumeFromProfile(base, undefined);
+
+      expect(result.name).toBe("Existing");
+    });
+
+    it("handles partial profile — only fills available fields", () => {
+      // seedResumeFromProfile is imported from the store
+      const partial = { fullName: "Jane", email: "jane@test.com" };
+      const seeded = seedResumeFromProfile({ ...defaultResume }, partial);
+
+      expect(seeded.name).toBe("Jane");
+      expect(seeded.email).toBe("jane@test.com");
+      expect(seeded.title).toBe(""); // not provided
+      expect(seeded.experience).toHaveLength(0); // not provided
+    });
+
+    it("preserves resume-specific fields (templateId, careerStage)", () => {
+      // seedResumeFromProfile is imported from the store
+      const base = { ...defaultResume, templateId: "executive-classic", careerStage: "manager" as const };
+      const seeded = seedResumeFromProfile(base, mockProfile);
+
+      expect(seeded.templateId).toBe("executive-classic");
+      expect(seeded.careerStage).toBe("manager");
+      expect(seeded.name).toBe("Jane Smith"); // profile data applied
+    });
+
+    it("handles empty experience/education arrays in profile", () => {
+      // seedResumeFromProfile is imported from the store
+      const emptyProfile = { fullName: "Test", experience: [], education: [], skills: [] };
+      const seeded = seedResumeFromProfile({ ...defaultResume }, emptyProfile);
+
+      expect(seeded.name).toBe("Test");
+      expect(seeded.experience).toHaveLength(0);
+      expect(seeded.education).toHaveLength(0);
+      expect(seeded.skills).toHaveLength(0);
+    });
+
+    it("filters empty strings from skills", () => {
+      // seedResumeFromProfile is imported from the store
+      const profile = { skills: ["Python", "", "SQL", "  ", "Azure"] };
+      const seeded = seedResumeFromProfile({ ...defaultResume }, profile);
+
+      // Empty and whitespace-only strings are filtered out
+      expect(seeded.skills).toHaveLength(3);
+      expect(seeded.skills.map((s: { name: string }) => s.name)).toEqual(["Python", "SQL", "Azure"]);
+    });
+
+    it("duplication does not reseed from Professional Identity", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Original");
+      const rA = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idA)!;
+
+      // Manually set some data
+      useResumeBuilder.getState().setResume({ ...rA, name: "Custom Name", title: "Custom Title" });
+
+      // Duplicate
+      const idB = useResumeBuilder.getState().duplicateResume(idA);
+      const rB = useResumeBuilder.getState().resumes.find((r) => r.resumeId === idB)!;
+
+      // Should duplicate the SOURCE resume, not reseed from profile
+      expect(rB.name).toBe("Custom Name");
+      expect(rB.title).toBe("Custom Title");
     });
   });
 });
