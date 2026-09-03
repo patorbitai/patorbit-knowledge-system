@@ -43,7 +43,8 @@ export type AIAction =
   | "analyzeJobMatch"
   | "optimizeForJob"
   | "generateClaims"
-  | "extractResume";
+  | "extractResume"
+  | "tailorResume";
 
 /** Known action → handler map. The API route dispatches on these keys. */
 type ActionHandlers = {
@@ -261,6 +262,19 @@ export class AIService {
     };
   }
 
+  /**
+   * C33 — Generate a tailored resume from Professional Identity + Job Description.
+   * Returns the full tailored resume payload plus match analysis.
+   */
+  async tailorResume(data: {
+    resume: Resume;
+    jobDescription: string;
+  }): Promise<Record<string, unknown>> {
+    const { system, user } = Prompts.tailorResume(data);
+    const result = await this.complete(system, user, { maxTokens: 4096, jsonMode: true });
+    return JSON.parse(result);
+  }
+
   // ── Professional Identity: Claim Generation (PKS-SRS-PIP-1 §2.3) ──
 
   /**
@@ -342,6 +356,7 @@ export class AIService {
     optimizeForJob: this.optimizeForJob,
     generateClaims: this.generateClaims,
     extractResume: this.extractResume,
+    tailorResume: this.tailorResume,
   };
 }
 

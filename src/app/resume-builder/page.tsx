@@ -14,9 +14,10 @@ import { ImportButton } from "@/components/resume-builder/ImportButton";
 import { ResumeServerSyncMonitor } from "@/components/resume-builder/ResumeServerSyncMonitor";
 import { ResumeMigrationUI } from "@/components/resume-builder/ResumeMigrationUI";
 import AccountMenu from "@/components/hub/AccountMenu";
-import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine } from "lucide-react";
+import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine, Target } from "lucide-react";
 import { PreviewErrorBoundary } from "@/components/resume-builder/PreviewErrorBoundary";
 import { MobilePreview } from "@/components/resume-builder/MobilePreview";
+import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 import { debounce } from "@/lib/debounce";
 
 /* ── Dynamic imports for heavy panels (SSR=false to avoid layout-effect crashes) ── */
@@ -178,7 +179,7 @@ function MobileModeToggle({ mode, onModeChange }: { mode: "edit" | "preview"; on
 }
 
 /* ── App Header ── */
-function AppHeader() {
+function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
   return (
     <header className="sticky top-0 z-40 h-12 bg-white/90 dark:bg-[#070d18]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08]">
       <div className="flex items-center justify-between h-full px-4">
@@ -191,6 +192,13 @@ function AppHeader() {
           <ResumeSelector />
         </div>
         <div className="flex items-center gap-1.5 sm:gap-2">
+          <button
+            onClick={onOpenTailor}
+            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-purple-600 dark:text-purple-300 border border-purple-500/30 bg-purple-50 dark:bg-purple-500/[0.08] hover:bg-purple-100 dark:hover:bg-purple-500/[0.16] hover:border-purple-500/50 transition-all"
+          >
+            <Target className="w-3.5 h-3.5" />
+            <span>Tailor to Job</span>
+          </button>
           <ImportButton variant="card" label="Import Resume" />
           <SaveStatusIndicator />
           <div className="hidden sm:block h-3 w-px bg-gray-300 dark:bg-white/[0.08]" />
@@ -217,6 +225,7 @@ export default function ResumeBuilderPage() {
 
   const [rightMode, setRightMode] = useState<"preview" | "copilot">("preview");
   const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
+  const [tailorOpen, setTailorOpen] = useState(false);
 
   const debouncedAnalysis = useCallback(
     debounce(async (currentResume) => {
@@ -249,7 +258,7 @@ export default function ResumeBuilderPage() {
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="h-screen w-full bg-gray-50 dark:bg-[#070d18] text-gray-900 dark:text-white font-sans antialiased flex flex-col overflow-hidden selection:bg-cyan-500/30">
-        <AppHeader />
+        <AppHeader onOpenTailor={() => setTailorOpen(true)} />
 
         <div className="flex-1 flex overflow-hidden">
           {/* Left sidebar — section navigation (hidden on mobile) */}
@@ -286,6 +295,7 @@ export default function ResumeBuilderPage() {
         <ClaimsReview />
         <ResumeServerSyncMonitor />
         <ResumeMigrationUI />
+        <TailorResumeModal open={tailorOpen} onClose={() => setTailorOpen(false)} />
       </div>
     </DndProvider>
   );

@@ -719,3 +719,104 @@ Score this resume. Return only the JSON.`;
 
   return buildPrompt(system, user);
 }
+
+/** -----------------------------------------------------------
+ * Tailor Resume to Job Description (C33)
+ * -----------------------------------------------------------
+ *
+ * Generates a complete tailored Resume payload from the user's existing
+ * Professional Identity and a target Job Description.
+ *
+ * CRITICAL RULES:
+ * - Every fact in the tailored resume MUST trace back to the original profile.
+ * - Never fabricate employers, skills, education, certifications, or metrics.
+ * - If a JD requirement is missing from the profile, mark it as missing.
+ * - Reorder, rewrite, and emphasize — but do not invent.
+ * - Return a complete Resume object compatible with the existing schema.
+ */
+export function tailorResume(data: { resume: unknown; jobDescription: string }) {
+  const context = formatContext(data.resume);
+
+  const system = `${SYSTEM_PROFILE}
+
+You are Patorbit's resume tailoring engine. You take a candidate's existing Professional Identity (resume) and a target Job Description, then produce a tailored version of the resume optimized for that specific role.
+
+Return STRICT JSON matching this exact shape and nothing else:
+{
+  "name": "",
+  "title": "",
+  "email": "",
+  "phone": "",
+  "address": "",
+  "summary": "",
+  "experience": [
+    {
+      "company": "",
+      "position": "",
+      "location": "",
+      "startDate": "",
+      "endDate": "",
+      "current": false,
+      "duration": "",
+      "description": "",
+      "achievements": "",
+      "techUsed": "",
+      "bulletPoints": []
+    }
+  ],
+  "education": [
+    {
+      "school": "",
+      "degree": "",
+      "field": "",
+      "year": "",
+      "gpa": ""
+    }
+  ],
+  "skills": [
+    { "name": "", "level": "Intermediate", "category": "" }
+  ],
+  "projects": [
+    {
+      "name": "",
+      "description": "",
+      "tech": "",
+      "role": ""
+    }
+  ],
+  "certifications": [
+    { "name": "", "issuer": "", "date": "" }
+  ],
+  "matchAnalysis": {
+    "matchScore": 0,
+    "matchedSkills": [],
+    "partialMatches": [],
+    "missingSkills": [],
+    "prioritizedSections": []
+  }
+}
+
+CRITICAL FACTUALITY RULES:
+1. Every experience entry, skill, education, project, and certification MUST come from the original profile. Do NOT add items that do not exist.
+2. You may REWRITE bullet points to emphasize JD-relevant keywords, but the underlying facts must be the same.
+3. You may REORDER skills to prioritize JD-relevant ones.
+4. You may REWRITE the summary to target the role, using only facts from the profile.
+5. You may OMIT irrelevant experience/projects — but do NOT fabricate new ones.
+6. If the profile has no Snowflake experience and the JD requires Snowflake, do NOT add Snowflake to the skills or experience. Instead, include it in matchAnalysis.missingSkills.
+7. bulletPoints must be arrays of strings, not single description strings.
+8. Skills must be reordered with JD-relevant skills first.
+9. matchAnalysis must honestly reflect what matches, what partially matches, and what is missing.
+10. Return ONLY the JSON — no markdown, no prose, no code fences.`;
+
+  const user = `Candidate's existing Professional Identity (resume):
+${context}
+
+Target Job Description:
+"""
+${data.jobDescription}
+"""
+
+Generate a tailored version of this resume for the target role. Return only the JSON.`;
+
+  return buildPrompt(system, user);
+}

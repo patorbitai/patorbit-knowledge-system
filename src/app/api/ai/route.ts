@@ -23,6 +23,7 @@ const KNOWN_ACTIONS: readonly string[] = [
   "analyzeJobMatch",
   "optimizeForJob",
   "generateClaims",
+  "tailorResume",
 ];
 
 /** Maximum request body size (100 KB). */
