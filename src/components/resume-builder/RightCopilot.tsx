@@ -176,6 +176,39 @@ export function RightCopilot() {
           </div>
         )}
 
+        {/* C41: AI Actions Quick Reference */}
+        <CollapsibleCard title="AI Actions" icon={<Sparkles className="w-3 h-3 text-cyan-400" />} color="#22d3ee" defaultOpen={!completed}>
+          <div className="space-y-2">
+            <p className="text-[10px] text-gray-500 dark:text-slate-400 leading-relaxed">
+              Use the section editor on the left to access AI features for each part of your resume.
+            </p>
+            <div className="space-y-1.5">
+              {[
+                { label: "Tailor to Job", desc: "Match your resume to a job description", header: true },
+                { label: "Summary AI", desc: "Generate, rewrite, or improve tone" },
+                { label: "Experience AI", desc: "Rewrite bullets, improve impact, generate achievements" },
+                { label: "Skills AI", desc: "Suggest relevant skills for your role" },
+                { label: "Project AI", desc: "Generate project descriptions" },
+              ].map((action) => (
+                <div key={action.label} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] dark:bg-white/[0.02]">
+                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
+                  <div className="flex-1">
+                    <span className="text-[11px] font-medium text-gray-700 dark:text-slate-300">{action.label}</span>
+                    <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-1.5">{action.desc}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CollapsibleCard>
+
+        {/* C41: Trust & Factuality */}
+        <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-3.5 py-3">
+          <p className="text-[10px] text-emerald-600/80 dark:text-emerald-400/60 leading-relaxed">
+            <strong className="dark:text-emerald-400/80">AI uses information already in your resume.</strong> It does not verify employment, education, or certifications. Missing skills are never invented. Review all AI-generated changes before saving.
+          </p>
+        </div>
+
         {/* Analysis Progress */}
         {inProgress && analysis?.phases && (
           <CollapsibleCard title="Analysis Progress" icon={<Loader2 className="w-3.5 h-3.5 text-[#22d3ee] animate-spin" />} color="#22d3ee" defaultOpen={true}>

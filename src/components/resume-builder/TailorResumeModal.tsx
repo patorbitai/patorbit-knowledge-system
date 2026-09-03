@@ -380,6 +380,12 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
                       )}
                     </div>
                   </div>
+                  {/* C41: Trust notice on input step */}
+                  <div className="rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] px-3 py-2">
+                    <p className="text-[10px] text-gray-500 dark:text-slate-400 leading-relaxed">
+                      <strong className="text-gray-700 dark:text-slate-300">How it works:</strong> Patorbit analyzes the job description against your existing resume. It rewrites and reorders content for relevance — it does not add skills, experience, or certifications you don&apos;t have.
+                    </p>
+                  </div>
                   {error && (
                     <div className="rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 px-3 py-2 text-xs text-red-600 dark:text-red-400">
                       {error}

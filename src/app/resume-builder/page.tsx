@@ -194,10 +194,11 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
         <div className="flex items-center gap-1.5 sm:gap-2">
           <button
             onClick={onOpenTailor}
-            className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-medium text-purple-600 dark:text-purple-300 border border-purple-500/30 bg-purple-50 dark:bg-purple-500/[0.08] hover:bg-purple-100 dark:hover:bg-purple-500/[0.16] hover:border-purple-500/50 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/30 transition-all"
           >
             <Target className="w-3.5 h-3.5" />
-            <span>Tailor to Job</span>
+            <span className="hidden sm:inline">Tailor to Job</span>
+            <span className="sm:hidden">Tailor</span>
           </button>
           <ImportButton variant="card" label="Import Resume" />
           <SaveStatusIndicator />

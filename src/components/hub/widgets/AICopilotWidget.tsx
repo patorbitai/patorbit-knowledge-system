@@ -1,42 +1,103 @@
 import Link from "next/link";
-import { Bot } from "lucide-react";
-import WidgetCard from "./WidgetCard";
+import { Target, Sparkles, FileText, ArrowRight } from "lucide-react";
 
+/**
+ * C41: Real AI dashboard card — replaces the "Coming Soon" placeholder.
+ * Shows the primary AI workflow (Tailor to Job) and secondary actions.
+ * Links directly to the resume builder where all AI features live.
+ */
 export default function AICopilotWidget() {
   return (
-    <WidgetCard
-      title="AI Career Copilot"
-      icon={Bot}
-      action={{ label: "Open AI", href: "/ai" }}
-    >
-      <div className="flex flex-col gap-4">
-        <p className="text-xs text-slate-400 leading-relaxed">
-          Your AI career copilot analyzes your profile and surfaces opportunities — job matches,
-          skill gaps, and resume improvements tailored to your goals.
-        </p>
-        <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
-          {["Resume analysis", "Job match scoring", "Skill gap detection"].map((item) => (
-            <div key={item} className="flex items-center gap-2.5">
-              <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-md bg-white/[0.04]">
-                <svg className="h-3 w-3 text-slate-600" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" aria-hidden="true">
-                  <circle cx="6" cy="6" r="5" />
-                  <path d="M4 6h4M6 4v4" />
-                </svg>
-              </span>
-              <span className="text-xs text-slate-600">{item}</span>
-              <span className="ml-auto rounded-md bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-600">
-                Soon
-              </span>
-            </div>
-          ))}
+    <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] overflow-hidden">
+      {/* Header */}
+      <div className="px-5 pt-5 pb-4">
+        <div className="flex items-center gap-3 mb-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+            <Sparkles className="w-4.5 h-4.5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
+              AI Resume Tools
+            </h3>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+              Improve your resume with AI assistance
+            </p>
+          </div>
         </div>
+      </div>
+
+      {/* Primary action — Tailor to Job */}
+      <div className="px-5 pb-4">
         <Link
-          href="/ai"
-          className="text-xs font-medium text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:text-cyan-300"
+          href="/resume-builder"
+          className="group block rounded-xl border border-purple-200 dark:border-purple-500/20 bg-purple-50 dark:bg-purple-500/[0.06] p-4 hover:bg-purple-100 dark:hover:bg-purple-500/[0.1] transition-all"
         >
-          Add a resume to unlock AI insights →
+          <div className="flex items-start gap-3">
+            <div className="w-8 h-8 rounded-lg bg-purple-100 dark:bg-purple-500/20 flex items-center justify-center shrink-0 mt-0.5">
+              <Target className="w-4 h-4 text-purple-600 dark:text-purple-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-900 dark:text-white">
+                Tailor Resume to a Job
+              </p>
+              <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-relaxed">
+                Paste a job description and Patorbit will identify relevant requirements and tailor your resume using your existing experience.
+              </p>
+              <div className="flex items-center gap-1 mt-2 text-[11px] font-medium text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300">
+                Open Builder
+                <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
+              </div>
+            </div>
+          </div>
         </Link>
       </div>
-    </WidgetCard>
+
+      {/* Secondary actions */}
+      <div className="px-5 pb-5 space-y-2">
+        <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">
+          Also available in the builder
+        </p>
+
+        {[
+          {
+            icon: <Sparkles className="w-3.5 h-3.5" />,
+            label: "Improve Summary",
+            desc: "Rewrite or improve tone of your professional summary",
+            color: "text-cyan-500",
+          },
+          {
+            icon: <FileText className="w-3.5 h-3.5" />,
+            label: "Improve Bullet Points",
+            desc: "Strengthen experience bullets with better impact language",
+            color: "text-blue-500",
+          },
+        ].map((action) => (
+          <Link
+            key={action.label}
+            href="/resume-builder"
+            className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors group"
+          >
+            <span className={`${action.color} opacity-70 group-hover:opacity-100 transition-opacity`}>
+              {action.icon}
+            </span>
+            <div className="flex-1 min-w-0">
+              <p className="text-[11px] font-medium text-gray-700 dark:text-slate-300">
+                {action.label}
+              </p>
+              <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate">
+                {action.desc}
+              </p>
+            </div>
+          </Link>
+        ))}
+      </div>
+
+      {/* Trust footer */}
+      <div className="px-5 py-3 border-t border-gray-100 dark:border-white/[0.04] bg-gray-50 dark:bg-white/[0.01]">
+        <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-relaxed">
+          AI uses information already in your resume. It does not verify employment, education, or certifications. Review all AI-generated changes before saving.
+        </p>
+      </div>
+    </div>
   );
 }

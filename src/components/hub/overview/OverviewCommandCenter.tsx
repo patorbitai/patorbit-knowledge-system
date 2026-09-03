@@ -16,6 +16,7 @@ import {
   Share2,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
+import AICopilotWidget from "@/components/hub/widgets/AICopilotWidget";
 import type { IdentityScoreData } from "@/lib/identity-score";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
@@ -289,7 +290,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
           </div>
           <div>
             <p className="text-xs font-semibold text-gray-900 dark:text-white">Templates</p>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">Browse 29 designs</p>
+            <p className="text-[11px] text-gray-400 dark:text-slate-500">Browse 32 designs</p>
           </div>
         </Link>
         <Link
@@ -316,6 +317,11 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
             <p className="text-[11px] text-gray-400 dark:text-slate-500">Verify credentials</p>
           </div>
         </Link>
+      </section>
+
+      {/* ── AI TOOLS ── */}
+      <section>
+        <AICopilotWidget />
       </section>
 
       {/* Share Resume Modal */}
