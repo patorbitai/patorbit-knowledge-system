@@ -20,9 +20,9 @@ const ebGaramond = EB_Garamond({ subsets: ["latin"], variable: "--font-garamond"
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
 export const metadata: Metadata = {
-  title: "Patorbit — Verified Professional Identity",
+  title: "Patorbit — Build Once, Tailor Every Resume",
   description:
-    "Build, prove, and share your professional identity. AI-powered resume intelligence, credential verification, and trust scoring.",
+    "Create your Professional Identity once, then build multiple resumes and tailor each one to the job — without inventing experience. AI-assisted, truthful, user-controlled.",
 };
 
 export default function RootLayout({
