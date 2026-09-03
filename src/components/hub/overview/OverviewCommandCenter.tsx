@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import AICopilotWidget from "@/components/hub/widgets/AICopilotWidget";
+import { JobApplicationsSection } from "@/components/hub/applications/JobApplicationsSection";
 import type { IdentityScoreData } from "@/lib/identity-score";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
@@ -394,6 +395,9 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
           </div>
         </section>
       )}
+
+      {/* ── JOB APPLICATIONS ── */}
+      <JobApplicationsSection />
 
       {/* ── AI TOOLS ── */}
       <section>
