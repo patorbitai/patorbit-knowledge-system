@@ -1,5 +1,7 @@
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
+import GoogleProvider from "next-auth/providers/google";
+import GitHubProvider from "next-auth/providers/github";
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 
@@ -13,6 +15,29 @@ export const authOptions: NextAuthOptions = {
     signIn: "/login",
   },
   providers: [
+    // ── Google OAuth ──────────────────────────────────────────────
+    // C55.2: Only enabled when GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are set.
+    ...(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET
+      ? [
+          GoogleProvider({
+            clientId: process.env.GOOGLE_CLIENT_ID,
+            clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+
+    // ── GitHub OAuth ──────────────────────────────────────────────
+    // C55.2: Only enabled when GITHUB_CLIENT_ID and GITHUB_CLIENT_SECRET are set.
+    ...(process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET
+      ? [
+          GitHubProvider({
+            clientId: process.env.GITHUB_CLIENT_ID,
+            clientSecret: process.env.GITHUB_CLIENT_SECRET,
+          }),
+        ]
+      : []),
+
+    // ── Email/Password (always available) ─────────────────────────
     CredentialsProvider({
       name: "credentials",
       credentials: {
@@ -20,22 +45,16 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        console.log("[auth] authorize() called, email:", credentials?.email ?? "MISSING");
-
         if (!credentials?.email || !credentials?.password) {
-          console.log("[auth] authorize() early return: missing credentials");
           return null;
         }
 
         let user;
         try {
-          console.log("[auth] querying prisma for user:", credentials.email);
           user = await prisma.user.findUnique({
             where: { email: credentials.email },
           });
-          console.log("[auth] prisma result:", user ? `found id=${user.id}` : "NOT FOUND");
-        } catch (err) {
-          console.error("[auth] prisma query threw:", err);
+        } catch {
           return null;
         }
 
@@ -45,28 +64,22 @@ export const authOptions: NextAuthOptions = {
 
         let passwordMatch;
         try {
-          console.log("[auth] calling bcrypt.compare");
           passwordMatch = await bcrypt.compare(
             credentials.password,
             user.passwordHash
           );
-          console.log("[auth] bcrypt.compare result:", passwordMatch);
-        } catch (err) {
-          console.error("[auth] bcrypt.compare threw:", err);
+        } catch {
           return null;
         }
 
         if (!passwordMatch) {
-          console.log("[auth] password mismatch, returning null");
           return null;
         }
 
         if (!user.emailVerified) {
-          console.log("[auth] user email not verified");
           throw new Error("Please verify your email address before signing in.");
         }
 
-        console.log("[auth] authorize() success, returning user id:", user.id);
         return {
           id: user.id,
           email: user.email,
@@ -76,15 +89,92 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
+    // C55.2: Handle OAuth sign-in — create/find user by email, link account
+    async signIn({ user, account }) {
+      // For OAuth providers, ensure the user exists in the database
+      if (account?.provider && account.provider !== "credentials" && user?.email) {
+        try {
+          // Check if user already exists
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email },
+          });
+
+          if (existingUser) {
+            // User exists — link the OAuth account
+            const existingAccount = await prisma.account.findUnique({
+              where: {
+                provider_providerAccountId: {
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                },
+              },
+            });
+
+            if (!existingAccount) {
+              // Create the account link
+              await prisma.account.create({
+                data: {
+                  userId: existingUser.id,
+                  type: account.type,
+                  provider: account.provider,
+                  providerAccountId: account.providerAccountId,
+                  access_token: account.access_token ?? null,
+                  refresh_token: account.refresh_token ?? null,
+                  expires_at: account.expires_at ?? null,
+                  token_type: account.token_type ?? null,
+                  scope: account.scope ?? null,
+                  id_token: account.id_token ?? null,
+                  session_state: account.session_state ?? null,
+                },
+              });
+            }
+
+            // Update the user object with the existing user's ID
+            user.id = existingUser.id;
+          } else {
+            // New user — create account
+            const name = user.name || user.email.split("@")[0];
+            const newUser = await prisma.user.create({
+              data: {
+                name,
+                email: user.email,
+                emailVerified: new Date(), // OAuth emails are considered verified
+                passwordHash: "", // No password for OAuth users
+                accounts: {
+                  create: {
+                    type: account.type,
+                    provider: account.provider,
+                    providerAccountId: account.providerAccountId,
+                    access_token: account.access_token ?? null,
+                    refresh_token: account.refresh_token ?? null,
+                    expires_at: account.expires_at ?? null,
+                    token_type: account.token_type ?? null,
+                    scope: account.scope ?? null,
+                    id_token: account.id_token ?? null,
+                    session_state: account.session_state ?? null,
+                  },
+                },
+              },
+            });
+
+            user.id = newUser.id;
+          }
+        } catch (err) {
+          console.error("[auth] OAuth sign-in error:", err);
+          return false;
+        }
+      }
+
+      return true;
+    },
+
     async jwt({ token, user }) {
-      console.log("[auth] jwt callback, user present:", !!user);
       if (user) {
         token.userId = user.id;
       }
       return token;
     },
     async session({ session, token }) {
-      console.log("[auth] session callback, token.userId:", token.userId);
       if (session.user) {
         session.user.id = token.userId as string;
       }
