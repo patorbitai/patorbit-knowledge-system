@@ -27,7 +27,6 @@ export async function proxy(request: NextRequest) {
 
   // Protected routes — redirect to login if not authenticated
   const protectedPaths = [
-    "/overview",
     "/solutions",
     "/resume",
     "/passport",
@@ -55,7 +54,6 @@ export async function proxy(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/overview/:path*",
     "/solutions/:path*",
     "/resume/:path*",
     "/passport/:path*",

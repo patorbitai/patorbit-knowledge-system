@@ -38,11 +38,11 @@ export default function ComingSoon({
       )}
 
       <Link
-        href="/overview"
+        href="/solutions"
         className="mt-4 inline-flex items-center gap-2 rounded-xl border border-white/[0.08] bg-white/[0.03] px-5 py-2.5 text-sm font-medium text-slate-300 transition-colors hover:border-cyan-400/30 hover:text-cyan-300"
       >
         <ArrowLeft className="h-4 w-4" />
-        Back to Overview
+        Back to Home
       </Link>
     </div>
   );

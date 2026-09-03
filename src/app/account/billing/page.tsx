@@ -107,7 +107,7 @@ export default function BillingPage() {
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="flex items-center gap-3 mb-1">
             <Link
-              href="/overview"
+              href="/solutions"
               className="text-slate-400 hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />

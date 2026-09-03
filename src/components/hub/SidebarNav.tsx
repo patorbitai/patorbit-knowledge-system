@@ -17,7 +17,7 @@ type NavItem = {
 };
 
 const PRIMARY_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/overview", icon: LayoutDashboard },
+  { label: "Dashboard", href: "/solutions", icon: LayoutDashboard },
   { label: "Resumes", href: "/resume-builder", icon: FileText },
   { label: "Templates", href: "/templates", icon: Palette },
 ];
