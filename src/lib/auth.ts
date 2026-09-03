@@ -89,83 +89,98 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    // C55.2: Handle OAuth sign-in — create/find user by email, link account
+    // C55.2/C55.2.1: Handle OAuth sign-in — create user or link account safely.
+    // SECURITY: We do NOT automatically link OAuth to existing password accounts.
+    // This prevents account takeover via email spoofing on providers with weak
+    // email verification (e.g., GitHub noreply addresses).
     async signIn({ user, account }) {
-      // For OAuth providers, ensure the user exists in the database
-      if (account?.provider && account.provider !== "credentials" && user?.email) {
-        try {
-          // Check if user already exists
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email },
-          });
-
-          if (existingUser) {
-            // User exists — link the OAuth account
-            const existingAccount = await prisma.account.findUnique({
-              where: {
-                provider_providerAccountId: {
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                },
-              },
-            });
-
-            if (!existingAccount) {
-              // Create the account link
-              await prisma.account.create({
-                data: {
-                  userId: existingUser.id,
-                  type: account.type,
-                  provider: account.provider,
-                  providerAccountId: account.providerAccountId,
-                  access_token: account.access_token ?? null,
-                  refresh_token: account.refresh_token ?? null,
-                  expires_at: account.expires_at ?? null,
-                  token_type: account.token_type ?? null,
-                  scope: account.scope ?? null,
-                  id_token: account.id_token ?? null,
-                  session_state: account.session_state ?? null,
-                },
-              });
-            }
-
-            // Update the user object with the existing user's ID
-            user.id = existingUser.id;
-          } else {
-            // New user — create account
-            const name = user.name || user.email.split("@")[0];
-            const newUser = await prisma.user.create({
-              data: {
-                name,
-                email: user.email,
-                emailVerified: new Date(), // OAuth emails are considered verified
-                passwordHash: "", // No password for OAuth users
-                accounts: {
-                  create: {
-                    type: account.type,
-                    provider: account.provider,
-                    providerAccountId: account.providerAccountId,
-                    access_token: account.access_token ?? null,
-                    refresh_token: account.refresh_token ?? null,
-                    expires_at: account.expires_at ?? null,
-                    token_type: account.token_type ?? null,
-                    scope: account.scope ?? null,
-                    id_token: account.id_token ?? null,
-                    session_state: account.session_state ?? null,
-                  },
-                },
-              },
-            });
-
-            user.id = newUser.id;
-          }
-        } catch (err) {
-          console.error("[auth] OAuth sign-in error:", err);
-          return false;
-        }
+      if (!account?.provider || account.provider === "credentials" || !user?.email) {
+        return true;
       }
 
-      return true;
+      try {
+        const existingUser = await prisma.user.findUnique({
+          where: { email: user.email },
+          include: { accounts: true },
+        });
+
+        if (existingUser) {
+          // Check if this specific OAuth account is already linked
+          const alreadyLinked = existingUser.accounts.some(
+            (a) => a.provider === account.provider && a.providerAccountId === account.providerAccountId
+          );
+
+          if (alreadyLinked) {
+            // Returning OAuth user — safe to proceed
+            user.id = existingUser.id;
+            return true;
+          }
+
+          // Check if the existing account has a password (was created via email/password)
+          const hasPassword = existingUser.passwordHash && existingUser.passwordHash.length > 0;
+
+          if (hasPassword) {
+            // SECURITY: Do NOT automatically link OAuth to a password account.
+            // The user must sign in with email/password, then link OAuth from Settings.
+            console.warn(
+              `[auth] Blocked OAuth link: ${account.provider} email ${user.email} matches existing password account. ` +
+              `User must sign in with email/password and link from Settings.`
+            );
+            return false;
+          }
+
+          // Existing OAuth-only account (no password) — safe to link new provider
+          await prisma.account.create({
+            data: {
+              userId: existingUser.id,
+              type: account.type,
+              provider: account.provider,
+              providerAccountId: account.providerAccountId,
+              access_token: account.access_token ?? null,
+              refresh_token: account.refresh_token ?? null,
+              expires_at: account.expires_at ?? null,
+              token_type: account.token_type ?? null,
+              scope: account.scope ?? null,
+              id_token: account.id_token ?? null,
+              session_state: account.session_state ?? null,
+            },
+          });
+
+          user.id = existingUser.id;
+          return true;
+        }
+
+        // Brand-new user — create account via Prisma nested create
+        const name = user.name || user.email.split("@")[0];
+        const newUser = await prisma.user.create({
+          data: {
+            name,
+            email: user.email,
+            emailVerified: new Date(), // OAuth emails are considered verified
+            passwordHash: "", // No password for OAuth-only users
+            accounts: {
+              create: {
+                type: account.type,
+                provider: account.provider,
+                providerAccountId: account.providerAccountId,
+                access_token: account.access_token ?? null,
+                refresh_token: account.refresh_token ?? null,
+                expires_at: account.expires_at ?? null,
+                token_type: account.token_type ?? null,
+                scope: account.scope ?? null,
+                id_token: account.id_token ?? null,
+                session_state: account.session_state ?? null,
+              },
+            },
+          },
+        });
+
+        user.id = newUser.id;
+        return true;
+      } catch (err) {
+        console.error("[auth] OAuth sign-in error:", err);
+        return false;
+      }
     },
 
     async jwt({ token, user }) {
