@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useMemo, useRef } from "react";
+import { useState, useCallback, useMemo, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   X,
@@ -39,6 +39,14 @@ interface TailorResult {
 interface TailorResumeModalProps {
   open: boolean;
   onClose: () => void;
+  /** C55.1: Optional application context for application-aware tailoring. */
+  applicationId?: string;
+  /** C55.1: Pre-filled job description from a saved application. */
+  initialJobDescription?: string;
+  /** C55.1: Pre-selected resumeId from a saved application. */
+  initialResumeId?: string;
+  /** C55.1: Callback after successful approval — called with the new resumeId and match data. */
+  onApproved?: (data: { resumeId: string; matchScore: number; matchData: unknown }) => void;
 }
 
 type Step = "input" | "analyzing" | "results" | "review" | "editing";
@@ -98,7 +106,7 @@ function detectUnsupportedClaims(original: Resume, tailored: Record<string, unkn
   return unsupported;
 }
 
-export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
+export function TailorResumeModal({ open, onClose, applicationId, initialJobDescription, initialResumeId, onApproved }: TailorResumeModalProps) {
   const [step, setStep] = useState<Step>("input");
   const [jobDescription, setJobDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -115,6 +123,18 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
   const [draftSkills, setDraftSkills] = useState("");
   const [draftExpBullets, setDraftExpBullets] = useState<Record<number, string>>({});
   const draftInitialized = useRef(false);
+
+  // C55.1: Initialize job description from application context
+  const jdInitialized = useRef(false);
+  useEffect(() => {
+    if (open && initialJobDescription && !jdInitialized.current) {
+      setJobDescription(initialJobDescription);
+      jdInitialized.current = true;
+    }
+    if (!open) {
+      jdInitialized.current = false;
+    }
+  }, [open, initialJobDescription]);
 
   const originalResume = useResumeBuilder((s) => s.resume);
   const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
@@ -185,6 +205,9 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
     setDraftExpBullets(bullets);
   }, [tailorResult]);
 
+  // C55.1: Use application's resumeId if provided, otherwise use the active resume
+  const effectiveResumeId = initialResumeId || activeResumeId;
+
   const handleAnalyze = useCallback(async () => {
     if (!jobDescription.trim()) {
       setError("Please paste a job description.");
@@ -194,7 +217,7 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
       setError("Job description is too short. Please paste the full job posting.");
       return;
     }
-    if (!activeResumeId) {
+    if (!effectiveResumeId) {
       setError("No active resume selected. Please open a resume first.");
       return;
     }
@@ -208,7 +231,7 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          resumeId: activeResumeId,
+          resumeId: effectiveResumeId,
           jobDescription: jobDescription.trim(),
         }),
       });
@@ -235,7 +258,7 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
   }, [tailorResult, initDraft]);
 
   const handleRegenerate = useCallback(async () => {
-    if (!jobDescription.trim() || !activeResumeId) return;
+    if (!jobDescription.trim() || !effectiveResumeId) return;
     setShowRegenConfirm(false);
     setIsRegenerating(true);
     setError(null);
@@ -248,7 +271,7 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          resumeId: activeResumeId,
+          resumeId: effectiveResumeId,
           jobDescription: jobDescription.trim(),
         }),
       });
@@ -260,9 +283,9 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
     } finally {
       setIsRegenerating(false);
     }
-  }, [jobDescription, activeResumeId]);
+  }, [jobDescription, effectiveResumeId]);
 
-  const handleApprove = useCallback(() => {
+  const handleApprove = useCallback(async () => {
     if (!tailorResult || !tailoredResume) return;
 
     // Use the latest preview data (which includes draft edits)
@@ -279,8 +302,44 @@ export function TailorResumeModal({ open, onClose }: TailorResumeModalProps) {
     } as Partial<Resume>);
     switchResume(newResumeId);
 
+    // C55.1: If this is an application-context tailoring, persist match data
+    // and resume association to the JobApplication.
+    if (applicationId && tailorResult.matchAnalysis) {
+      try {
+        await fetch(`/api/applications/${applicationId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            resumeId: newResumeId,
+            matchScore: tailorResult.matchAnalysis.matchScore,
+            matchData: {
+              matched: tailorResult.matchAnalysis.matchedSkills,
+              partial: tailorResult.matchAnalysis.partialMatches,
+              missing: tailorResult.matchAnalysis.missingSkills,
+            },
+          }),
+        });
+      } catch {
+        // Non-critical — the resume was created successfully.
+        // The application association can be retried.
+      }
+    }
+
+    // C55.1: Notify parent if callback provided
+    if (onApproved) {
+      onApproved({
+        resumeId: newResumeId,
+        matchScore: tailorResult.matchAnalysis?.matchScore ?? 0,
+        matchData: {
+          matched: tailorResult.matchAnalysis?.matchedSkills ?? [],
+          partial: tailorResult.matchAnalysis?.partialMatches ?? [],
+          missing: tailorResult.matchAnalysis?.missingSkills ?? [],
+        },
+      });
+    }
+
     setTimeout(() => { window.location.href = "/resume-builder"; }, 800);
-  }, [tailorResult, tailoredResume, originalResume, createResume, switchResume, selectedTemplateId]);
+  }, [tailorResult, tailoredResume, originalResume, createResume, switchResume, selectedTemplateId, applicationId, onApproved]);
 
   const handleReset = useCallback(() => {
     if (isDirty && !confirm("You have unsaved tailored changes. Discard draft?")) return;

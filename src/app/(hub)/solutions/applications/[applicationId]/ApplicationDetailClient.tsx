@@ -1,10 +1,9 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback } from "react";
 import Link from "next/link";
 import {
   ArrowLeft,
-  Briefcase,
   Building2,
   FileText,
   Target,
@@ -13,7 +12,9 @@ import {
   Loader2,
   Trash2,
   Sparkles,
+  CheckCircle2,
 } from "lucide-react";
+import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 
 type JobApplication = {
   applicationId: string;
@@ -56,6 +57,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showTailorModal, setShowTailorModal] = useState(false);
 
   const updateStatus = useCallback(async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -89,6 +91,20 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
       }
     } catch {
       setDeleting(false);
+    }
+  }, [app.applicationId]);
+
+  // C55.1: After tailoring approval, refresh application data from server
+  const handleTailorApproved = useCallback(async (data: { resumeId: string; matchScore: number; matchData: unknown }) => {
+    // Refetch the application to get updated data
+    try {
+      const res = await fetch(`/api/applications/${app.applicationId}`);
+      if (res.ok) {
+        const updated = await res.json();
+        setApp(updated);
+      }
+    } catch {
+      // Non-critical — the modal already handled the approval
     }
   }, [app.applicationId]);
 
@@ -259,6 +275,16 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
               </div>
             </div>
           )}
+
+          {/* No match analysis yet */}
+          {!matchData && (
+            <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] px-5 py-6 text-center">
+              <Target className="h-5 w-5 text-gray-300 dark:text-slate-600 mx-auto mb-2" />
+              <p className="text-xs text-gray-500 dark:text-slate-400">
+                Not analyzed yet. Tailor a resume to see match analysis.
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Right column — Actions */}
@@ -270,9 +296,10 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
             </h3>
             {app.resumeId ? (
               <div className="space-y-2">
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  Linked resume is associated with this application.
-                </p>
+                <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
+                  <CheckCircle2 className="h-3 w-3" />
+                  Tailored resume linked
+                </div>
                 <Link
                   href="/resume-builder"
                   className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-500 dark:bg-[#0ea5e9] text-xs font-semibold text-white hover:brightness-110 transition-all w-full justify-center"
@@ -290,25 +317,26 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
             )}
           </div>
 
-          {/* Tailor action */}
+          {/* C55.1: Tailor action — opens modal with application context */}
           <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-2">
               <Sparkles className="h-4 w-4 text-purple-500" />
               AI Tailoring
             </h3>
             <p className="text-xs text-gray-500 dark:text-slate-400">
-              Tailor your resume to this specific job. Patorbit will analyze the job description
-              and suggest truthful improvements based on your existing information.
+              {app.resumeId
+                ? "Re-tailor your resume with updated analysis, or tailor a different resume for this job."
+                : "Tailor your resume to this specific job. Patorbit will analyze the job description and suggest truthful improvements."}
             </p>
-            <Link
-              href="/resume-builder"
+            <button
+              onClick={() => setShowTailorModal(true)}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-purple-500 dark:bg-purple-500/90 text-xs font-semibold text-white hover:brightness-110 transition-all w-full justify-center"
             >
               <Sparkles className="h-3 w-3" />
-              Tailor Resume
-            </Link>
+              {app.resumeId ? "Tailor Again" : "Tailor Resume"}
+            </button>
             <p className="text-[10px] text-gray-400 dark:text-slate-500 text-center">
-              Opens the Resume Builder where you can use the Tailor to Job feature.
+              Uses this application&apos;s job description automatically.
             </p>
           </div>
 
@@ -352,6 +380,16 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
           </div>
         </div>
       </div>
+
+      {/* C55.1: TailorResumeModal with application context */}
+      <TailorResumeModal
+        open={showTailorModal}
+        onClose={() => setShowTailorModal(false)}
+        applicationId={app.applicationId}
+        initialJobDescription={app.jobDescription}
+        initialResumeId={app.resumeId || undefined}
+        onApproved={handleTailorApproved}
+      />
     </div>
   );
 }
