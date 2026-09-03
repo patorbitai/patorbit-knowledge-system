@@ -160,7 +160,7 @@ export function PersonalSection() {
             <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Summary</h4>
             <div className="flex items-center gap-1.5">
               <AIActionButton
-                label="Generate"
+                label="Generate Summary"
                 onClick={handleGenerateSummary}
                 isLoading={aiActions["summary-generate"]?.status === "loading"}
                 variant="ghost"

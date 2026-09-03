@@ -200,7 +200,7 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
             <span className="hidden sm:inline">Tailor to Job</span>
             <span className="sm:hidden">Tailor</span>
           </button>
-          <ImportButton variant="card" label="Import Resume" />
+          <ImportButton variant="card" label="Import" />
           <SaveStatusIndicator />
           <div className="hidden sm:block h-3 w-px bg-gray-300 dark:bg-white/[0.08]" />
           <Link href="/resume-builder/preview"
