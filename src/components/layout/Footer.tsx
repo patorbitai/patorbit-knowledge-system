@@ -1,37 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
-import AnimatedCounter from "@/components/ui/AnimatedCounter";
 
 /* ─── Nav link groups ─── */
 const navGroups = [
   {
-    title: "Platform",
+    title: "Product",
     links: [
-      { href: "/career-passport", label: "Career Passport" },
-      { href: "/features", label: "AI Resume Intelligence" },
-      { href: "/trust-verification", label: "Trust Score" },
-      { href: "/trust-verification", label: "Credential Verification" },
-      { href: "/knowledge-graph", label: "Knowledge Graph" },
-    ],
-  },
-  {
-    title: "Solutions",
-    links: [
-      { href: "/solutions", label: "Students" },
-      { href: "/solutions", label: "Engineers" },
-      { href: "/solutions", label: "Recruiters" },
-      { href: "/solutions", label: "Hiring Managers" },
-      { href: "/enterprise", label: "Enterprise" },
+      { href: "/features", label: "Features" },
+      { href: "/templates", label: "Templates" },
+      { href: "/pricing", label: "Pricing" },
     ],
   },
   {
     title: "Resources",
     links: [
       { href: "/docs", label: "Documentation" },
-      { href: "/api-reference", label: "API" },
-      { href: "/developers", label: "Developers" },
       { href: "/changelog", label: "Changelog" },
       { href: "/status", label: "Status" },
     ],
@@ -40,34 +24,11 @@ const navGroups = [
     title: "Company",
     links: [
       { href: "/about", label: "About" },
-      { href: "/careers", label: "Careers" },
-      { href: "/blog", label: "Blog" },
       { href: "/contact", label: "Contact" },
-      { href: "/press", label: "Press" },
+      { href: "/careers", label: "Careers" },
     ],
   },
 ];
-
-/* ─── Trust Metrics ─── */
-function TrustMetrics() {
-  return (
-    <div className="grid grid-cols-2 md:grid-cols-4 gap-6 py-10 border-y border-white/[0.06]">
-      {[
-        { target: 3200, suffix: "+", label: "Verified Professionals" },
-        { target: 12000, suffix: "+", label: "Verified Claims" },
-        { target: 68, suffix: "K+", label: "Knowledge Graph Nodes" },
-        { target: 99, suffix: ".9%", label: "Platform Uptime" },
-      ].map((stat) => (
-        <div key={stat.label} className="text-center">
-          <div className="text-xl lg:text-2xl font-bold text-white tabular-nums">
-            <AnimatedCounter target={stat.target} suffix={stat.suffix} duration={2200} />
-          </div>
-          <div className="text-xs text-slate-400 mt-1">{stat.label}</div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 /* ─── Footer ─── */
 export default function Footer() {
@@ -75,7 +36,7 @@ export default function Footer() {
     <footer className="bg-[#070B14] border-t border-white/[0.06]">
       <div className="mx-auto max-w-7xl px-6">
         {/* Brand + Navigation */}
-        <div className="grid lg:grid-cols-5 gap-10 pb-10">
+        <div className="grid lg:grid-cols-4 gap-10 py-10">
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
@@ -84,11 +45,8 @@ export default function Footer() {
               </div>
               <span className="text-lg font-semibold text-white">Patorbit</span>
             </Link>
-            <p className="text-[11px] uppercase tracking-[0.15em] text-slate-400 font-medium mb-2">
-              Professional Identity Infrastructure
-            </p>
             <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
-              The platform for verified professional identity. Extract, verify, and showcase your credentials with AI-powered trust.
+              Build your Professional Identity once. Create multiple resumes. Tailor each to the job — without inventing experience.
             </p>
 
             {/* Social Icons */}
@@ -128,19 +86,13 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Trust Metrics */}
-        <TrustMetrics />
-
         {/* Bottom Bar */}
-        <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-6 text-xs text-slate-400">
-          <p>© 2026 Patorbit. All rights reserved.</p>
+        <div className="flex flex-col md:flex-row items-center justify-between gap-4 py-6 border-t border-white/[0.06] text-xs text-slate-400">
+          <p>&copy; 2026 Patorbit. All rights reserved.</p>
           <div className="flex items-center gap-4">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
             <Link href="/security" className="hover:text-white transition-colors">Security</Link>
-            <Link href="/compliance" className="hover:text-white transition-colors">Compliance</Link>
-            <span className="text-slate-600 hidden md:inline">·</span>
-            <span className="text-slate-400">Building the future of professional trust.</span>
           </div>
         </div>
       </div>

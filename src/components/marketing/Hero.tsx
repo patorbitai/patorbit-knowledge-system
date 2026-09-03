@@ -5,44 +5,44 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   FileText,
-  Brain,
-  Network,
-  ShieldCheck,
+  Sparkles,
+  Target,
   ArrowRight,
-  Play,
   Check,
   Loader2,
+  User,
+  Copy,
 } from "lucide-react";
 
-/* ─── Pipeline stages — only 4 processing steps ─── */
+/* ─── Pipeline stages — the real Patorbit workflow ─── */
 const pipeline = [
   {
-    id: "resume",
-    icon: FileText,
-    label: "Resume Imported",
-    detail: "Parsing 3 pages · 47 data points",
-    color: "#3b82f6",
-  },
-  {
-    id: "extraction",
-    icon: Brain,
-    label: "AI Extraction",
-    detail: "LLM extracts 12 verified claims",
-    color: "#8b5cf6",
-  },
-  {
-    id: "graph",
-    icon: Network,
-    label: "Knowledge Graph",
-    detail: "68 nodes · 132 edges · semantic map built",
+    id: "identity",
+    icon: User,
+    label: "Professional Identity",
+    detail: "Your reusable professional information",
     color: "#06b6d4",
   },
   {
-    id: "verify",
-    icon: ShieldCheck,
-    label: "Evidence Verification",
-    detail: "24 of 24 claims matched to verifiable sources",
-    color: "#f59e0b",
+    id: "resume",
+    icon: FileText,
+    label: "Create Resume",
+    detail: "Seeded from your Professional Identity",
+    color: "#3b82f6",
+  },
+  {
+    id: "tailor",
+    icon: Target,
+    label: "Tailor to Job",
+    detail: "AI analyzes job description against your resume",
+    color: "#8b5cf6",
+  },
+  {
+    id: "review",
+    icon: Sparkles,
+    label: "Review & Approve",
+    detail: "You control every change before saving",
+    color: "#10b981",
   },
 ];
 
@@ -108,7 +108,7 @@ function PipelineStep({ step, index, stage }: { step: typeof pipeline[0]; index:
   );
 }
 
-/* ─── Pipeline loading steps (always 4) ─── */
+/* ─── Pipeline loading steps ─── */
 function PipelineLoading({ stage }: { stage: number }) {
   return (
     <div className="relative flex flex-col gap-3 py-2" style={{ minHeight: 0 }}>
@@ -137,68 +137,23 @@ function PipelineLoading({ stage }: { stage: number }) {
         <PipelineStep key={step.id} step={step} index={i} stage={stage} />
       ))}
 
-      {/* Interstitial: "Generating Trust Score..." showing while done=false but stage >= 4 */}
+      {/* Final state: workflow complete */}
       {stage >= pipeline.length && (
         <div className="relative z-10 flex w-full items-center gap-4 rounded-xl border border-emerald-500/20 bg-emerald-500/5 px-4 py-3.5">
           <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-emerald-500/15">
-            <Loader2 className="h-4 w-4 animate-spin text-emerald-400" />
+            <Check className="h-4 w-4 text-emerald-400" strokeWidth={2.5} />
           </div>
           <div className="flex-1">
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-medium text-emerald-300">Generating Trust Score...</span>
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none">
-                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="50 20" strokeLinecap="round" />
-              </svg>
+              <span className="text-sm font-medium text-emerald-300">Resume Ready</span>
+              <span className="text-[10px] font-medium text-emerald-400/80">Export or Share</span>
             </div>
-            <div className="mt-2.5 h-0.5 w-full rounded-full bg-slate-800 overflow-hidden">
-              <div className="h-full rounded-full bg-emerald-500" style={{ width: "100%", animation: "progress-fill 2s linear infinite" }} />
-            </div>
+            <p className="mt-1 text-[11px] text-slate-500 leading-snug">
+              Tailored resume created. Original preserved.
+            </p>
           </div>
         </div>
       )}
-    </div>
-  );
-}
-
-/* ─── Final Trust Score Panel ─── */
-function TrustScorePanel({ score }: { score: number }) {
-  return (
-    <div className="p-4">
-      <div className="flex items-end justify-between mb-4">
-        <div>
-          <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-1">Trust Score</div>
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-3xl font-bold tabular-nums bg-gradient-to-r from-emerald-300 to-cyan-400 bg-clip-text text-transparent">
-              {score}
-            </span>
-            <span className="text-base text-slate-500 font-medium">/100</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 px-2.5 py-1 animate-ambient-glow">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-400" />
-          <span className="text-[11px] font-semibold text-emerald-400">Excellent</span>
-        </div>
-      </div>
-
-      <div className="h-1 w-full rounded-full bg-slate-800 overflow-hidden mb-4">
-        <div
-          className="h-full rounded-full bg-gradient-to-r from-cyan-400 via-blue-400 to-emerald-400"
-          style={{ width: `${score}%`, transition: "width 1s ease-out" }}
-        />
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        {[
-          { label: "Verified Claims", value: 24 },
-          { label: "Graph Nodes", value: 68 },
-          { label: "Evidence Sources", value: 12 },
-        ].map((m) => (
-          <div key={m.label} className="rounded-lg border border-slate-800/80 bg-slate-900/60 px-2.5 py-2 text-center">
-            <div className="text-base font-bold text-white tabular-nums">{m.value}</div>
-            <div className="text-[9px] text-slate-500 mt-0.5 leading-tight">{m.label}</div>
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
@@ -207,8 +162,6 @@ function TrustScorePanel({ score }: { score: number }) {
 export default function Hero() {
   const [stage, setStage] = useState(0);
   const [done, setDone] = useState(false);
-  const [trustScore, setTrustScore] = useState(0);
-  const [showTrust, setShowTrust] = useState(false);
   const pipelineStarted = useRef(false);
 
   // Advance pipeline on mount
@@ -221,9 +174,7 @@ export default function Hero() {
 
     const run = () => {
       if (current >= pipeline.length) {
-        // Pipeline done — show generating state briefly, then reveal trust score
-        setStage(current); // triggers "Generating Trust Score..."
-        timers.push(setTimeout(() => setDone(true), 1800));
+        setDone(true);
         return;
       }
       setStage(current);
@@ -235,25 +186,7 @@ export default function Hero() {
     return () => timers.forEach(clearTimeout);
   }, []);
 
-  // Count up trust score once done
-  useEffect(() => {
-    if (!done) return;
-    let cancelled = false;
-    setShowTrust(true);
-    const countUp = () => {
-      if (cancelled) return;
-      setTrustScore((s) => {
-        if (s >= 84) return s;
-        const next = Math.min(84, s + 2);
-        setTimeout(countUp, 18);
-        return next;
-      });
-    };
-    setTimeout(countUp, 300);
-    return () => { cancelled = true; };
-  }, [done]);
-
-  const rightContentHeight = done ? "h-[340px]" : stage >= pipeline.length ? "h-[460px]" : "h-[420px]";
+  const rightContentHeight = done ? "h-[300px]" : "h-[380px]";
 
   return (
     <section
@@ -275,32 +208,43 @@ export default function Hero() {
                 <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
                 <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
               </span>
-              <span className="text-[11px] text-slate-400 tracking-wider uppercase font-medium">Live on Mainnet</span>
+              <span className="text-[11px] text-slate-400 tracking-wider uppercase font-medium">
+                Build once. Tailor when you need it.
+              </span>
             </div>
 
             <h1 className="text-5xl sm:text-6xl lg:text-[4.25rem] xl:text-[5rem] font-bold leading-[0.95] tracking-tight text-white">
-              Your Career Should Be{" "}
+              Build Your Resume{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                Verifiable.
+                Once.
+              </span>
+              <br />
+              Tailor It to{" "}
+              <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
+                Every Job.
               </span>
             </h1>
 
             <p className="mt-6 text-[17px] text-slate-400 leading-relaxed max-w-lg">
-              Resumes are just claims. Patorbit extracts, verifies, and connects every credential into a professional passport you own — building trust that compounds over time.
+              Keep your professional information in one{" "}
+              <strong className="text-slate-300">Professional Identity</strong>. Create multiple resumes and tailor
+              each one to the job — without starting from scratch or inventing experience.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
-                href="/resume-builder"
+                href="/register"
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
               >
-                Build Your Passport
+                Get Started Free
                 <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
-              <button className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100">
-                <Play className="w-3.5 h-3.5" fill="currentColor" />
-                Watch Demo
-              </button>
+              <Link
+                href="/templates"
+                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+              >
+                Explore Templates
+              </Link>
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
@@ -313,10 +257,13 @@ export default function Hero() {
             </div>
           </div>
 
-          {/* ─── RIGHT: Live Demo Panel ─── */}
+          {/* ─── RIGHT: Live Workflow Demo ─── */}
           <div>
             <div className="relative">
-              <div className="relative z-10 rounded-xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl overflow-hidden shadow-[0_0_60px_-15px_rgba(59,130,246,0.15)]">
+              <div
+                className="relative z-10 rounded-xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl overflow-hidden shadow-[0_0_60px_-15px_rgba(59,130,246,0.15)]"
+                style={{ minHeight: rightContentHeight }}
+              >
                 {/* Card header */}
                 <div className="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between">
                   <div className="flex items-center gap-2.5">
@@ -324,10 +271,10 @@ export default function Hero() {
                       P
                     </div>
                     <div>
-                      <div className="text-sm font-medium text-white">career.patorbit.ai</div>
+                      <div className="text-sm font-medium text-white">Patorbit</div>
                       <div className="text-[10px] text-slate-500 flex items-center gap-1.5">
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                        Live Demo
+                        Your workflow
                       </div>
                     </div>
                   </div>
@@ -338,9 +285,8 @@ export default function Hero() {
                   </div>
                 </div>
 
-                {/* Content area — fixed height container */}
-                <div className="relative px-4 py-3" style={{ minHeight: 300 }}>
-                  {/* Pipeline loading (shown until done) */}
+                {/* Content area */}
+                <div className="relative px-4 py-3" style={{ minHeight: 280 }}>
                   <AnimatePresence mode="wait">
                     {!done ? (
                       <motion.div
@@ -353,12 +299,33 @@ export default function Hero() {
                       </motion.div>
                     ) : (
                       <motion.div
-                        key="trust"
+                        key="complete"
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ duration: 0.4, ease: "easeOut" }}
+                        className="space-y-4"
                       >
-                        <TrustScorePanel score={trustScore} />
+                        <div className="flex items-center gap-3 mb-3">
+                          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-emerald-500/15">
+                            <Check className="h-4 w-4 text-emerald-400" strokeWidth={2.5} />
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-white">Tailored Resume Created</p>
+                            <p className="text-[11px] text-slate-500">Original resume preserved</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                          <Copy className="w-3.5 h-3.5" />
+                          <span>New resume seeded from your Professional Identity</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                          <Target className="w-3.5 h-3.5" />
+                          <span>Matched 8 of 10 job requirements</span>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-slate-400">
+                          <Sparkles className="w-3.5 h-3.5" />
+                          <span>AI improved wording — you approved every change</span>
+                        </div>
                       </motion.div>
                     )}
                   </AnimatePresence>

@@ -2,44 +2,38 @@
 
 import { useRef } from "react";
 import { useInView } from "framer-motion";
-import { FileText, Brain, ShieldCheck, Network, Star, UserCheck } from "lucide-react";
+import { User, FileText, Target, Sparkles, Download } from "lucide-react";
 
 const steps = [
   {
-    icon: FileText,
-    title: "Import Your Resume",
-    description: "Upload any resume — PDF, DOCX, or JSON. Our AI parses every data point with 98%+ accuracy.",
-    color: "#3b82f6",
-  },
-  {
-    icon: Brain,
-    title: "AI Extracts & Maps",
-    description: "LLMs identify every claim — degrees, titles, skills, certifications — and map them to verifiable fields.",
-    color: "#8b5cf6",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Verify Every Claim",
-    description: "Each credential is cross-referenced against public databases, academic registries, and professional networks.",
-    color: "#f59e0b",
-  },
-  {
-    icon: Network,
-    title: "Build Your Knowledge Graph",
-    description: "Every verified fact becomes a node in your personal knowledge graph — connected, searchable, secure.",
+    icon: User,
+    title: "Build your Professional Identity",
+    description: "Keep your professional information organized in one place — name, experience, education, skills, and more.",
     color: "#06b6d4",
   },
   {
-    icon: Star,
-    title: "Generate Your Trust Score",
-    description: "A dynamic 0–100 score reflecting the strength and completeness of your verified professional identity.",
+    icon: FileText,
+    title: "Create multiple resumes",
+    description: "Create separate resumes for different roles and opportunities. Each one starts from your Professional Identity.",
+    color: "#3b82f6",
+  },
+  {
+    icon: Target,
+    title: "Tailor to a job",
+    description: "Paste a job description and Patorbit analyzes the match — identifying strengths, gaps, and improvement opportunities.",
+    color: "#8b5cf6",
+  },
+  {
+    icon: Sparkles,
+    title: "Review AI suggestions",
+    description: "AI suggests changes based on your existing information. Missing skills are identified, not invented. You approve every change.",
     color: "#10b981",
   },
   {
-    icon: UserCheck,
-    title: "Claim Your Passport",
-    description: "Share your professional passport with anyone — employers, clients, networks — with one link or QR code.",
-    color: "#00D4FF",
+    icon: Download,
+    title: "Export or share",
+    description: "Export your finished resume as PDF or DOCX, or share it with a link.",
+    color: "#f59e0b",
   },
 ];
 
@@ -70,19 +64,19 @@ export default function HowItWorks() {
             </span>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
-            From resume to verified identity in{" "}
+            From professional identity to{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              minutes.
+              tailored resume
             </span>
           </h2>
           <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
-            No manual data entry. No waiting. Just upload and let AI do the work.
+            Build once, tailor for every opportunity. No manual rewrites. No invented experience.
           </p>
         </div>
 
         {/* Steps grid */}
         <div className="relative max-w-5xl mx-auto">
-          {/* Connecting line — centered behind the circles; the circles' solid discs mask it */}
+          {/* Connecting line */}
           <div className="absolute left-10 top-0 bottom-0 w-px bg-gradient-to-b from-cyan-500/0 via-cyan-500/20 to-cyan-500/0 hidden md:block" />
 
           <div className="space-y-8 md:space-y-0">
@@ -98,8 +92,6 @@ export default function HowItWorks() {
               >
                 {/* Step number + icon */}
                 <div className="relative flex md:flex-col items-center gap-3 md:items-center md:h-full">
-                  {/* Circle is pinned to the row's vertical midpoint so it centers
-                      exactly on the card, independent of the step number below it. */}
                   <div className="relative z-10 h-14 w-14 shrink-0 rounded-full bg-[#070B14] md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
                     <div
                       className="absolute inset-0 flex items-center justify-center rounded-full border"

@@ -2,54 +2,54 @@
 
 import GlowCard from "@/components/ui/GlowCard";
 import {
-  Brain,
-  ShieldCheck,
-  Network,
-  Star,
-  UserCheck,
-  Fingerprint,
+  User,
+  FileText,
+  Target,
+  Sparkles,
+  Layout,
+  Download,
 } from "lucide-react";
 
 const features = [
   {
-    icon: Brain,
-    title: "AI Resume Intelligence",
-    description: "98%+ accurate extraction from any resume format.",
-    gradient: "from-blue-500/20 to-blue-500/5",
-    iconColor: "text-blue-400",
-  },
-  {
-    icon: ShieldCheck,
-    title: "Credential Verification",
-    description: "Real-time cross-referencing against public databases.",
-    gradient: "from-emerald-500/20 to-emerald-500/5",
-    iconColor: "text-emerald-400",
-  },
-  {
-    icon: Network,
-    title: "AI Knowledge Graph",
-    description: "A living map of your skills, experience, and connections.",
+    icon: User,
+    title: "Professional Identity",
+    description: "Maintain reusable professional information as the foundation for all your resumes.",
     gradient: "from-cyan-500/20 to-cyan-500/5",
     iconColor: "text-cyan-400",
   },
   {
-    icon: Star,
-    title: "Trust Score",
-    description: "Dynamic 0–100 score reflecting verification depth.",
-    gradient: "from-amber-500/20 to-amber-500/5",
-    iconColor: "text-amber-400",
+    icon: FileText,
+    title: "Multiple Resumes",
+    description: "Create separate resume versions for different roles without losing your original.",
+    gradient: "from-blue-500/20 to-blue-500/5",
+    iconColor: "text-blue-400",
   },
   {
-    icon: UserCheck,
-    title: "Professional Passport",
-    description: "Portable identity — share anywhere with one link.",
+    icon: Target,
+    title: "Job Tailoring",
+    description: "Paste a job description and get a tailored resume based on your existing information.",
     gradient: "from-purple-500/20 to-purple-500/5",
     iconColor: "text-purple-400",
   },
   {
-    icon: Fingerprint,
-    title: "Blockchain Verification",
-    description: "Tamper-proof credential anchoring on chain.",
+    icon: Sparkles,
+    title: "Truthful AI",
+    description: "Improve wording and structure without fabricating employers, skills, or achievements.",
+    gradient: "from-emerald-500/20 to-emerald-500/5",
+    iconColor: "text-emerald-400",
+  },
+  {
+    icon: Layout,
+    title: "Professional Templates",
+    description: "Choose from multiple layout families designed for different career stages and industries.",
+    gradient: "from-amber-500/20 to-amber-500/5",
+    iconColor: "text-amber-400",
+  },
+  {
+    icon: Download,
+    title: "Export & Share",
+    description: "Export as PDF or DOCX, or share your resume with a public link.",
     gradient: "from-rose-500/20 to-rose-500/5",
     iconColor: "text-rose-400",
   },
@@ -71,13 +71,13 @@ export default function FeatureGrid() {
             </span>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
-            Your complete professional{" "}
+            Your complete{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              identity toolkit
+              resume toolkit
             </span>
           </h2>
           <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
-            From AI extraction to verified credentials, everything you need to prove who you are.
+            From Professional Identity to tailored exports, everything you need to build the right resume for every opportunity.
           </p>
         </div>
 

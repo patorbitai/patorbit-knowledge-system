@@ -2,35 +2,44 @@
 
 import { useRef } from "react";
 import { useInView } from "framer-motion";
-import { Fingerprint, ShieldCheck, Rocket, Users } from "lucide-react";
+import { User, Copy, Target, ShieldCheck } from "lucide-react";
 
 const cards = [
   {
-    title: "Build Once. Reuse Everywhere.",
+    title: "One Professional Identity",
     description:
-      "Professionals repeatedly recreate the same information across resumes, job portals, LinkedIn, freelance platforms, and application forms. Patorbit creates one structured Professional Passport that evolves with your career.",
-    icon: Users,
-    gradient: "from-blue-500/20 to-cyan-500/10",
+      "Stop re-entering the same information across every resume. Build your professional profile once and reuse it everywhere.",
+    icon: User,
+    gradient: "from-cyan-500/20 to-cyan-500/10",
+    border: "hover:border-cyan-500/30",
+    glow: "group-hover:shadow-cyan-500/5",
+  },
+  {
+    title: "Multiple Resumes, Zero Clutter",
+    description:
+      "Create separate resumes for different roles — Data Engineer, ML Engineer, Tech Lead — without losing your original or managing confusing file versions.",
+    icon: Copy,
+    gradient: "from-blue-500/20 to-blue-500/10",
     border: "hover:border-blue-500/30",
     glow: "group-hover:shadow-blue-500/5",
   },
   {
-    title: "Evidence, Not Just Claims",
+    title: "Job-Specific Tailoring",
     description:
-      "Anyone can claim skills on a resume. Patorbit connects projects, certifications, portfolios, and career achievements into one evidence-backed professional identity.",
-    icon: ShieldCheck,
-    gradient: "from-emerald-500/20 to-teal-500/10",
-    border: "hover:border-emerald-500/30",
-    glow: "group-hover:shadow-emerald-500/5",
-  },
-  {
-    title: "Career Ready, Anytime",
-    description:
-      "Whether you're applying for a job, internship, scholarship, or future professional opportunities, your Professional Passport is always ready to share.",
-    icon: Rocket,
-    gradient: "from-purple-500/20 to-violet-500/10",
+      "Paste a job description and Patorbit identifies what matches, what partially matches, and what's missing — then suggests improvements based on your existing experience.",
+    icon: Target,
+    gradient: "from-purple-500/20 to-purple-500/10",
     border: "hover:border-purple-500/30",
     glow: "group-hover:shadow-purple-500/5",
+  },
+  {
+    title: "Truthful AI",
+    description:
+      "AI improves wording and structure without fabricating employers, skills, certifications, or achievements. You review every change before saving.",
+    icon: ShieldCheck,
+    gradient: "from-emerald-500/20 to-emerald-500/10",
+    border: "hover:border-emerald-500/30",
+    glow: "group-hover:shadow-emerald-500/5",
   },
 ];
 
@@ -42,13 +51,12 @@ export default function WhyPatorbit() {
     <section
       ref={ref}
       className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
-      aria-label="Why professionals need Patorbit"
+      aria-label="Why Patorbit"
     >
       {/* Subtle grid pattern */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:40px_40px]" />
 
       <div className="relative mx-auto max-w-6xl px-6">
-
         {/* Header */}
         <div
           style={{
@@ -60,23 +68,22 @@ export default function WhyPatorbit() {
         >
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
             <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
-              The Problem
+              Why Patorbit
             </span>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
-            Why Professional Identity{" "}
+            Resume building{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              Needs to Change
+              without the busywork
             </span>
           </h2>
           <p className="mt-4 text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
-            The resume hasn&apos;t evolved in decades. It&apos;s a static document
-            built on claims, not evidence. Professionals deserve better.
+            Patorbit keeps your professional information organized, creates multiple resumes from it, and helps you tailor each one to the job — without inventing experience.
           </p>
         </div>
 
         {/* Cards */}
-        <div className="grid md:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
           {cards.map((card, i) => {
             const Icon = card.icon;
             return (
@@ -119,15 +126,14 @@ export default function WhyPatorbit() {
         >
           <div className="max-w-3xl mx-auto">
             <div className="relative">
-              {/* Decorative quote marks */}
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-6xl text-slate-700/30 select-none leading-none">
                 &ldquo;
               </div>
               <p className="text-xl lg:text-2xl font-medium text-white/90 leading-relaxed">
-                The future of professional identity isn&apos;t another resume.
+                Tailor the truth.
               </p>
               <p className="text-xl lg:text-2xl font-medium mt-2 bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                It&apos;s a secure, portable Professional Passport that you own.
+                Don&apos;t manufacture a better-looking truth.
               </p>
               <div className="absolute -bottom-12 right-1/4 text-6xl text-slate-700/30 select-none leading-none">
                 &rdquo;
@@ -142,7 +148,6 @@ export default function WhyPatorbit() {
             </div>
           </div>
         </div>
-
       </div>
     </section>
   );

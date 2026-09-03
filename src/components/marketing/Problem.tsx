@@ -2,34 +2,34 @@
 
 import { useRef } from "react";
 import { useInView } from "framer-motion";
-import { FileText, Search, ShieldCheck, UserCheck } from "lucide-react";
+import { Repeat, FileText, Shuffle, Sparkles } from "lucide-react";
 
 const problems = [
   {
-    icon: FileText,
-    title: "Resumes Are Just Claims",
-    description: "Anyone can write anything on a resume. There's no way to verify what's true and what's exaggerated.",
+    icon: Repeat,
+    title: "Rewriting the Same Resume",
+    description: "You update your resume for every application, re-entering the same information repeatedly.",
     color: "text-blue-400",
     bg: "bg-blue-500/10",
   },
   {
-    icon: Search,
-    title: "Hiring on Faith",
-    description: "Recruiters spend hours cross-referencing candidates with LinkedIn, GitHub, and references — with no guarantee.",
+    icon: FileText,
+    title: "Too Many Versions",
+    description: "You end up with multiple resume files and forget which version contains what.",
     color: "text-purple-400",
     bg: "bg-purple-500/10",
   },
   {
-    icon: ShieldCheck,
-    title: "Trust Is Fragile",
-    description: "A single overstated claim can destroy credibility. Yet verification is an afterthought in most hiring pipelines.",
+    icon: Shuffle,
+    title: "Manual Tailoring",
+    description: "Matching your resume to each job description takes hours of manual editing.",
     color: "text-amber-400",
     bg: "bg-amber-500/10",
   },
   {
-    icon: UserCheck,
-    title: "Your Identity Is Fragmented",
-    description: "Your degrees, skills, and experience are scattered across platforms. No unified professional identity exists.",
+    icon: Sparkles,
+    title: "AI That Overstates",
+    description: "Some AI tools add skills and experience you don't actually have.",
     color: "text-emerald-400",
     bg: "bg-emerald-500/10",
   },
@@ -62,14 +62,13 @@ export default function Problem() {
             </span>
           </div>
           <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
-            Why resumes{" "}
+            Resumes are{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-              don&apos;t work
-            </span>{" "}
-            anymore
+              harder than they should be
+            </span>
           </h2>
           <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
-            The professional world runs on trust — yet the tools we use to prove ourselves haven&apos;t evolved in decades.
+            Every job application means rewriting the same information. There should be a better way.
           </p>
         </div>
 

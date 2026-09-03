@@ -44,37 +44,36 @@ export default function CTA() {
 
             {/* Headline */}
             <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white max-w-2xl mx-auto">
-              Ready to Build Your{" "}
+              Ready to build your{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                Professional Passport
+                next resume?
               </span>
-              ?
             </h2>
 
             <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-md mx-auto">
-              Join thousands of professionals who trust Patorbit to verify and showcase their credentials.
+              Create your Professional Identity once, then tailor resumes for the jobs you want.
             </p>
 
-            {/* CTA Button */}
+            {/* CTA Buttons */}
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
               <Link
-                href="/resume-builder"
+                href="/register"
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
               >
-                Build Your Passport
+                Get Started Free
                 <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/contact"
+                href="/templates"
                 className="group inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-8 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
               >
-                Book a Demo
+                Explore Templates
               </Link>
             </div>
 
             {/* Trust builders */}
             <div className="mt-6 flex flex-wrap items-center justify-center gap-x-6 gap-y-2">
-              {["Free Forever", "No Credit Card", "Setup in 2 Minutes", "Cancel Anytime"].map((item) => (
+              {["Free Forever", "No Credit Card", "Setup in 2 Minutes"].map((item) => (
                 <span key={item} className="inline-flex items-center gap-1.5 text-xs text-slate-500">
                   <Check className="w-3.5 h-3.5 text-emerald-400" strokeWidth={2.5} />
                   {item}
