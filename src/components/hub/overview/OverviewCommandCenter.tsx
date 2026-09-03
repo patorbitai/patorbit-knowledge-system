@@ -14,6 +14,9 @@ import {
   ArrowRight,
   LayoutDashboard,
   Share2,
+  User,
+  Sparkles,
+  Target,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import AICopilotWidget from "@/components/hub/widgets/AICopilotWidget";
@@ -29,6 +32,23 @@ type Props = {
   data: IdentityScoreData;
   onboardingCompleted?: boolean;
 };
+
+/** Format a date string or timestamp into a human-readable relative time. */
+function formatRelativeTime(date: string | number | Date | undefined): string {
+  if (!date) return "";
+  const d = new Date(date);
+  const now = new Date();
+  const diffMs = now.getTime() - d.getTime();
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMins / 60);
+  const diffDays = Math.floor(diffHours / 24);
+
+  if (diffMins < 1) return "Just now";
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
 
 export function OverviewCommandCenter({ name, email, data, onboardingCompleted = true }: Props) {
   const [mounted, setMounted] = useState(false);
@@ -52,6 +72,13 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
 
   const resumeList = mounted && resumes ? resumes : [];
   const hasResumes = resumeList.length > 0;
+
+  // Sort resumes by most recently updated
+  const sortedResumes = [...resumeList].sort((a, b) => {
+    const aTime = (a as any).updatedAt || (a as any).createdAt || 0;
+    const bTime = (b as any).updatedAt || (b as any).createdAt || 0;
+    return new Date(bTime).getTime() - new Date(aTime).getTime();
+  });
 
   const handleCreateResume = () => {
     const id = createResume();
@@ -86,27 +113,84 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
         <p className="text-sm text-gray-500 dark:text-[#94a3b8] max-w-xl">
           {hasResumes
             ? "Pick up where you left off or create a new resume."
-            : "Build a professional resume in minutes."}
+            : "Build a professional resume, tailor it to any job, and export it in minutes."}
         </p>
       </section>
 
-      {/* ── PRIMARY ACTIONS ── */}
-      <section className="flex flex-wrap gap-3">
-        <button
-          onClick={handleCreateResume}
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
-        >
-          <Plus className="h-4 w-4" />
-          Create Resume
-        </button>
-        <Link
-          href="/resume-builder"
-          className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm font-medium text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-all"
-        >
-          <Upload className="h-4 w-4" />
-          Import Resume
-        </Link>
-      </section>
+      {/* ── EMPTY STATE — New user ── */}
+      {!hasResumes && mounted && (
+        <section className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] overflow-hidden">
+          <div className="px-6 py-10 text-center space-y-6">
+            <div className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg shadow-blue-500/20">
+              <FileText className="h-7 w-7 text-white" />
+            </div>
+            <div className="space-y-2 max-w-md mx-auto">
+              <h2 className="text-lg font-bold text-gray-900 dark:text-white">
+                Create your first resume
+              </h2>
+              <p className="text-sm text-gray-500 dark:text-slate-400 leading-relaxed">
+                Build a professional resume from scratch, or import an existing one.
+                Your Professional Profile can automatically seed new resumes with your information.
+              </p>
+            </div>
+
+            {/* Primary actions */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <button
+                onClick={handleCreateResume}
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all shadow-md shadow-blue-500/20"
+              >
+                <Plus className="h-4 w-4" />
+                Create Resume
+              </button>
+              <Link
+                href="/resume-builder"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm font-medium text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-all"
+              >
+                <Upload className="h-4 w-4" />
+                Import Resume
+              </Link>
+            </div>
+
+            {/* What you can do */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 max-w-lg mx-auto pt-2">
+              {[
+                { icon: <Pencil className="w-3.5 h-3.5" />, label: "Edit & customize", desc: "32 templates" },
+                { icon: <Target className="w-3.5 h-3.5" />, label: "Tailor to any job", desc: "AI-powered matching" },
+                { icon: <Sparkles className="w-3.5 h-3.5" />, label: "Improve with AI", desc: "Bullets, summary, skills" },
+              ].map((item) => (
+                <div key={item.label} className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.04]">
+                  <span className="text-blue-500 dark:text-cyan-400">{item.icon}</span>
+                  <div>
+                    <p className="text-[11px] font-medium text-gray-700 dark:text-slate-300">{item.label}</p>
+                    <p className="text-[10px] text-gray-400 dark:text-slate-500">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── PRIMARY ACTIONS (only when user has resumes) ── */}
+      {hasResumes && (
+        <section className="flex flex-wrap gap-3">
+          <button
+            onClick={handleCreateResume}
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
+          >
+            <Plus className="h-4 w-4" />
+            Create Resume
+          </button>
+          <Link
+            href="/resume-builder"
+            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm font-medium text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-all"
+          >
+            <Upload className="h-4 w-4" />
+            Import Resume
+          </Link>
+        </section>
+      )}
 
       {/* ── RESUMES ── */}
       {hasResumes && (
@@ -121,7 +205,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-            {resumeList.map((r) => {
+            {sortedResumes.map((r) => {
               const resumeId = r.resumeId ?? "";
               const isActive = resumeId === activeResumeId;
               const resumeName = r.resumeName || "Untitled Resume";
@@ -130,6 +214,8 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
               const experienceCount = r.experience?.length || 0;
               const educationCount = r.education?.length || 0;
               const skillsCount = r.skills?.length || 0;
+              const updatedAt = (r as any).updatedAt || (r as any).createdAt;
+              const timeAgo = formatRelativeTime(updatedAt);
 
               return (
                 <div
@@ -232,6 +318,12 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
                       {skillsCount > 0 && (
                         <span>{skillsCount} skills</span>
                       )}
+                      {timeAgo && (
+                        <span className="flex items-center gap-1 ml-auto">
+                          <Clock className="h-3 w-3" />
+                          {timeAgo}
+                        </span>
+                      )}
                     </div>
 
                     {/* Actions row */}
@@ -252,72 +344,6 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
           </div>
         </section>
       )}
-
-      {/* ── EMPTY STATE ── */}
-      {!hasResumes && mounted && (
-        <section className="text-center py-16 space-y-5">
-          <div className="mx-auto w-14 h-14 rounded-2xl bg-gray-50 dark:bg-white/[0.03] flex items-center justify-center border border-gray-100 dark:border-white/[0.04]">
-            <FileText className="h-6 w-6 text-gray-300 dark:text-white/15" />
-          </div>
-          <div className="space-y-1">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">
-              Build your professional resume
-            </h3>
-            <p className="text-sm text-gray-400 dark:text-slate-500 max-w-xs mx-auto">
-              Choose a template, add your experience, and export a polished resume in minutes.
-            </p>
-          </div>
-          <div className="flex items-center justify-center gap-3">
-            <button
-              onClick={handleCreateResume}
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
-            >
-              <Plus className="h-4 w-4" />
-              Create Resume
-            </button>
-          </div>
-        </section>
-      )}
-
-      {/* ── QUICK ACTIONS ── */}
-      <section className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-        <Link
-          href="/templates"
-          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] transition-all"
-        >
-          <div className="w-8 h-8 rounded-lg bg-purple-50 dark:bg-purple-500/10 flex items-center justify-center">
-            <LayoutDashboard className="h-4 w-4 text-purple-500 dark:text-purple-400" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-900 dark:text-white">Templates</p>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">Browse 32 designs</p>
-          </div>
-        </Link>
-        <Link
-          href="/resume-builder"
-          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] transition-all"
-        >
-          <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-            <Pencil className="h-4 w-4 text-blue-500 dark:text-blue-400" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-900 dark:text-white">Resume Builder</p>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">Edit your resume</p>
-          </div>
-        </Link>
-        <Link
-          href="/trust"
-          className="flex items-center gap-3 p-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] transition-all"
-        >
-          <div className="w-8 h-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center">
-            <FileText className="h-4 w-4 text-emerald-500 dark:text-emerald-400" />
-          </div>
-          <div>
-            <p className="text-xs font-semibold text-gray-900 dark:text-white">Trust Score</p>
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">Verify credentials</p>
-          </div>
-        </Link>
-      </section>
 
       {/* ── AI TOOLS ── */}
       <section>
