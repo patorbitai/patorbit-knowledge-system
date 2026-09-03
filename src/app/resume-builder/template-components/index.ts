@@ -9,6 +9,8 @@ export { CompactProPreview } from "./compact-pro";
 export { ExecutiveProPreview } from "./executive-pro";
 export { ModernCleanPreview } from "./modern-clean";
 export { TimelineProPreview } from "./timeline-pro";
+export { TimelineLayoutPreview } from "./timeline-layout";
+export { TwoColumnBalancedPreview } from "./two-column-balanced";
 
 /* ── Legacy template re-exports (kept for existing resume data) ── */
 export { EngineeringCleanPreview } from "./engineering-clean";

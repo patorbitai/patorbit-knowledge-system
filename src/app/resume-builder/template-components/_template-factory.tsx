@@ -44,7 +44,7 @@ export interface TemplateConfig {
   /** Header variant */
   header: "centered" | "left" | "dark-bar" | "gold-accent" | "minimal" | "split-contact" | "bold-banner";
   /** Layout variant */
-  layout?: "single" | "two-column-sidebar" | "sidebar-left" | "banner" | "compact";
+  layout?: "single" | "two-column-sidebar" | "sidebar-left" | "banner" | "compact" | "timeline" | "two-column-balanced";
   /** Section ordering (default: standard order) */
   sectionOrder?: ("summary" | "experience" | "skills" | "projects" | "education" | "certs" | "achievements" | "languages" | "interests")[];
   /** Spacing density */
@@ -555,6 +555,104 @@ export function generateTemplate(config: TemplateConfig) {
           {/* Main content */}
           <div style={{ flex: 1, paddingLeft: 20 }}>
             {mainSections.map(renderSection)}
+          </div>
+        </div>
+      );
+    }
+
+    // Timeline layout — vertical chronological spine for experience
+    if (layoutVariant === "timeline") {
+      const accent = effectiveTheme.accent || effectiveTheme.muted;
+      const summarySection = resume.summary ? (
+        <section key="summary" style={{ marginBottom: themedSpacing.sectionGap }}>
+          <SectionTitle color={accent}>{TITLES.summary}</SectionTitle>
+          <div style={{ fontSize: 10, lineHeight: 1.65, color: effectiveTheme.body }}>
+            <FormattedDescription text={resume.summary} color={effectiveTheme.body} mutedColor={effectiveTheme.muted} size="xs" />
+          </div>
+        </section>
+      ) : null;
+
+      const otherSections = sectionOrder.filter(s => s !== "summary" && s !== "experience").map(renderSection);
+
+      return (
+        <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: themedSpacing.padding, backgroundColor }}>
+          {HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}
+          {summarySection}
+          {/* Timeline experience section */}
+          {resume.experience.length > 0 && (
+            <section style={{ marginBottom: themedSpacing.sectionGap }}>
+              <SectionTitle color={accent}>{TITLES.experience}</SectionTitle>
+              <div style={{ position: "relative", paddingLeft: 20 }}>
+                {/* Vertical spine */}
+                <div style={{ position: "absolute", left: 3, top: 4, bottom: 4, width: 2, backgroundColor: accent + "30", borderRadius: 1 }} />
+                {resume.experience.map((exp, idx) => {
+                  const dateStr = exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" \u2013 ");
+                  const b = effectiveTheme.bulletChar || "\u25b8";
+                  return (
+                    <div key={exp.id} style={{ position: "relative", marginBottom: themedSpacing.entryGap, breakInside: "avoid" }}>
+                      {/* Timeline dot */}
+                      <div style={{ position: "absolute", left: -20, top: 3, width: 12, height: 12, borderRadius: "50%", backgroundColor: accent, border: `2px solid ${backgroundColor}` }} />
+                      {/* Date badge */}
+                      {dateStr && (
+                        <div style={{ fontSize: 8, fontWeight: 600, color: accent, marginBottom: 2, letterSpacing: "0.03em" }}>
+                          {dateStr}
+                        </div>
+                      )}
+                      {/* Company + Position */}
+                      <div style={{ fontSize: 11, fontWeight: 700, color: effectiveTheme.ink, lineHeight: 1.3 }}>
+                        {exp.company}
+                      </div>
+                      <div style={{ fontSize: 10, color: effectiveTheme.body, marginTop: 1 }}>
+                        <span style={{ fontWeight: 600 }}>{exp.position}</span>
+                        {exp.employmentType && <span style={{ color: effectiveTheme.muted }}> \u00b7 {exp.employmentType}</span>}
+                        {exp.location && <span style={{ color: effectiveTheme.muted }}> \u00b7 {exp.location}</span>}
+                      </div>
+                      {exp.description && (
+                        <div style={{ marginTop: 4, fontSize: 10, lineHeight: 1.6, color: effectiveTheme.body }}>
+                          <FormattedDescription text={exp.description} color={effectiveTheme.body} mutedColor={effectiveTheme.muted} size="xs" />
+                        </div>
+                      )}
+                      {exp.bulletPoints && exp.bulletPoints.length > 0 && (
+                        <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
+                          {exp.bulletPoints.map((bp, i) => (
+                            <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: effectiveTheme.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
+                              <span style={{ position: "absolute", left: 0, color: accent, fontSize: 8, top: 2 }}>{b}</span>
+                              {bp}
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                      {exp.techUsed && (
+                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
+                          {exp.techUsed.split(/[,;]/).map((t) => t.trim()).filter(Boolean).map((t, i) => (
+                            <span key={i} style={{ fontSize: 8, fontWeight: 500, color: accent, backgroundColor: accent + "12", padding: "1px 6px", borderRadius: 3 }}>{t}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          )}
+          {otherSections}
+        </div>
+      );
+    }
+
+    // Two-column balanced layout — summary+experience left, skills+education right
+    if (layoutVariant === "two-column-balanced") {
+      const leftSections = sectionOrder.filter(s => ["summary", "experience", "projects", "certs", "achievements"].includes(s));
+      const rightSections = sectionOrder.filter(s => ["skills", "education", "languages", "interests"].includes(s));
+      const leftContent = <>{leftSections.map(renderSection)}</>;
+      const rightContent = <>{rightSections.map(renderSection)}</>;
+
+      return (
+        <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: themedSpacing.padding, backgroundColor }}>
+          {HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}
+          <div style={{ display: "flex", gap: 24 }}>
+            <div style={{ flex: 1, minWidth: 0 }}>{leftContent}</div>
+            <div style={{ width: 240, borderLeft: `1px solid ${effectiveTheme.border || "#e2e8f0"}`, paddingLeft: 20 }}>{rightContent}</div>
           </div>
         </div>
       );

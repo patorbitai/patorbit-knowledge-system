@@ -556,6 +556,56 @@ export const TEMPLATES: ResumeTemplate[] = [
     }
   },
   {
+    id: "timeline-layout",
+    name: "Timeline",
+    description: "Chronological timeline with vertical spine and date badges. Experience flows through time.",
+    preview: "\ud83d\udcc5",
+    family: "timeline",
+    layout: "standard",
+    suggestedFont: "jakarta",
+    atsLabel: "ATS Friendly",
+    category: "Software Engineer",
+    atsRating: 92,
+    experienceLevel: "Mid",
+    recommendedFor: "Mid-to-Senior Engineers",
+    suggestedColors: {
+      primary: "#0f172a",
+      secondary: "#0284c7",
+      accent: "#0284c7",
+      bg: "#ffffff",
+      text: "#334155",
+      muted: "#64748b",
+      border: "#bae6fd",
+      cardBg: "#f0f9ff",
+      sectionTitle: "#0284c7"
+    }
+  },
+  {
+    id: "two-column-balanced",
+    name: "Two-Column",
+    description: "Balanced two-column with narrative on left and reference sections on right.",
+    preview: "\ud83d\udcca",
+    family: "two-column",
+    layout: "standard",
+    suggestedFont: "jakarta",
+    atsLabel: "ATS Friendly",
+    category: "Professional",
+    atsRating: 93,
+    experienceLevel: "Senior",
+    recommendedFor: "Any Industry",
+    suggestedColors: {
+      primary: "#0f172a",
+      secondary: "#4f46e5",
+      accent: "#4f46e5",
+      bg: "#ffffff",
+      text: "#334155",
+      muted: "#64748b",
+      border: "#e2e8f0",
+      cardBg: "#eef2ff",
+      sectionTitle: "#4f46e5"
+    }
+  },
+  {
     id: "premium-slate",
     name: "Premium Slate",
     description: "Understated slate-gray palette for a refined corporate look.",
