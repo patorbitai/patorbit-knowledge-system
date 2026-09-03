@@ -47,7 +47,7 @@ const plans: Plan[] = [
     name: "Professional",
     tagline: "For career professionals ready to stand out.",
     monthly: 149,
-    yearly: 119,
+    yearly: null,
     badges: ["Most Popular", "Best Value"],
     features: [
       "Unlimited resumes",
@@ -159,14 +159,13 @@ const focusRing =
 
 /* ═══════════════ UI helpers ═══════════════ */
 
-function PriceDisplay({ plan, yearly }: { plan: Plan; yearly: boolean }) {
+function PriceDisplay({ plan }: { plan: Plan }) {
   if (plan.monthly === null) {
     return <div className="text-4xl font-bold text-white mb-2">Custom</div>;
   }
-  const price = yearly && plan.yearly !== null ? plan.yearly : plan.monthly;
   return (
     <div className="flex items-baseline justify-center gap-1 mb-2">
-      <span className="text-4xl font-bold text-white tabular-nums">₹{price}</span>
+      <span className="text-4xl font-bold text-white tabular-nums">₹{plan.monthly}</span>
       <span className="text-sm text-slate-400">/month</span>
     </div>
   );
@@ -204,10 +203,7 @@ function CheckItem({ children }: { children: React.ReactNode }) {
 /* ═══════════════ Page ═══════════════ */
 
 export default function PricingPage() {
-  const [yearly, setYearly] = useState(true);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const monthlyRef = useRef<HTMLButtonElement>(null);
-  const yearlyRef = useRef<HTMLButtonElement>(null);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(false);
@@ -231,15 +227,6 @@ export default function PricingPage() {
     };
   }, []);
 
-  const handleToggleKey = (e: React.KeyboardEvent, current: "Monthly" | "Yearly") => {
-    if (e.key === "ArrowLeft" || e.key === "ArrowRight") {
-      e.preventDefault();
-      const next = current === "Monthly" ? "Yearly" : "Monthly";
-      setYearly(next === "Yearly");
-      (next === "Monthly" ? monthlyRef : yearlyRef).current?.focus();
-    }
-  };
-
   const handleUpgrade = async (planName: string) => {
     if (planName === "Starter") {
       window.location.href = "/resume-builder";
@@ -255,7 +242,7 @@ export default function PricingPage() {
       const res = await fetch("/api/razorpay/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interval: yearly ? "yearly" : "monthly" }),
+        body: JSON.stringify({ interval: "monthly" }),
       });
 
       if (res.status === 401) {
@@ -275,7 +262,7 @@ export default function PricingPage() {
         key: razorpayKeyId,
         subscription_id: subscriptionId,
         name: "Patorbit",
-        description: `${planName} Plan (${yearly ? "Yearly" : "Monthly"})`,
+        description: `${planName} Plan (Monthly)`,
         handler: function (response: { razorpay_payment_id: string; razorpay_subscription_id: string; razorpay_signature: string }) {
           // Payment successful — redirect to billing portal
           window.location.href = "/account/billing?status=success";
@@ -369,49 +356,7 @@ export default function PricingPage() {
             </Link>
           </motion.div>
 
-          {/* Billing toggle */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.4 }}
-            className="mt-12 inline-flex items-center gap-1 rounded-xl border border-slate-800 bg-slate-900/60 p-1"
-            role="radiogroup"
-            aria-label="Billing period"
-          >
-            {(["Monthly", "Yearly"] as const).map((label) => {
-              const isYearly = label === "Yearly";
-              const active = yearly === isYearly;
-              return (
-                <button
-                  key={label}
-                  ref={isYearly ? yearlyRef : monthlyRef}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  tabIndex={active ? 0 : -1}
-                  onClick={() => setYearly(isYearly)}
-                  onKeyDown={(e) => handleToggleKey(e, label)}
-                  className={`relative inline-flex items-center gap-2 rounded-lg px-5 py-2 text-sm font-medium transition-colors ${focusRing} ${
-                    active ? "text-white" : "text-slate-400 hover:text-slate-200"
-                  }`}
-                >
-                  {active && (
-                    <motion.span
-                      layoutId="billing-pill"
-                      className="absolute inset-0 rounded-lg bg-gradient-to-r from-cyan-500/20 to-blue-600/20 border border-cyan-500/30"
-                      transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                    />
-                  )}
-                  <span className="relative">{label}</span>
-                  {isYearly && (
-                    <span className="relative inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
-                      Save 20%
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </motion.div>
+
         </div>
       </section>
 
@@ -465,13 +410,9 @@ export default function PricingPage() {
                   <p className="text-sm text-slate-400 mb-6">{plan.tagline}</p>
 
                   <div className="mb-6">
-                    <PriceDisplay plan={plan} yearly={yearly} />
+                    <PriceDisplay plan={plan} />
                     {plan.monthly !== null && (
-                      <p className="text-xs text-slate-400 text-center">
-                        {plan.yearly !== null && yearly
-                          ? `billed annually (₹${plan.yearly * 12}/yr)`
-                          : "billed monthly"}
-                      </p>
+                      <p className="text-xs text-slate-400 text-center">billed monthly</p>
                     )}
                   </div>
 

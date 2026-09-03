@@ -11,16 +11,12 @@ test.describe("Pricing page responsive QA", () => {
     const starter = card(page, "Starter");
     const ent = card(page, "Enterprise");
 
-    // Professional defaults to yearly billing => ₹119
-    await expect(pro).toContainText("₹119");
+    // Professional shows ₹149/month
+    await expect(pro).toContainText("₹149");
     // Starter is free
     await expect(starter).toContainText("₹0");
     // Enterprise is custom
     await expect(ent).toContainText("Custom");
-
-    // Switch to Monthly => Professional shows ₹149 (not bare "149")
-    await page.getByRole("radio", { name: "Monthly" }).click();
-    await expect(pro).toContainText("₹149");
   });
 
   test("comparison table scrolls on 320px without page overflow or clipped columns", async ({ page }) => {
@@ -60,36 +56,6 @@ test.describe("Pricing page responsive QA", () => {
       });
       expect(clipped).toBe(false);
     }).toPass({ timeout: 2000 });
-  });
-
-  test("billing toggle is keyboard accessible with ARIA radio semantics", async ({ page }) => {
-    await page.goto("/pricing");
-
-    const group = page.getByRole("radiogroup", { name: "Billing period" });
-    await expect(group).toBeVisible();
-
-    const monthly = page.getByRole("radio", { name: "Monthly" });
-    const yearly = page.getByRole("radio", { name: /Yearly/ });
-
-    // Default: yearly active
-    await expect(yearly).toHaveAttribute("aria-checked", "true");
-    await expect(monthly).toHaveAttribute("aria-checked", "false");
-
-    // Roving tabindex: only the active option is in the tab order
-    await expect(yearly).toHaveAttribute("tabindex", "0");
-    await expect(monthly).toHaveAttribute("tabindex", "-1");
-
-    // Arrow keys move selection and focus
-    await yearly.focus();
-    await page.keyboard.press("ArrowLeft");
-    await expect(monthly).toHaveAttribute("aria-checked", "true");
-    await expect(monthly).toBeFocused();
-    await expect(yearly).toHaveAttribute("tabindex", "-1");
-    await expect(monthly).toHaveAttribute("tabindex", "0");
-
-    await page.keyboard.press("ArrowRight");
-    await expect(yearly).toHaveAttribute("aria-checked", "true");
-    await expect(yearly).toBeFocused();
   });
 
   test("all interactive elements reveal a visible focus ring when keyboard-navigated", async ({ page }) => {
