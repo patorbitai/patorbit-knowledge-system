@@ -87,7 +87,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
         method: "DELETE",
       });
       if (res.ok) {
-        window.location.href = "/solutions";
+        window.location.href = "/overview";
       }
     } catch {
       setDeleting(false);
@@ -123,7 +123,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
       {/* Header */}
       <div className="flex items-start gap-4">
         <Link
-          href="/solutions"
+          href="/overview"
           className="mt-1 rounded-lg p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />

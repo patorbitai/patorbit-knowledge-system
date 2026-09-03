@@ -186,7 +186,7 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
     <header className="sticky top-0 z-40 h-12 bg-white/90 dark:bg-[#070d18]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08]">
       <div className="flex items-center justify-between h-full px-4">
         <div className="flex items-center gap-2.5">
-          <Link href="/solutions" className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all group">
+          <Link href="/overview" className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all group">
             <ArrowLeft className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" />
             <span>Dashboard</span>
           </Link>

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getToken } from "next-auth/jwt";
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
   console.log("[proxy] path:", pathname);
 
@@ -17,17 +17,17 @@ export async function middleware(request: NextRequest) {
     console.error("[proxy] getToken threw:", err);
   }
 
-  // Auth pages — redirect to solutions if already authenticated
+  // Auth pages — redirect to overview if already authenticated
   if (pathname === "/login" || pathname === "/register") {
     if (token) {
-      return NextResponse.redirect(new URL("/solutions", request.url));
+      return NextResponse.redirect(new URL("/overview", request.url));
     }
     return NextResponse.next();
   }
 
   // Protected routes — redirect to login if not authenticated
   const protectedPaths = [
-    "/solutions",
+    "/overview",
     "/resume",
     "/passport",
     "/trust",
@@ -54,7 +54,7 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/solutions/:path*",
+    "/overview/:path*",
     "/resume/:path*",
     "/passport/:path*",
     "/trust/:path*",

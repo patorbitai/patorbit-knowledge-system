@@ -99,8 +99,8 @@ test.describe.serial("C32 — Resume Public Sharing Lifecycle", () => {
     }, idA);
     await page.waitForTimeout(2000);
 
-    // Navigate to solutions (authenticated home)
-    await page.goto("/solutions");
+    // Navigate to overview (authenticated home)
+    await page.goto("/overview");
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(1500);
 

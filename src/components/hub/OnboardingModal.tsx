@@ -40,7 +40,7 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
 
       // Navigate to the builder
       setTimeout(() => {
-        window.location.href = "/solutions";
+        window.location.href = "/overview";
       }, 800);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Failed to create resume");
@@ -65,7 +65,7 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
     const newResumeId = createResume("My Resume");
     switchResume(newResumeId);
     setTimeout(() => {
-      window.location.href = "/solutions";
+      window.location.href = "/overview";
     }, 800);
   }, [createResume, switchResume]);
 
