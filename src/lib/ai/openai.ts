@@ -157,14 +157,14 @@ function normalizeError(err: unknown): AIError {
   const e = err as { status?: number; code?: string; message?: string } | null | undefined;
 
   if (e?.status === 401) {
-    return new AIError("Invalid OpenAI API key.", "MISSING_API_KEY", {
+    return new AIError("Invalid AI provider API key. Please check your configuration.", "MISSING_API_KEY", {
       status: 401,
       userFacing: true,
     });
   }
 
   if (e?.status === 429) {
-    return new AIError("OpenAI rate limit exceeded. Please try again in a moment.", "RATE_LIMITED", {
+    return new AIError("AI provider rate limit exceeded. Please try again in a moment.", "RATE_LIMITED", {
       status: 429,
       userFacing: true,
     });

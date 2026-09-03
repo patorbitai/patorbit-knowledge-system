@@ -6,7 +6,7 @@
  */
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import { GeminiProvider } from "../gemini";
-import { getAIProvider } from "../provider";
+import { getAIProvider, _resetProviderCache } from "../provider";
 
 // ── Provider Contract ─────────────────────────────────────────────────────
 
@@ -49,6 +49,7 @@ describe("GeminiProvider — Registry", () => {
   beforeEach(() => {
     process.env = { ...originalEnv };
     delete process.env.AI_PROVIDER;
+    _resetProviderCache();
   });
 
   it("is registered as 'gemini' in the provider registry", () => {
@@ -61,6 +62,21 @@ describe("GeminiProvider — Registry", () => {
     process.env.AI_PROVIDER = "gemini";
     const provider = getAIProvider();
     expect(provider.name).toBe("gemini");
+  });
+
+  it("defaults to gemini when AI_PROVIDER is not set", () => {
+    delete process.env.AI_PROVIDER;
+    const provider = getAIProvider();
+    expect(provider.name).toBe("gemini");
+    expect(provider).toBeInstanceOf(GeminiProvider);
+  });
+
+  it("does NOT load OpenAI module when AI_PROVIDER is not set", () => {
+    delete process.env.AI_PROVIDER;
+    _resetProviderCache();
+    const provider = getAIProvider();
+    expect(provider.name).toBe("gemini");
+    // OpenAI module should NOT be loaded (lazy import only on explicit selection)
   });
 
   it("openai still works when AI_PROVIDER=openai", () => {

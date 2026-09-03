@@ -9,24 +9,43 @@
  * and the provider implementation — not the service or the frontend.
  */
 import type { AIProvider } from "./types";
-import { OpenAIProvider } from "./openai";
 import { GeminiProvider } from "./gemini";
+import { OpenAIProvider } from "./openai";
 
-const providers: Record<string, AIProvider> = {
-  openai: new OpenAIProvider(),
-  gemini: new GeminiProvider(),
-  // anthropic: new AnthropicProvider(),  // future
-};
+/** Lazily-created provider instances — only the selected one is ever created. */
+let cachedProvider: AIProvider | null = null;
+let cachedProviderName: string | null = null;
 
 export function getAIProvider(providerName?: string): AIProvider {
-  const name = providerName || process.env.AI_PROVIDER || "openai";
-  const provider = providers[name];
+  const name = providerName || process.env.AI_PROVIDER || "gemini";
 
-  if (!provider) {
-    throw new Error(
-      `AI Provider "${name}" not found. Available providers: ${Object.keys(providers).join(", ")}`,
-    );
+  // Return cached instance if the provider hasn't changed
+  if (cachedProvider && cachedProviderName === name) {
+    return cachedProvider;
   }
 
+  let provider: AIProvider;
+
+  switch (name) {
+    case "gemini":
+      provider = new GeminiProvider();
+      break;
+    case "openai":
+      provider = new OpenAIProvider();
+      break;
+    default:
+      throw new Error(
+        `AI Provider "${name}" not found. Available providers: gemini, openai`,
+      );
+  }
+
+  cachedProvider = provider;
+  cachedProviderName = name;
   return provider;
+}
+
+/** Reset cached provider — for tests only. */
+export function _resetProviderCache(): void {
+  cachedProvider = null;
+  cachedProviderName = null;
 }
