@@ -1,10 +1,10 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useState, useEffect } from "react";
 import { updateProfile, deleteAccount, type SettingsState } from "@/actions/settings";
 import { signOut } from "next-auth/react";
 import Link from "next/link";
-import { ShieldCheck, AlertTriangle, User, Lock, Trash2, Download, Sun, Moon, Check } from "lucide-react";
+import { ShieldCheck, AlertTriangle, User, Lock, Trash2, Download, Sun, Moon, Check, Briefcase } from "lucide-react";
 import { useTheme } from "@/components/providers/ThemeProvider";
 import { keys, createStore } from "idb-keyval";
 
@@ -57,6 +57,45 @@ export function SettingsClient({
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [billingMessage, setBillingMessage] = useState<string | null>(null);
+
+  // C35: Professional Identity state
+  const [piLoading, setPiLoading] = useState(true);
+  const [piData, setPiData] = useState<Record<string, unknown> | null>(null);
+  const [piSaving, setPiSaving] = useState(false);
+  const [piSaved, setPiSaved] = useState(false);
+  const [piError, setPiError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/identity")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        if (data?.profileData) setPiData(data.profileData as Record<string, unknown>);
+      })
+      .catch(() => {}) // silently fail — PI section just won't show pre-filled data
+      .finally(() => setPiLoading(false));
+  }, []);
+
+  const handlePiSave = async (profileData: Record<string, unknown>) => {
+    setPiSaving(true);
+    setPiError(null);
+    try {
+      const res = await fetch("/api/identity", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ profileData }),
+      });
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || "Failed to save");
+      }
+      setPiSaved(true);
+      setTimeout(() => setPiSaved(false), 3000);
+    } catch (err: unknown) {
+      setPiError(err instanceof Error ? err.message : "Failed to save");
+    } finally {
+      setPiSaving(false);
+    }
+  };
 
   const handleOpenPortal = async () => {
     setPortalLoading(true);
@@ -288,6 +327,36 @@ export function SettingsClient({
             Save Changes
           </button>
         </form>
+      </div>
+
+      {/* ── PROFESSIONAL IDENTITY SECTION ───────────────────────── */}
+      <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 space-y-6">
+        <div className="flex items-center gap-3 border-b border-white/[0.06] pb-4">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+            <Briefcase className="w-4 h-4" />
+          </div>
+          <div>
+            <h2 className="text-base font-semibold text-white">Professional Identity</h2>
+            <p className="text-xs text-slate-400">Your canonical professional information used by AI tailoring and resume creation.</p>
+          </div>
+        </div>
+
+        {piLoading ? (
+          <div className="flex items-center gap-2 py-4">
+            <Spinner />
+            <span className="text-xs text-slate-400">Loading professional identity...</span>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <ProfessionalIdentityEditorInline
+              initialData={piData}
+              saving={piSaving}
+              saved={piSaved}
+              error={piError}
+              onSave={handlePiSave}
+            />
+          </div>
+        )}
       </div>
 
       {/* ── EXTERNAL VERIFICATION (LINKEDIN & GITHUB) ─────────────── */}
@@ -553,6 +622,143 @@ export function SettingsClient({
             </button>
           </div>
         </form>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Inline Professional Identity editor for the Settings page.
+ * Dark-themed to match the Settings aesthetic.
+ * Loads existing data from the server and saves via PUT /api/identity.
+ */
+function ProfessionalIdentityEditorInline({
+  initialData,
+  saving,
+  saved,
+  error,
+  onSave,
+}: {
+  initialData: Record<string, unknown> | null;
+  saving: boolean;
+  saved: boolean;
+  error: string | null;
+  onSave: (data: Record<string, unknown>) => void;
+}) {
+  const inputClass =
+    "w-full rounded-xl border border-white/[0.08] bg-white/[0.04] px-3 py-2 text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50";
+  const labelClass = "block text-xs font-medium text-slate-300 mb-1";
+
+  const [profile, setProfile] = useState<Record<string, unknown>>({
+    fullName: "",
+    headline: "",
+    summary: "",
+    email: "",
+    phone: "",
+    location: "",
+    linkedin: "",
+    github: "",
+    website: "",
+    experience: [],
+    education: [],
+    skills: [],
+    ...(initialData || {}),
+  });
+
+  useEffect(() => {
+    if (initialData) setProfile((prev) => ({ ...prev, ...initialData }));
+  }, [initialData]);
+
+  const update = (field: string, value: unknown) =>
+    setProfile((prev) => ({ ...prev, [field]: value }));
+
+  return (
+    <div className="space-y-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Full Name</label>
+          <input
+            value={(profile.fullName as string) || ""}
+            onChange={(e) => update("fullName", e.target.value)}
+            placeholder="Jane Smith"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Professional Headline</label>
+          <input
+            value={(profile.headline as string) || ""}
+            onChange={(e) => update("headline", e.target.value)}
+            placeholder="Senior Data Engineer"
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Email</label>
+          <input
+            value={(profile.email as string) || ""}
+            onChange={(e) => update("email", e.target.value)}
+            placeholder="jane@example.com"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>Phone</label>
+          <input
+            value={(profile.phone as string) || ""}
+            onChange={(e) => update("phone", e.target.value)}
+            placeholder="+1 (555) 123-4567"
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        <div>
+          <label className={labelClass}>Location</label>
+          <input
+            value={(profile.location as string) || ""}
+            onChange={(e) => update("location", e.target.value)}
+            placeholder="San Francisco, CA"
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className={labelClass}>LinkedIn</label>
+          <input
+            value={(profile.linkedin as string) || ""}
+            onChange={(e) => update("linkedin", e.target.value)}
+            placeholder="https://linkedin.com/in/janesmith"
+            className={inputClass}
+          />
+        </div>
+      </div>
+      <div>
+        <label className={labelClass}>Professional Summary</label>
+        <textarea
+          value={(profile.summary as string) || ""}
+          onChange={(e) => update("summary", e.target.value)}
+          placeholder="Experienced data engineer with 5+ years..."
+          rows={3}
+          className={`${inputClass} resize-none`}
+        />
+      </div>
+      <div className="flex items-center gap-3 pt-1">
+        <div className="flex-1" />
+        {error && <span className="text-xs text-rose-400">{error}</span>}
+        {saved && (
+          <span className="flex items-center gap-1 text-xs text-emerald-400">
+            <Check className="w-3 h-3" /> Saved
+          </span>
+        )}
+        <button
+          onClick={() => onSave(profile)}
+          disabled={saving}
+          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-xs font-semibold text-white transition-colors"
+        >
+          {saving ? <Spinner /> : "Save Professional Identity"}
+        </button>
       </div>
     </div>
   );
