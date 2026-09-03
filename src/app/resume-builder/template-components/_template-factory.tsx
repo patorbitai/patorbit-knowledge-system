@@ -44,7 +44,7 @@ export interface TemplateConfig {
   /** Header variant */
   header: "centered" | "left" | "dark-bar" | "gold-accent" | "minimal" | "split-contact" | "bold-banner";
   /** Layout variant */
-  layout?: "single" | "two-column-sidebar" | "banner" | "compact";
+  layout?: "single" | "two-column-sidebar" | "sidebar-left" | "banner" | "compact";
   /** Section ordering (default: standard order) */
   sectionOrder?: ("summary" | "experience" | "skills" | "projects" | "education" | "certs" | "achievements" | "languages" | "interests")[];
   /** Spacing density */
@@ -509,28 +509,53 @@ export function generateTemplate(config: TemplateConfig) {
       }
     };
 
-    // Two-column sidebar layout
+    // Two-column sidebar layout (right sidebar)
     if (layoutVariant === "two-column-sidebar") {
       const mainSections = sectionOrder.filter(s => !["skills", "education"].includes(s));
       const sideSections = sectionOrder.filter(s => ["skills", "education"].includes(s));
-      const sidebarOnRight = config.sidebarPosition !== "left";
-
       const mainContent = <>{mainSections.map(renderSection)}</>;
       const sideContent = <>{sideSections.map(renderSection)}</>;
 
       return (
         <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: themedSpacing.padding, backgroundColor, display: "flex", gap: 20 }}>
-          {sidebarOnRight ? (
-            <>
-              <div style={{ flex: 1 }}>{HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}{mainContent}</div>
-              <div style={{ width: 180, borderLeft: `1px solid ${effectiveTheme.border || "#e2e8f0"}`, paddingLeft: 16 }}>{sideContent}</div>
-            </>
-          ) : (
-            <>
-              <div style={{ width: 180, borderRight: `1px solid ${effectiveTheme.border || "#e2e8f0"}`, paddingRight: 16 }}>{sideContent}</div>
-              <div style={{ flex: 1 }}>{HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}{mainContent}</div>
-            </>
-          )}
+          <div style={{ flex: 1 }}>{HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}{mainContent}</div>
+          <div style={{ width: 180, borderLeft: `1px solid ${effectiveTheme.border || "#e2e8f0"}`, paddingLeft: 16 }}>{sideContent}</div>
+        </div>
+      );
+    }
+
+    // Left sidebar layout — sidebar on left with contact/skills/education
+    if (layoutVariant === "sidebar-left") {
+      const mainSections = sectionOrder.filter(s => !["skills", "education", "interests"].includes(s));
+      const sideSections = sectionOrder.filter(s => ["skills", "education", "interests"].includes(s));
+      const sideContent = <>{sideSections.map(renderSection)}</>;
+
+      return (
+        <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: themedSpacing.padding, backgroundColor, display: "flex", gap: 0 }}>
+          {/* Left sidebar — colored background */}
+          <div style={{ width: 200, backgroundColor: effectiveTheme.ink + "08", borderRight: `1px solid ${effectiveTheme.border || "#e2e8f0"}`, paddingRight: 16, paddingLeft: 0 }}>
+            <header style={{ marginBottom: 16 }}>
+              <h1 style={{ fontSize: 20, fontWeight: 800, color: effectiveTheme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
+                {resume.name || "Your Name"}
+              </h1>
+              {resume.title && (
+                <p style={{ fontSize: 11, fontWeight: 500, color: effectiveTheme.accent || effectiveTheme.muted, marginTop: 3 }}>{resume.title}</p>
+              )}
+            </header>
+            <div style={{ fontSize: 9, color: effectiveTheme.muted, marginBottom: 16, lineHeight: 1.8 }}>
+              {resume.email && <div style={{ marginBottom: 2 }}>{resume.email}</div>}
+              {resume.phone && <div style={{ marginBottom: 2 }}>{resume.phone}</div>}
+              {resume.address && <div style={{ marginBottom: 2 }}>{resume.address}</div>}
+              {resume.social?.linkedin && <div style={{ color: effectiveTheme.accent || effectiveTheme.muted, marginBottom: 2 }}>{resume.social.linkedin}</div>}
+              {resume.social?.github && <div style={{ color: effectiveTheme.accent || effectiveTheme.muted, marginBottom: 2 }}>{resume.social.github}</div>}
+              {resume.social?.website && <div style={{ color: effectiveTheme.accent || effectiveTheme.muted, marginBottom: 2 }}>{resume.social.website}</div>}
+            </div>
+            {sideContent}
+          </div>
+          {/* Main content */}
+          <div style={{ flex: 1, paddingLeft: 20 }}>
+            {mainSections.map(renderSection)}
+          </div>
         </div>
       );
     }

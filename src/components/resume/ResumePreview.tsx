@@ -1,4 +1,4 @@
-import { ExecutivePreview, ExecutiveProPreview, MinimalAtsPreview, EngineeringCleanPreview, ModernCleanPreview, PatorbitModernPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview, SidebarElegancePreview, GradientFlowPreview, AcademicFormalPreview, StartupVibePreview, DarkElegancePreview, TimelineProPreview, PremiumSlatePreview, NatureGreenPreview, LuxuryGoldPreview, SwissDesignPreview, ScientificPreview, CreativePortfolioPreview, ConsultingElitePreview, ProductManagerPreview, CreativeProfessionalPreview, AcademicCvPreview } from "@/app/resume-builder/template-components";
+import { ExecutivePreview, ExecutiveProPreview, MinimalAtsPreview, EngineeringCleanPreview, ModernCleanPreview, PatorbitModernPreview, ClassicSerifPreview, TechMonoPreview, CreativeBurstPreview, CompactProPreview, CorporateBluePreview, MinimalEdgePreview, BannerBoldPreview, SidebarElegancePreview, GradientFlowPreview, AcademicFormalPreview, StartupVibePreview, DarkElegancePreview, TimelineProPreview, PremiumSlatePreview, NatureGreenPreview, LuxuryGoldPreview, SwissDesignPreview, ScientificPreview, CreativePortfolioPreview, ConsultingElitePreview, ProductManagerPreview, CreativeProfessionalPreview, AcademicCvPreview, SidebarLeftPreview } from "@/app/resume-builder/template-components";
 import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
 import type { ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
@@ -60,6 +60,7 @@ export function ResumePreview({ resume, template, styleConfig }: { resume: Resum
     case "product-manager": return <ProductManagerPreview resume={resume} bulletChar={bulletChar} />;
     case "creative-professional": return <CreativeProfessionalPreview resume={resume} bulletChar={bulletChar} />;
     case "academic-cv": return <AcademicCvPreview resume={resume} bulletChar={bulletChar} />;
+    case "sidebar-left": return <SidebarLeftPreview resume={resume} bulletChar={bulletChar} />;
     default: return <ModernCleanPreview resume={resume} bulletChar={bulletChar} />;
     }
   })();

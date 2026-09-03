@@ -55,7 +55,8 @@ const CATEGORIES = [
       (t) =>
         t.layout === "two-column" ||
         t.layout === "sidebar-right" ||
-        t.layout === "banner"
+        t.layout === "banner" ||
+        t.family === "sidebar-left"
     ).length,
   },
   {
@@ -109,7 +110,8 @@ function matchesCategory(template: ResumeTemplate, catId: string): boolean {
     return (
       template.layout === "two-column" ||
       template.layout === "sidebar-right" ||
-      template.layout === "banner"
+      template.layout === "banner" ||
+      template.family === "sidebar-left"
     );
   if (catId === "creative")
     return (
