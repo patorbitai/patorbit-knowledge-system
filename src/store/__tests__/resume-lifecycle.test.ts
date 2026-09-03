@@ -989,4 +989,80 @@ describe("Resume Lifecycle Reliability", () => {
       expect(resumes.some((r) => r.resumeId === idC)).toBe(true);
     });
   });
+
+  describe("C32 — Resume Public Sharing", () => {
+    it("share state is independent per resume", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Share A");
+      const idB = state.createResume("Share B");
+
+      // Set share state for A only
+      useResumeBuilder.getState().setShareState(idA, {
+        shareEnabled: true,
+        shareToken: "token_a",
+        shareUrl: "/resume/share/token_a",
+      });
+
+      // A should have share state, B should not
+      expect(useResumeBuilder.getState().shareStates[idA]?.shareEnabled).toBe(true);
+      expect(useResumeBuilder.getState().shareStates[idB]).toBeUndefined();
+    });
+
+    it("clearShareState removes share state for one resume", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Share Clear A");
+
+      useResumeBuilder.getState().setShareState(idA, {
+        shareEnabled: true,
+        shareToken: "token_clear",
+        shareUrl: "/resume/share/token_clear",
+      });
+
+      expect(useResumeBuilder.getState().shareStates[idA]?.shareEnabled).toBe(true);
+
+      useResumeBuilder.getState().clearShareState(idA);
+      expect(useResumeBuilder.getState().shareStates[idA]).toBeUndefined();
+    });
+
+    it("duplicate does not inherit share state", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Share Dup A");
+
+      useResumeBuilder.getState().setShareState(idA, {
+        shareEnabled: true,
+        shareToken: "token_dup_source",
+        shareUrl: "/resume/share/token_dup_source",
+      });
+
+      const idB = state.duplicateResume(idA);
+
+      // A should still have share state
+      expect(useResumeBuilder.getState().shareStates[idA]?.shareEnabled).toBe(true);
+      // B should NOT have share state
+      expect(useResumeBuilder.getState().shareStates[idB]).toBeUndefined();
+    });
+
+    it("multiple resumes have independent share tokens", () => {
+      const state = useResumeBuilder.getState();
+      const idA = state.createResume("Share Multi A");
+      const idB = state.createResume("Share Multi B");
+      const idC = state.createResume("Share Multi C");
+
+      useResumeBuilder.getState().setShareState(idA, {
+        shareEnabled: true,
+        shareToken: "token_a_multi",
+        shareUrl: "/resume/share/token_a_multi",
+      });
+      useResumeBuilder.getState().setShareState(idB, {
+        shareEnabled: true,
+        shareToken: "token_b_multi",
+        shareUrl: "/resume/share/token_b_multi",
+      });
+      // C not shared
+
+      expect(useResumeBuilder.getState().shareStates[idA]?.shareToken).toBe("token_a_multi");
+      expect(useResumeBuilder.getState().shareStates[idB]?.shareToken).toBe("token_b_multi");
+      expect(useResumeBuilder.getState().shareStates[idC]).toBeUndefined();
+    });
+  });
 });

@@ -173,4 +173,36 @@ export const resumeRepository = {
     await prisma.resume.delete({ where: { id: existing.id } });
     return true;
   },
+
+  /** Enable sharing for a resume — sets shareEnabled and shareToken. */
+  async enableShare(
+    resumeId: string,
+    professionalIdentityId: string,
+    shareToken: string,
+  ): Promise<ResumeRecord | null> {
+    const existing = await this.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
+    if (!existing) return null;
+    return prisma.resume.update({
+      where: { id: existing.id },
+      data: { shareEnabled: true, shareToken },
+    });
+  },
+
+  /** Disable sharing for a resume — clears shareEnabled and shareToken. */
+  async disableShare(
+    resumeId: string,
+    professionalIdentityId: string,
+  ): Promise<ResumeRecord | null> {
+    const existing = await this.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
+    if (!existing) return null;
+    return prisma.resume.update({
+      where: { id: existing.id },
+      data: { shareEnabled: false, shareToken: null },
+    });
+  },
+
+  /** Find a resume by its share token (public lookup, no auth needed). */
+  async findByShareToken(shareToken: string): Promise<ResumeRecord | null> {
+    return prisma.resume.findUnique({ where: { shareToken } });
+  },
 };

@@ -13,11 +13,13 @@ import {
   Copy,
   ArrowRight,
   LayoutDashboard,
+  Share2,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { IdentityScoreData } from "@/lib/identity-score";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
+import { ShareResumeModal } from "@/components/resume-builder/ShareResumeModal";
 
 type Props = {
   name: string;
@@ -27,6 +29,7 @@ type Props = {
 
 export function OverviewCommandCenter({ name, email, data }: Props) {
   const [mounted, setMounted] = useState(false);
+  const [shareModalResume, setShareModalResume] = useState<{ id: string; name: string } | null>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -189,6 +192,14 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
                             Duplicate
                           </button>
 
+                          <button
+                            onClick={() => setShareModalResume({ id: resumeId, name: resumeName })}
+                            className="flex items-center gap-2 w-full px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                          >
+                            <Share2 className="h-3 w-3" />
+                            Share
+                          </button>
+
                           {resumeList.length > 1 && (
                             <button
                               onClick={() => handleDelete(resumeId)}
@@ -303,6 +314,16 @@ export function OverviewCommandCenter({ name, email, data }: Props) {
           </div>
         </Link>
       </section>
+
+      {/* Share Resume Modal */}
+      {shareModalResume && (
+        <ShareResumeModal
+          open={true}
+          onClose={() => setShareModalResume(null)}
+          resumeId={shareModalResume.id}
+          resumeName={shareModalResume.name}
+        />
+      )}
     </div>
   );
 }

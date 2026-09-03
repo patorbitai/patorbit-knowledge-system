@@ -59,6 +59,11 @@ export interface ResumeBuilderState {
   deleteResume: (resumeId: string) => void;
   duplicateResume: (sourceResumeId: string) => string;
 
+  /** Share state per resume — populated by share API. */
+  shareStates: Record<string, { shareEnabled: boolean; shareToken: string | null; shareUrl: string | null }>;
+  setShareState: (resumeId: string, state: { shareEnabled: boolean; shareToken: string | null; shareUrl: string | null }) => void;
+  clearShareState: (resumeId: string) => void;
+
   activeSection: SectionId;  saveStatus: SaveStatus;
   /** True after Zustand persist has rehydrated from localStorage. */
   hydrated: boolean;
@@ -398,7 +403,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
 
         analysis: null, activeSection: "personal", saveStatus: "unsaved",
         hydrated: false, hydratingFromServer: false,
-        serverVersions: {}, pendingDeletes: [], writeConflict: null,
+        serverVersions: {}, pendingDeletes: [], shareStates: {}, writeConflict: null,
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
         qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
@@ -489,6 +494,14 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         setServerVersion: (resumeId, version) => set((s) => ({
           serverVersions: { ...s.serverVersions, [resumeId]: version },
         })),
+        setShareState: (resumeId, state) => set((s) => ({
+          shareStates: { ...s.shareStates, [resumeId]: state },
+        })),
+        clearShareState: (resumeId) => set((s) => {
+          const shareStates = { ...s.shareStates };
+          delete shareStates[resumeId];
+          return { shareStates };
+        }),
         setWriteConflict: (conflict) => set({ writeConflict: conflict }),
         clearWriteConflict: () => set({ writeConflict: null }),
         resolveConflictKeepMine: async () => {
@@ -930,7 +943,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     {
       name: "patorbit-resume-v2",
       merge: mergePersistedResumeState,
-      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes }),
+      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes, shareStates: state.shareStates }),
       onRehydrateStorage: () => (snapshot) => {
         // In Zustand v5 the `snapshot` parameter may be stale — the persist
         // middleware's own internal setState(merged) may not have fired yet.

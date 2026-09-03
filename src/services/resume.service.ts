@@ -319,6 +319,73 @@ export class ResumeService {
     }
     return true;
   }
+
+  /** Enable public sharing for a resume. Returns the share info. */
+  async enableShare(
+    professionalIdentityId: string,
+    resumeId: string,
+  ): Promise<{ shareEnabled: boolean; shareToken: string; shareUrl: string }> {
+    const existing = await resumeRepository.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
+    if (!existing) throw new ResumeNotFoundError();
+
+    // If already shared with a valid token, return existing
+    if (existing.shareEnabled && existing.shareToken) {
+      return {
+        shareEnabled: true,
+        shareToken: existing.shareToken,
+        shareUrl: `/resume/share/${existing.shareToken}`,
+      };
+    }
+
+    // Generate a cryptographically random share token
+    const { randomBytes } = await import("crypto");
+    const shareToken = randomBytes(32).toString("hex");
+
+    const record = await resumeRepository.enableShare(resumeId, professionalIdentityId, shareToken);
+    if (!record) throw new ResumeNotFoundError();
+
+    return {
+      shareEnabled: true,
+      shareToken,
+      shareUrl: `/resume/share/${shareToken}`,
+    };
+  }
+
+  /** Disable public sharing for a resume. */
+  async disableShare(
+    professionalIdentityId: string,
+    resumeId: string,
+  ): Promise<{ shareEnabled: boolean }> {
+    const existing = await resumeRepository.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
+    if (!existing) throw new ResumeNotFoundError();
+
+    await resumeRepository.disableShare(resumeId, professionalIdentityId);
+    return { shareEnabled: false };
+  }
+
+  /** Get current share status for a resume. */
+  async getShareStatus(
+    professionalIdentityId: string,
+    resumeId: string,
+  ): Promise<{ shareEnabled: boolean; shareToken: string | null; shareUrl: string | null }> {
+    const existing = await resumeRepository.findByResumeIdAndIdentity(resumeId, professionalIdentityId);
+    if (!existing) throw new ResumeNotFoundError();
+
+    return {
+      shareEnabled: existing.shareEnabled,
+      shareToken: existing.shareToken,
+      shareUrl: existing.shareToken ? `/resume/share/${existing.shareToken}` : null,
+    };
+  }
+
+  /** Public lookup — find a resume by share token (no auth). */
+  async getSharedResume(
+    shareToken: string,
+  ): Promise<ServerResume | null> {
+    const record = await resumeRepository.findByShareToken(shareToken);
+    if (!record || !record.shareEnabled) return null;
+    return this.toServerResume(record);
+  }
 }
 
 export const resumeService = new ResumeService();
