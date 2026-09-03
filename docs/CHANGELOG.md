@@ -8,7 +8,14 @@ Versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Changes staged for the next commit (resume-builder release-readiness work).
+Changes staged for the next commit.
+
+### Added
+- **Job Application Workspace (C55)** — persistent job application tracking integrated with existing resume/tailoring capabilities. Prisma `JobApplication` model with ownership scoping, CRUD API routes (`/api/applications`), `/solutions` page integration with `JobApplicationsSection`, `AddJobApplicationModal`, application detail page with status management, match analysis display, and resume linking.
+- **Application ↔ Tailoring Integration (C55.1)** — `TailorResumeModal` accepts application context (`applicationId`, `initialJobDescription`, `initialResumeId`). Job description auto-filled from saved application. After approval, application PATCHed with new resumeId + match score + match data. "Tailor Again" button for re-tailoring.
+- **Authenticated Home at `/solutions` (C54)** — post-login destination changed from resume builder to `/solutions` as main product home. Users now choose their action intentionally.
+- **`/overview` → `/solutions` redirect (C54.1)** — `/overview` now redirects to `/solutions`; all internal navigation updated.
+- **Full Professional Identity editor in Settings (C48)** — Settings PI editor expanded from compact-only (basics only) to full editor with Basics, Experience, Education, and Skills tabs. Trust/clarity note explains PI→resume relationship.
 
 ### Added
 - **Visual Template Gallery** — replaced the template dropdown as the primary selection experience with a professional card grid (category sections: Recommended, ATS & Professional, Engineering, Business & Consulting, Executive, Academic, Creative, More Templates). Cards render the actual template components with a shared realistic gallery sample resume — no fake screenshots.

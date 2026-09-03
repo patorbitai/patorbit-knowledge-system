@@ -18,12 +18,17 @@ architecture will become**, and why.
 
 | Layer | Status |
 |---|---|
-| **Canonical source of truth (PostgreSQL-first)** | ✅ **DECIDED — ADR-001 (accepted); migration not yet started** |
-| **Professional Identity domain model** | ✅ **DECIDED — ADR-002 (accepted); server entities not yet created** |
-| **Resume server persistence (Phase 0 foundation)** | ✅ **DECIDED — ADR-003 (accepted); table + API implemented, not yet connected to the client** |
-| **Resume server read parity (Phase 1A)** | ✅ **DECIDED — ADR-004 (accepted); read-only server snapshot + LOCAL/SERVER parity implemented, client still authoritative** |
-| **Safe local resume migration (Phase 1B)** | ✅ **DECIDED — ADR-005 (accepted); explicit migration of LOCAL_ONLY resumes to PostgreSQL with verification, local data preserved** |
-| Resume Builder (29 templates, gallery, customization) | ✅ **CURRENT — implemented** |
+| **Canonical source of truth (PostgreSQL-first)** | ✅ **IMPLEMENTED — ADR-001; Resume table + API live; server is authoritative** |
+| **Professional Identity domain model** | ✅ **IMPLEMENTED — ADR-002; PI model with profileData, onboarding, resume seeding** |
+| **Resume server persistence (Phase 0 foundation)** | ✅ **IMPLEMENTED — ADR-003; Resume table under PI with hybrid relational metadata + JSON payload** |
+| **Resume server read parity (Phase 1A)** | ✅ **IMPLEMENTED — ADR-004; server-authoritative tailoring (C33.2)** |
+| **Safe local resume migration (Phase 1B)** | ✅ **IMPLEMENTED — ADR-005; local→server migration with verification** |
+| **AI Provider (Gemini)** | ✅ **IMPLEMENTED — C33.3; Google Gemini as primary provider** |
+| **Job Tailoring (server-authoritative)** | ✅ **IMPLEMENTED — C33/C33.2; `/api/ai/tailor` with trust/factuality safeguards** |
+| **Job Application Workspace** | ✅ **IMPLEMENTED — C55/C55.1; persistent applications with tailoring integration** |
+| **Authenticated Home (`/solutions`)** | ✅ **IMPLEMENTED — C54; post-login destination with resume + application management** |
+| **Landing Page (accurate positioning)** | ✅ **IMPLEMENTED — C52; PI→resumes→tailoring story; fabricated claims removed** |
+| Resume Builder (32 templates, 7 layouts, gallery, customization) | ✅ **CURRENT — implemented** |
 | A4 page-frame / pagination architecture | ✅ **CURRENT — implemented** |
 | Gallery ↔ Preview ↔ PDF parity | ✅ **CURRENT — implemented** |
 | Resume import pipeline + review flow | ✅ **CURRENT — implemented** |

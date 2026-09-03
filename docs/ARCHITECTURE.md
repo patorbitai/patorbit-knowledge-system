@@ -1,7 +1,7 @@
 # Patorbit Architecture
 
-**Last Updated:** 2026-08-16  
-**Stack:** Next.js 16.3.0 · React 19 · PostgreSQL · Prisma · Zustand · OpenAI
+**Last Updated:** 2026-09-03  
+**Stack:** Next.js 16.3.0 · React 19 · PostgreSQL · Prisma · Zustand · Gemini AI
 
 > **Project direction (current vs. future):** see [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md).
 > This file documents the implemented system; the master document adds the
@@ -16,10 +16,10 @@
 │                        BROWSER (Client)                         │
 │  ┌─────────────┐  ┌──────────────┐  ┌──────────────────────┐  │
 │  │  Marketing  │  │  Auth Pages  │  │    Authenticated App  │  │
-│  │  (public)   │  │  /login      │  │  /overview            │  │
+│  │  (public)   │  │  /login      │  │  /solutions           │  │
 │  │  /pricing   │  │  /register   │  │  /resume-builder      │  │
-│  │  /platform  │  └──────────────┘  │  /passport            │  │
-│  └─────────────┘                    │  /trust /ai /network  │  │
+│  │  /templates │  └──────────────┘  │  /settings            │  │
+│  └─────────────┘                    │  /templates           │  │
 │                                     └──────────────────────┘  │
 └───────────────────────────┬─────────────────────────────────────┘
                             │ Next.js API Routes
@@ -27,8 +27,10 @@
 │                        SERVER (Vercel)                           │
 │  ┌──────────────┐  ┌─────────────┐  ┌────────────────────────┐ │
 │  │ /api/auth    │  │  /api/ai    │  │  /api/export-docx      │ │
-│  │ NextAuth.js  │  │  OpenAI GPT │  │  /api/import           │ │
-│  └──────────────┘  └─────────────┘  │  /api/version          │ │
+│  │ NextAuth.js  │  │  Gemini AI  │  │  /api/import           │ │
+│  └──────────────┘  └─────────────┘  │  /api/resumes          │ │
+│                                     │  /api/applications     │ │
+│                                     │  /api/identity         │ │
 │                                     └────────────────────────┘ │
 │  ┌─────────────────────────────────────────────────────────┐   │
 │  │                    Prisma ORM                           │   │
@@ -38,6 +40,7 @@
 ┌────────────────────────────▼────────────────────────────────────┐
 │                       PostgreSQL (Vercel Postgres)               │
 │   User · Account · Session · ProfessionalIdentity               │
+│   Resume · JobApplication · EvidenceRecord · Subscription       │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -255,19 +258,18 @@ sequenceDiagram
 - **Adapter:** `@auth/prisma-adapter` — stores sessions and accounts in PostgreSQL
 - **Session Augmentation:** `src/types/next-auth.d.ts` adds `id` to `Session.user`
 
-**Protected Routes (from `src/middleware.ts`):**
+**Protected Routes (from `src/proxy.ts`):**
 
 | Route Pattern | Auth Required |
 |---|---|
-| `/overview/*` | ✅ Yes |
+| `/solutions/*` | ✅ Yes |
 | `/resume-builder/*` | ✅ Yes |
-| `/passport/*` | ✅ Yes |
-| `/trust/*` | ✅ Yes |
-| `/ai/*` | ✅ Yes |
-| `/network/*` | ✅ Yes |
 | `/settings/*` | ✅ Yes |
 | `/resume/*` | ✅ Yes |
-| `/login`, `/register` | Redirect to `/overview` if authenticated |
+| `/login`, `/register` | Redirect to `/solutions` if authenticated |
+| `/` (landing) | No |
+| `/templates` | No |
+| `/pricing` | No |
 
 ---
 
@@ -289,23 +291,62 @@ model User {
   professionalIdentity ProfessionalIdentity?
   accounts             Account[]
   sessions             Session[]
+  evidenceRecords      EvidenceRecord[]
+  usageRecords         UsageRecord[]
 }
 
-model Account { ... }        // OAuth accounts (future OAuth providers)
+model Account { ... }        // OAuth accounts
 model Session { ... }        // JWT sessions
-model VerificationToken { ... }  // Email verification (not yet wired)
+model VerificationToken { ... }
 
 // Domain model
 model ProfessionalIdentity {
-  id        String   @id @default(cuid())
-  userId    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User @relation(...)
+  id                   String   @id @default(cuid())
+  userId               String   @unique
+  profileData          Json?    // Full professional profile (Basics, Experience, Education, Skills)
+  onboardingCompleted  Boolean  @default(false)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+  user                 User     @relation(...)
+  resumes              Resume[]
+  jobApplications      JobApplication[]
+}
+
+model Resume {
+  id                     String   @id @default(cuid())
+  resumeId               String   @unique  // Stable public/domain ID
+  professionalIdentityId String
+  resumeName             String
+  templateId             String
+  careerStage            String   @default("working-professional")
+  payload                Json     // Full resume document (JSONB)
+  version                Int      @default(1)
+  shareEnabled           Boolean  @default(false)
+  shareToken             String?  @unique
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  @@unique([professionalIdentityId, resumeId])
+}
+
+model JobApplication {
+  id                     String   @id @default(cuid())
+  applicationId          String   @unique
+  professionalIdentityId String
+  title                  String   // Job title
+  companyName            String   // Company name
+  jobDescription         String   @db.Text
+  status                 String   @default("saved")
+  resumeId               String?  // Optional reference to Resume
+  matchScore             Int?     // 0-100 match score
+  matchData              Json?    // Match analysis (matched/partial/missing skills)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+  @@index([professionalIdentityId])
+  @@index([professionalIdentityId, status])
 }
 ```
 
-> **Note:** The database schema is minimal. Resume data is currently stored in browser localStorage via Zustand persist. Future sprints will move resume data to the database for multi-device sync.
+> **Note:** Resume data is stored both in PostgreSQL (server-authoritative) and localStorage (client cache via Zustand persist). The server is the canonical source of truth for resume data (ADR-001).
 
 ---
 
@@ -380,19 +421,22 @@ Browser Component
      │
      ▼
 src/lib/ai/client.ts        (ai.generateSummary(), ai.rewrite(), etc.)
-     │ POST /api/ai { action, data }
+     │ POST /api/ai { action, data }  OR  POST /api/ai/tailor { resumeId, jobDescription }
      ▼
-src/app/api/ai/route.ts     (action dispatcher)
+src/app/api/ai/route.ts     (action dispatcher for general AI actions)
+src/app/api/ai/tailor/route.ts (server-authoritative tailoring endpoint)
      │
      ▼
 src/lib/ai/service.ts       (server-side handler per action)
      │
      ▼
-src/lib/ai/openai.ts        (OpenAI SDK instance)
+src/lib/ai/gemini.ts        (Google Gemini SDK instance)
      │
      ▼
-OpenAI API (GPT-4)
+Google Gemini API
 ```
+
+**C33.3: Gemini is the primary AI provider.** OpenAI is no longer used.
 
 ### API Contract
 
@@ -550,9 +594,9 @@ Vercel CI/CD
 | Variable | Purpose |
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
-| `AUTH_SECRET` | JWT signing secret (active variable; legacy `NEXTAUTH_SECRET` name is obsolete) |
+| `AUTH_SECRET` | JWT signing secret |
 | `NEXTAUTH_URL` | Canonical auth URL |
-| `OPENAI_API_KEY` | OpenAI GPT-4 access |
+| `GEMINI_API_KEY` | Google Gemini AI access (primary AI provider) |
 | `NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA` | Baked-in build SHA (client) |
 | `VERCEL_GIT_COMMIT_SHA` | Server-side current build SHA |
 
@@ -562,10 +606,13 @@ Vercel CI/CD
 
 | Decision | Choice | Rationale |
 |---|---|---|
-| State management | Zustand + persist | Lightweight, no boilerplate, works offline |
+| State management | Zustand + persist (client) + PostgreSQL (server) | Client cache for offline; server as canonical source (ADR-001) |
 | Auth | NextAuth.js v4 + Credentials | No OAuth dependency needed for MVP |
+| AI Provider | Google Gemini (C33.3) | Primary AI provider; OpenAI removed |
 | PDF export | Browser print → Save as PDF (A4) | Matches the on-screen resume; zero server cost; browser-consistent |
 | Evidence storage | IndexedDB (idb-keyval) | Files too large for localStorage; no S3 cost |
-| AI routing | Single `/api/ai` endpoint | Simpler than multiple endpoints; action dispatch pattern |
-| Resume persistence | localStorage only | Fast, offline-capable; DB sync is a future sprint |
+| Resume persistence | PostgreSQL (server-authoritative) + localStorage (client cache) | Server is source of truth; client is cache (ADR-001) |
+| Professional Identity | Server-side canonical source | PI seeds new resumes; existing resumes unchanged when PI updates |
+| Job Applications | PostgreSQL with PI ownership | Applications reference resumes but don't own them |
 | CSS framework | Tailwind v4 | Utility-first, fast iteration, custom properties |
+| Post-login destination | `/solutions` (C54) | Main product home; builder entered intentionally |

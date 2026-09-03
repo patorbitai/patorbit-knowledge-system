@@ -278,17 +278,24 @@ Career Memory closes the loop begun in M5: accumulated, evidence-based knowledge
 
 ## Current State
 
-**Overall completion: ~65%** (as of Sprint 4, 2026-08-07); Phase 1 M1 now implemented (see above).
+**Overall completion: ~75%** (as of C55.1, 2026-09-03); Phase 1 M1 implemented; Job Application Workspace complete.
 
 | Module | Status | Completion |
 |---|---|---|
 | Authentication | Deployed | 100% |
-| Landing Website | Deployed | 95% |
-| Resume Builder | Deployed | 90% |
-| Dashboard (Overview) | Deployed | 85% |
+| Landing Website | Deployed | 100% (C52 rewrite — accurate positioning) |
+| Resume Builder | Deployed | 95% (32 templates, 7 layouts, tailoring, import/export) |
+| Dashboard / Solutions | Deployed | 95% (C54 `/solutions` home, C55 applications section) |
+| Professional Identity | Deployed | 90% (C48 full editor in Settings, onboarding, resume seeding) |
+| Job Tailoring (AI) | Deployed | 90% (C33/C33.2 server-authoritative, Gemini, trust safeguards) |
+| Job Application Workspace | Deployed | 85% (C55/C55.1 persistent applications with tailoring integration) |
+| AI Provider (Gemini) | Deployed | 95% (C33.3 primary provider, C38 verified) |
 | Pricing | Deployed | 100% |
-| AI Copilot | Deployed | 75% |
-| Settings | Deployed | 60% |
+| AI Copilot | Deployed | 80% (section-level AI actions, tailoring, analysis) |
+| Settings | Deployed | 85% (C48 full PI editor) |
+| Templates | Deployed | 90% (C40-C40.2 structural diversification, C47 discovery audit) |
+| Export (PDF/DOCX) | Deployed | 90% (A4 parity, style config) |
+| Sharing | Deployed | 85% (public share URLs, owner controls) |
 | Career Passport | In Progress | 40% |
 | Trust Score | In Progress | 35% |
 | Knowledge Graph | In Progress | 30% |
@@ -465,10 +472,20 @@ A milestone is not done until all ten items are complete.
 
 ## CURRENT POSITION
 
-- Phase 0 (Foundation / Beta Stability) is substantially complete (see Phase 0 status note and Current State).
-- **M1 - Career Profile Foundation has been implemented and verified** in commit `ff22c3d`: canonical Career Profile data model, deterministic builder with provenance on all fields, non-invention behavior, tests, TypeScript check, build verification, and security/privacy review all complete.
-- The next development milestone is **M2 - Job Understanding Engine**. It has **not** been started; per the MILESTONE RULE, work begins only after M1 is fully landed and pushed.
-- The forward sequence is unambiguous: **M1 → M2 → M3 → M4 → M5** (Phase 1), followed by Phase 2 (Customer Acquisition) and Phase 3 (Career Platform).
+- Phase 0 (Foundation / Beta Stability) is complete.
+- **M1 - Career Profile Foundation** implemented and verified.
+- **C33-C33.3** — AI provider migration to Gemini complete; server-authoritative tailoring with trust/factuality safeguards.
+- **C35-C36.1** — Professional Identity architecture: PI as canonical source, resume seeding, server-authoritative creation.
+- **C40-C40.2** — Template system redesign: 32 templates, 7 genuine structural layouts.
+- **C42-C43** — Dashboard and Builder UX improvements.
+- **C44-C44.1** — End-to-end product readiness; rendering error fix.
+- **C48** — Professional Identity full editor in Settings.
+- **C50-C52** — Product differentiation audit; landing page rewrite (accurate positioning).
+- **C53** — Product hardening and end-to-end validation.
+- **C54-C54.1** — Authenticated home at `/solutions`; `/overview` redirect cleanup.
+- **C55-C55.1** — Job Application Workspace with tailoring integration.
+- The next development focus should be **product development based on user value**, not another audit cycle.
+- The forward sequence for Phase 1 is: **M1 ✅ → M2 → M3 → M4 → M5**, followed by Phase 2 (Customer Acquisition) and Phase 3 (Career Platform).
 
 ---
 
