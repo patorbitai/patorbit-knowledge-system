@@ -46,7 +46,7 @@ export function SettingsClient({
   const [deleteState, deleteAction, deletePending] = useActionState(async (prev: SettingsState, fd: FormData) => {
     const res = await deleteAccount(prev, fd);
     if (res.success) {
-      await signOut({ callbackUrl: "/login" });
+      await signOut({ callbackUrl: "/home" });
     }
     return res;
   }, initialState);
