@@ -13,8 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
 export function ExperienceSection() {
-  const claims = useResumeBuilder((s) => s.resume.claims ?? []);
-  const experience = useResumeBuilder((s) => s.resume.experience ?? []);
+  const claims = useResumeBuilder((s) => s.resume?.claims ?? []);
+  const experience = useResumeBuilder((s) => s.resume?.experience ?? []);
   const addExperience = useResumeBuilder((s) => s.addExperience);
   const updateExperience = useResumeBuilder((s) => s.updateExperience);
   const removeExperience = useResumeBuilder((s) => s.removeExperience);

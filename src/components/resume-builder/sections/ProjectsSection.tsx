@@ -13,8 +13,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
 export function ProjectsSection() {
-  const claims = useResumeBuilder((s) => s.resume.claims ?? []);
-  const projects = useResumeBuilder((s) => s.resume.projects ?? []);
+  const claims = useResumeBuilder((s) => s.resume?.claims ?? []);
+  const projects = useResumeBuilder((s) => s.resume?.projects ?? []);
   const addProject = useResumeBuilder((s) => s.addProject);
   const updateProject = useResumeBuilder((s) => s.updateProject);
   const removeProject = useResumeBuilder((s) => s.removeProject);
