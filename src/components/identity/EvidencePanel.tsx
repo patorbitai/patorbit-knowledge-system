@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { clsx } from "clsx";
 import {
   FileText,
@@ -170,7 +170,8 @@ function EvidenceCard({ evidence }: { evidence: Evidence }) {
 }
 
 export function EvidencePanel({ claimId, onAddEvidence }: EvidencePanelProps) {
-  const evidence = useResumeBuilder((s) => s.evidence.filter((e) => e.claimId === claimId));
+  const allEvidence = useResumeBuilder((s) => s.evidence);
+  const evidence = useMemo(() => allEvidence.filter((e) => e.claimId === claimId), [allEvidence, claimId]);
   const evidenceCount = evidence.length;
 
   return (

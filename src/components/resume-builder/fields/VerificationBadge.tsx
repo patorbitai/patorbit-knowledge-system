@@ -2,7 +2,7 @@
 
 import { clsx } from "clsx";
 import { Shield, ShieldCheck, ShieldAlert, ShieldOff, ShieldX, Upload, Link2, Eye } from "lucide-react";
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { Claim } from "@/types/resume";
 import { deriveBadgeStatus, BADGE_CONFIG, type BadgeState } from "@/lib/evidence/badge";
@@ -17,7 +17,8 @@ interface VerificationBadgeProps {
 const ICONS = { ShieldCheck, Shield, ShieldAlert, ShieldOff, ShieldX };
 
 export function VerificationBadge({ claim, size = "sm" }: VerificationBadgeProps) {
-  const evidence = useResumeBuilder((s) => s.evidenceForClaim(claim.id));
+  const allEvidence = useResumeBuilder((s) => s.evidence);
+  const evidence = useMemo(() => allEvidence.filter((e) => e.claimId === claim.id), [allEvidence, claim.id]);
   const status = deriveBadgeStatus(claim, evidence);
   const config = BADGE_CONFIG[status];
   const Icon = ICONS[config.icon];
