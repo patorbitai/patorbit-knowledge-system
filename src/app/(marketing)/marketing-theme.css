@@ -8,15 +8,30 @@
   display: none !important;
 }
 
-/* ── Section and main backgrounds ── */
-[data-theme="light"] section,
+/* ── Section and main backgrounds — subtle alternating rhythm ── */
 [data-theme="light"] main {
   background-color: #ffffff !important;
   background-image: none !important;
   color: #0f172a !important;
 }
 
-/* ── Force all text to dark by default ── */
+/* Alternate sections for visual rhythm */
+[data-theme="light"] section:nth-child(odd) {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+[data-theme="light"] section:nth-child(even) {
+  background-color: #f8fafc !important;
+  background-image: none !important;
+  color: #0f172a !important;
+}
+
+/* First section (hero) gets pure white */
+[data-theme="light"] section:first-child {
+  background-color: #ffffff !important;
+}
+
 [data-theme="light"] section * {
   color: #0f172a;
 }
@@ -29,34 +44,85 @@
   color: transparent !important;
 }
 
-/* ── Secondary text ── */
+/* ── Secondary text — clean hierarchy ── */
 [data-theme="light"] section .text-slate-300 { color: #475569 !important; }
 [data-theme="light"] section .text-slate-400 { color: #64748b !important; }
-[data-theme="light"] section .text-slate-500 { color: #64748b !important; }
+[data-theme="light"] section .text-slate-500 { color: #94a3b8 !important; }
 
-/* ── Cards / panels — catch all opacity variants ── */
-[data-theme="light"] .bg-slate-900 { background-color: #f8fafc !important; }
+/* ── Cards / panels — elevated white with subtle shadow ── */
+[data-theme="light"] .bg-slate-900 { background-color: #ffffff !important; }
 [data-theme="light"] .bg-slate-950 { background-color: #ffffff !important; }
-[data-theme="light"] .bg-slate-800 { background-color: #f1f5f9 !important; }
+[data-theme="light"] .bg-slate-800 { background-color: #f8fafc !important; }
 
-/* Card backgrounds with opacity — override the dark semi-transparent cards */
-[data-theme="light"] section [class*="bg-slate-900"] { background-color: #f8fafc !important; background-image: none !important; }
-[data-theme="light"] section [class*="bg-slate-950"] { background-color: #ffffff !important; background-image: none !important; }
-[data-theme="light"] section [class*="bg-slate-800"] { background-color: #f1f5f9 !important; background-image: none !important; }
-/* Catch sections with bg-[#070B14] and any other dark bg class */
-[data-theme="light"] section[class*="bg-"] { background-color: #ffffff !important; background-image: none !important; }
-/* ── Dark gradient cards in light mode — clear ALL gradient backgrounds on dark cards ── */
-[data-theme="light"] section [class*="from-slate-9"] { background-image: none !important; background-color: #f8fafc !important; }
-[data-theme="light"] section [class*="to-slate-9"] { background-image: none !important; background-color: #f8fafc !important; }
-[data-theme="light"] section [class*="bg-gradient-to-b"][class*="slate"] { background-image: none !important; background-color: #f8fafc !important; }
-[data-theme="light"] section [class*="bg-gradient-to-br"][class*="slate"] { background-image: none !important; background-color: #f8fafc !important; }
-[data-theme="light"] section [class*="bg-gradient-to-t"][class*="slate"] { background-image: none !important; background-color: #f8fafc !important; }
+/* Card backgrounds — catch all opacity variants */
+[data-theme="light"] section [class*="bg-slate-900"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.03);
+  border-radius: 12px;
+}
+[data-theme="light"] section [class*="bg-slate-950"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  border-radius: 12px;
+}
+[data-theme="light"] section [class*="bg-slate-800"] {
+  background-color: #f8fafc !important;
+  background-image: none !important;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
 
-/* ── Borders ── */
-[data-theme="light"] .border-slate-800 { border-color: rgba(15, 23, 42, 0.1) !important; }
-[data-theme="light"] .border-slate-700 { border-color: rgba(15, 23, 42, 0.12) !important; }
-[data-theme="light"] section [class*="border-slate-800"] { border-color: rgba(15, 23, 42, 0.1) !important; }
-[data-theme="light"] section [class*="border-slate-700"] { border-color: rgba(15, 23, 42, 0.12) !important; }
+/* Section backgrounds — strip hard dark bg */
+[data-theme="light"] section[class*="bg-"] {
+  background-color: #ffffff !important;
+  background-image: none !important;
+}
+
+/* ── Dark gradient cards → clean light cards ── */
+[data-theme="light"] section [class*="from-slate-9"] {
+  background-image: none !important;
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+[data-theme="light"] section [class*="to-slate-9"] {
+  background-image: none !important;
+  background-color: #ffffff !important;
+}
+[data-theme="light"] section [class*="bg-gradient-to-b"][class*="slate"] {
+  background-image: none !important;
+  background-color: #f8fafc !important;
+}
+[data-theme="light"] section [class*="bg-gradient-to-br"][class*="slate"] {
+  background-image: none !important;
+  background-color: #ffffff !important;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+[data-theme="light"] section [class*="bg-gradient-to-t"][class*="slate"] {
+  background-image: none !important;
+  background-color: #f8fafc !important;
+}
+
+/* ── Borders — refined light-mode borders ── */
+[data-theme="light"] .border-slate-800 { border-color: rgba(0, 0, 0, 0.08) !important; }
+[data-theme="light"] .border-slate-700 { border-color: rgba(0, 0, 0, 0.1) !important; }
+[data-theme="light"] section [class*="border-slate-800"] {
+  border-color: rgba(0, 0, 0, 0.08) !important;
+}
+[data-theme="light"] section [class*="border-slate-700"] {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+}
+/* Section dividers — subtle and elegant */
+[data-theme="light"] section.border-b {
+  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+}
+[data-theme="light"] section.border-t {
+  border-top-color: rgba(0, 0, 0, 0.06) !important;
+}
 
 /* ── Keep CTA button text white on gradient backgrounds ── */
 [data-theme="light"] section .from-cyan-500,
@@ -70,30 +136,125 @@
   color: #ffffff !important;
 }
 
-/* ── Header ── */
+/* ── Header — frosted glass effect ── */
 [data-theme="light"] header {
-  background-color: rgba(255, 255, 255, 0.95) !important;
-  border-bottom-color: rgba(15, 23, 42, 0.08) !important;
-  box-shadow: 0 1px 40px -15px rgba(0, 0, 0, 0.08) !important;
+  background-color: rgba(255, 255, 255, 0.85) !important;
+  border-bottom-color: rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04), 0 4px 24px -8px rgba(0, 0, 0, 0.06) !important;
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
   color: #0f172a !important;
 }
 [data-theme="light"] header * { color: inherit; }
 
-/* ── Footer ── */
+/* ── Footer — clean subtle footer ── */
 [data-theme="light"] footer {
   background-color: #f8fafc !important;
   color: #0f172a !important;
-  border-top-color: rgba(15, 23, 42, 0.1) !important;
+  border-top-color: rgba(0, 0, 0, 0.06) !important;
 }
 [data-theme="light"] footer * { color: inherit; }
 
-/* ── Hover states ── */
-[data-theme="light"] .hover\:bg-slate-900:hover { background-color: #f1f5f9 !important; }
-[data-theme="light"] .hover\:bg-slate-800:hover { background-color: #e2e8f0 !important; }
-[data-theme="light"] .hover\:border-slate-700:hover { border-color: rgba(15, 23, 42, 0.2) !important; }
-[data-theme="light"] .hover\:text-white:hover { color: #ffffff !important; }
+/* ── Hover states — light-mode interactive feedback ── */
+[data-theme="light"] .hover\:bg-slate-900:hover {
+  background-color: #f1f5f9 !important;
+}
+[data-theme="light"] .hover\:bg-slate-800:hover {
+  background-color: #e2e8f0 !important;
+}
+[data-theme="light"] .hover\:border-slate-700:hover {
+  border-color: rgba(0, 0, 0, 0.15) !important;
+}
+[data-theme="light"] .hover\:text-white:hover {
+  color: #0f172a !important;
+}
+
+/* Card hover — elevate on hover */
+[data-theme="light"] section [class*="bg-slate-900"]:hover,
+[data-theme="light"] section [class*="bg-slate-950"]:hover {
+  box-shadow: 0 4px 16px -4px rgba(0, 0, 0, 0.08), 0 2px 4px rgba(0, 0, 0, 0.04) !important;
+  transform: translateY(-1px);
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  transition: all 0.2s ease;
+}
 
 /* ── Focus ring ── */
 [data-theme="light"] [class*="ring-offset-slate-950"] {
   --tw-ring-offset-color: #ffffff !important;
+}
+
+/* ── HowItWorks step line — visible in light mode ── */
+[data-theme="light"] [class*="border-dashed"][class*="border-slate-"] {
+  border-color: rgba(0, 0, 0, 0.12) !important;
+}
+
+/* ── Feature grid icons — colored containers on light ── */
+[data-theme="light"] section [class*="bg-cyan-500/10"] {
+  background-color: rgba(8, 145, 178, 0.08) !important;
+}
+[data-theme="light"] section [class*="bg-blue-500/10"] {
+  background-color: rgba(37, 99, 235, 0.08) !important;
+}
+[data-theme="light"] section [class*="bg-purple-500/10"] {
+  background-color: rgba(124, 58, 237, 0.08) !important;
+}
+[data-theme="light"] section [class*="bg-amber-500/10"] {
+  background-color: rgba(217, 119, 6, 0.08) !important;
+}
+[data-theme="light"] section [class*="bg-emerald-500/10"] {
+  background-color: rgba(5, 150, 105, 0.08) !important;
+}
+
+/* ── Comparison table — clean rows ── */
+[data-theme="light"] [class*="bg-slate-900/40"] {
+  background-color: #f8fafc !important;
+}
+[data-theme="light"] [class*="bg-slate-900/50"] {
+  background-color: #f1f5f9 !important;
+}
+
+/* ── Badge / pill elements — crisp on white ── */
+[data-theme="light"] [class*="rounded-full"][class*="border"][class*="border-slate-800"] {
+  border-color: rgba(0, 0, 0, 0.1) !important;
+  background-color: #f8fafc !important;
+}
+
+/* ── Workflow demo panel ── */
+[data-theme="light"] [class*="shadow-"][class*="border-slate-800"][class*="bg-slate-900"] {
+  background-color: #ffffff !important;
+  border-color: rgba(0, 0, 0, 0.08) !important;
+  box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.08), 0 4px 8px rgba(0, 0, 0, 0.04) !important;
+}
+
+/* ── Decorative background patterns — subtle on light ── */
+[data-theme="light"] .bg-grid {
+  background-image:
+    linear-gradient(rgba(0, 0, 0, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 0, 0, 0.03) 1px, transparent 1px) !important;
+}
+[data-theme="light"] .bg-dot {
+  background-image: radial-gradient(rgba(0, 0, 0, 0.06) 1px, transparent 1px) !important;
+}
+
+/* ── Gradient text — darken gradient colors for light backgrounds ── */
+[data-theme="light"] section .bg-clip-text {
+  color: transparent !important;
+  -webkit-text-fill-color: transparent !important;
+}
+/* Override light gradient colors with darker variants for contrast */
+[data-theme="light"] section .from-cyan-300 { --tw-gradient-from: #0891b2 !important; }
+[data-theme="light"] section .via-blue-400 { --tw-gradient-via: #2563eb !important; }
+[data-theme="light"] section .to-indigo-400 { --tw-gradient-to: #4f46e5 !important; }
+[data-theme="light"] section .from-cyan-400 { --tw-gradient-from: #0891b2 !important; }
+[data-theme="light"] section .to-blue-500 { --tw-gradient-to: #2563eb !important; }
+
+/* ── Glowing accents — subtle on white ── */
+[data-theme="light"] .glow-cyan {
+  box-shadow: 0 0 40px rgba(8, 145, 178, 0.08) !important;
+}
+[data-theme="light"] .glow-blue {
+  box-shadow: 0 0 40px rgba(37, 99, 235, 0.08) !important;
+}
+[data-theme="light"] .glow-purple {
+  box-shadow: 0 0 40px rgba(124, 58, 237, 0.08) !important;
 }

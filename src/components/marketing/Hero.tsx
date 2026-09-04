@@ -235,7 +235,7 @@ export default function Hero() {
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
-                href={session ? "/resume-builder" : "/register"}
+                href={session ? "/overview" : "/register"}
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
               >
                 Get Started Free
