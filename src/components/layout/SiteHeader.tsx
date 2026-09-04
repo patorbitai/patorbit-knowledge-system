@@ -116,7 +116,7 @@ export default function SiteHeader() {
                 Home
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: "/home" })}
+                onClick={async () => { await signOut({ redirect: false }); window.location.href = "/home"; }}
                 className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] border border-white/[0.08] px-5 py-2.5 text-sm font-medium text-slate-300 transition-all duration-300 hover:text-white hover:bg-white/[0.1]"
               >
                 Sign Out
@@ -246,9 +246,10 @@ export default function SiteHeader() {
                       Home
                     </Link>
                     <button
-                      onClick={() => {
+                      onClick={async () => {
                         setIsOpen(false);
-                        signOut({ callbackUrl: "/home" });
+                        await signOut({ redirect: false });
+                        window.location.href = "/home";
                       }}
                       className="mt-2 w-full flex items-center justify-center rounded-xl bg-white/[0.06] border border-white/[0.08] px-4 py-3 text-base font-medium text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition-all duration-200"
                     >

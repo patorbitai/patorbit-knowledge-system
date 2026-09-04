@@ -78,7 +78,7 @@ export default function AccountMenu() {
           <button
             type="button"
             role="menuitem"
-            onClick={() => signOut({ callbackUrl: "/home" })}
+            onClick={async () => { await signOut({ redirect: false }); window.location.href = "/home"; }}
             className="flex w-full items-center gap-2 px-4 py-2.5 text-xs font-medium text-slate-600 dark:text-slate-400 transition-colors hover:bg-rose-500/10 hover:text-rose-400"
           >
             <LogOut className="h-3.5 w-3.5" />

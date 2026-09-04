@@ -31,7 +31,7 @@ export function InactivityProvider({ children }: { children: React.ReactNode }) 
   const warnedRef = useRef(false);
 
   const logout = useCallback(() => {
-    signOut({ callbackUrl: "/login" });
+    signOut({ redirect: false }).then(() => { window.location.href = "/home"; });
   }, []);
 
   const resetTimer = useCallback(() => {
