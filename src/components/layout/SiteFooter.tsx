@@ -54,7 +54,7 @@ export default function SiteFooter() {
     <footer className="border-t border-white/10 bg-slate-950 text-slate-400">
       <div className="mx-auto max-w-7xl px-6 py-16">
         <div className="mb-14 flex flex-col items-start gap-6 lg:flex-row lg:items-center lg:justify-between">
-          <Link href="/" className="flex items-center gap-2.5">
+          <Link href="/home" className="flex items-center gap-2.5">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500">
               <span className="text-sm font-bold text-white">P</span>
             </div>

@@ -53,7 +53,7 @@ export default function SiteHeader() {
     >
       <div className="relative mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
         {/* ── Logo ── */}
-        <Link href="/" className="group flex items-center gap-2.5 shrink-0">
+        <Link href="/home" className="group flex items-center gap-2.5 shrink-0">
           <div className="relative flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 shadow-lg shadow-cyan-500/20 transition-all duration-300 group-hover:shadow-cyan-400/40 group-hover:scale-105">
             <span className="text-sm font-bold text-white drop-shadow-sm">P</span>
           </div>
@@ -110,13 +110,13 @@ export default function SiteHeader() {
           {session ? (
             <>
               <Link
-                href="/"
+                href="/home"
                 className="relative hidden sm:inline-flex items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-slate-300 transition-all duration-300 hover:text-white hover:bg-white/[0.06]"
               >
                 Home
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => signOut({ callbackUrl: "/home" })}
                 className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] border border-white/[0.08] px-5 py-2.5 text-sm font-medium text-slate-300 transition-all duration-300 hover:text-white hover:bg-white/[0.1]"
               >
                 Sign Out
@@ -239,7 +239,7 @@ export default function SiteHeader() {
                 {session ? (
                   <>
                     <Link
-                      href="/"
+                      href="/home"
                       onClick={() => setIsOpen(false)}
                       className="flex items-center justify-center rounded-xl px-4 py-3 text-base font-medium text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition-all duration-200"
                     >
@@ -248,7 +248,7 @@ export default function SiteHeader() {
                     <button
                       onClick={() => {
                         setIsOpen(false);
-                        signOut({ callbackUrl: "/" });
+                        signOut({ callbackUrl: "/home" });
                       }}
                       className="mt-2 w-full flex items-center justify-center rounded-xl bg-white/[0.06] border border-white/[0.08] px-4 py-3 text-base font-medium text-slate-400 hover:bg-white/[0.04] hover:text-slate-200 transition-all duration-200"
                     >

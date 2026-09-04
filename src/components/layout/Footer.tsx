@@ -39,7 +39,7 @@ export default function Footer() {
         <div className="grid lg:grid-cols-4 gap-10 py-10">
           {/* Brand Column */}
           <div className="lg:col-span-1">
-            <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
+            <Link href="/home" className="inline-flex items-center gap-2.5 mb-4">
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 shadow-md shadow-cyan-500/20">
                 <span className="text-sm font-bold text-white">P</span>
               </div>

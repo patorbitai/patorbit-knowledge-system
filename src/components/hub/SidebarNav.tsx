@@ -43,7 +43,7 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
       {/* Brand */}
       <div className="px-4 pt-5 pb-4">
         <Link
-          href="/"
+          href="/home"
           onClick={onNavigate}
           aria-label="Go to Patorbit home"
           className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.04] group"

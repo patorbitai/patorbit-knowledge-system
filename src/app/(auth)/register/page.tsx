@@ -232,7 +232,7 @@ export default function RegisterPage() {
                     disabled={!!socialLoading}
                     onClick={() => {
                       setSocialLoading(p.id);
-                      signIn(p.id, { callbackUrl: "/" });
+                      signIn(p.id, { callbackUrl: "/home" });
                     }}
                     className="flex items-center justify-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.03] px-3 py-2.5 text-xs font-medium text-slate-300 hover:bg-white/[0.06] hover:border-white/[0.15] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     aria-label={`Continue with ${p.name}`}

@@ -19,7 +19,7 @@ export default function AuthLayout({
       <div className="min-h-screen bg-[#070B11] flex">
         {/* Left brand panel — hidden on mobile */}
         <div className="hidden lg:flex lg:w-[45%] xl:w-[42%] flex-col justify-between p-12 xl:p-16 border-r border-white/[0.06]">
-          <Link href="/" className="flex items-center gap-3 w-fit">
+          <Link href="/home" className="flex items-center gap-3 w-fit">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600 shrink-0">
               <span className="text-sm font-bold text-white">P</span>
             </div>
@@ -58,7 +58,7 @@ export default function AuthLayout({
         {/* Right form panel */}
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-12 sm:px-8">
           {/* Mobile logo */}
-          <Link href="/" className="flex lg:hidden items-center gap-2.5 mb-10">
+          <Link href="/home" className="flex lg:hidden items-center gap-2.5 mb-10">
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-400 via-blue-500 to-purple-600">
               <span className="text-sm font-bold text-white">P</span>
             </div>

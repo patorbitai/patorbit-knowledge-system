@@ -20,7 +20,7 @@ export async function proxy(request: NextRequest) {
   // Auth pages — redirect to home if already authenticated
   if (pathname === "/login" || pathname === "/register") {
     if (token) {
-      return NextResponse.redirect(new URL("/", request.url));
+      return NextResponse.redirect(new URL("/home", request.url));
     }
     return NextResponse.next();
   }

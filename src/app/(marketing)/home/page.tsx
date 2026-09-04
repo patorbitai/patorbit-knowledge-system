@@ -9,7 +9,7 @@ import WhyPatorbit from "@/components/marketing/WhyPatorbit";
 import ComparisonTable from "@/components/marketing/ComparisonTable";
 import CTA from "@/components/marketing/CTA";
 
-export default function Home() {
+export default function HomePage() {
   return (
     <main className="bg-[#070B14] text-white">
       <Hero />
