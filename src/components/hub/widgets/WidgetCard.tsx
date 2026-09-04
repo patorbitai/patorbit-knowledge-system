@@ -26,16 +26,16 @@ export default function WidgetCard({
       <header className="mb-4 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           {Icon && (
-            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-white/[0.05] text-cyan-300">
+            <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-blue-50 dark:bg-white/[0.05] text-blue-500 dark:text-cyan-300">
               <Icon className="h-4 w-4" />
             </span>
           )}
-          <h2 className="text-sm font-semibold text-white">{title}</h2>
+          <h2 className="text-sm font-semibold text-gray-900 dark:text-white">{title}</h2>
         </div>
         {action && (
           <Link
             href={action.href}
-            className="text-xs font-medium text-slate-400 transition-colors hover:text-cyan-300"
+            className="text-xs font-medium text-gray-500 dark:text-slate-400 transition-colors hover:text-blue-500 dark:hover:text-cyan-300"
           >
             {action.label} →
           </Link>

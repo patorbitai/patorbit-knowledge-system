@@ -11,6 +11,10 @@
  *   const { content } = await ai.generateSummary(resume);
  */
 import type { Resume, Experience, Project, ResumeAnalysis, SuggestedClaim } from "@/types/resume";
+import type { EvidenceOptimizerResult } from "@/types/evidence-optimizer";
+import type { CareerProfile } from "@/types/career-profile";
+import type { JobProfile } from "@/types/job-profile";
+import type { QualificationMatch } from "@/types/qualification-match";
 
 export interface AIResponse<T = unknown> {
   success: boolean;
@@ -137,6 +141,24 @@ export const ai = {
       jobDescription,
       targetRole,
     });
+  },
+
+  /** M4 — Evidence-grounded resume optimization with traceability. */
+  async evidenceOptimize(
+    resume: Resume,
+    careerProfile: CareerProfile,
+    jobProfile: JobProfile,
+    qualificationMatch: QualificationMatch,
+    jobDescription: string,
+    signal?: AbortSignal,
+  ) {
+    return callAI<EvidenceOptimizerResult>("evidenceOptimize", {
+      resume,
+      careerProfile,
+      jobProfile,
+      qualificationMatch,
+      jobDescription,
+    }, signal);
   },
 
   /** Identify candidate Claims from the Professional Identity (review only, never auto-create). */

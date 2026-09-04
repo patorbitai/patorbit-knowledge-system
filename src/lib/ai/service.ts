@@ -23,11 +23,17 @@ import type {
 } from "./types";
 import { getAIProvider } from "./provider";
 import * as Prompts from "./prompts";
+import { buildEvidenceOptimizerPrompt } from "./evidence-optimizer-prompt";
+import { validateOptimizerChanges } from "./evidence-validator";
 import {
   buildPhases,
   computeResumeScoreDetail,
   computeTrustScoreDetail,
 } from "./scoring";
+import type { CareerProfile } from "@/types/career-profile";
+import type { JobProfile } from "@/types/job-profile";
+import type { QualificationMatch } from "@/types/qualification-match";
+import type { EvidenceOptimizerResult } from "@/types/evidence-optimizer";
 
 export type AIAction =
   | "generateSummary"
@@ -42,6 +48,7 @@ export type AIAction =
   | "interviewPreparation"
   | "analyzeJobMatch"
   | "optimizeForJob"
+  | "evidenceOptimize"
   | "generateClaims"
   | "extractResume"
   | "tailorResume";
@@ -263,6 +270,67 @@ export class AIService {
   }
 
   /**
+   * M4 — Evidence-grounded resume optimizer.
+   * Uses Career Profile (M1), Job Profile (M2), and Qualification Match (M3)
+   * to produce traceable, non-fabricated resume improvements.
+   */
+  async evidenceOptimize(data: {
+    resume: Resume;
+    careerProfile: CareerProfile;
+    jobProfile: JobProfile;
+    qualificationMatch: QualificationMatch;
+    jobDescription: string;
+  }): Promise<EvidenceOptimizerResult> {
+    const { system, user } = buildEvidenceOptimizerPrompt(data);
+    const result = await this.complete(system, user, { maxTokens: 4096, jsonMode: true });
+    const parsed = JSON.parse(result) as Record<string, unknown>;
+
+    // Normalize the result into our type
+    const changes = Array.isArray(parsed.changes)
+      ? (parsed.changes as EvidenceOptimizerResult["changes"])
+      : [];
+
+    const gaps = Array.isArray(parsed.gaps)
+      ? (parsed.gaps as EvidenceOptimizerResult["gaps"])
+      : [];
+
+    const result_: EvidenceOptimizerResult = {
+      targetRole: typeof parsed.targetRole === "string" ? parsed.targetRole : "",
+      companyName: typeof parsed.companyName === "string" ? parsed.companyName : "",
+      preMatchScore: typeof parsed.preMatchScore === "number" ? parsed.preMatchScore : 0,
+      postMatchScore: typeof parsed.postMatchScore === "number" ? parsed.postMatchScore : 0,
+      changes: changes.map((c, i) => ({
+        id: c.id || `change-${i + 1}`,
+        section: c.section || "general",
+        original: c.original || "",
+        optimized: c.optimized || "",
+        reason: c.reason || "",
+        qualification: c.qualification || "PROVEN",
+        supportingEvidence: Array.isArray(c.supportingEvidence) ? c.supportingEvidence : [],
+        confidence: typeof c.confidence === "number" ? c.confidence : 0.5,
+      })),
+      summary: typeof parsed.summary === "string" ? parsed.summary : "",
+      gaps: gaps.map((g) => ({
+        requirement: g.requirement || "",
+        reason: g.reason || "",
+        classification: "MISSING" as const,
+        suggestion: g.suggestion,
+      })),
+      createdAt: new Date().toISOString(),
+    };
+
+    // Deterministic anti-fabrication validation
+    const validation = validateOptimizerChanges(result_.changes, data.careerProfile);
+    if (!validation.valid) {
+      // Remove changes that failed validation
+      const violatingIds = new Set(validation.violations.map((v) => v.changeId));
+      result_.changes = result_.changes.filter((c) => !violatingIds.has(c.id));
+    }
+
+    return result_;
+  }
+
+  /**
    * C33 — Generate a tailored resume from Professional Identity + Job Description.
    * Returns the full tailored resume payload plus match analysis.
    */
@@ -354,6 +422,7 @@ export class AIService {
     interviewPreparation: this.interviewPreparation,
     analyzeJobMatch: this.analyzeJobMatch,
     optimizeForJob: this.optimizeForJob,
+    evidenceOptimize: this.evidenceOptimize,
     generateClaims: this.generateClaims,
     extractResume: this.extractResume,
     tailorResume: this.tailorResume,

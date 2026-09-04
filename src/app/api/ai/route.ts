@@ -23,6 +23,7 @@ const KNOWN_ACTIONS: readonly string[] = [
   "interviewPreparation",
   "analyzeJobMatch",
   "optimizeForJob",
+  "evidenceOptimize",
   "generateClaims",
   "tailorResume",
 ];

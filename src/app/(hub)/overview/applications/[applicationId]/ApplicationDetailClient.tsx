@@ -13,7 +13,15 @@ import {
   Trash2,
   Sparkles,
   CheckCircle2,
+  Calendar,
+  MessageSquare,
+  TrendingUp,
+  Award,
+  XCircle,
+  Clock,
+  Plus,
 } from "lucide-react";
+import { clsx } from "clsx";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 
 type JobApplication = {
@@ -27,6 +35,21 @@ type JobApplication = {
   matchData: unknown;
   createdAt: string;
   updatedAt: string;
+};
+
+type ApplicationEvent = {
+  id: string;
+  applicationId: string;
+  eventType: string;
+  previousStatus: string | null;
+  newStatus: string | null;
+  interviewStage: string | null;
+  interviewType: string | null;
+  interviewDate: string | null;
+  outcome: string | null;
+  notes: string | null;
+  metadata: unknown;
+  createdAt: string;
 };
 
 type Props = {
@@ -52,12 +75,48 @@ const STATUS_STYLES: Record<string, { bg: string; text: string }> = {
   rejected: { bg: "bg-red-50 dark:bg-red-500/10", text: "text-red-600 dark:text-red-400" },
 };
 
+const EVENT_TYPE_LABELS: Record<string, { icon: typeof Calendar; label: string; color: string }> = {
+  status_change: { icon: TrendingUp, label: "Status Changed", color: "text-blue-400" },
+  interview_scheduled: { icon: Calendar, label: "Interview Scheduled", color: "text-purple-400" },
+  interview_completed: { icon: MessageSquare, label: "Interview Completed", color: "text-amber-400" },
+  outcome_recorded: { icon: Award, label: "Outcome Recorded", color: "text-green-400" },
+};
+
+const INTERVIEW_STAGES: { value: string; label: string }[] = [
+  { value: "phone_screen", label: "Phone Screen" },
+  { value: "technical", label: "Technical" },
+  { value: "behavioral", label: "Behavioral" },
+  { value: "final", label: "Final Round" },
+  { value: "onsite", label: "Onsite" },
+];
+
+const INTERVIEW_TYPES: { value: string; label: string }[] = [
+  { value: "phone", label: "Phone" },
+  { value: "video", label: "Video" },
+  { value: "in_person", label: "In Person" },
+  { value: "take_home", label: "Take Home" },
+];
+
+const OUTCOMES: { value: string; label: string; color: string }[] = [
+  { value: "offer", label: "Offer", color: "bg-green-500/10 text-green-400 border-green-500/20" },
+  { value: "rejected", label: "Rejected", color: "bg-red-500/10 text-red-400 border-red-500/20" },
+  { value: "withdrawn", label: "Withdrawn", color: "bg-gray-500/10 text-gray-400 border-gray-500/20" },
+  { value: "no_response", label: "No Response", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
+];
+
 export function ApplicationDetailClient({ application: initialApp, userName }: Props) {
   const [app, setApp] = useState<JobApplication>(initialApp);
+  const [events, setEvents] = useState<ApplicationEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(true);
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [showTailorModal, setShowTailorModal] = useState(false);
+  const [showInterviewForm, setShowInterviewForm] = useState(false);
+  const [showOutcomeForm, setShowOutcomeForm] = useState(false);
+  const [interviewForm, setInterviewForm] = useState({ stage: "phone_screen", type: "video", date: "", notes: "" });
+  const [outcomeForm, setOutcomeForm] = useState({ outcome: "offer", notes: "" });
+  const [submittingEvent, setSubmittingEvent] = useState(false);
 
   const updateStatus = useCallback(async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -78,6 +137,60 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
       setShowStatusMenu(false);
     }
   }, [app.applicationId]);
+
+  // Fetch events on mount
+  React.useEffect(() => {
+    fetch(`/api/applications/${app.applicationId}/events`)
+      .then((r) => r.json())
+      .then((data) => setEvents(data.events || []))
+      .catch(() => setEvents([]))
+      .finally(() => setEventsLoading(false));
+  }, [app.applicationId]);
+
+  const recordEvent = useCallback(async (eventType: string, payload: Record<string, unknown>) => {
+    setSubmittingEvent(true);
+    try {
+      const res = await fetch(`/api/applications/${app.applicationId}/events`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventType, ...payload }),
+      });
+      if (res.ok) {
+        const event = await res.json();
+        setEvents((prev) => [...prev, event]);
+        // Refetch application to get updated status
+        const appRes = await fetch(`/api/applications/${app.applicationId}`);
+        if (appRes.ok) {
+          const updated = await appRes.json();
+          setApp(updated);
+        }
+      }
+    } catch {
+      // Silently handle
+    } finally {
+      setSubmittingEvent(false);
+      setShowInterviewForm(false);
+      setShowOutcomeForm(false);
+      setInterviewForm({ stage: "phone_screen", type: "video", date: "", notes: "" });
+      setOutcomeForm({ outcome: "offer", notes: "" });
+    }
+  }, [app.applicationId]);
+
+  const handleRecordInterview = useCallback(() => {
+    recordEvent("interview_scheduled", {
+      interviewStage: interviewForm.stage,
+      interviewType: interviewForm.type,
+      interviewDate: interviewForm.date || undefined,
+      notes: interviewForm.notes || undefined,
+    });
+  }, [recordEvent, interviewForm]);
+
+  const handleRecordOutcome = useCallback(() => {
+    recordEvent("outcome_recorded", {
+      outcome: outcomeForm.outcome,
+      notes: outcomeForm.notes || undefined,
+    });
+  }, [recordEvent, outcomeForm]);
 
   const handleDelete = useCallback(async () => {
     if (!confirm("Delete this application? This will not affect your resumes.")) return;
@@ -338,6 +451,193 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
             <p className="text-[10px] text-gray-400 dark:text-slate-500 text-center">
               Uses this application&apos;s job description automatically.
             </p>
+          </div>
+
+          {/* M5: Record Interview */}
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-2">
+              <Calendar className="h-4 w-4 text-purple-500" />
+              Record Interview
+            </h3>
+            {!showInterviewForm ? (
+              <button
+                onClick={() => setShowInterviewForm(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-purple-500 dark:bg-purple-500/90 text-xs font-semibold text-white hover:brightness-110 transition-all w-full justify-center"
+              >
+                <Plus className="h-3 w-3" />
+                Add Interview
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <select
+                  value={interviewForm.stage}
+                  onChange={(e) => setInterviewForm((p) => ({ ...p, stage: e.target.value }))}
+                  className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-xs text-gray-700 dark:text-slate-300"
+                >
+                  {INTERVIEW_STAGES.map((s) => (
+                    <option key={s.value} value={s.value}>{s.label}</option>
+                  ))}
+                </select>
+                <select
+                  value={interviewForm.type}
+                  onChange={(e) => setInterviewForm((p) => ({ ...p, type: e.target.value }))}
+                  className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-xs text-gray-700 dark:text-slate-300"
+                >
+                  {INTERVIEW_TYPES.map((t) => (
+                    <option key={t.value} value={t.value}>{t.label}</option>
+                  ))}
+                </select>
+                <input
+                  type="datetime-local"
+                  value={interviewForm.date}
+                  onChange={(e) => setInterviewForm((p) => ({ ...p, date: e.target.value }))}
+                  className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-xs text-gray-700 dark:text-slate-300"
+                />
+                <textarea
+                  value={interviewForm.notes}
+                  onChange={(e) => setInterviewForm((p) => ({ ...p, notes: e.target.value }))}
+                  placeholder="Notes (optional)"
+                  rows={2}
+                  className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-xs text-gray-700 dark:text-slate-300 resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleRecordInterview}
+                    disabled={submittingEvent}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-500 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
+                  >
+                    {submittingEvent ? <Loader2 className="h-3 w-3 animate-spin" /> : <Calendar className="h-3 w-3" />}
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setShowInterviewForm(false)}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] text-xs text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* M5: Record Outcome */}
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-2">
+              <Award className="h-4 w-4 text-green-500" />
+              Record Outcome
+            </h3>
+            {!showOutcomeForm ? (
+              <button
+                onClick={() => setShowOutcomeForm(true)}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-green-500 dark:bg-green-500/90 text-xs font-semibold text-white hover:brightness-110 transition-all w-full justify-center"
+              >
+                <Award className="h-3 w-3" />
+                Add Outcome
+              </button>
+            ) : (
+              <div className="space-y-2">
+                <div className="flex flex-wrap gap-1.5">
+                  {OUTCOMES.map((o) => (
+                    <button
+                      key={o.value}
+                      onClick={() => setOutcomeForm((p) => ({ ...p, outcome: o.value }))}
+                      className={clsx(
+                        "px-2.5 py-1 rounded-lg text-[10px] font-semibold border transition-all",
+                        outcomeForm.outcome === o.value
+                          ? o.color
+                          : "border-gray-200 dark:border-white/[0.06] text-gray-400 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-white/[0.04]",
+                      )}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={outcomeForm.notes}
+                  onChange={(e) => setOutcomeForm((p) => ({ ...p, notes: e.target.value }))}
+                  placeholder="Notes (optional)"
+                  rows={2}
+                  className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-xs text-gray-700 dark:text-slate-300 resize-none"
+                />
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleRecordOutcome}
+                    disabled={submittingEvent}
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500 text-xs font-semibold text-white hover:brightness-110 disabled:opacity-50"
+                  >
+                    {submittingEvent ? <Loader2 className="h-3 w-3 animate-spin" /> : <Award className="h-3 w-3" />}
+                    Save
+                  </button>
+                  <button
+                    onClick={() => setShowOutcomeForm(false)}
+                    className="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] text-xs text-gray-500 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* M5: Event Timeline */}
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-3">
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-2">
+              <Clock className="h-4 w-4 text-gray-400" />
+              Timeline
+            </h3>
+            {eventsLoading ? (
+              <div className="animate-pulse space-y-2">
+                <div className="h-3 bg-gray-200 dark:bg-white/[0.06] rounded w-2/3" />
+                <div className="h-3 bg-gray-200 dark:bg-white/[0.06] rounded w-1/2" />
+              </div>
+            ) : events.length === 0 ? (
+              <p className="text-xs text-gray-400 dark:text-slate-500">
+                No events recorded yet. Update the status or record an interview to start tracking.
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {events.map((event) => {
+                  const eventStyle = EVENT_TYPE_LABELS[event.eventType] || EVENT_TYPE_LABELS.status_change;
+                  const EventIcon = eventStyle.icon;
+                  return (
+                    <div key={event.id} className="flex items-start gap-3">
+                      <div className="mt-0.5">
+                        <EventIcon className={clsx("h-3.5 w-3.5", eventStyle.color)} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-medium text-gray-700 dark:text-slate-300">
+                          {eventStyle.label}
+                          {event.newStatus && (
+                            <span className="ml-1.5 text-gray-400 dark:text-slate-500">
+                              → {event.newStatus.replace(/_/g, " ")}
+                            </span>
+                          )}
+                        </p>
+                        {event.interviewStage && (
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                            {event.interviewStage.replace(/_/g, " ")} • {event.interviewType?.replace(/_/g, " ") || "video"}
+                            {event.interviewDate && ` • ${new Date(event.interviewDate).toLocaleDateString()}`}
+                          </p>
+                        )}
+                        {event.outcome && (
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500">
+                            Outcome: {event.outcome}
+                          </p>
+                        )}
+                        {event.notes && (
+                          <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 line-clamp-2">
+                            {event.notes}
+                          </p>
+                        )}
+                        <p className="text-[9px] text-gray-300 dark:text-slate-600 mt-0.5">
+                          {new Date(event.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           {/* Danger zone */}

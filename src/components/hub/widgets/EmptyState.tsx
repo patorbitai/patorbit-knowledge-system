@@ -19,25 +19,25 @@ export default function EmptyState({
   return (
     <div
       className={clsx(
-        "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-white/[0.08] bg-white/[0.02] px-4 py-8 text-center",
+        "flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-8 text-center",
         className
       )}
     >
       {Icon && (
-        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05] text-slate-500">
+        <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 dark:bg-white/[0.05] text-gray-400 dark:text-slate-500">
           <Icon className="h-5 w-5" />
         </span>
       )}
       <div>
-        <p className="text-sm font-medium text-slate-300">{title}</p>
-        <p className="mt-1 text-xs leading-relaxed text-slate-500">
+        <p className="text-sm font-medium text-gray-700 dark:text-slate-300">{title}</p>
+        <p className="mt-1 text-xs leading-relaxed text-gray-500 dark:text-slate-500">
           {description}
         </p>
       </div>
       {cta && (
         <Link
           href={cta.href}
-          className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/10 px-3.5 py-1.5 text-xs font-semibold text-cyan-300 transition-colors hover:bg-cyan-500/20"
+          className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-blue-50 dark:bg-cyan-500/10 px-3.5 py-1.5 text-xs font-semibold text-blue-600 dark:text-cyan-300 transition-colors hover:bg-blue-100 dark:hover:bg-cyan-500/20"
         >
           {cta.label}
         </Link>

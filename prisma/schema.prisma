@@ -135,7 +135,7 @@ model JobApplication {
   applicationId          String   @unique
   professionalIdentityId String
   title                  String   // Job title
-  companyName            String   // Company name
+  companyName            String   // Company name
   jobDescription         String   @db.Text
   status                 String   @default("saved") // saved | ready_to_apply | applied | interview | offer | rejected
   resumeId               String?  // Optional reference to a resume
@@ -145,9 +145,57 @@ model JobApplication {
   updatedAt              DateTime @updatedAt
 
   professionalIdentity ProfessionalIdentity @relation(fields: [professionalIdentityId], references: [id], onDelete: Cascade)
+  events               ApplicationEvent[]
 
   @@index([professionalIdentityId])
   @@index([professionalIdentityId, status])
+}
+
+// ─── M5: Application Lifecycle Events ─────────────────────────
+//
+// Records the history of status changes and interview events
+// for each job application. Preserves history so previous states
+// are not lost when the application progresses.
+model ApplicationEvent {
+  id                     String   @id @default(cuid())
+  applicationId          String
+  professionalIdentityId String
+  eventType              String   // status_change | interview_scheduled | interview_completed | outcome_recorded
+  previousStatus         String?
+  newStatus              String?
+  interviewStage         String?  // phone_screen | technical | behavioral | final | onsite
+  interviewType          String?  // phone | video | in_person | take_home
+  interviewDate          DateTime?
+  outcome                String?  // offer | rejected | withdrawn | no_response | ghosted
+  notes                  String?  @db.Text
+  metadata               Json?    // Additional event-specific data
+  createdAt              DateTime @default(now())
+
+  application JobApplication @relation(fields: [applicationId], references: [applicationId], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@index([professionalIdentityId])
+  @@index([applicationId, createdAt])
+}
+
+// ─── M5: Career Memory ──────────────────────────────────────
+//
+// Structured facts derived from actual application outcomes.
+// Only generated from sufficiently supported patterns — not single events.
+// Used to improve future career recommendations.
+model CareerMemory {
+  id                     String   @id @default(cuid())
+  professionalIdentityId String
+  category               String   // interview_pattern | skill_gap | outcome_trend | role_fit
+  insight                String   @db.Text  // Human-readable insight
+  confidence             Float    @default(0.5) // 0-1, based on evidence strength
+  evidenceCount          Int      @default(1)   // Number of events supporting this insight
+  metadata               Json?    // Structured data (skills, roles, companies involved)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  @@index([professionalIdentityId])
+  @@index([professionalIdentityId, category])
 }
 
 model EvidenceRecord {

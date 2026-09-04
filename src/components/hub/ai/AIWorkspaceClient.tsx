@@ -18,6 +18,7 @@ import {
   CheckCircle2,
   AlertTriangle,
   Search,
+  Brain,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useResumeBuilder } from "@/store/resume-builder";
@@ -27,8 +28,11 @@ import { MatchReport } from "@/components/resume-builder/optimization/MatchRepor
 import { KeywordCloud } from "@/components/resume-builder/optimization/KeywordCloud";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 import { ErrorBox, LoadingRow } from "@/components/resume-builder/optimization/shared";
+import { EvidenceOptimizerReview } from "@/components/resume-builder/optimization/EvidenceOptimizerReview";
+import { CareerInsightsPanel } from "@/components/hub/ai/CareerInsightsPanel";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
+import type { EvidenceOptimizerResult, OptimizerChange } from "@/types/evidence-optimizer";
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
@@ -49,12 +53,13 @@ interface AIWorkspaceClientProps {
 
 // ── Tab definitions ────────────────────────────────────────────────────────────
 
-type TabId = "score" | "match" | "tailor";
+type TabId = "score" | "match" | "tailor" | "insights";
 
 const TABS: { id: TabId; label: string; icon: React.ComponentType<{ className?: string }>; requiresJob: boolean }[] = [
   { id: "score", label: "Resume Score", icon: BarChart3, requiresJob: false },
   { id: "match", label: "Job Match", icon: Target, requiresJob: true },
   { id: "tailor", label: "Tailor Resume", icon: PenLine, requiresJob: true },
+  { id: "insights", label: "Career Insights", icon: Brain, requiresJob: false },
 ];
 
 // ── Empty state ────────────────────────────────────────────────────────────────
@@ -293,6 +298,11 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
   // JD text for manual input
   const [jdText, setJdText] = useState("");
 
+  // M4 Evidence Optimizer state
+  const [evidenceResult, setEvidenceResult] = useState<EvidenceOptimizerResult | null>(null);
+  const [evidenceLoading, setEvidenceLoading] = useState(false);
+  const [evidenceError, setEvidenceError] = useState<string | null>(null);
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -374,6 +384,37 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
 
   const handleTailorApproved = useCallback(() => {
     setTailorOpen(false);
+    opt.resetScore();
+    opt.resetMatch();
+  }, [opt]);
+
+  // M4 Evidence Optimization handler
+  const handleEvidenceOptimize = useCallback(async () => {
+    if (!selectedResume || !effectiveJD) return;
+    setEvidenceLoading(true);
+    setEvidenceError(null);
+    setEvidenceResult(null);
+    try {
+      const res = await fetch("/api/ai/evidence-optimize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume: selectedResume, jobDescription: effectiveJD }),
+      });
+      const json = (await res.json()) as { success: boolean; data?: EvidenceOptimizerResult; error?: string };
+      if (!res.ok || !json.success) throw new Error(json.error ?? "Evidence optimization failed.");
+      setEvidenceResult(json.data ?? null);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Something went wrong.";
+      setEvidenceError(message);
+    } finally {
+      setEvidenceLoading(false);
+    }
+  }, [selectedResume, effectiveJD]);
+
+  const handleApplyEvidenceChanges = useCallback((acceptedChanges: OptimizerChange[]) => {
+    // For now, log the accepted changes. Full integration with resume store comes next.
+    console.log("Applying evidence-based changes:", acceptedChanges.length, "changes");
+    setEvidenceResult(null);
     opt.resetScore();
     opt.resetMatch();
   }, [opt]);
@@ -589,18 +630,48 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
                   error={null}
                   onRetry={handleMatch}
                 />
-                {/* Tailor CTA */}
-                <div className="flex justify-center pt-2">
+                {/* M4: Evidence Optimize CTA */}
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-3 pt-2">
+                  <button
+                    onClick={handleEvidenceOptimize}
+                    disabled={evidenceLoading}
+                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-cyan-500/25"
+                  >
+                    {evidenceLoading ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-4 h-4" />
+                    )}
+                    {evidenceLoading ? "Optimizing..." : "Evidence-Based Optimize"}
+                  </button>
                   <button
                     onClick={() => setTailorOpen(true)}
                     className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-semibold transition-colors"
                   >
                     <PenLine className="w-4 h-4" />
-                    Tailor Resume to This Job
+                    Tailor Resume
                     <ArrowRight className="w-4 h-4" />
                   </button>
                 </div>
               </div>
+            )}
+            {/* M4: Evidence Optimization Results */}
+            {evidenceLoading && !evidenceResult && (
+              <LoadingRow label="Computing evidence-based optimization..." />
+            )}
+            {evidenceError && !evidenceLoading && (
+              <ErrorBox
+                message={evidenceError}
+                onRetry={handleEvidenceOptimize}
+                retryLabel="Retry Optimization"
+              />
+            )}
+            {evidenceResult && !evidenceLoading && (
+              <EvidenceOptimizerReview
+                result={evidenceResult}
+                onApply={handleApplyEvidenceChanges}
+                onCancel={() => setEvidenceResult(null)}
+              />
             )}
             {!effectiveJD && (
               <div className="flex flex-col items-center py-12 text-center">
@@ -644,6 +715,21 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
                 </p>
               </div>
             )}
+          </div>
+        )}
+
+        {/* ── Career Insights Tab ── */}
+        {activeTab === "insights" && (
+          <div className="space-y-4">
+            <div className="flex flex-col items-center py-4 text-center">
+              <Brain className="w-10 h-10 text-slate-600 mb-3" />
+              <p className="text-sm font-medium text-slate-300 mb-1">Career Memory</p>
+              <p className="text-[11px] text-slate-500 max-w-sm">
+                Patterns and insights derived from your application outcomes. The more you track,
+                the smarter your career recommendations become.
+              </p>
+            </div>
+            <CareerInsightsPanel />
           </div>
         )}
       </div>

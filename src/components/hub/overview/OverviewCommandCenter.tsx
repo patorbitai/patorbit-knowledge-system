@@ -20,18 +20,24 @@ import {
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import AICopilotWidget from "@/components/hub/widgets/AICopilotWidget";
+import TrustWidget from "@/components/hub/widgets/TrustWidget";
+import KnowledgeGraphWidget from "@/components/hub/widgets/KnowledgeGraphWidget";
+import PassportWidget from "@/components/hub/widgets/PassportWidget";
+import CareerInsightsWidget from "@/components/hub/widgets/CareerInsightsWidget";
 import { JobApplicationsSection } from "@/components/hub/applications/JobApplicationsSection";
 import type { IdentityScoreData } from "@/lib/identity-score";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { ShareResumeModal } from "@/components/resume-builder/ShareResumeModal";
 import { OnboardingModal } from "@/components/hub/OnboardingModal";
+import { FeatureGate } from "@/components/ProBadge";
 
 type Props = {
   name: string;
   email: string;
   data: IdentityScoreData;
   onboardingCompleted?: boolean;
+  subscriptionTier?: "Free" | "Professional" | "Enterprise";
 };
 
 /** Format a date string or timestamp into a human-readable relative time. */
@@ -51,7 +57,7 @@ function formatRelativeTime(date: string | number | Date | undefined): string {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-export function OverviewCommandCenter({ name, email, data, onboardingCompleted = true }: Props) {
+export function OverviewCommandCenter({ name, email, data, onboardingCompleted = true, subscriptionTier = "Free" }: Props) {
   const [mounted, setMounted] = useState(false);
   const [shareModalResume, setShareModalResume] = useState<{ id: string; name: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(!onboardingCompleted);
@@ -398,6 +404,27 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
 
       {/* ── JOB APPLICATIONS ── */}
       <JobApplicationsSection />
+
+      {/* ── PROFESSIONAL IDENTITY WIDGETS ── */}
+      {hasResumes && (
+        <section className="space-y-4">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+            Professional Identity
+          </h2>
+          <FeatureGate
+            gated={subscriptionTier === "Free"}
+            featureName="Professional Identity"
+            proIncludes={["Trust Score", "Professional Passport", "Knowledge Graph", "Career Insights"]}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+              <TrustWidget />
+              <PassportWidget />
+              <KnowledgeGraphWidget />
+              <CareerInsightsWidget />
+            </div>
+          </FeatureGate>
+        </section>
+      )}
 
       {/* ── AI TOOLS ── */}
       <section>

@@ -20,9 +20,25 @@ const ebGaramond = EB_Garamond({ subsets: ["latin"], variable: "--font-garamond"
 const jetbrainsMono = JetBrains_Mono({ subsets: ["latin"], variable: "--font-jetbrains" });
 
 export const metadata: Metadata = {
-  title: "Patorbit — Build Once, Tailor Every Resume",
+  title: {
+    default: "Patorbit — Build Better Resumes. Build Your Professional Identity.",
+    template: "%s | Patorbit",
+  },
   description:
     "Create your Professional Identity once, then build multiple resumes and tailor each one to the job — without inventing experience. AI-assisted, truthful, user-controlled.",
+  metadataBase: new URL("https://www.patorbit.com"),
+  openGraph: {
+    siteName: "Patorbit",
+    locale: "en_US",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 export default function RootLayout({
