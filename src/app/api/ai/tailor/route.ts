@@ -6,6 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
 import { resumeService } from "@/services/resume.service";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { usageService } from "@/services/usage.service";
 import { getAIService } from "@/lib/ai/service";
 import { AIError } from "@/lib/ai/types";
 
@@ -58,6 +59,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
     r429.headers.set("Retry-After", String(retryAfter));
     return r429;
+  }
+
+  // 2b. Usage metering for AI tailoring
+  const usageCheck = await usageService.checkAndIncrementUsage(session.user.id, "ai_tailoring");
+  if (!usageCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Monthly AI tailoring limit reached for Free tier. Upgrade to Professional for unlimited.", code: "USAGE_LIMIT_REACHED" },
+      { status: 429 },
+    );
   }
 
   // 3. Body size guard

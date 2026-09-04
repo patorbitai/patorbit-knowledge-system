@@ -10,10 +10,12 @@ import {
   AlertTriangle,
   ArrowLeft,
   Calendar,
-  Clock,
   Shield,
+  FileText,
+  Sparkles,
+  Target,
+  Crown,
 } from "lucide-react";
-import CheckoutButton from "@/components/CheckoutButton";
 
 type SubscriptionData = {
   tier: string;
@@ -34,13 +36,28 @@ type SubscriptionData = {
   } | null;
 };
 
+type UsageData = {
+  ai_generations: { current: number; limit: number };
+  job_analysis: { current: number; limit: number };
+  ai_tailoring: { current: number; limit: number };
+  resumeCount: { current: number; limit: number };
+};
+
+declare global {
+  interface Window {
+    Razorpay?: new (opts: Record<string, unknown>) => { open: () => void };
+  }
+}
+
 export default function BillingPage() {
   const { data: session, status: authStatus } = useSession();
   const router = useRouter();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
+  const [usage, setUsage] = useState<UsageData | null>(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [success, setSuccess] = useState(false);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
 
   useEffect(() => {
     if (authStatus === "unauthenticated") {
@@ -59,7 +76,14 @@ export default function BillingPage() {
       })
       .catch(() => setLoading(false));
 
-    // Check for success param
+    // Fetch usage data
+    fetch("/api/account/usage")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && !data.error) setUsage(data);
+      })
+      .catch(() => {});
+
     const params = new URLSearchParams(window.location.search);
     if (params.get("status") === "success") {
       setSuccess(true);
@@ -67,11 +91,68 @@ export default function BillingPage() {
     }
   }, [authStatus]);
 
+  const isPro =
+    subscription?.tier === "professional" &&
+    (subscription?.status === "active" || subscription?.status === "trialing");
+
+  const sub = subscription?.subscription;
+
+  const handleUpgrade = async () => {
+    setCheckoutLoading(true);
+    try {
+      const res = await fetch("/api/razorpay/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ interval: "monthly" }),
+      });
+
+      if (res.status === 401) {
+        window.location.href = "/login?callbackUrl=/account/billing";
+        return;
+      }
+      if (!res.ok) {
+        const err = await res.json();
+        alert(err.error || "Failed to start checkout");
+        setCheckoutLoading(false);
+        return;
+      }
+
+      const { subscriptionId, razorpayKeyId } = await res.json();
+
+      const options = {
+        key: razorpayKeyId,
+        subscription_id: subscriptionId,
+        name: "Patorbit",
+        description: "Professional Plan (Monthly)",
+        handler: function () {
+          window.location.href = "/account/billing?status=success";
+        },
+        prefill: {},
+        theme: { color: "#0891b2" },
+        modal: { ondismiss: () => setCheckoutLoading(false) },
+      };
+
+      const w = window as unknown as { Razorpay?: new (opts: Record<string, unknown>) => { open: () => void } };
+      if (!w.Razorpay) {
+        const script = document.createElement("script");
+        script.src = "https://checkout.razorpay.com/v1/checkout.js";
+        script.onload = () => {
+          new w.Razorpay!(options).open();
+        };
+        document.body.appendChild(script);
+      } else {
+        new w.Razorpay(options).open();
+      }
+    } catch {
+      alert("Network error. Please try again.");
+      setCheckoutLoading(false);
+    }
+  };
+
   const handleCancel = async () => {
     if (!confirm("Cancel your subscription? You'll keep access until the end of the billing period.")) {
       return;
     }
-
     setCancelling(true);
     try {
       const res = await fetch("/api/razorpay/subscription", { method: "DELETE" });
@@ -79,7 +160,7 @@ export default function BillingPage() {
         setSubscription((prev) =>
           prev
             ? { ...prev, cancelAtPeriodEnd: true, subscription: prev.subscription ? { ...prev.subscription, cancelAtPeriodEnd: true } : null }
-            : prev
+            : prev,
         );
       }
     } catch {
@@ -91,39 +172,38 @@ export default function BillingPage() {
 
   if (authStatus === "loading" || loading) {
     return (
-      <div className="min-h-screen bg-[#070B14] flex items-center justify-center">
-        <div className="text-slate-400 text-sm">Loading billing information...</div>
+      <div className="min-h-screen bg-white dark:bg-[#070B14] flex items-center justify-center">
+        <div className="text-gray-400 dark:text-slate-400 text-sm">Loading billing information...</div>
       </div>
     );
   }
 
-  const isPro = subscription?.tier === "professional" && subscription?.status === "active";
-  const sub = subscription?.subscription;
+  const formatLimit = (limit: number) => (limit === -1 ? "Unlimited" : limit.toString());
 
   return (
-    <div className="min-h-screen bg-[#070B14]">
+    <div className="min-h-screen bg-white dark:bg-[#070B14]">
       {/* Header */}
-      <div className="border-b border-white/[0.06]">
+      <div className="border-b border-gray-200 dark:border-white/[0.06]">
         <div className="max-w-4xl mx-auto px-6 py-6">
           <div className="flex items-center gap-3 mb-1">
             <Link
               href="/overview"
-              className="text-slate-400 hover:text-white transition-colors"
+              className="text-gray-400 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
             >
               <ArrowLeft className="w-4 h-4" />
             </Link>
-            <h1 className="text-xl font-semibold text-white">Billing & Subscription</h1>
+            <h1 className="text-xl font-semibold text-gray-900 dark:text-white">Billing & Subscription</h1>
           </div>
-          <p className="text-sm text-slate-400 ml-7">
-            Manage your plan, payment method, and invoices.
+          <p className="text-sm text-gray-500 dark:text-slate-400 ml-7">
+            Manage your plan, payment method, and usage.
           </p>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-6 py-8 space-y-6">
         {/* Success banner */}
         {success && (
-          <div className="mb-6 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex items-center gap-3">
+          <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex items-center gap-3">
             <Check className="w-5 h-5 text-emerald-400 shrink-0" />
             <p className="text-sm text-emerald-300">
               Payment successful! Your subscription is now active.
@@ -132,23 +212,21 @@ export default function BillingPage() {
         )}
 
         {/* Current Plan */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 mb-6">
+        <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-300 uppercase tracking-wider">
               Current Plan
             </h2>
             {!isPro && (
-              <CheckoutButton
-                amount={14900}
-                label="Upgrade to Pro — ₹149"
-                description="Patorbit Professional Plan (Monthly)"
-                className="text-xs font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-1.5 rounded-lg hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/20"
-                onSuccess={() => {
-                  setSuccess(true);
-                  setTimeout(() => window.location.reload(), 1500);
-                }}
-                onError={(err) => alert(err)}
-              />
+              <button
+                type="button"
+                onClick={handleUpgrade}
+                disabled={checkoutLoading}
+                className="inline-flex items-center gap-2 text-xs font-semibold bg-gradient-to-r from-cyan-500 to-blue-600 text-white px-4 py-1.5 rounded-lg hover:from-cyan-400 hover:to-blue-500 transition-all shadow-lg shadow-cyan-500/20 disabled:opacity-50"
+              >
+                <Crown className="h-3 w-3" />
+                {checkoutLoading ? "Starting..." : "Upgrade to Professional — ₹149/mo"}
+              </button>
             )}
           </div>
 
@@ -158,7 +236,7 @@ export default function BillingPage() {
             </div>
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <h3 className="text-lg font-semibold text-white">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
                   {isPro ? "Professional" : "Starter"}
                 </h3>
                 {isPro && (
@@ -172,18 +250,18 @@ export default function BillingPage() {
                   </span>
                 )}
               </div>
-              <p className="text-sm text-slate-400 mb-3">
+              <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
                 {isPro
                   ? sub?.interval === "yearly"
                     ? "Annual plan — billed every 12 months"
-                    : "Monthly plan — billed every month"
+                    : "Monthly plan — ₹149/month"
                   : "Free plan with basic features"}
               </p>
 
               {isPro && sub && (
                 <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2 text-slate-300">
-                    <Calendar className="w-4 h-4 text-slate-500" />
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
+                    <Calendar className="w-4 h-4 text-gray-400 dark:text-slate-500" />
                     <span>
                       Renews{" "}
                       {sub.currentPeriodEnd
@@ -195,8 +273,8 @@ export default function BillingPage() {
                         : "N/A"}
                     </span>
                   </div>
-                  <div className="flex items-center gap-2 text-slate-300">
-                    <CreditCard className="w-4 h-4 text-slate-500" />
+                  <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
+                    <CreditCard className="w-4 h-4 text-gray-400 dark:text-slate-500" />
                     <span>Razorpay</span>
                   </div>
                 </div>
@@ -205,28 +283,63 @@ export default function BillingPage() {
           </div>
         </div>
 
+        {/* Usage Meters */}
+        {usage && (
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] p-6">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-4">
+              Usage This Month
+            </h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <UsageMeter
+                icon={<Sparkles className="w-4 h-4" />}
+                label="AI Suggestions"
+                current={usage.ai_generations.current}
+                limit={usage.ai_generations.limit}
+              />
+              <UsageMeter
+                icon={<FileText className="w-4 h-4" />}
+                label="Job Analyses"
+                current={usage.job_analysis.current}
+                limit={usage.job_analysis.limit}
+              />
+              <UsageMeter
+                icon={<Target className="w-4 h-4" />}
+                label="AI Tailoring"
+                current={usage.ai_tailoring.current}
+                limit={usage.ai_tailoring.limit}
+              />
+              <UsageMeter
+                icon={<FileText className="w-4 h-4" />}
+                label="Resumes"
+                current={usage.resumeCount.current}
+                limit={usage.resumeCount.limit}
+              />
+            </div>
+          </div>
+        )}
+
         {/* Subscription Details */}
         {isPro && sub && (
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 mb-6">
-            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] p-6">
+            <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-4">
               Subscription Details
             </h2>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-xs text-slate-500 mb-1">Subscription ID</p>
-                <p className="text-sm text-slate-300 font-mono">{sub.razorpaySubscriptionId}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Subscription ID</p>
+                <p className="text-sm text-gray-700 dark:text-slate-300 font-mono">{sub.razorpaySubscriptionId}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 mb-1">Status</p>
-                <p className="text-sm text-slate-300 capitalize">{sub.status}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Status</p>
+                <p className="text-sm text-gray-700 dark:text-slate-300 capitalize">{sub.status}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 mb-1">Billing Interval</p>
-                <p className="text-sm text-slate-300 capitalize">{sub.interval}</p>
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Billing Interval</p>
+                <p className="text-sm text-gray-700 dark:text-slate-300 capitalize">{sub.interval}</p>
               </div>
               <div>
-                <p className="text-xs text-slate-500 mb-1">Started</p>
-                <p className="text-sm text-slate-300">
+                <p className="text-xs text-gray-400 dark:text-slate-500 mb-1">Started</p>
+                <p className="text-sm text-gray-700 dark:text-slate-300">
                   {new Date(sub.createdAt).toLocaleDateString("en-US", {
                     month: "short",
                     day: "numeric",
@@ -240,14 +353,14 @@ export default function BillingPage() {
 
         {/* Cancel */}
         {isPro && !subscription?.cancelAtPeriodEnd && (
-          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 mb-6">
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] p-6">
             <div className="flex items-start gap-3">
               <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
-                <h3 className="text-sm font-semibold text-white mb-1">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
                   Cancel Subscription
                 </h3>
-                <p className="text-sm text-slate-400 mb-4">
+                <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
                   You&apos;ll keep access until the end of your current billing period.
                   After that, your account will be downgraded to the free Starter plan.
                 </p>
@@ -264,45 +377,113 @@ export default function BillingPage() {
           </div>
         )}
 
-        {/* Features Included */}
-        <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6">
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
+        {/* Plan Features */}
+        <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] p-6">
+          <h2 className="text-sm font-semibold text-gray-500 dark:text-slate-300 uppercase tracking-wider mb-4">
             {isPro ? "Included in your plan" : "Upgrade to unlock"}
           </h2>
           <ul className="space-y-3">
             {(isPro
               ? [
                   "Unlimited resumes",
+                  "All resume templates",
+                  "Advanced AI suggestions",
+                  "Advanced job analysis",
+                  "Full Qualification Match",
                   "Professional Passport",
                   "Knowledge Graph",
                   "Trust Score",
                   "Evidence Management",
+                  "Career Timeline",
                   "AI Career Insights",
+                  "Advanced ATS analysis",
                   "Priority support",
                 ]
               : [
-                  "1 Resume",
+                  "Up to 2 resumes",
+                  "Core resume templates",
                   "Basic AI suggestions",
-                  "Resume export",
+                  "Basic job analysis",
+                  "Basic ATS checks",
+                  "PDF export",
                   "Community support",
                 ]
             ).map((feature) => (
               <li key={feature} className="flex items-center gap-3">
                 <Check className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span className="text-sm text-slate-300">{feature}</span>
+                <span className="text-sm text-gray-700 dark:text-slate-300">{feature}</span>
               </li>
             ))}
           </ul>
           {!isPro && (
-            <Link
-              href="/pricing"
-              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-500 transition-all"
+            <button
+              type="button"
+              onClick={handleUpgrade}
+              disabled={checkoutLoading}
+              className="mt-6 inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-500 transition-all disabled:opacity-50"
             >
-              View Plans
-            </Link>
+              <Crown className="h-4 w-4" />
+              {checkoutLoading ? "Starting checkout..." : "Upgrade to Professional — ₹149/mo"}
+            </button>
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+// ─── Usage Meter Component ──────────────────────────────────────────────────
+
+function UsageMeter({
+  icon,
+  label,
+  current,
+  limit,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  current: number;
+  limit: number;
+}) {
+  const isUnlimited = limit === -1;
+  const percentage = isUnlimited ? 0 : Math.min(100, (current / limit) * 100);
+  const isNearLimit = !isUnlimited && percentage >= 80;
+  const isAtLimit = !isUnlimited && percentage >= 100;
+
+  return (
+    <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className="text-cyan-500 dark:text-cyan-400">{icon}</span>
+        <span className="text-sm font-medium text-gray-700 dark:text-slate-300">{label}</span>
+      </div>
+      <div className="flex items-baseline gap-1 mb-2">
+        <span className={`text-xl font-bold ${isAtLimit ? "text-amber-400" : "text-gray-900 dark:text-white"}`}>
+          {current}
+        </span>
+        <span className="text-sm text-gray-400 dark:text-slate-500">
+          / {isUnlimited ? "∞" : limit}
+        </span>
+      </div>
+      {!isUnlimited && (
+        <div className="h-1.5 rounded-full bg-gray-200 dark:bg-white/[0.06] overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all ${
+              isAtLimit
+                ? "bg-amber-500"
+                : isNearLimit
+                  ? "bg-amber-400"
+                  : "bg-cyan-500"
+            }`}
+            style={{ width: `${percentage}%` }}
+          />
+        </div>
+      )}
+      {isUnlimited && (
+        <p className="text-[11px] text-gray-400 dark:text-slate-500">Unlimited with Professional</p>
+      )}
+      {isAtLimit && (
+        <p className="text-[11px] text-amber-400 mt-1">Limit reached</p>
+      )}
     </div>
   );
 }

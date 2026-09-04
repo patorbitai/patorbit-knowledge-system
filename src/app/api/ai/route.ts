@@ -3,6 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { getAIService, type AIAction } from "@/lib/ai/service";
 import { AIError } from "@/lib/ai/types";
+import { usageService } from "@/services/usage.service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -127,7 +128,16 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 4. Dispatch to AI service with timeout protection
+  // 4. Usage metering for AI generations
+  const usageCheck = await usageService.checkAndIncrementUsage(session.user.id, "ai_generations");
+  if (!usageCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Monthly AI generation limit reached for Free tier. Upgrade to Professional for unlimited.", code: "USAGE_LIMIT_REACHED" },
+      { status: 429 },
+    );
+  }
+
+  // 5. Dispatch to AI service with timeout protection
   try {
     const service = getAIService();
     const result = await withTimeout(service.dispatch(action as AIAction, data));

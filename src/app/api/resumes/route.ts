@@ -11,6 +11,7 @@ import {
   type SaveResumeInput,
 } from "@/services/resume.service";
 import { mapProfileToResume, isEmptyResumePayload, type ProfileData } from "@/lib/resume-seeding";
+import { checkResumeLimit } from "@/lib/api-entitlement";
 
 /**
  * /api/resumes — list and create the authenticated user's resumes.
@@ -46,6 +47,12 @@ export async function POST(req: NextRequest) {
   }
 
   try {
+    // C57: Server-side resume limit enforcement for Starter tier
+    const limitCheck = await checkResumeLimit(session.user.id);
+    if (!limitCheck.allowed) {
+      return limitCheck.error!;
+    }
+
     const body = (await req.json()) as SaveResumeInput;
     const identity = await identityService.ensureProfessionalIdentity(
       session.user.id,

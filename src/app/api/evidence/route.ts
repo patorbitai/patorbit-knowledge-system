@@ -16,12 +16,12 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const hasEvidenceAccess = await entitlementService.hasFeature(session.user.id, "evidenceManagement");
+  const hasEvidenceAccess = await entitlementService.hasFeature(session.user.id, "evidence");
   if (!hasEvidenceAccess) {
     return NextResponse.json({
       error: "Evidence management requires a Professional or Enterprise subscription",
       code: "FEATURE_NOT_ENTITLED",
-      feature: "evidenceManagement",
+      feature: "evidence",
     }, { status: 403 });
   }
 

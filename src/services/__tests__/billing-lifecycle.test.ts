@@ -1,73 +1,113 @@
 "use strict";
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import { entitlementService } from "../entitlement.service";
-import { usageService } from "../usage.service";
 
-const { findUniqueMock, updateMock } = vi.hoisted(() => ({
+const { findUniqueMock } = vi.hoisted(() => ({
   findUniqueMock: vi.fn(),
-  updateMock: vi.fn(),
 }));
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
     user: {
       findUnique: findUniqueMock,
-      update: updateMock,
     },
     usageRecord: {
       findUnique: vi.fn(),
       upsert: vi.fn(),
     },
+    professionalIdentity: {
+      findUnique: vi.fn(),
+    },
   },
 }));
 
-describe("EPIC-06 Phase 4: Billing Lifecycle Management", () => {
+import { entitlementService } from "../entitlement.service";
+
+describe("Billing Lifecycle", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("reflects active subscriber entitlements correctly", async () => {
+  it("grants Professional features for active subscriber", async () => {
     findUniqueMock.mockResolvedValue({
       subscriptionTier: "Professional",
       subscriptionStatus: "active",
-      stripeCustomerId: "cus_test_123",
-      stripeSubscriptionId: "sub_test_123",
-      cancelAtPeriodEnd: false,
     });
+    const e = await entitlementService.getUserEntitlements("u1");
 
-    const entitlements = await entitlementService.getUserEntitlements("user_1");
-    expect(entitlements.tier).toBe("Professional");
-    expect(entitlements.isActive).toBe(true);
-    expect(entitlements.features.trustScore).toBe(true);
+    expect(e.tier).toBe("Professional");
+    expect(e.isActive).toBe(true);
+    expect(e.features.trustScore).toBe(true);
+    expect(e.features.knowledgeGraph).toBe(true);
+    expect(e.features.evidence).toBe(true);
+    expect(e.features.maxResumes).toBe(-1);
+    expect(e.features.aiAdvanced).toBe(true);
+    expect(e.features.jobAnalysisAdvanced).toBe(true);
   });
 
-  it("handles payment failure (past_due status) and grace behavior", async () => {
+  it("downgrades to Free when subscription is past_due", async () => {
     findUniqueMock.mockResolvedValue({
       subscriptionTier: "Professional",
       subscriptionStatus: "past_due",
-      stripeCustomerId: "cus_test_123",
-      stripeSubscriptionId: "sub_test_123",
-      cancelAtPeriodEnd: false,
     });
+    const e = await entitlementService.getUserEntitlements("u2");
 
-    // In entitlement service, past_due status or active status grants access
-    const user = await findUniqueMock();
-    expect(user.subscriptionStatus).toBe("past_due");
+    expect(e.tier).toBe("Free");
+    expect(e.isActive).toBe(false);
+    expect(e.features.trustScore).toBe(false);
+    expect(e.features.maxResumes).toBe(2);
   });
 
-  it("reflects cancellation and downgrade to Free tier after subscription deletion", async () => {
+  it("downgrades to Free after subscription is canceled", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "Professional",
+      subscriptionStatus: "canceled",
+    });
+    const e = await entitlementService.getUserEntitlements("u3");
+
+    expect(e.tier).toBe("Free");
+    expect(e.isActive).toBe(false);
+    expect(e.features.trustScore).toBe(false);
+    expect(e.features.knowledgeGraph).toBe(false);
+    expect(e.features.passport).toBe(false);
+    expect(e.features.maxResumes).toBe(2);
+  });
+
+  it("downgrades to Free when tier is free regardless of status", async () => {
     findUniqueMock.mockResolvedValue({
       subscriptionTier: "Free",
-      subscriptionStatus: "canceled",
-      stripeCustomerId: "cus_test_123",
-      stripeSubscriptionId: null,
-      cancelAtPeriodEnd: true,
+      subscriptionStatus: "inactive",
     });
+    const e = await entitlementService.getUserEntitlements("u4");
 
-    const entitlements = await entitlementService.getUserEntitlements("user_1");
-    expect(entitlements.tier).toBe("Free");
-    expect(entitlements.isActive).toBe(false);
-    expect(entitlements.features.trustScore).toBe(false);
+    expect(e.tier).toBe("Free");
+    expect(e.features.pdfExport).toBe(true);
+    expect(e.features.aiBasic).toBe(true);
+  });
+
+  it("preserves Professional access during trialing", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "Professional",
+      subscriptionStatus: "trialing",
+    });
+    const e = await entitlementService.getUserEntitlements("u5");
+
+    expect(e.tier).toBe("Professional");
+    expect(e.isActive).toBe(true);
+    expect(e.features.aiAdvanced).toBe(true);
+  });
+
+  it("Enterprise tier gets organization features", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "Enterprise",
+      subscriptionStatus: "active",
+    });
+    const e = await entitlementService.getUserEntitlements("u6");
+
+    expect(e.tier).toBe("Enterprise");
+    expect(e.features.organizationFeatures).toBe(true);
+    expect(e.features.apiAccess).toBe(true);
+    expect(e.features.sso).toBe(true);
+    expect(e.features.customIntegrations).toBe(true);
   });
 });

@@ -31,6 +31,22 @@ vi.mock("@/lib/prisma", () => ({
       update: updateMock,
       delete: deleteMock,
     },
+    professionalIdentity: {
+      findUnique: vi.fn().mockResolvedValue({ id: "pi_test", resumes: [] }),
+    },
+  },
+}));
+
+vi.mock("@/services/entitlement.service", () => ({
+  entitlementService: {
+    getUserEntitlements: vi.fn().mockResolvedValue({
+      tier: "Professional",
+      status: "active",
+      isActive: true,
+      features: { maxResumes: -1 },
+    }),
+    hasFeature: vi.fn().mockResolvedValue(true),
+    checkResumeLimit: vi.fn().mockResolvedValue({ allowed: true, current: 0, max: -1 }),
   },
 }));
 

@@ -2,11 +2,7 @@
 
 import { useState, useCallback } from "react";
 
-declare global {
-  interface Window {
-    Razorpay: new (options: RazorpayOptions) => RazorpayInstance;
-  }
-}
+/* Note: Window.Razorpay global type is declared in billing/page.tsx */
 
 interface RazorpayOptions {
   key: string;
@@ -141,7 +137,8 @@ export default function CheckoutButton({
         },
       };
 
-      const rzp = new window.Razorpay(options);
+      const w = window as unknown as { Razorpay: new (opts: Record<string, unknown>) => { open: () => void; on: (event: string, handler: (resp: { error: { description: string } }) => void) => void } };
+      const rzp = new w.Razorpay(options as unknown as Record<string, unknown>);
 
       // Handle payment failure
       rzp.on("payment.failed", (response: { error: { description: string } }) => {

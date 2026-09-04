@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkAIRateLimit } from "@/lib/rate-limit";
+import { usageService } from "@/services/usage.service";
 import { getAIProvider } from "@/lib/ai/provider";
 import { AIError } from "@/lib/ai/types";
 import type { JdMatchResult, TailoringSuggestion, AIChatMessage } from "@/lib/ai/types";
@@ -109,6 +110,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
     r429.headers.set("Retry-After", String(retryAfter));
     return r429;
+  }
+
+  // 2b. Usage metering for job analysis
+  const usageCheck = await usageService.checkAndIncrementUsage(session.user.id, "job_analysis");
+  if (!usageCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Monthly job analysis limit reached for Free tier. Upgrade to Professional for unlimited.", code: "USAGE_LIMIT_REACHED" },
+      { status: 429 },
+    );
   }
 
   // 3. Body size guard
