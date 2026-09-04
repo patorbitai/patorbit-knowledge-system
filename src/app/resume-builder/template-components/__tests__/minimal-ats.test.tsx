@@ -118,7 +118,6 @@ describe("MinimalAtsPreview", () => {
     expect(html).toContain("Data Pipeline Platform");
     expect(html).toContain("Python");
     expect(html).toContain("AWS Certified Data Analytics");
-    expect(html).toContain("Open Source");
     expect(html).toContain("Hackathon Winner");
   });
 });

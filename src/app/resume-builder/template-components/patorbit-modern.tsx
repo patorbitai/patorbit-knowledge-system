@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Resume, FormattedDescription, ContactRow } from "./shared";
+import { Resume, FormattedDescription, ContactRow, normalizeSocialUrl, socialUrlLabel } from "./shared";
 import {
   fontFamilies,
   typography,
@@ -196,10 +196,10 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
               <p style={{ fontSize: 9, color: C.light, lineHeight: 1.6 }}>{resume.address}</p>
             )}
             {resume.social?.linkedin && (
-              <p style={{ fontSize: 9, color: C.gold, marginTop: 2 }}>{resume.social.linkedin}</p>
+              <a href={normalizeSocialUrl(resume.social.linkedin)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 9, color: C.gold, marginTop: 2, display: "block" }}>{socialUrlLabel(resume.social.linkedin)}</a>
             )}
             {resume.social?.github && (
-              <p style={{ fontSize: 9, color: C.gold }}>{resume.social.github}</p>
+              <a href={normalizeSocialUrl(resume.social.github)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 9, color: C.gold, display: "block" }}>{socialUrlLabel(resume.social.github)}</a>
             )}
           </div>
         </div>

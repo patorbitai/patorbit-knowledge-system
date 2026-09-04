@@ -133,7 +133,8 @@ describe("Auth Verification & Password Reset Service", () => {
   });
 
   it("expired password reset token fails", async () => {
-    const token = "expired-reset-token";
+    const token = `expired-reset-token-${Date.now()}`;
+    await prisma.verificationToken.deleteMany({ where: { token } }).catch(() => {});
     await prisma.verificationToken.create({
       data: {
         identifier: `reset_${testEmail}`,

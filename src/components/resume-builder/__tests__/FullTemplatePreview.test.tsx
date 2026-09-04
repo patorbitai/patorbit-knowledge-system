@@ -128,20 +128,20 @@ describe("FullTemplatePreview", () => {
     const { unmount } = renderToContainer(
       <FullTemplatePreview templateId="patorbit-modern" templates={templates} onClose={() => {}} onUseTemplate={() => {}} />,
     );
-    expect(document.body.textContent).toContain("Patorbit Modern");
+    expect(document.body.textContent).toContain("Tech Two-Column");
 
     click(document.body.querySelector('[aria-label="Next template"]'));
-    expect(document.body.textContent).toContain("Patorbit ATS");
+    expect(document.body.textContent).toContain("Minimal ATS");
 
     act(() => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowLeft" }));
     });
-    expect(document.body.textContent).toContain("Patorbit Modern");
+    expect(document.body.textContent).toContain("Tech Two-Column");
 
     act(() => {
       window.dispatchEvent(new KeyboardEvent("keydown", { key: "ArrowRight" }));
     });
-    expect(document.body.textContent).toContain("Patorbit ATS");
+    expect(document.body.textContent).toContain("Minimal ATS");
     unmount();
   });
 

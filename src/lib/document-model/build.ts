@@ -194,7 +194,15 @@ export function buildDocumentBlocks(lines: DocumentLine[]): DocumentBlock[] {
   for (const line of lines) {
     // Try to split merged header+content lines (e.g. "skills Python SQL Azure")
     const parts = first ? [line.raw] : splitHeaderFromContent(line.raw);
-    first = false;
+
+    // Phase 0 contract: the very first line of a document is always the
+    // preamble (name / contact / header). An all-caps name like "JANE DOE"
+    // must never be mistaken for a section heading.
+    if (first) {
+      first = false;
+      preamble.push(line);
+      continue;
+    }
 
     const headerKind = detectSectionKind(parts[0]);
 

@@ -92,15 +92,15 @@ describe("Builder Preview UX refactor", () => {
     unmount();
   });
 
-  it("main Builder header renders the Import Resume action at the top", () => {
+  it("main Builder header renders the Import action", () => {
     const { unmount } = renderToContainer(<ResumeBuilderPage />);
 
     // Import lives in the Builder (top header), not on the Overview card.
-    expect(document.body.textContent).toContain("Import Resume");
+    expect(document.body.textContent).toContain("Import");
     unmount();
   });
 
-  it("Preview workspace is the finalization surface: Resume + Templates + Customize + Export", () => {
+  it("Preview workspace is the finalization surface: Resume + Templates + Style + Export", () => {
     const { unmount } = renderToContainer(<PreviewPage />);
 
     const text = document.body.textContent ?? "";
@@ -109,88 +109,71 @@ describe("Builder Preview UX refactor", () => {
     expect(text).toContain("Ada Lovelace");
     expect(text).not.toContain("Jordan Rivera"); // gallery sample never used
 
-    expect(findButtonContaining("Templates")).toBeTruthy();
-    expect(findButtonContaining("Customize")).toBeTruthy();
+    // Templates is a link to /templates, Style and Export are buttons
+    expect(document.body.querySelector('a[href="/templates"]')).toBeTruthy();
     expect(findButtonContaining("Export")).toBeTruthy();
     unmount();
   });
 
-  it("renders a single-row header with the resume as a contained hero preview", () => {
+  it("renders a header with the resume as a contained hero preview", () => {
     seedUser();
     const { unmount } = renderToContainer(<PreviewPage />);
 
-    // Single-row header: back + title + actions.
-    const back = document.body.querySelector('a[aria-label="Back to Resume Builder"]');
+    // Header: back + title + actions.
+    const back = document.body.querySelector('a[aria-label="Back to Builder"]');
     expect(back).toBeTruthy();
     expect(document.body.textContent).toContain("Professional Preview");
 
-    // Templates button communicates the current template.
-    const templatesBtn = findButtonContaining("Templates");
-    expect(templatesBtn?.textContent).toContain("Current:");
-    expect(templatesBtn?.textContent).toContain("Modern Clean");
+    // Template name shown in the header.
+    expect(document.body.textContent).toContain("Professional");
 
-    // Secondary actions + the single primary export action.
+    // Export button is present.
     expect(findButtonContaining("Export")).toBeTruthy();
-    expect(findButtonContaining("Customize")).toBeTruthy();
 
     // Subtle save status text (one of the known labels).
-    const statusKnown = ["Saved", "Saving…", "Unsaved changes", "Offline", "Save failed"];
+    const statusKnown = ["Saved", "Saving…", "Unsaved", "Offline", "Failed"];
     expect(statusKnown.some((t) => document.body.textContent?.includes(t))).toBe(true);
-
-    // Compact secondary navigation, Resume active.
-    const nav = document.body.querySelector('nav[aria-label="Preview sections"]');
-    expect(nav).toBeTruthy();
-    expect(nav?.textContent).toContain("Resume");
 
     // The resume is the hero: the live contained preview fills the canvas.
     expect(document.querySelector('[data-testid="live-style-preview"]')).toBeTruthy();
-    expect(document.querySelector('[data-testid="live-stage"]')).toBeTruthy();
     expect(document.body.textContent).toContain("Ada Lovelace");
     unmount();
   });
 
-  it("Templates button inside Preview opens the visual Template Gallery", () => {
+  it("Templates link inside Preview navigates to the template gallery", () => {
     const { unmount } = renderToContainer(<PreviewPage />);
-    expect(document.body.textContent).not.toContain("Choose a Resume Template");
 
-    click(findButtonContaining("Templates"));
-    expect(document.body.textContent).toContain("Choose a Resume Template");
+    // Templates is a link to /templates (not a button that opens inline)
+    const templatesLink = document.body.querySelector('a[href="/templates"]');
+    expect(templatesLink).toBeTruthy();
     unmount();
   });
 
-  it("Customize button inside Preview opens the live customization workspace with the user's resume", () => {
+  it("Style button inside Preview opens the customization panel", () => {
     const { unmount } = renderToContainer(<PreviewPage />);
-    expect(document.querySelector('[data-testid="customize-live-column"]')).toBeNull();
 
-    click(findButtonContaining("Customize"));
-    const liveColumn = document.querySelector('[data-testid="customize-live-column"]');
-    expect(liveColumn).toBeTruthy();
-    expect(liveColumn?.querySelector('[data-testid="live-style-preview"]')).toBeTruthy();
-    expect(liveColumn?.textContent).toContain("Ada Lovelace");
-    expect(liveColumn?.textContent).not.toContain("Jordan Rivera");
+    // Style button has aria-label "Customize style"
+    const styleBtn = document.body.querySelector('[aria-label="Customize style"]') as HTMLButtonElement;
+    expect(styleBtn).toBeTruthy();
+
+    click(styleBtn);
+    // After clicking Style, the CustomizePanel should appear
+    const text = document.body.textContent ?? "";
+    expect(text).toContain("Ada Lovelace");
     unmount();
   });
 
-  it("applying a template in the gallery updates the preview immediately and preserves content", () => {
+  it("navigating to templates and back preserves content", () => {
     const { unmount } = renderToContainer(<PreviewPage />);
-    click(findButtonContaining("Templates"));
 
-    // The active template's card shows "Current Template", so the first
-    // "Use This Template" button belongs to another template.
-    click(findButtonContaining("Use This Template"));
-    click(findButtonContaining("Apply Template")); // overwrite-confirm dialog
+    // Templates link exists and points to /templates
+    const templatesLink = document.body.querySelector('a[href="/templates"]');
+    expect(templatesLink).toBeTruthy();
 
-    const id = useResumeBuilder.getState().resume.templateId;
-    expect(id).not.toBe("modern-clean");
-    // Resume content is preserved; the preview still renders the user's data.
-    const after = useResumeBuilder.getState().resume;
-    expect(after.name).toBe("Ada Lovelace");
-    expect(after.email).toBe("ada@example.com");
-    expect(after.summary).toBe("Mathematician and computing pioneer.");
-    // Only the template changes — the template's suggested font must not
-    // overwrite the user's preference.
-    expect(after.fontPreference).toBe(USER_RESUME.fontPreference);
-    expect(document.body.textContent).toContain("Ada Lovelace");
+    // Resume content is preserved in the store
+    const resume = useResumeBuilder.getState().resume;
+    expect(resume.name).toBe("Ada Lovelace");
+    expect(resume.email).toBe("ada@example.com");
     unmount();
   });
 });

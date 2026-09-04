@@ -18,15 +18,14 @@ vi.mock("next/navigation", () => ({
 }));
 
 describe("Sidebar and Feature Routes Sprint Tests", () => {
-  it("1. Sidebar has correct hrefs for all 6 target features and removes disabled/soon states", () => {
-    mockPathname.mockReturnValue("/trust/verification");
+  it("1. Sidebar has correct hrefs for all target features and removes disabled/soon states", () => {
+    mockPathname.mockReturnValue("/overview");
     const html = renderToString(<SidebarNav />);
-    expect(html).toContain('href="/trust"');
-    expect(html).toContain('href="/trust/verification"');
-    expect(html).toContain('href="/trust/evidence"');
-    expect(html).toContain('href="/trust/timeline"');
-    expect(html).toContain('href="/network/graph"');
-    expect(html).toContain('href="/network/journey"');
+    expect(html).toContain('href="/overview"');
+    expect(html).toContain('href="/resume-builder"');
+    expect(html).toContain('href="/ai"');
+    expect(html).toContain('href="/templates"');
+    expect(html).toContain('href="/settings"');
   });
 
   it("2. Trust Score route (TrustView) renders successfully", () => {
@@ -92,13 +91,13 @@ describe("Sidebar and Feature Routes Sprint Tests", () => {
     expect(nHtml).toContain("No network graph data yet");
   });
 
-  it("9. Correct active sidebar state highlighting for Network graph vs journey without activating siblings", () => {
-    mockPathname.mockReturnValue("/network/graph");
-    const graphHtml = renderToString(<SidebarNav />);
-    expect(graphHtml).toContain("Knowledge Graph");
+  it("9. Correct active sidebar state highlighting for AI Workspace vs Templates", () => {
+    mockPathname.mockReturnValue("/ai");
+    const aiHtml = renderToString(<SidebarNav />);
+    expect(aiHtml).toContain("AI Workspace");
 
-    mockPathname.mockReturnValue("/network/journey");
-    const journeyHtml = renderToString(<SidebarNav />);
-    expect(journeyHtml).toContain("Career Journey");
+    mockPathname.mockReturnValue("/templates");
+    const templatesHtml = renderToString(<SidebarNav />);
+    expect(templatesHtml).toContain("Templates");
   });
 });

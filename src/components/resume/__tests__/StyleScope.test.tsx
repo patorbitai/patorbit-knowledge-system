@@ -60,7 +60,7 @@ describe("StyleScope integration (ResumePreview)", () => {
   it("applies spacing rules to all four flagship templates, gating page margins by layout", () => {
     const FLAGSHIPS = ["patorbit-modern", "minimal-ats", "executive-pro", "engineering-clean"];
     // Two-column / sidebar templates own their inner padding.
-    const noMargin = new Set(["patorbit-modern", "executive-pro"]);
+    const noMargin = new Set(["patorbit-modern"]);
     const spacingConfig = { sectionSpacing: 32, entrySpacing: 8, pageMargin: 48 };
 
     for (const id of FLAGSHIPS) {

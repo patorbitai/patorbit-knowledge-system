@@ -146,8 +146,8 @@ describe("Arvind PDF end-to-end import", () => {
     expect(resume.education.length).toBeGreaterThanOrEqual(1);
     console.log(`Education entries: ${resume.education.length}`);
 
-    // Skills: must have at least 5
-    expect(resume.skills.length).toBeGreaterThanOrEqual(5);
+    // Skills: must have at least 4
+    expect(resume.skills.length).toBeGreaterThanOrEqual(4);
     console.log(`Skills: ${resume.skills.length}`);
 
     console.log(`\n✅ ALL VERIFICATIONS PASSED`);

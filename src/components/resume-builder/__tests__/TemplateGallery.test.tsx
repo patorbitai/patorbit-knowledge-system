@@ -149,8 +149,11 @@ describe("TemplateGallery", () => {
   });
 
   it("shows 'Current Template' on the card for the selected template", () => {
+    const r = { ...defaultResume, resumeId: "r1", resumeName: "My Resume", templateId: "patorbit-modern" };
     useResumeBuilder.setState({
-      resume: { ...defaultResume, resumeId: "r1", resumeName: "My Resume", templateId: "patorbit-modern" },
+      resume: r,
+      resumes: [r],
+      activeResumeId: "r1",
     });
     const { unmount } = renderToContainer(<TemplateGallery open onClose={() => {}} />);
 

@@ -145,8 +145,9 @@ describe("ResumeService", () => {
     it("treats a concurrent P2002 duplicate as idempotent success", async () => {
       const existing = makeRecord();
       findUniqueMock
-        .mockResolvedValueOnce(null) // first existence check
-        .mockResolvedValueOnce(existing); // after-race re-fetch
+        .mockResolvedValueOnce(null) // service-level existence check
+        .mockResolvedValueOnce(null) // repository upsert's internal check
+        .mockResolvedValueOnce(existing); // after-race re-fetch in upsert catch
       createMock.mockRejectedValue(
         Object.assign(new Error("Unique constraint failed"), { code: "P2002" }),
       );
