@@ -1,18 +1,10 @@
-import { Sparkles } from "lucide-react";
-import ComingSoon from "@/components/hub/ComingSoon";
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/auth";
+import AIWorkspaceClient from "@/components/hub/ai/AIWorkspaceClient";
 
-export default function AiPage() {
-  return (
-    <ComingSoon
-      title="AI"
-      description="Your AI career copilot — resume analysis, job matching, and tailored career insights."
-      icon={Sparkles}
-      capabilities={[
-        "Career Copilot",
-        "Resume Analysis",
-        "Job Match",
-        "Career Insights",
-      ]}
-    />
-  );
+export default async function AiPage() {
+  const session = await getServerSession(authOptions);
+  const userName = session?.user?.name || "User";
+
+  return <AIWorkspaceClient userName={userName} />;
 }

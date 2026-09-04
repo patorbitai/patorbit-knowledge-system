@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   FileText,
   Palette,
+  Sparkles,
   Settings,
 } from "lucide-react";
 
@@ -19,6 +20,7 @@ type NavItem = {
 const PRIMARY_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/overview", icon: LayoutDashboard },
   { label: "Resumes", href: "/resume-builder", icon: FileText },
+  { label: "AI Workspace", href: "/ai", icon: Sparkles },
   { label: "Templates", href: "/templates", icon: Palette },
 ];
 

@@ -94,9 +94,18 @@ export default function AICopilotWidget() {
 
       {/* Trust footer */}
       <div className="px-5 py-3 border-t border-gray-100 dark:border-white/[0.04] bg-gray-50 dark:bg-white/[0.01]">
-        <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-relaxed">
-          AI uses information already in your resume. It does not verify employment, education, or certifications. Review all AI-generated changes before saving.
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-relaxed">
+            AI uses your existing information. All changes require your approval.
+          </p>
+          <Link
+            href="/ai"
+            className="shrink-0 inline-flex items-center gap-1 text-[10px] font-medium text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+          >
+            Open AI Workspace
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
       </div>
     </div>
   );
