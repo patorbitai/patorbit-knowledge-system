@@ -35,6 +35,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
+    // 4. Check for existing active subscription
+    const existingSub = await prisma.subscription.findFirst({
+      where: {
+        userId: user.id,
+        status: { in: ["active", "pending", "trialing"] },
+      },
+    });
+    if (existingSub) {
+      return NextResponse.json(
+        { error: "You already have an active subscription. Manage it from your billing page." },
+        { status: 409 }
+      );
+    }
+
     const razorpay = getRazorpay();
     let customerId = user.razorpayCustomerId;
 
@@ -53,24 +67,24 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 4. Get plan ID for the interval
+    // 5. Get plan ID for the interval
     const planId = getPlanId(interval as PlanInterval);
 
-    // 5. Create Razorpay subscription
+    // 6. Create Razorpay subscription
     const subscription = await razorpay.subscriptions.create({
       plan_id: planId,
       customer_notify: 1,
       total_count: interval === "yearly" ? 12 : 24, // months before auto-renewal
     });
 
-    // 6. Store pending subscription in DB
+    // 7. Store pending subscription in DB
     await prisma.subscription.create({
       data: {
         userId: user.id,
         razorpaySubscriptionId: subscription.id,
         razorpayPlanId: planId,
         razorpayCustomerId: customerId,
-        tier: "professional",
+        tier: "Professional",
         status: "pending",
         interval,
         currentPeriodStart: subscription.current_start ? new Date(subscription.current_start * 1000) : new Date(),
@@ -78,7 +92,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // 7. Return subscription ID for frontend checkout
+    // 8. Return subscription ID for frontend checkout
     return NextResponse.json({
       subscriptionId: subscription.id,
       razorpayKeyId: process.env.RAZORPAY_KEY_ID,

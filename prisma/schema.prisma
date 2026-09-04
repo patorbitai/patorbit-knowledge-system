@@ -212,3 +212,17 @@ model UsageRecord {
 
   @@unique([userId, feature, period])
 }
+
+// ─── Razorpay Webhook Idempotency ───────────────────────────
+//
+// Razorpay may deliver the same webhook event more than once.
+// We track processed event IDs to ensure each event is applied exactly once.
+model WebhookEvent {
+  id            String   @id @default(cuid())
+  eventId       String   @unique  // Razorpay x-razorpay-event-id
+  eventType     String
+  subscriptionId String?
+  processedAt   DateTime @default(now())
+
+  @@index([eventId])
+}

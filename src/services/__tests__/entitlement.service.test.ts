@@ -191,4 +191,68 @@ describe("Entitlement Service", () => {
     expect(await entitlementService.hasFeature("u", "aiAdvanced")).toBe(true);
     expect(await entitlementService.hasFeature("u", "organizationFeatures")).toBe(false);
   });
+
+  // ── normalizeTier ────────────────────────────────────────────
+
+  it("normalizeTier normalizes lowercase DB values", () => {
+    expect(entitlementService.normalizeTier("free")).toBe("Free");
+    expect(entitlementService.normalizeTier("professional")).toBe("Professional");
+    expect(entitlementService.normalizeTier("enterprise")).toBe("Enterprise");
+  });
+
+  it("normalizeTier passes through PascalCase values", () => {
+    expect(entitlementService.normalizeTier("Free")).toBe("Free");
+    expect(entitlementService.normalizeTier("Professional")).toBe("Professional");
+    expect(entitlementService.normalizeTier("Enterprise")).toBe("Enterprise");
+  });
+
+  it("normalizeTier defaults to Free for null/undefined/unknown", () => {
+    expect(entitlementService.normalizeTier(null)).toBe("Free");
+    expect(entitlementService.normalizeTier(undefined)).toBe("Free");
+    expect(entitlementService.normalizeTier("")).toBe("Free");
+    expect(entitlementService.normalizeTier("unknown_tier")).toBe("Free");
+  });
+
+  // ── hasFeature numeric handling ───────────────────────────────
+
+  it("hasFeature returns true for maxResumes=2 (Free tier, numeric)", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "Free",
+      subscriptionStatus: "inactive",
+    });
+    // Free has maxResumes: 2, which is truthy → should return true
+    expect(await entitlementService.hasFeature("u", "maxResumes")).toBe(true);
+  });
+
+  it("hasFeature returns true for maxResumes=-1 (Professional, numeric)", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "Professional",
+      subscriptionStatus: "active",
+    });
+    // Professional has maxResumes: -1 (unlimited) → should return true
+    expect(await entitlementService.hasFeature("u", "maxResumes")).toBe(true);
+  });
+
+  // ── Case normalization in tier resolution ─────────────────────
+
+  it("resolves Professional tier for lowercase DB value 'professional'", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "professional",
+      subscriptionStatus: "active",
+    });
+    const e = await entitlementService.getUserEntitlements("u_case");
+    expect(e.tier).toBe("Professional");
+    expect(e.isActive).toBe(true);
+    expect(e.features.aiAdvanced).toBe(true);
+  });
+
+  it("resolves Free tier for lowercase DB value 'free'", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "free",
+      subscriptionStatus: "inactive",
+    });
+    const e = await entitlementService.getUserEntitlements("u_free_case");
+    expect(e.tier).toBe("Free");
+    expect(e.features.aiAdvanced).toBe(false);
+  });
 });

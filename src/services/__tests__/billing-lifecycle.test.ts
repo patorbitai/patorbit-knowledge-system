@@ -110,4 +110,31 @@ describe("Billing Lifecycle", () => {
     expect(e.features.sso).toBe(true);
     expect(e.features.customIntegrations).toBe(true);
   });
+
+  // ── DB case normalization ────────────────────────────────────
+
+  it("resolves Professional from lowercase 'professional' in DB", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "professional",
+      subscriptionStatus: "active",
+    });
+    const e = await entitlementService.getUserEntitlements("u_lower");
+
+    expect(e.tier).toBe("Professional");
+    expect(e.isActive).toBe(true);
+    expect(e.features.aiAdvanced).toBe(true);
+    expect(e.features.trustScore).toBe(true);
+  });
+
+  it("resolves Free from lowercase 'free' in DB", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "free",
+      subscriptionStatus: "inactive",
+    });
+    const e = await entitlementService.getUserEntitlements("u_free_l");
+
+    expect(e.tier).toBe("Free");
+    expect(e.features.maxResumes).toBe(2);
+    expect(e.features.aiAdvanced).toBe(false);
+  });
 });

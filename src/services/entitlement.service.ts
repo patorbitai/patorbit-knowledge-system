@@ -157,11 +157,17 @@ export interface UserEntitlements {
 
 export const entitlementService = {
   /**
-   * Resolve the effective tier for a user.
-   *
-   * - If subscription is active or trialing AND tier is not Free → use that tier.
-   * - Otherwise → fall back to Free.
+   * Normalize DB tier strings to canonical PascalCase.
+   * DB defaults may store "free" / "professional" (lowercase) while the
+   * entitlement system uses "Free" / "Professional" (PascalCase).
    */
+  normalizeTier(raw: string | null | undefined): SubscriptionTier {
+    const lower = (raw || "").toLowerCase();
+    if (lower === "professional") return "Professional";
+    if (lower === "enterprise") return "Enterprise";
+    return "Free";
+  },
+
   async getUserEntitlements(userId: string): Promise<UserEntitlements> {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -171,7 +177,7 @@ export const entitlementService = {
       },
     });
 
-    const tier = (user?.subscriptionTier as SubscriptionTier) || "Free";
+    const tier = this.normalizeTier(user?.subscriptionTier);
     const status =
       (user?.subscriptionStatus as SubscriptionStatus) || "inactive";
     const isActive = status === "active" || status === "trialing";
@@ -186,15 +192,29 @@ export const entitlementService = {
     };
   },
 
+  /** Features whose values are numeric (not boolean). */
+  numericFeatures: new Set<keyof PlanFeatures>([
+    "maxResumes",
+  ]),
+
   /**
    * Quick boolean check for a single feature.
+   * Handles both boolean and numeric feature values correctly.
    */
   async hasFeature(
     userId: string,
     feature: keyof PlanFeatures,
   ): Promise<boolean> {
     const entitlements = await this.getUserEntitlements(userId);
-    return Boolean(entitlements.features[feature]);
+    const value = entitlements.features[feature];
+
+    if (this.numericFeatures.has(feature)) {
+      // Numeric: -1 means unlimited (available), > 0 means available, 0 means not available
+      return typeof value === "number" && value !== 0;
+    }
+
+    // Boolean feature
+    return value === true;
   },
 
   /**
