@@ -82,6 +82,7 @@ model ProfessionalIdentity {
   trustShareEnabled    Boolean  @default(false)
   trustReportCache     String?  @db.Text
   passportShareEnabled Boolean  @default(false)
+  passportShareToken   String?  @unique
   passportDataCache    String?  @db.Text
   profileData          Json?
   onboardingCompleted  Boolean  @default(false)

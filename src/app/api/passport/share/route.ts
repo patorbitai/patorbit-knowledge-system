@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import crypto from "crypto";
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -15,13 +16,14 @@ export async function GET() {
     where: { userId: session.user.id },
   });
 
-  if (!identity || !identity.passportShareEnabled) {
+  if (!identity || !identity.passportShareEnabled || !identity.passportShareToken) {
     return NextResponse.json({ enabled: false });
   }
 
   return NextResponse.json({
     enabled: true,
-    shareUrl: `/passport/${session.user.id}`,
+    token: identity.passportShareToken,
+    shareUrl: `/passport/share/${identity.passportShareToken}`,
   });
 }
 
@@ -50,23 +52,29 @@ export async function POST(request: Request) {
         where: { id: identity.id },
         data: {
           passportShareEnabled: false,
+          passportShareToken: null,
           passportDataCache: null,
         },
       });
       return NextResponse.json({ enabled: false });
     }
 
+    // Generate a secure share token (reuse existing if present)
+    const token = identity.passportShareToken || crypto.randomUUID();
+
     await prisma.professionalIdentity.update({
       where: { id: identity.id },
       data: {
         passportShareEnabled: true,
+        passportShareToken: token,
         passportDataCache: passportData ? JSON.stringify(passportData) : null,
       },
     });
 
     return NextResponse.json({
       enabled: true,
-      shareUrl: `/passport/${session.user.id}`,
+      token,
+      shareUrl: `/passport/share/${token}`,
     });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : "Failed to update passport share settings";

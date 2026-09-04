@@ -19,7 +19,7 @@ export function PassportShareControl() {
     fetch("/api/passport/share")
       .then((res) => res.json())
       .then((data) => {
-        if (data.enabled) {
+        if (data.enabled && data.shareUrl) {
           setShareEnabled(true);
           setShareUrl(data.shareUrl);
         }

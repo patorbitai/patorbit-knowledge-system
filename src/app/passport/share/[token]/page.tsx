@@ -3,23 +3,16 @@
 import { prisma } from "@/lib/prisma";
 import { PublicPassportView } from "@/components/identity/PublicPassportView";
 import { ShieldCheck } from "lucide-react";
-import Link from "next/link";
 
-/**
- * Legacy passport page using userId in the URL.
- *
- * If the identity has a passportShareToken, redirect to the secure URL.
- * Otherwise, render the passport from the cache (backward compatibility).
- */
-export default async function PublicPassportPage({
+export default async function PublicPassportSharePage({
   params,
 }: {
-  params: Promise<{ userId: string }>;
+  params: Promise<{ token: string }>;
 }) {
-  const { userId } = await params;
+  const { token } = await params;
 
   const identity = await prisma.professionalIdentity.findUnique({
-    where: { userId },
+    where: { passportShareToken: token },
     include: { user: true },
   });
 
@@ -30,35 +23,13 @@ export default async function PublicPassportPage({
           <ShieldCheck className="w-12 h-12 text-slate-500 mx-auto" />
           <h1 className="text-lg font-bold text-white">Passport Private or Unavailable</h1>
           <p className="text-xs text-slate-400">
-            This Professional Passport is private, disabled, or does not exist.
+            This Professional Passport link is invalid, has been revoked, or the passport is private.
           </p>
         </div>
       </main>
     );
   }
 
-  // If a secure token exists, redirect to it
-  if (identity.passportShareToken) {
-    return (
-      <main className="min-h-screen bg-[#070911] text-slate-300 flex items-center justify-center p-6">
-        <div className="max-w-md w-full rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 text-center space-y-4">
-          <ShieldCheck className="w-12 h-12 text-cyan-400 mx-auto" />
-          <h1 className="text-lg font-bold text-white">Passport Link Updated</h1>
-          <p className="text-xs text-slate-400">
-            This passport now uses a secure link. Please use the updated share URL.
-          </p>
-          <Link
-            href={`/passport/share/${identity.passportShareToken}`}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-sm font-semibold text-white"
-          >
-            View Passport →
-          </Link>
-        </div>
-      </main>
-    );
-  }
-
-  // Backward compatibility: render from cache if no token exists yet
   let data;
   try {
     data = JSON.parse(identity.passportDataCache);
@@ -78,19 +49,27 @@ export default async function PublicPassportPage({
     );
   }
 
+  // Filter out private/sensitive fields from the public view
+  const publicResume = {
+    ...data.resume,
+    email: "", // Never expose email publicly
+    phone: "", // Never expose phone publicly
+    address: "", // Never expose address publicly
+  };
+
   return (
     <main className="min-h-screen bg-[#070911] text-slate-300 py-12 px-4 lg:px-8">
       <div className="mx-auto max-w-4xl space-y-6">
         <div className="flex items-center justify-between border-b border-white/[0.06] pb-6">
           <div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-medium text-amber-400 border border-amber-500/20">
-              Legacy Link
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-3 py-1 text-xs font-medium text-emerald-400 border border-emerald-500/20">
+              Verified Professional Passport
             </span>
             <h1 className="text-2xl font-bold text-white mt-2">{identity.user.name}&apos;s Passport</h1>
             <p className="text-xs text-slate-400 mt-1">Read-only professional identity and career credentials.</p>
           </div>
         </div>
-        <PublicPassportView resume={data.resume} claims={data.claims ?? []} evidence={data.evidence ?? []} />
+        <PublicPassportView resume={publicResume} claims={data.claims ?? []} evidence={data.evidence ?? []} />
       </div>
     </main>
   );
