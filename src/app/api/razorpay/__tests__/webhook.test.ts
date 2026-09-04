@@ -299,6 +299,46 @@ describe("Razorpay Webhook Idempotency", () => {
     // creation failed due to race — which is fine.
     expect(mocks.subscriptionUpdate).toHaveBeenCalled();
   });
+
+  it("subscription.charged idempotency — same event ID processed once", async () => {
+    const futureEnd = Math.floor(Date.now() / 1000) + 30 * 86400;
+    const event = buildSubscriptionEvent("subscription.charged", {
+      id: "sub_chg_idem",
+      current_end: futureEnd,
+    });
+    event["x-razorpay-event-id"] = "evt_chg_idem_001";
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    // First delivery
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue({ userId: "u_idem" });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    const res1 = await POST(req);
+    const json1 = await res1.json();
+    expect(json1.received).toBe(true);
+    expect(json1.duplicate).toBeUndefined();
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledTimes(1);
+    expect(mocks.userUpdate).toHaveBeenCalledTimes(1);
+
+    // Second delivery (duplicate)
+    vi.clearAllMocks();
+    mocks.webhookEventFindUnique.mockResolvedValue({
+      eventId: "evt_chg_idem_001",
+      eventType: "subscription.charged",
+      processedAt: new Date(),
+    });
+
+    const res2 = await POST(req);
+    const json2 = await res2.json();
+    expect(json2.received).toBe(true);
+    expect(json2.duplicate).toBe(true);
+    expect(mocks.subscriptionUpdate).not.toHaveBeenCalled();
+    expect(mocks.userUpdate).not.toHaveBeenCalled();
+  });
 });
 
 // ──────────────────────────────────────────────────────────────────────────────
@@ -377,9 +417,79 @@ describe("Subscription Lifecycle", () => {
     );
     expect(mocks.userUpdate).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ subscriptionStatus: "active" }),
+        data: expect.objectContaining({
+          subscriptionTier: "Professional",
+          subscriptionStatus: "active",
+        }),
       }),
     );
+  });
+
+  // ── subscription.charged detailed tests ──────────────────────
+
+  it("subscription.charged → pending Subscription becomes active, User upgraded to Professional", async () => {
+    const futureEnd = Math.floor(Date.now() / 1000) + 30 * 86400;
+    const event = buildSubscriptionEvent("subscription.charged", {
+      id: "sub_chg_pending",
+      current_end: futureEnd,
+    });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue({ userId: "u_pending" });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    // Subscription activated
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { razorpaySubscriptionId: "sub_chg_pending" },
+        data: expect.objectContaining({ status: "active" }),
+      }),
+    );
+    // User fully synchronized
+    expect(mocks.userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          subscriptionTier: "Professional",
+          subscriptionStatus: "active",
+          cancelAtPeriodEnd: false,
+        }),
+      }),
+    );
+  });
+
+  it("subscription.charged → already active Subscription and Professional User updated without regression", async () => {
+    const futureEnd = Math.floor(Date.now() / 1000) + 30 * 86400;
+    const event = buildSubscriptionEvent("subscription.charged", {
+      id: "sub_chg_active",
+      current_end: futureEnd,
+    });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue({ userId: "u_active" });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    expect(mocks.subscriptionUpdate).toHaveBeenCalled();
+    expect(mocks.userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          subscriptionTier: "Professional",
+          subscriptionStatus: "active",
+        }),
+      }),
+    );
+    expect(mocks.webhookEventCreate).toHaveBeenCalled();
   });
 
   it("subscription.cancelled → marks cancel_at_period_end, user stays Professional", async () => {
@@ -542,5 +652,66 @@ describe("Subscription Lifecycle", () => {
 
     // Restore
     process.env.RAZORPAY_WEBHOOK_SECRET = mocks.razorpayWebhookSecret;
+  });
+});
+
+// ──────────────────────────────────────────────────────────────────────────────
+// ENTITLEMENT INTEGRATION — subscription.charged
+// ──────────────────────────────────────────────────────────────────────────────
+
+describe("Entitlement after subscription.charged", () => {
+  let POST: Function;
+
+  beforeEach(async () => {
+    vi.clearAllMocks();
+    process.env.RAZORPAY_WEBHOOK_SECRET = mocks.razorpayWebhookSecret;
+
+    const mod = await import("../webhook/route");
+    POST = mod.POST;
+  });
+
+  it("after charged, entitlement service resolves Professional features", async () => {
+    // Simulate: subscription.charged arrives for a pending subscription
+    const futureEnd = Math.floor(Date.now() / 1000) + 30 * 86400;
+    const event = buildSubscriptionEvent("subscription.charged", {
+      id: "sub_ent_test",
+      current_end: futureEnd,
+    });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue({ userId: "u_ent" });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    // Verify User was upgraded to Professional
+    expect(mocks.userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          subscriptionTier: "Professional",
+          subscriptionStatus: "active",
+        }),
+      }),
+    );
+
+    // Verify Subscription was activated
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "active" }),
+      }),
+    );
+
+    // Verify WebhookEvent was created
+    expect(mocks.webhookEventCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        eventId: expect.any(String),
+        eventType: "subscription.charged",
+        subscriptionId: "sub_ent_test",
+      }),
+    });
   });
 });

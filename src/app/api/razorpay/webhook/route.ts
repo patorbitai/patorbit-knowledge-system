@@ -92,8 +92,11 @@ export async function POST(req: NextRequest) {
       case "subscription.charged": {
         if (!subId) break;
 
-        // Payment successful — extend the subscription period.
-        // Do NOT downgrade here; "charged" means the renewal payment succeeded.
+        // Payment successful — activate/extend the subscription.
+        // A charged event means a payment was collected. This can arrive for
+        // both renewals AND the initial payment (in lieu of subscription.activated
+        // depending on Razorpay event configuration). Fully synchronize the
+        // Subscription and User so Professional entitlement is granted.
         await prisma.subscription.update({
           where: { razorpaySubscriptionId: subId },
           data: {
@@ -112,10 +115,12 @@ export async function POST(req: NextRequest) {
           await prisma.user.update({
             where: { id: dbSub2.userId },
             data: {
+              subscriptionTier: "Professional",
               subscriptionStatus: "active",
               currentPeriodEnd: subEntity?.current_end
                 ? new Date(subEntity.current_end * 1000)
                 : undefined,
+              cancelAtPeriodEnd: false,
             },
           });
         }
@@ -237,10 +242,12 @@ export async function POST(req: NextRequest) {
           await prisma.user.update({
             where: { id: dbSub7.userId },
             data: {
+              subscriptionTier: "Professional",
               subscriptionStatus: "active",
               currentPeriodEnd: subEntity?.current_end
                 ? new Date(subEntity.current_end * 1000)
                 : undefined,
+              cancelAtPeriodEnd: false,
             },
           });
         }
