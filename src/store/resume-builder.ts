@@ -113,6 +113,8 @@ export interface ResumeBuilderState {
   setEvidenceVisibility: (id: string, visibility: EvidenceVisibility) => void;
   markClaimReadyForReview: (claimId: string) => void;
   evidenceForClaim: (claimId: string) => Evidence[];
+  /** Fetch evidence from server API and merge into the store (server-authoritative). */
+  syncEvidenceFromServer: () => Promise<void>;
   hydrateFromServer: (serverResumes: Array<{ resumeId: string; resumeName: string; templateId: string; careerStage: string; resume: Record<string, unknown>; version: number }>) => void;
   /** Remove a resume ID from the pending deletes list (after server confirms deletion). */
   clearPendingDelete: (resumeId: string) => void;
@@ -772,7 +774,8 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             ),
             saveStatus: "unsaved",
           })),
-        removeEvidence: (id) =>
+        removeEvidence: (id) => {
+          // Optimistic local removal
           set((s) => {
             const target = s.evidence.find((e) => e.id === id);
             const evidence = s.evidence.filter((e) => e.id !== id);
@@ -787,7 +790,10 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             const updatedResume = { ...s.resume, claims };
             const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
             return { resume: updatedResume, resumes, evidence, saveStatus: "unsaved" };
-          }),
+          });
+          // Server-side delete (fire-and-forget, fail silently)
+          fetch(`/api/evidence/${id}`, { method: "DELETE" }).catch(() => {});
+        },
         setEvidenceStatus: (id, status) =>
           set((s) => ({
             evidence: s.evidence.map((e) =>
@@ -832,6 +838,33 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             };
           }),
         evidenceForClaim: (claimId) => get().evidence.filter((e) => e.claimId === claimId),
+        syncEvidenceFromServer: async () => {
+          try {
+            const res = await fetch("/api/evidence");
+            if (!res.ok) return;
+            const data = await res.json();
+            const serverEvidence: Evidence[] = data.evidence ?? [];
+            if (serverEvidence.length === 0) return;
+
+            const state = get();
+            const localIds = new Set(state.evidence.map((e) => e.id));
+
+            // Merge: keep local evidence not on server (pending uploads), add server evidence not in local
+            const merged = [...state.evidence];
+            for (const ev of serverEvidence) {
+              if (!localIds.has(ev.id)) {
+                merged.push(ev);
+              }
+            }
+
+            // Only update if there are actual changes
+            if (merged.length !== state.evidence.length) {
+              set({ evidence: merged });
+            }
+          } catch (err) {
+            console.error("[syncEvidenceFromServer] Failed:", err);
+          }
+        },
         addExperience: expH.add, updateExperience: expH.update, removeExperience: expH.remove, moveExperience: expH.move,
         addEducation: eduH.add, updateEducation: eduH.update, removeEducation: eduH.remove, moveEducation: eduH.move,
         addSkill: skillH.add, updateSkill: skillH.update, removeSkill: skillH.remove,

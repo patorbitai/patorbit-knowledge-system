@@ -69,6 +69,9 @@ export function ResumeServerSyncMonitor() {
             });
         }
 
+        // Evidence sync: always fetch evidence from server (server-authoritative per ADR-001)
+        useResumeBuilder.getState().syncEvidenceFromServer();
+
         // C29: Retry pending deletes — if we're online and have pending deletes, retry them
         const pendingDeletes = useResumeBuilder.getState().pendingDeletes ?? [];
         if (pendingDeletes.length > 0 && navigator.onLine) {
