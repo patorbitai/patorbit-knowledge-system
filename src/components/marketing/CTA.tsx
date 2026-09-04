@@ -3,9 +3,11 @@
 import { useRef } from "react";
 import { useInView } from "framer-motion";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import { ArrowRight, Check } from "lucide-react";
 
 export default function CTA() {
+  const { data: session } = useSession();
   const ref = useRef<HTMLElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-80px" });
 
@@ -57,7 +59,7 @@ export default function CTA() {
             {/* CTA Buttons */}
             <div className="mt-8 flex flex-col sm:flex-row justify-center gap-3">
               <Link
-                href="/register"
+                href={session ? "/resume-builder" : "/register"}
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
               >
                 Get Started Free
