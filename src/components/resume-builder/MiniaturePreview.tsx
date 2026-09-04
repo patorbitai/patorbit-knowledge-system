@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { ResumePreview } from "@/components/resume/ResumePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
-import { GALLERY_SAMPLE_RESUME } from "./gallery-sample-resume";
+import { getTemplateDemoResume } from "./template-demo-data";
 
 // A4 at 96 dpi
 const RESUME_WIDTH = 794;
@@ -52,7 +52,7 @@ export function MiniaturePreview({ templateId, resume: resumeProp }: MiniaturePr
   const template = TEMPLATES.find((t) => t.id === templateId) ?? TEMPLATES[0];
   const resume: Resume = resumeProp
     ? { ...resumeProp, templateId }
-    : { ...GALLERY_SAMPLE_RESUME, templateId };
+    : { ...getTemplateDemoResume(templateId), templateId };
 
   return (
     <div

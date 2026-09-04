@@ -5,7 +5,7 @@ import React from "react";
 import { act } from "react";
 import { FullTemplatePreview } from "../FullTemplatePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
-import { GALLERY_SAMPLE_RESUME } from "../gallery-sample-resume";
+import { getTemplateDemoResume } from "../template-demo-data";
 import {
   installObserverStubs,
   setFakeScrollHeight,
@@ -50,9 +50,9 @@ describe("FullTemplatePreview", () => {
         );
         const text = document.body.textContent ?? "";
         expect(text).toContain(template.name);
-        expect(text).toContain(GALLERY_SAMPLE_RESUME.name);
-        expect(text).toContain("Northwind Labs");
-        expect(text).toContain("Jordan Rivera");
+        const demo = getTemplateDemoResume(id);
+        expect(text).toContain(demo.name);
+        expect(text).toContain(demo.title);
         unmount();
       }
     },

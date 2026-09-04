@@ -7,7 +7,7 @@ import { Check, ChevronLeft, ChevronRight, Minus, Plus, RotateCcw, X } from "luc
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import type { ResumeTemplate } from "@/app/resume-builder/templates";
 import type { Resume } from "@/types/resume";
-import { GALLERY_SAMPLE_RESUME } from "./gallery-sample-resume";
+import { getTemplateDemoResume } from "./template-demo-data";
 import { A4 } from "@/lib/resume-design-system/geometry";
 
 const PAGE_WIDTH = A4.widthPx;
@@ -50,7 +50,7 @@ export function FullTemplatePreview({
   const index = templates.findIndex((t) => t.id === activeId);
 
   const resume: Resume = useMemo(
-    () => ({ ...GALLERY_SAMPLE_RESUME, templateId: activeId }),
+    () => ({ ...getTemplateDemoResume(activeId), templateId: activeId }),
     [activeId],
   );
 
