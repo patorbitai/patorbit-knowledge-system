@@ -17,10 +17,10 @@ export async function proxy(request: NextRequest) {
     console.error("[proxy] getToken threw:", err);
   }
 
-  // Auth pages — redirect to overview if already authenticated
+  // Auth pages — redirect to home if already authenticated
   if (pathname === "/login" || pathname === "/register") {
     if (token) {
-      return NextResponse.redirect(new URL("/overview", request.url));
+      return NextResponse.redirect(new URL("/", request.url));
     }
     return NextResponse.next();
   }
