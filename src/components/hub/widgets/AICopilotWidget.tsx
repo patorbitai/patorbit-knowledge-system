@@ -98,15 +98,15 @@ export default function AICopilotWidget() {
         ))}
       </div>
 
-      {/* Trust footer */}
-      <div className="px-5 py-3 border-t border-gray-100 dark:border-white/[0.04] bg-gray-50/50 dark:bg-white/[0.01]">
-        <div className="flex items-center justify-between">
+      {/* Footer CTA */}
+      <div className="px-5 py-4 border-t border-gray-100 dark:border-white/[0.04]">
+        <div className="flex items-center justify-between gap-3">
           <p className="text-[10px] text-gray-400 dark:text-slate-500">
             AI uses your existing information. All changes require your approval.
           </p>
           <Link
             href="/ai"
-            className="shrink-0 inline-flex items-center gap-1 text-[10px] font-semibold text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 transition-colors"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30 hover:brightness-110 active:scale-[0.98] transition-all"
           >
             Open AI Workspace
             <ArrowRight className="w-3 h-3" />
