@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error";
 import { evidenceStorageService } from "@/services/evidence-storage.service";
 import { evidenceRepository } from "@/repositories/evidence.repository";
 import { entitlementService } from "@/services/entitlement.service";
@@ -138,8 +139,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json(responseEvidence, { status: 201 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to upload evidence";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "evidence:POST");
   }
 }
 
@@ -171,7 +171,6 @@ export async function GET() {
 
     return NextResponse.json({ evidence: evidenceList }, { status: 200 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to fetch evidence";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "evidence:GET");
   }
 }

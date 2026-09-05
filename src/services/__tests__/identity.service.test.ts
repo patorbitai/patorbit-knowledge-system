@@ -2,14 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Hoisted mock fns are available inside the vi.mock factory (vitest hoists
 // factory calls above top-level variables, so define them with vi.hoisted).
-const { findUniqueMock, createMock } = vi.hoisted(() => ({
+const { findUniqueMock, createMock, userFindUniqueMock } = vi.hoisted(() => ({
   findUniqueMock: vi.fn(),
   createMock: vi.fn(),
+  userFindUniqueMock: vi.fn(),
 }));
 
 // Mock the Prisma client BEFORE importing the modules under test.
 vi.mock("@/lib/prisma", () => ({
   prisma: {
+    user: { findUnique: userFindUniqueMock },
     professionalIdentity: {
       findUnique: findUniqueMock,
       create: createMock,
@@ -47,6 +49,7 @@ describe("IdentityService.ensureProfessionalIdentity", () => {
 
   it("creates a new identity when none exists", async () => {
     findUniqueMock.mockResolvedValue(null);
+    userFindUniqueMock.mockResolvedValue({ id: "user_1" });
     createMock.mockResolvedValue(identity);
 
     const service = new IdentityService();
@@ -93,6 +96,7 @@ describe("IdentityRepository", () => {
   });
 
   it("create persists a new identity for the userId", async () => {
+    userFindUniqueMock.mockResolvedValue({ id: "user_1" });
     createMock.mockResolvedValue(identity);
 
     const result = await identityRepository.create("user_1");

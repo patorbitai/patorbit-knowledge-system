@@ -20,21 +20,39 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   const createResume = useResumeBuilder((s) => s.createResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
 
-  const handleIdentitySaved = useCallback(async (_data: ProfileData) => {
+  const handleIdentitySaved = useCallback(async (data: ProfileData) => {
     setStep("creating");
     setCreating(true);
     setError(null);
 
     try {
-      // Mark onboarding as completed on the server
-      await fetch("/api/identity", {
+      // Save profile data AND mark onboarding as completed
+      const res = await fetch("/api/identity", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ onboardingCompleted: true }),
+        body: JSON.stringify({
+          profileData: {
+            fullName: data.fullName,
+            headline: data.headline,
+            email: data.email,
+            phone: data.phone,
+            location: data.location,
+            linkedin: data.linkedin,
+            github: data.github,
+            website: data.website,
+            summary: data.summary,
+          },
+          onboardingCompleted: true,
+        }),
       });
 
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || `Failed to save (HTTP ${res.status})`);
+      }
+
       // Create first resume using the existing C30 flow
-      const name = _data.fullName || "My Resume";
+      const name = data.fullName || "My Resume";
       const newResumeId = createResume(name);
       switchResume(newResumeId);
 
@@ -50,23 +68,35 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   }, [createResume, switchResume]);
 
   const handleSkip = useCallback(async () => {
-    // Mark onboarding as completed even if skipped
+    setError(null);
+    setCreating(true);
+    setStep("creating");
+
     try {
-      await fetch("/api/identity", {
+      // Mark onboarding as completed — this must succeed before redirecting
+      const res = await fetch("/api/identity", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ onboardingCompleted: true }),
       });
-    } catch {
-      // Best effort — continue even if this fails
-    }
 
-    // Create a default resume anyway
-    const newResumeId = createResume("My Resume");
-    switchResume(newResumeId);
-    setTimeout(() => {
-      window.location.href = "/overview";
-    }, 800);
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || `Failed to save (HTTP ${res.status})`);
+      }
+
+      // Create a default resume
+      const newResumeId = createResume("My Resume");
+      switchResume(newResumeId);
+
+      setTimeout(() => {
+        window.location.href = "/overview";
+      }, 800);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Failed to complete setup");
+      setCreating(false);
+      setStep("identity");
+    }
   }, [createResume, switchResume]);
 
   if (!open) return null;

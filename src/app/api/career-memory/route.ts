@@ -10,6 +10,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error";
 import { identityService } from "@/services/identity.service";
 import { careerMemoryService } from "@/services/career-memory.service";
 
@@ -46,8 +47,6 @@ export async function GET(req: NextRequest) {
     const summary = await careerMemoryService.getSummary(identity.id);
     return NextResponse.json(summary, { status: 200 });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Failed to fetch career memory";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "career-memory:GET");
   }
 }

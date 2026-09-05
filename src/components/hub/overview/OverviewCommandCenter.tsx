@@ -18,7 +18,7 @@ import {
   Sparkles,
   Target,
 } from "lucide-react";
-import { useResumeBuilder } from "@/store/resume-builder";
+import { useResumeBuilder, isResumeEffectivelyEmpty } from "@/store/resume-builder";
 import AICopilotWidget from "@/components/hub/widgets/AICopilotWidget";
 import TrustWidget from "@/components/hub/widgets/TrustWidget";
 import KnowledgeGraphWidget from "@/components/hub/widgets/KnowledgeGraphWidget";
@@ -64,6 +64,9 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   // C46: State-driven menu instead of CSS hover
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -107,16 +110,21 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   const deleteResume = useResumeBuilder((s) => s.deleteResume);
   const duplicateResume = useResumeBuilder((s) => s.duplicateResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
+  const renameResume = useResumeBuilder((s) => s.renameResume);
 
   const resumeList = mounted && resumes ? resumes : [];
-  const hasResumes = resumeList.length > 0;
+  // A resume is only "real" if it has user content. The default blank placeholder
+  // should not count — it prevents the empty state from showing for new users.
+  const hasResumes = resumeList.some((r) => !isResumeEffectivelyEmpty(r));
 
-  // Sort resumes by most recently updated
-  const sortedResumes = [...resumeList].sort((a, b) => {
-    const aTime = (a as any).updatedAt || (a as any).createdAt || 0;
-    const bTime = (b as any).updatedAt || (b as any).createdAt || 0;
-    return new Date(bTime).getTime() - new Date(aTime).getTime();
-  });
+  // Sort resumes by most recently updated — exclude empty placeholders
+  const sortedResumes = [...resumeList]
+    .filter((r) => !isResumeEffectivelyEmpty(r))
+    .sort((a, b) => {
+      const aTime = (a as any).updatedAt || (a as any).createdAt || 0;
+      const bTime = (b as any).updatedAt || (b as any).createdAt || 0;
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
+    });
 
   const handleCreateResume = () => {
     const id = createResume();
@@ -129,6 +137,17 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
     deleteResume(id);
     closeMenu();
   };
+
+  const commitRename = useCallback(() => {
+    if (renamingId) {
+      const trimmed = renameValue.trim();
+      if (trimmed && trimmed.length <= 100) {
+        renameResume(renamingId, trimmed);
+      }
+    }
+    setRenamingId(null);
+    setRenameValue("");
+  }, [renamingId, renameValue, renameResume]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -239,7 +258,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
               Your resumes
             </h2>
             <span className="text-xs text-gray-400 dark:text-slate-500">
-              {resumeList.length} resume{resumeList.length !== 1 ? "s" : ""}
+              {sortedResumes.length} resume{sortedResumes.length !== 1 ? "s" : ""}
             </span>
           </div>
 
@@ -280,9 +299,41 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
                   <div className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0 flex-1">
-                        <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
-                          {resumeName}
-                        </h3>
+                        {renamingId === resumeId ? (
+                          <input
+                            ref={renameInputRef}
+                            autoFocus
+                            value={renameValue}
+                            onChange={(e) => setRenameValue(e.target.value)}
+                            onKeyDown={(e) => {
+                              e.stopPropagation();
+                              if (e.key === "Enter") commitRename();
+                              if (e.key === "Escape") { setRenamingId(null); setRenameValue(""); }
+                            }}
+                            onBlur={commitRename}
+                            onClick={(e) => e.stopPropagation()}
+                            aria-label="Resume name"
+                            maxLength={100}
+                            className="w-full px-2 py-1 rounded-lg bg-gray-100 dark:bg-white/[0.08] border border-cyan-500/40 text-base font-semibold text-gray-900 dark:text-white outline-none"
+                          />
+                        ) : (
+                          <div className="flex items-center gap-1.5 group/rename">
+                            <h3 className="text-base font-semibold text-gray-900 dark:text-white truncate">
+                              {resumeName}
+                            </h3>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRenamingId(resumeId);
+                                setRenameValue(resumeName);
+                              }}
+                              className="p-0.5 rounded text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-white opacity-0 group-hover/rename:opacity-100 transition-opacity cursor-pointer"
+                              aria-label={`Rename ${resumeName}`}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </button>
+                          </div>
+                        )}
                         {professionalTitle && (
                           <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5 truncate">
                             {professionalTitle}

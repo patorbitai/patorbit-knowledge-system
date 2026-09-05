@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
+import { handleApiError } from "@/lib/api-error";
 import {
   resumeService,
   ResumeValidationError,
@@ -34,9 +35,7 @@ export async function GET() {
     const resumes = await resumeService.list(identity.id);
     return NextResponse.json({ resumes }, { status: 200 });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Failed to fetch resumes";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "resumes:GET");
   }
 }
 
@@ -82,8 +81,6 @@ export async function POST(req: NextRequest) {
         { status: 409 },
       );
     }
-    const message =
-      err instanceof Error ? err.message : "Failed to create resume";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "resumes:POST");
   }
 }

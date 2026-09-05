@@ -55,9 +55,10 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ verified: true });
   } catch (error: unknown) {
-    console.error("Verify payment error:", error);
-    const message =
-      error instanceof Error ? error.message : "Payment verification failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[verify-payment] error:", error);
+    return NextResponse.json(
+      { error: "Payment verification failed. Please try again." },
+      { status: 500 }
+    );
   }
 }

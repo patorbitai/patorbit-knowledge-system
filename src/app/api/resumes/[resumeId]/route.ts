@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
+import { handleApiError } from "@/lib/api-error";
 import {
   resumeService,
   ResumeNotFoundError,
@@ -45,9 +46,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     if (err instanceof ResumeNotFoundError) {
       return NextResponse.json({ error: "Resume not found" }, { status: 404 });
     }
-    const message =
-      err instanceof Error ? err.message : "Failed to fetch resume";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "resumes:[id]:GET");
   }
 }
 
@@ -78,9 +77,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     if (err instanceof ResumeValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }
-    const message =
-      err instanceof Error ? err.message : "Failed to update resume";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "resumes:[id]:PUT");
   }
 }
 
@@ -105,8 +102,6 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
     if (err instanceof ResumeNotFoundError) {
       return NextResponse.json({ error: "Resume not found" }, { status: 404 });
     }
-    const message =
-      err instanceof Error ? err.message : "Failed to delete resume";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "resumes:[id]:DELETE");
   }
 }

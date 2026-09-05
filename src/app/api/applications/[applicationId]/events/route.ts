@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
+import { handleApiError } from "@/lib/api-error";
 import {
   applicationEventService,
   type CreateEventInput,
@@ -37,9 +38,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     );
     return NextResponse.json({ events }, { status: 200 });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Failed to fetch events";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "application-events:GET");
   }
 }
 
@@ -75,8 +74,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
 
     return NextResponse.json(event, { status: 201 });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Failed to record event";
-    return NextResponse.json({ error: message }, { status: 400 });
+    return handleApiError(err, "application-events:POST");
   }
 }

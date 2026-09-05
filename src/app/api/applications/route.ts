@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
+import { handleApiError } from "@/lib/api-error";
 import {
   jobApplicationService,
   JobApplicationValidationError,
@@ -30,9 +31,7 @@ export async function GET() {
     const applications = await jobApplicationService.list(identity.id);
     return NextResponse.json({ applications }, { status: 200 });
   } catch (err: unknown) {
-    const message =
-      err instanceof Error ? err.message : "Failed to fetch applications";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "applications:GET");
   }
 }
 
@@ -54,8 +53,6 @@ export async function POST(req: NextRequest) {
     if (err instanceof JobApplicationValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }
-    const message =
-      err instanceof Error ? err.message : "Failed to create application";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "applications:POST");
   }
 }

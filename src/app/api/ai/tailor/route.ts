@@ -181,6 +181,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       );
     }
 
+    // Check for User not found (stale session after DB reset)
+    if (message.includes("User not found")) {
+      return NextResponse.json(
+        { success: false, error: "Your session has expired. Please sign in again." },
+        { status: 401 },
+      );
+    }
+
     console.error("[POST /api/ai/tailor]", err);
     return NextResponse.json(
       { success: false, error: "Something went wrong while tailoring the resume." },

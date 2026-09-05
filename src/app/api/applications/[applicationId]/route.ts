@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
+import { handleApiError } from "@/lib/api-error";
 import {
   jobApplicationService,
   JobApplicationNotFoundError,
@@ -39,9 +40,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     if (err instanceof JobApplicationNotFoundError) {
       return NextResponse.json({ error: "Application not found" }, { status: 404 });
     }
-    const message =
-      err instanceof Error ? err.message : "Failed to fetch application";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "applications:GET");
   }
 }
 
@@ -70,9 +69,7 @@ export async function PUT(req: NextRequest, context: RouteContext) {
     if (err instanceof JobApplicationValidationError) {
       return NextResponse.json({ error: err.message }, { status: 400 });
     }
-    const message =
-      err instanceof Error ? err.message : "Failed to update application";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "applications:PUT");
   }
 }
 
@@ -97,8 +94,6 @@ export async function DELETE(_req: NextRequest, context: RouteContext) {
     if (err instanceof JobApplicationNotFoundError) {
       return NextResponse.json({ error: "Application not found" }, { status: 404 });
     }
-    const message =
-      err instanceof Error ? err.message : "Failed to delete application";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "applications:DELETE");
   }
 }

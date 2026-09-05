@@ -98,9 +98,10 @@ export async function POST(req: NextRequest) {
       razorpayKeyId: process.env.RAZORPAY_KEY_ID,
     });
   } catch (error: unknown) {
-    console.error("Razorpay checkout error:", error);
-    const message =
-      error instanceof Error ? error.message : "Failed to create subscription";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[razorpay-checkout] error:", error);
+    return NextResponse.json(
+      { error: "Failed to create subscription. Please try again." },
+      { status: 500 }
+    );
   }
 }

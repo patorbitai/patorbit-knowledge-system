@@ -21,6 +21,13 @@ export const identityRepository = {
   },
 
   async create(userId: string): Promise<ProfessionalIdentity> {
+    // Verify the User exists before creating ProfessionalIdentity.
+    // This prevents FK violations when the JWT session outlives the user record
+    // (e.g. after database reset or user deletion).
+    const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true } });
+    if (!user) {
+      throw new Error("User not found — your session may have expired. Please sign in again.");
+    }
     return prisma.professionalIdentity.create({ data: { userId } });
   },
 

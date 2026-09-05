@@ -21,7 +21,10 @@ export async function DELETE(req: NextRequest) {
 
     return NextResponse.json({ success: true, provider: "github" }, { status: 200 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to disconnect";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[github-disconnect] error:", err);
+    return NextResponse.json(
+      { error: "Failed to disconnect GitHub. Please try again." },
+      { status: 500 }
+    );
   }
 }

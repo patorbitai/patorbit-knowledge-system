@@ -92,7 +92,10 @@ export async function GET() {
       },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to export data";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("[user-export] error:", err);
+    return NextResponse.json(
+      { error: "Failed to export data. Please try again." },
+      { status: 500 }
+    );
   }
 }

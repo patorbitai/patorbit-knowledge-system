@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
+import { handleApiError } from "@/lib/api-error";
 import { evidenceStorageService } from "@/services/evidence-storage.service";
 import { evidenceRepository } from "@/repositories/evidence.repository";
 
@@ -61,8 +62,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
       },
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to retrieve evidence";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "evidence:[id]:GET");
   }
 }
 
@@ -93,7 +93,6 @@ export async function DELETE(req: NextRequest, context: RouteContext) {
 
     return NextResponse.json({ success: true, id }, { status: 200 });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to delete evidence";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "evidence:[id]:DELETE");
   }
 }

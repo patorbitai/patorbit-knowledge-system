@@ -45,6 +45,25 @@ export const defaultResume: Resume = {
   claims: [],
 };
 
+/**
+ * Check whether a resume is effectively empty (the default placeholder).
+ * A resume is "empty" if it has no user-provided content — no name, email,
+ * title, summary, experience, education, skills, or projects.
+ * This prevents the default placeholder resume from appearing as a real card.
+ */
+export function isResumeEffectivelyEmpty(r: Resume): boolean {
+  return (
+    !r.name &&
+    !r.title &&
+    !r.email &&
+    !r.summary &&
+    r.experience.length === 0 &&
+    r.education.length === 0 &&
+    r.skills.length === 0 &&
+    r.projects.length === 0
+  );
+}
+
 /* ── Store types ── */
 
 export type SaveStatus = "saved" | "saving" | "unsaved" | "offline" | "sync-failed";
@@ -313,6 +332,28 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             const resume = resumes.find((r) => r.resumeId === s.activeResumeId) || resumes[0];
             return { resumes, resume, saveStatus: "unsaved" };
           });
+
+          // Persist rename to server
+          import("@/lib/resume-write-back").then(({ markCreating, clearCreating }) => {
+            markCreating(resumeId);
+            fetch(`/api/resumes/${resumeId}`, {
+              method: "PUT",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ resumeName: name }),
+            })
+              .then((res) => {
+                if (res.ok) {
+                  return res.json().then((data: { version?: number }) => {
+                    if (data.version !== undefined) {
+                      get().setServerVersion(resumeId, data.version);
+                    }
+                    get().setSaveStatus("saved");
+                  });
+                }
+              })
+              .catch(() => {}) // leave as unsaved, write-back will retry
+              .finally(() => { clearCreating(resumeId); });
+          }).catch(() => {});
         },
         deleteResume: (resumeId: string) => {
           const state = get();

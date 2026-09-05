@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
+import { handleApiError } from "@/lib/api-error";
 import {
   resumeService,
   ResumeNotFoundError,
@@ -29,8 +30,7 @@ export async function GET(_req: NextRequest, context: RouteContext) {
     if (err instanceof ResumeNotFoundError) {
       return NextResponse.json({ error: "Resume not found" }, { status: 404 });
     }
-    const message = err instanceof Error ? err.message : "Failed to get share status";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "resume-share:GET");
   }
 }
 
@@ -62,7 +62,6 @@ export async function POST(req: NextRequest, context: RouteContext) {
     if (err instanceof ResumeNotFoundError) {
       return NextResponse.json({ error: "Resume not found" }, { status: 404 });
     }
-    const message = err instanceof Error ? err.message : "Failed to update share settings";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "resume-share:POST");
   }
 }

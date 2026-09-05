@@ -321,9 +321,9 @@ export async function POST(request: NextRequest) {
         : {}),
     });
   } catch (error) {
-    console.error("Import error:", error);
+    console.error("[import] error:", error);
     return NextResponse.json(
-      { error: error instanceof Error ? error.message : "Failed to import the file" },
+      { error: "Failed to import the file. Please try a different file." },
       { status: 500 }
     );
   }

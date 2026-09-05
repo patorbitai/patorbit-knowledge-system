@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
+import { handleApiError } from "@/lib/api-error";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -33,8 +34,7 @@ export async function GET() {
       updatedAt: identity.updatedAt.toISOString(),
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to fetch identity";
-    return NextResponse.json({ error: message }, { status: 500 });
+    return handleApiError(err, "identity:GET");
   }
 }
 
@@ -93,7 +93,15 @@ export async function PUT(req: NextRequest) {
       updatedAt: identity!.updatedAt.toISOString(),
     });
   } catch (err: unknown) {
-    const message = err instanceof Error ? err.message : "Failed to update identity";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Distinguish between user-gone (session expired) and generic failures
+    const msg = err instanceof Error ? err.message : "";
+    if (msg.includes("User not found")) {
+      return handleApiError(err, "identity:PUT", {
+        status: 401,
+        code: "SESSION_EXPIRED",
+        message: "Your session has expired. Please sign in again.",
+      });
+    }
+    return handleApiError(err, "identity:PUT");
   }
 }
