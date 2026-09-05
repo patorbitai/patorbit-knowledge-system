@@ -78,35 +78,34 @@ export function SettingsClient({
     setPortalLoading(true);
     setBillingMessage(null);
     try {
-      const res = await fetch("/api/stripe/portal", { method: "POST" });
+      const res = await fetch("/api/razorpay/subscription", { method: "GET" });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to open billing portal");
+        setBillingMessage("Unable to load billing details. Please try again.");
+        return;
       }
-      const data = await res.json();
-      if (data.url) {
-        window.location.href = data.url;
-      }
-    } catch (err: unknown) {
-      setBillingMessage(err instanceof Error ? err.message : "Failed to open portal");
+      // Razorpay doesn't have a hosted portal — redirect to billing page
+      window.location.href = "/account/billing";
+    } catch {
+      setBillingMessage("Something went wrong. Please try again.");
     } finally {
       setPortalLoading(false);
     }
   };
 
   const handleCancelSubscription = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You will retain access until the end of your billing period.")) return;
+    if (!confirm("Are you sure you want to cancel your subscription? You will keep access until the end of your billing period.")) return;
     setCancelLoading(true);
     setBillingMessage(null);
     try {
-      const res = await fetch("/api/stripe/cancel", { method: "POST" });
+      const res = await fetch("/api/razorpay/subscription", { method: "DELETE" });
       if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Failed to cancel subscription");
+        setBillingMessage("Unable to cancel subscription. Please try again.");
+        return;
       }
-      window.location.reload();
-    } catch (err: unknown) {
-      setBillingMessage(err instanceof Error ? err.message : "Failed to cancel subscription");
+      setBillingMessage("Your subscription will cancel at the end of the billing period.");
+      setTimeout(() => window.location.reload(), 1500);
+    } catch {
+      setBillingMessage("Something went wrong. Please try again.");
     } finally {
       setCancelLoading(false);
     }
@@ -422,17 +421,19 @@ export function SettingsClient({
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 rounded-xl border border-white/[0.08] bg-slate-900/50 p-4">
             <div>
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-white">Current Plan: <span className="text-cyan-400 font-semibold">{subscriptionTier}</span></h3>
-                <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-semibold ${
-                  subscriptionStatus === "active" ? "bg-emerald-500/20 text-emerald-300" :
-                  subscriptionStatus === "past_due" ? "bg-amber-500/20 text-amber-300" : "bg-slate-800 text-slate-300"
-                }`}>
-                  {subscriptionStatus}
-                </span>
+                <h3 className="text-sm font-medium text-white">Current Plan: <span className="text-cyan-400 font-semibold">{subscriptionTier === "Free" ? "Starter" : subscriptionTier}</span></h3>
+                {subscriptionTier !== "Free" && (
+                  <span className={`px-2 py-0.5 rounded text-[10px] uppercase font-semibold ${
+                    subscriptionStatus === "active" ? "bg-emerald-500/20 text-emerald-300" :
+                    subscriptionStatus === "past_due" ? "bg-amber-500/20 text-amber-300" : "bg-slate-800 text-slate-300"
+                  }`}>
+                    {subscriptionStatus === "active" ? "Active" : subscriptionStatus === "past_due" ? "Past Due" : subscriptionStatus}
+                  </span>
+                )}
               </div>
               <p className="text-xs text-slate-400 mt-1">
-                {cancelAtPeriodEnd ? "Your subscription is set to cancel at the end of the billing period." :
-                 currentPeriodEnd ? `Renews on ${new Date(currentPeriodEnd).toLocaleDateString()}` : "Free tier access."}
+                {cancelAtPeriodEnd ? "Your subscription will cancel at the end of the billing period." :
+                 currentPeriodEnd ? `Renews on ${new Date(currentPeriodEnd).toLocaleDateString()}` : "Free plan with core features"}
               </p>
             </div>
             <div className="flex items-center gap-2 flex-wrap">

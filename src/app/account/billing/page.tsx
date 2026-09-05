@@ -69,16 +69,25 @@ export default function BillingPage() {
     if (authStatus !== "authenticated") return;
 
     fetch("/api/razorpay/subscription")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("load");
+        return res.json();
+      })
       .then((data) => {
         setSubscription(data);
         setLoading(false);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setSubscription({ tier: "free", status: "inactive", currentPeriodEnd: null, cancelAtPeriodEnd: false, subscription: null });
+        setLoading(false);
+      });
 
     // Fetch usage data
     fetch("/api/account/usage")
-      .then((res) => res.json())
+      .then((res) => {
+        if (!res.ok) throw new Error("load");
+        return res.json();
+      })
       .then((data) => {
         if (data && !data.error) setUsage(data);
       })
