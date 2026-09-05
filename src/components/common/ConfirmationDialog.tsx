@@ -32,6 +32,11 @@ export function ConfirmationDialog({
   onCancel,
 }: ConfirmationDialogProps) {
   const confirmRef = useRef<HTMLButtonElement>(null);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // Focus trap
   useEffect(() => {
@@ -70,7 +75,7 @@ export function ConfirmationDialog({
     danger: "bg-rose-500/15 text-rose-400",
     warning: "bg-amber-500/15 text-amber-400",
     default: "bg-blue-500/15 text-blue-400",
-  };
+  };  if (!mounted) return null;
 
   return createPortal(
     <AnimatePresence>
@@ -145,8 +150,7 @@ export function ConfirmationDialog({
                 className={clsx(
                   "px-4 py-2 rounded-xl text-sm font-semibold transition-all cursor-pointer",
                   confirmStyles[variant],
-                )}
-              >
+                )}>
                 {confirmLabel}
               </button>
             </div>

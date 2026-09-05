@@ -247,7 +247,7 @@ export function JobApplicationsSection() {
                     {/* Actions */}
                     <div className="flex items-center gap-2 mt-3">
                       <Link
-                        href={`/solutions/applications/${app.applicationId}`}
+                        href={`/overview/applications/${app.applicationId}`}
                         className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-blue-500 dark:bg-[#0ea5e9] text-[11px] font-semibold text-white hover:brightness-110 transition-all"
                       >
                         Open
