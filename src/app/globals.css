@@ -16,6 +16,11 @@
   --text-muted: #64748b;
   --text-accent: #22d3ee;
 
+  /* Font rendering — premium on dark backgrounds */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+
   --surface-base: #070911;
   --surface-raised: #0A0E1B;
   --surface-card: #0C1322;
@@ -466,14 +471,50 @@ html.light [data-rs-scope] .text-slate-400 { color: #94a3b8 !important; }
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-jetbrains);
+  --font-jakarta: var(--font-jakarta);
+  --font-playfair: var(--font-playfair);
+  --font-garamond: var(--font-garamond);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.011em;
+  line-height: 1.5;
+}
+
+/* Premium typography scale */
+h1, h2, h3, h4, h5, h6 {
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+
+/* Headings — tighter tracking for premium feel */
+h1 { letter-spacing: -0.03em; }
+h2 { letter-spacing: -0.025em; }
+h3 { letter-spacing: -0.02em; }
+
+/* Body text — slightly open for readability */
+p, li, span {
+  line-height: 1.6;
+}
+
+/* Buttons and labels — slightly tighter */
+button, label, [role="button"] {
+  letter-spacing: -0.005em;
+}
+
+/* Small text — a touch wider for legibility */
+.text-xs, .text-[10px], .text-[11px], small {
+  letter-spacing: 0;
+  line-height: 1.5;
 }
 
 /* ============================================================
