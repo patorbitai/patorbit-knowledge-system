@@ -7,6 +7,7 @@ import Link from "next/link";
 import { ShieldCheck, AlertTriangle, User, Lock, Trash2, Download, Sun, Moon, Check, Briefcase } from "lucide-react";
 import { ProfessionalIdentityEditor } from "./ProfessionalIdentityEditor";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import { keys, createStore } from "idb-keyval";
 
 const evidenceStore = createStore("patorbit-evidence-blobs", "evidence-files");
@@ -59,6 +60,13 @@ export function SettingsClient({
   const [portalLoading, setPortalLoading] = useState(false);
   const [cancelLoading, setCancelLoading] = useState(false);
   const [billingMessage, setBillingMessage] = useState<string | null>(null);
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    title: string;
+    message: string;
+    variant: "danger" | "warning" | "default";
+    onConfirm: () => void;
+  }>({ open: false, title: "", message: "", variant: "warning", onConfirm: () => {} });
 
   // C48: Professional Identity data — fetched once, editor handles its own saving
   const [piLoading, setPiLoading] = useState(true);
@@ -93,22 +101,29 @@ export function SettingsClient({
   };
 
   const handleCancelSubscription = async () => {
-    if (!confirm("Are you sure you want to cancel your subscription? You will keep access until the end of your billing period.")) return;
-    setCancelLoading(true);
-    setBillingMessage(null);
-    try {
-      const res = await fetch("/api/razorpay/subscription", { method: "DELETE" });
-      if (!res.ok) {
-        setBillingMessage("Unable to cancel subscription. Please try again.");
-        return;
-      }
-      setBillingMessage("Your subscription will cancel at the end of the billing period.");
-      setTimeout(() => window.location.reload(), 1500);
-    } catch {
-      setBillingMessage("Something went wrong. Please try again.");
-    } finally {
-      setCancelLoading(false);
-    }
+    setConfirmDialog({
+      open: true,
+      title: "Cancel subscription?",
+      message: "You will keep access until the end of your billing period. Are you sure you want to cancel?",
+      variant: "danger",
+      onConfirm: async () => {
+        setCancelLoading(true);
+        setBillingMessage(null);
+        try {
+          const res = await fetch("/api/razorpay/subscription", { method: "DELETE" });
+          if (!res.ok) {
+            setBillingMessage("Unable to cancel subscription. Please try again.");
+            return;
+          }
+          setBillingMessage("Your subscription will cancel at the end of the billing period.");
+          setTimeout(() => window.location.reload(), 1500);
+        } catch {
+          setBillingMessage("Something went wrong. Please try again.");
+        } finally {
+          setCancelLoading(false);
+        }
+      },
+    });
   };
 
   const handleDownloadData = async () => {
@@ -173,7 +188,7 @@ export function SettingsClient({
       document.body.removeChild(a);
       setExportSuccess(true);
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : "Failed to download complete data.");
+      setExportError("Something went wrong while exporting your data. Please try again.");
     } finally {
       setExportLoading(false);
     }
@@ -362,12 +377,16 @@ export function SettingsClient({
               </a>
               <button
                 type="button"
-                onClick={async () => {
-                  if (confirm("Disconnect LinkedIn?")) {
+                onClick={() => setConfirmDialog({
+                  open: true,
+                  title: "Disconnect LinkedIn?",
+                  message: "This will remove LinkedIn verification from your profile. You can reconnect at any time.",
+                  variant: "warning",
+                  onConfirm: async () => {
                     await fetch("/api/auth/linkedin/disconnect", { method: "DELETE" });
                     window.location.reload();
-                  }
-                }}
+                  },
+                })}
                 className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-slate-300 transition-colors cursor-pointer"
               >
                 Disconnect
@@ -390,12 +409,16 @@ export function SettingsClient({
               </a>
               <button
                 type="button"
-                onClick={async () => {
-                  if (confirm("Disconnect GitHub?")) {
+                onClick={() => setConfirmDialog({
+                  open: true,
+                  title: "Disconnect GitHub?",
+                  message: "This will remove GitHub verification from your profile. You can reconnect at any time.",
+                  variant: "warning",
+                  onConfirm: async () => {
                     await fetch("/api/auth/github/disconnect", { method: "DELETE" });
                     window.location.reload();
-                  }
-                }}
+                  },
+                })}
                 className="px-3 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.1] text-xs font-medium text-slate-300 transition-colors cursor-pointer"
               >
                 Disconnect
@@ -600,6 +623,16 @@ export function SettingsClient({
           </div>
         </form>
       </div>
+
+      <ConfirmationDialog
+        open={confirmDialog.open}
+        title={confirmDialog.title}
+        message={confirmDialog.message}
+        variant={confirmDialog.variant}
+        confirmLabel="Confirm"
+        onConfirm={confirmDialog.onConfirm}
+        onCancel={() => setConfirmDialog(prev => ({ ...prev, open: false }))}
+      />
     </div>
   );
 }

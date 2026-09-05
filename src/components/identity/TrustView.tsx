@@ -6,6 +6,7 @@ import { useResumeBuilder } from "@/store/resume-builder";
 import type { Resume, Evidence } from "@/types/resume";
 import type { TrustReport } from "@/types/knowledge-graph";
 import { ShieldCheck, CheckCircle2, Clock, Globe, Award, FileText, Sparkles, Users, Briefcase } from "lucide-react";
+import { IdentityNav } from "./IdentityNav";
 import { clsx } from "clsx";
 import { GraphService } from "@/services/graph-service";
 import { TrustService } from "@/services/trust-service";
@@ -175,20 +176,23 @@ export function TrustView({
   const isEmpty = !resume || (!resume.name && !resume.title && (resume.claims ?? []).length === 0 && evidence.length === 0);
 
   if (isEmpty || !snapshot) {
-    return (
-      <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 text-[#f8fafc] font-sans space-y-8">
-        <div>
-          <div className="text-[#60a5fa] text-[11px] font-extrabold tracking-[0.15em] uppercase">VERIFICATION & CREDIBILITY</div>
-          <h1 className="text-3xl font-bold tracking-tight text-white mt-1">Professional Trust</h1>
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 font-sans space-y-8">
+      <IdentityNav />
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mt-1">Professional Trust</h1>
           <p className="text-sm text-[#a9b9cf] font-light mt-1">
             Understand and grow how trustworthy your professional profile is — backed by verifiable claims and evidence.
           </p>
         </div>
-        <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-12 text-center space-y-3 shadow-xl">
-          <ShieldCheck className="w-10 h-10 text-cyan-400 mx-auto" />
-          <h3 className="text-sm font-bold text-white">No trust data yet</h3>
-          <p className="text-xs text-slate-400 max-w-md mx-auto">
-            Verify your credentials, add claims, and attach evidence to start building a trustworthy profile.
+        <div className="rounded-2xl border border-gray-200 dark:border-[rgba(148,163,184,.14)] bg-white dark:bg-gradient-to-br dark:from-[rgba(10,18,32,0.96)] dark:to-[rgba(7,14,26,0.92)] p-12 text-center space-y-3 shadow-xl">
+          <ShieldCheck className="w-10 h-10 text-cyan-500 dark:text-cyan-400 mx-auto" />
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">No trust data yet</h3>
+          <p className="text-xs text-gray-500 dark:text-slate-400 max-w-md mx-auto">
+            Your Trust Score will become more meaningful as your professional information and supporting evidence grow.
+          </p>
+          <p className="text-xs text-gray-400 dark:text-slate-500 max-w-md mx-auto">
+            Start by building your professional identity in the Resume Builder.
           </p>
         </div>
       </div>
@@ -196,12 +200,11 @@ export function TrustView({
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-10">
-      
+    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 font-sans space-y-10">
+      <IdentityNav />
       {/* ── PAGE HEADER ── */}
       <div className="space-y-2">
-        <div className="text-[#60a5fa] text-[11px] font-extrabold tracking-[0.15em] uppercase">VERIFICATION & CREDIBILITY</div>
-        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white flex items-center gap-3">
+        <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
           <ShieldCheck className="w-8 h-8 text-cyan-400" />
           Professional Trust
         </h1>

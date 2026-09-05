@@ -59,10 +59,10 @@ export default function CareerInsightsWidget() {
           <Sparkles className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
         </div>
         <p className="text-[11px] font-medium text-gray-600 dark:text-slate-300">
-          No insights yet
+          Turn your career data into insights
         </p>
         <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 leading-relaxed">
-          Run an AI analysis to unlock tailored career suggestions
+          Run Career Intelligence to uncover patterns and opportunities from your professional profile.
         </p>
         <Link
           href="/ai"

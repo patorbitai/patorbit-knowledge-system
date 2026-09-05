@@ -14,6 +14,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { AddJobApplicationModal } from "./AddJobApplicationModal";
+import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 
 type JobApplication = {
   applicationId: string;
@@ -59,6 +60,7 @@ export function JobApplicationsSection() {
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -78,19 +80,15 @@ export function JobApplicationsSection() {
     fetchApplications();
   }, [fetchApplications]);
 
-  const handleDelete = async (applicationId: string) => {
-    if (!confirm("Delete this application? This will not affect your resumes.")) return;
-
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
     try {
-      const res = await fetch(`/api/applications/${applicationId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/applications/${deleteTarget.id}`, { method: "DELETE" });
       if (res.ok) {
-        setApplications((prev) => prev.filter((a) => a.applicationId !== applicationId));
+        setApplications((prev) => prev.filter((a) => a.applicationId !== deleteTarget.id));
       }
-    } catch {
-      // Silently handle
-    }
+    } catch { /* silently handle */ }
+    setDeleteTarget(null);
     setOpenMenuId(null);
   };
 
@@ -198,7 +196,7 @@ export function JobApplicationsSection() {
                         {openMenuId === app.applicationId && (
                           <div className="absolute right-0 top-full z-10 mt-1 w-40 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1322] shadow-xl">
                             <button
-                              onClick={() => handleDelete(app.applicationId)}
+                              onClick={() => { setOpenMenuId(null); setDeleteTarget({ id: app.applicationId, title: app.title }); }}
                               className="flex items-center gap-2 w-full px-3 py-2 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl"
                             >
                               <Trash2 className="h-3 w-3" />
@@ -272,6 +270,17 @@ export function JobApplicationsSection() {
           })}
         </div>
       )}
+
+      {/* Delete confirmation */}
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        title="Delete this application?"
+        message={`"${deleteTarget?.title ?? ""}" will be permanently deleted. This will not affect your resumes.`}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setDeleteTarget(null)}
+      />
 
       {/* Add modal */}
       <AddJobApplicationModal

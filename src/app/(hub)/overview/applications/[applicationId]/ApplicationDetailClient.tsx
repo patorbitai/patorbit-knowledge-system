@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
+import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 
 type JobApplication = {
   applicationId: string;
@@ -111,6 +112,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
   const [showStatusMenu, setShowStatusMenu] = useState(false);
   const [updatingStatus, setUpdatingStatus] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showTailorModal, setShowTailorModal] = useState(false);
   const [showInterviewForm, setShowInterviewForm] = useState(false);
   const [showOutcomeForm, setShowOutcomeForm] = useState(false);
@@ -193,12 +195,10 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
   }, [recordEvent, outcomeForm]);
 
   const handleDelete = useCallback(async () => {
-    if (!confirm("Delete this application? This will not affect your resumes.")) return;
+    setShowDeleteConfirm(false);
     setDeleting(true);
     try {
-      const res = await fetch(`/api/applications/${app.applicationId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(`/api/applications/${app.applicationId}`, { method: "DELETE" });
       if (res.ok) {
         window.location.href = "/overview";
       }
@@ -649,7 +649,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
               Deleting this application will not affect any resumes.
             </p>
             <button
-              onClick={handleDelete}
+              onClick={() => setShowDeleteConfirm(true)}
               disabled={deleting}
               className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-red-200 dark:border-red-500/30 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-500/10 transition-all w-full justify-center disabled:opacity-50"
             >
@@ -689,6 +689,16 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
         initialJobDescription={app.jobDescription}
         initialResumeId={app.resumeId || undefined}
         onApproved={handleTailorApproved}
+      />
+
+      <ConfirmationDialog
+        open={showDeleteConfirm}
+        title="Delete this application?"
+        message={`"${app.title}" at ${app.companyName} will be permanently deleted. This will not affect your resumes.`}
+        confirmLabel="Delete"
+        variant="danger"
+        onConfirm={handleDelete}
+        onCancel={() => setShowDeleteConfirm(false)}
       />
     </div>
   );

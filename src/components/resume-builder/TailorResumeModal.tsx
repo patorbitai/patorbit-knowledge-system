@@ -21,6 +21,7 @@ import {
 import { useResumeBuilder } from "@/store/resume-builder";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
+import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import type { Resume } from "@/types/resume";
 import type { ResumeTemplate } from "@/app/resume-builder/templates";
 
@@ -341,8 +342,10 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     setTimeout(() => { window.location.href = "/resume-builder"; }, 800);
   }, [tailorResult, tailoredResume, originalResume, createResume, switchResume, selectedTemplateId, applicationId, onApproved]);
 
-  const handleReset = useCallback(() => {
-    if (isDirty && !confirm("You have unsaved tailored changes. Discard draft?")) return;
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [discardAction, setDiscardAction] = useState<"reset" | "close">("reset");
+
+  const doReset = useCallback(() => {
     setStep("input");
     setJobDescription("");
     setTailorResult(null);
@@ -352,10 +355,14 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     setIsEditing(false);
     setIsDirty(false);
     draftInitialized.current = false;
-  }, [isDirty]);
+  }, []);
 
-  const handleClose = useCallback(() => {
-    if (isDirty && step === "review" && !confirm("You have unsaved tailored changes. Discard draft?")) return;
+  const handleReset = useCallback(() => {
+    if (isDirty) { setDiscardAction("reset"); setShowDiscardConfirm(true); return; }
+    doReset();
+  }, [isDirty, doReset]);
+
+  const doClose = useCallback(() => {
     onClose();
     setStep("input");
     setJobDescription("");
@@ -366,7 +373,18 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     setIsEditing(false);
     setIsDirty(false);
     draftInitialized.current = false;
-  }, [isDirty, step, onClose]);
+  }, [onClose]);
+
+  const handleClose = useCallback(() => {
+    if (isDirty && step === "review") { setDiscardAction("close"); setShowDiscardConfirm(true); return; }
+    doClose();
+  }, [isDirty, step, doClose]);
+
+  const handleDiscardConfirm = useCallback(() => {
+    setShowDiscardConfirm(false);
+    if (discardAction === "reset") doReset();
+    else doClose();
+  }, [discardAction, doReset, doClose]);
 
   if (!open) return null;
 
@@ -777,6 +795,15 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
           </motion.div>
         </motion.div>
       )}
+      <ConfirmationDialog
+        open={showDiscardConfirm}
+        title="Discard changes?"
+        message="You have unsaved tailored changes that will be lost."
+        confirmLabel="Discard"
+        variant="warning"
+        onConfirm={handleDiscardConfirm}
+        onCancel={() => setShowDiscardConfirm(false)}
+      />
     </AnimatePresence>
   );
 }

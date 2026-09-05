@@ -11,7 +11,7 @@ describe("NetworkView Component", () => {
     const emptyResume = createEmptyResume();
     const html = renderToString(<NetworkView resume={emptyResume} evidence={[]} />);
     expect(html).toContain("No network graph data yet");
-    expect(html).toContain("Professional Network");
+    expect(html).toContain("Knowledge Graph");
   });
 
   it("renders existing network data correctly", () => {
@@ -22,7 +22,7 @@ describe("NetworkView Component", () => {
     ];
 
     const html = renderToString(<NetworkView resume={resume} />);
-    expect(html).toContain("Professional Network");
+    expect(html).toContain("Knowledge Graph");
     expect(html).toContain("Tech Corp");
     expect(html).toContain("Senior Developer");
     expect(html).toContain("TypeScript");

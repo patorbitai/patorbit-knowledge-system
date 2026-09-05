@@ -18,23 +18,25 @@ import {
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ProgressIndicator } from "./ProgressIndicator";
+import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import type { SectionId } from "@/types/resume";
 
-const sections: Array<{ id: SectionId; label: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = [
-  { id: "personal", label: "Personal Info", Icon: User, color: "#22d3ee" },
-  { id: "experience", label: "Experience", Icon: Briefcase, color: "#3b82f6" },
-  { id: "education", label: "Education", Icon: GraduationCap, color: "#8b5cf6" },
-  { id: "skills", label: "Skills", Icon: Zap, color: "#10b981" },
-  { id: "projects", label: "Projects", Icon: FolderKanban, color: "#f59e0b" },
-  { id: "certifications", label: "Certifications", Icon: Award, color: "#f97316" },
-  { id: "achievements", label: "Achievements", Icon: Trophy, color: "#ef4444" },
-  { id: "languages", label: "Languages", Icon: Globe, color: "#ec4899" },
-  { id: "portfolio", label: "Portfolio", Icon: Link2, color: "#14b8a6" },
-  { id: "review", label: "Review & Preview", Icon: Eye, color: "#6366f1" },
+const sections: Array<{ id: SectionId; label: string; hint: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = [
+  { id: "personal", label: "Personal Info", hint: "Name, contact, links", Icon: User, color: "#22d3ee" },
+  { id: "experience", label: "Experience", hint: "Work history", Icon: Briefcase, color: "#3b82f6" },
+  { id: "education", label: "Education", hint: "Degrees, schools", Icon: GraduationCap, color: "#8b5cf6" },
+  { id: "skills", label: "Skills", hint: "Technical & soft skills", Icon: Zap, color: "#10b981" },
+  { id: "projects", label: "Projects", hint: "Key projects", Icon: FolderKanban, color: "#f59e0b" },
+  { id: "certifications", label: "Certifications", hint: "Credentials", Icon: Award, color: "#f97316" },
+  { id: "achievements", label: "Achievements", hint: "Awards & honors", Icon: Trophy, color: "#ef4444" },
+  { id: "languages", label: "Languages", hint: "Language proficiency", Icon: Globe, color: "#ec4899" },
+  { id: "portfolio", label: "Portfolio", hint: "Links & samples", Icon: Link2, color: "#14b8a6" },
+  { id: "review", label: "Review & Preview", hint: "Final check", Icon: Eye, color: "#6366f1" },
 ];
 
 export function LeftSidebar() {
   const [hydrated, setHydrated] = useState(false);
+  const [showClearConfirm, setShowClearConfirm] = useState(false);
   useEffect(() => { setHydrated(true); }, []);
   const activeSection = useResumeBuilder((s) => s.activeSection);
   const setActiveSection = useResumeBuilder((s) => s.setActiveSection);
@@ -54,6 +56,7 @@ export function LeftSidebar() {
   };
 
   return (
+    <>
     <aside className="flex flex-col h-full overflow-hidden">
       {/* Progress summary */}
       <div className="px-4 py-4 border-b border-gray-200 dark:border-white/[0.08] space-y-3">
@@ -72,7 +75,7 @@ export function LeftSidebar() {
 
       {/* Navigation */}
       <nav className="flex-1 py-2 px-2 space-y-0.5 overflow-y-auto">
-        {sections.map(({ id, label, Icon, color }) => {
+        {sections.map(({ id, label, hint, Icon, color }) => {
           const isActive = activeSection === id;
           const isComplete = id !== "review" && sectionComplete(id as Exclude<SectionId, "review">);
 
@@ -81,22 +84,27 @@ export function LeftSidebar() {
               key={id}
               onClick={() => setActiveSection(id)}
               className={clsx(
-                "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-150 text-left cursor-pointer",
+                "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 cursor-pointer group/section",
                 "focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/40",
                 isActive
                   ? "bg-gray-100 dark:bg-white/[0.06] text-gray-900 dark:text-white"
                   : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-white/[0.03]",
               )}
             >
-              <Icon className={clsx("w-5 h-5 shrink-0", isActive ? "text-cyan-600 dark:text-cyan-400" : "text-gray-400 dark:text-slate-500")} />
-              <span className="flex-1 truncate">
-                {label}
-              </span>
-              {hydrated && sectionCounts[id] !== undefined && sectionCounts[id] > 0 && (
-                <span className="text-xs text-gray-400 dark:text-slate-500 tabular-nums">
-                  {sectionCounts[id]}
+              <div className={clsx(
+                "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+                isActive ? "bg-cyan-500/15" : "bg-gray-100 dark:bg-white/[0.04] group-hover/section:bg-gray-200 dark:group-hover/section:bg-white/[0.06]",
+              )}>
+                <Icon className={clsx("w-3.5 h-3.5", isActive ? "text-cyan-600 dark:text-cyan-400" : "text-gray-400 dark:text-slate-500")} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <span className="block text-xs font-medium truncate">
+                  {label}
                 </span>
-              )}
+                <span className="block text-[10px] text-gray-400 dark:text-slate-500 truncate">
+                  {hint}{hydrated && sectionCounts[id] !== undefined && sectionCounts[id] > 0 ? ` · ${sectionCounts[id]}` : ""}
+                </span>
+              </div>
               {hydrated && isComplete && (
                 <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" />
               )}
@@ -108,11 +116,7 @@ export function LeftSidebar() {
       {/* Footer */}
       <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.08] space-y-2">
         <button
-          onClick={() => {
-            if (window.confirm("Clear this resume?\n\nThis will remove the content from the currently selected resume. Your other resumes will not be affected.")) {
-              useResumeBuilder.getState().resetResume();
-            }
-          }}
+          onClick={() => setShowClearConfirm(true)}
           className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 dark:text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer"
         >
           <Trash2 className="w-3 h-3" />
@@ -124,5 +128,16 @@ export function LeftSidebar() {
         </div>
       </div>
     </aside>
+
+      <ConfirmationDialog
+        open={showClearConfirm}
+        title="Clear this resume?"
+        message="This will remove all content from the currently selected resume. Your other resumes will not be affected."
+        confirmLabel="Clear Resume"
+        variant="danger"
+        onConfirm={() => { setShowClearConfirm(false); useResumeBuilder.getState().resetResume(); }}
+        onCancel={() => setShowClearConfirm(false)}
+      />
+    </>
   );
 }

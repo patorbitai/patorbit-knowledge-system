@@ -138,7 +138,7 @@ export function ShareResumeModal({ open, onClose, resumeId, resumeName }: ShareR
 
             {loading && (
               <div className="py-8 text-center text-xs text-gray-400 dark:text-slate-500">
-                Loading...
+                Preparing share link...
               </div>
             )}
 

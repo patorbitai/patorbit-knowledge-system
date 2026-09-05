@@ -55,7 +55,7 @@ export function CareerJourneyView() {
 
   if (sortedExperience.length === 0) {
     return (
-      <div className="mx-auto max-w-4xl px-4 py-8 lg:px-8 space-y-8 text-[#f8fafc] font-sans">
+      <div className="mx-auto max-w-4xl px-4 py-8 lg:px-8 space-y-8 font-sans">
         <div>
           <div className="text-[#60a5fa] text-[11px] font-extrabold tracking-[0.15em] uppercase">CAREER JOURNEY</div>
           <h1 className="text-3xl font-bold tracking-tight text-white mt-1">Your professional evolution</h1>
@@ -88,7 +88,7 @@ export function CareerJourneyView() {
   }
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 lg:px-12 text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-10">
+    <div className="mx-auto max-w-5xl px-4 py-8 lg:px-12 font-sans space-y-10">
       
       {/* ── HEADER ── */}
       <div className="space-y-2">

@@ -16,6 +16,7 @@ import {
   Target,
   Crown,
 } from "lucide-react";
+import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 
 type SubscriptionData = {
   tier: string;
@@ -159,10 +160,10 @@ export default function BillingPage() {
     }
   };
 
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   const handleCancel = async () => {
-    if (!confirm("Cancel your subscription? You'll keep access until the end of the billing period.")) {
-      return;
-    }
+    setShowCancelConfirm(false);
     setCancelling(true);
     try {
       const res = await fetch("/api/razorpay/subscription", { method: "DELETE" });
@@ -388,7 +389,7 @@ export default function BillingPage() {
                 </p>
                 <button
                   type="button"
-                  onClick={handleCancel}
+                  onClick={() => setShowCancelConfirm(true)}
                   disabled={cancelling}
                   className="text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50"
                 >
@@ -450,6 +451,16 @@ export default function BillingPage() {
           )}
         </div>
       </div>
+
+      <ConfirmationDialog
+        open={showCancelConfirm}
+        title="Cancel subscription?"
+        message="You will keep access until the end of your billing period. After that, your account will be downgraded to the free Starter plan."
+        confirmLabel="Cancel Subscription"
+        variant="danger"
+        onConfirm={handleCancel}
+        onCancel={() => setShowCancelConfirm(false)}
+      />
     </div>
   );
 }

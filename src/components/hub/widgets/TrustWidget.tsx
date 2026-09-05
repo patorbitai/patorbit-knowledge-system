@@ -65,16 +65,16 @@ export default function TrustWidget() {
               <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
             </div>
             <p className="text-[11px] font-medium text-gray-600 dark:text-slate-300">
-              No trust data yet
+              Your Trust Score starts here
             </p>
             <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 leading-relaxed">
-              Verify your credentials to build a trustworthy profile
+              Your score becomes more meaningful as your professional information and supporting evidence grow.
             </p>
             <Link
               href="/trust"
               className="mt-3 inline-flex items-center gap-1.5 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 px-3.5 py-1.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors"
             >
-              Verify credentials
+              View Trust Score
               <ArrowRight className="w-3 h-3" />
             </Link>
           </div>

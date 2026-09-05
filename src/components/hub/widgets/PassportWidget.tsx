@@ -31,10 +31,10 @@ export default function PassportWidget() {
             <ShieldCheck className="w-4 h-4 text-cyan-500 dark:text-cyan-400" />
           </div>
           <p className="text-[11px] font-medium text-gray-600 dark:text-slate-300">
-            Passport is empty
+            Build your Professional Passport
           </p>
           <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 leading-relaxed">
-            Verified claims will appear here and become shareable
+            Bring your experience, skills and career history together into a shareable professional identity.
           </p>
           <Link
             href="/passport"

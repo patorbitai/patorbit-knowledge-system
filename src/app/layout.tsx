@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { InactivityProvider } from "@/components/providers/InactivityProvider";
 import { InactivityWarning } from "@/components/providers/InactivityWarning";
 import { DeploymentUpdateBanner } from "@/components/common/DeploymentUpdateBanner";
+import { ToastProvider } from "@/components/common/Toast";
 import "./globals.css";
 
 const inter = Inter({ subsets: ["latin"], variable: "--font-sans" });
@@ -65,10 +66,12 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <SessionProvider>
-            <InactivityProvider>
-              {children}
-              <InactivityWarning />
-            </InactivityProvider>
+            <ToastProvider>
+              <InactivityProvider>
+                {children}
+                <InactivityWarning />
+              </InactivityProvider>
+            </ToastProvider>
           </SessionProvider>
         </ThemeProvider>
         <DeploymentUpdateBanner />

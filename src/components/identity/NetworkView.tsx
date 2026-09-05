@@ -23,6 +23,7 @@ import {
 import { GraphService } from "@/services/graph-service";
 import { resumeToGraph } from "@/services/graph-mapper";
 import { CareerJourneyView } from "./CareerJourneyView";
+import { IdentityNav } from "./IdentityNav";
 
 export interface NetworkViewProps {
   resume?: Resume;
@@ -169,23 +170,26 @@ export function NetworkView({
   });
 
   return (
-    <div className={`${embedded ? "max-w-6xl px-4 sm:px-6 py-6 lg:px-8" : "mx-auto max-w-6xl px-4 py-8 lg:px-12"} text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-8`}>
+    <div className={`${embedded ? "max-w-6xl px-4 sm:px-6 py-6 lg:px-8" : "mx-auto max-w-6xl px-4 py-8 lg:px-12"} font-sans space-y-8`}>
       {/* Header & Tabs (title hidden when embedded — the host workspace provides it) */}
       <div className={`flex flex-col sm:flex-row sm:items-center gap-4 pb-2 ${embedded ? "sm:justify-end" : "sm:justify-between"}`}>
         {!embedded && (
-          <div>
-            <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-white">Professional Network & Knowledge Graph</h1>
-            <p className="text-sm text-[#a9b9cf] font-light mt-1">
-              Explore your connected professional profile, entities, and career journey.
-            </p>
+          <div className="space-y-3">
+            <IdentityNav />
+            <div>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white">Knowledge Graph & Career Journey</h1>
+              <p className="text-sm text-gray-500 dark:text-[#a9b9cf] font-light mt-1">
+                Explore your connected professional profile, entities, and career journey.
+              </p>
+            </div>
           </div>
         )}
-        <div className="flex items-center gap-1 rounded-xl border border-[rgba(148,163,184,.15)] bg-[rgba(10,18,32,0.8)] p-1 backdrop-blur">
+        <div className="flex items-center gap-1 rounded-xl border border-gray-200 dark:border-[rgba(148,163,184,.15)] bg-gray-100 dark:bg-[rgba(10,18,32,0.8)] p-1 backdrop-blur">
           <button
             type="button"
             onClick={() => setActiveTab("graph")}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === "graph" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-slate-400 hover:text-white"
+              activeTab === "graph" ? "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             Knowledge Graph
@@ -194,7 +198,7 @@ export function NetworkView({
             type="button"
             onClick={() => setActiveTab("journey")}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === "journey" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-slate-400 hover:text-white"
+              activeTab === "journey" ? "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             Career Journey
@@ -203,7 +207,7 @@ export function NetworkView({
             type="button"
             onClick={() => setActiveTab("overview")}
             className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-              activeTab === "overview" ? "bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-slate-400 hover:text-white"
+              activeTab === "overview" ? "bg-cyan-500/20 text-cyan-700 dark:text-cyan-300 border border-cyan-500/30 shadow-sm" : "text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white"
             }`}
           >
             Overview

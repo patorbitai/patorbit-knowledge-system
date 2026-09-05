@@ -66,7 +66,7 @@ export function TrustTimelineView({
 
   if (!resume || rawTimeline.length === 0) {
     return (
-      <div className={`${embedded ? "max-w-6xl px-4 py-6 space-y-8" : "mx-auto max-w-6xl px-4 py-8 lg:px-12"} text-[#f8fafc] font-sans space-y-8`}>
+      <div className={`${embedded ? "max-w-6xl px-4 py-6 space-y-8" : "mx-auto max-w-6xl px-4 py-8 lg:px-12"} font-sans space-y-8`}>
         {!embedded && (
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2">
             <div>
@@ -90,7 +90,7 @@ export function TrustTimelineView({
   }
 
   return (
-    <div className={`${embedded ? "max-w-6xl px-4 sm:px-6 py-6 lg:px-8" : "mx-auto max-w-6xl px-4 py-8 lg:px-12"} text-[#f8fafc] font-sans selection:bg-cyan-500/30 space-y-8`}>
+    <div className={`${embedded ? "max-w-6xl px-4 sm:px-6 py-6 lg:px-8" : "mx-auto max-w-6xl px-4 py-8 lg:px-12"} font-sans space-y-8`}>
       
       {/* ── HEADER & SORT CONTROL (title hidden when embedded — the host workspace provides it) ── */}
       <div className={`flex flex-col sm:flex-row sm:items-center gap-4 pb-2 ${embedded ? "sm:justify-end" : "justify-between"}`}>

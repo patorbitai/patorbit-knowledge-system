@@ -13,6 +13,7 @@ import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndic
 import { ImportButton } from "@/components/resume-builder/ImportButton";
 import { ResumeServerSyncMonitor } from "@/components/resume-builder/ResumeServerSyncMonitor";
 import { ResumeMigrationUI } from "@/components/resume-builder/ResumeMigrationUI";
+import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import AccountMenu from "@/components/hub/AccountMenu";
 import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine, Target } from "lucide-react";
 import { PreviewErrorBoundary } from "@/components/resume-builder/PreviewErrorBoundary";
@@ -43,6 +44,7 @@ function ResumeSelector() {
   const [createName, setCreateName] = useState("");
   const [renamingId, setRenamingId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState("");
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
   const activeResume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
 
@@ -102,7 +104,7 @@ function ResumeSelector() {
                       <button title="Rename" onClick={(e) => { e.stopPropagation(); setRenamingId(r.resumeId || null); setRenameValue(r.resumeName || ""); }}
                         className="p-1 hover:text-gray-900 dark:hover:text-white text-gray-400 dark:text-slate-400 rounded cursor-pointer">✏️</button>
                       {resumes.length > 1 && (
-                        <button title="Delete" onClick={(e) => { e.stopPropagation(); if (confirm(`Delete "${r.resumeName}"?`) && r.resumeId) deleteResume(r.resumeId); }}
+                        <button title="Delete" onClick={(e) => { e.stopPropagation(); setDeleteTarget({ id: r.resumeId || "", name: r.resumeName || "" }); }}
                           className="p-1 hover:text-red-400 text-gray-400 dark:text-slate-400 rounded cursor-pointer">🗑️</button>
                       )}
                     </div>
@@ -126,6 +128,16 @@ function ResumeSelector() {
           </div>
         </>
       )}
+
+      <ConfirmationDialog
+        open={!!deleteTarget}
+        title={`Delete "${deleteTarget?.name ?? ""}"?`}
+        message="This resume will be permanently deleted. This action cannot be undone."
+        confirmLabel="Delete Resume"
+        variant="danger"
+        onConfirm={() => { if (deleteTarget?.id) deleteResume(deleteTarget.id); setDeleteTarget(null); }}
+        onCancel={() => setDeleteTarget(null)}
+      />
     </div>
   );
 }
@@ -184,31 +196,33 @@ function MobileModeToggle({ mode, onModeChange }: { mode: "edit" | "preview"; on
 function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
   return (
     <header className="sticky top-0 z-40 h-12 bg-white/90 dark:bg-[#070d18]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08]">
-      <div className="flex items-center justify-between h-full px-4">
-        <div className="flex items-center gap-2.5">
-          <Link href="/overview" className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all group">
-            <ArrowLeft className="w-3 h-3 transition-transform group-hover:-translate-x-0.5" />
-            <span>Dashboard</span>
+      <div className="flex items-center justify-between h-full px-3 sm:px-4">
+        {/* Left: navigation + resume selector */}
+        <div className="flex items-center gap-2 min-w-0">
+          <Link href="/overview" className="flex items-center gap-1 px-2 py-1 rounded-lg text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-all shrink-0">
+            <ArrowLeft className="w-3 h-3" />
+            <span className="hidden sm:inline">Dashboard</span>
           </Link>
-          <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.08]" />
+          <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.08] shrink-0" />
           <ResumeSelector />
         </div>
-        <div className="flex items-center gap-1.5 sm:gap-2">
+
+        {/* Right: save status + actions */}
+        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <SaveStatusIndicator />
           <button
             onClick={onOpenTailor}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 shadow-md shadow-purple-500/20 hover:shadow-lg hover:shadow-purple-500/30 transition-all"
+            className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all"
           >
             <Target className="w-3.5 h-3.5" />
             <span className="hidden sm:inline">Tailor to Job</span>
             <span className="sm:hidden">Tailor</span>
           </button>
           <ImportButton variant="card" label="Import" />
-          <SaveStatusIndicator />
-          <div className="hidden sm:block h-3 w-px bg-gray-300 dark:bg-white/[0.08]" />
           <Link href="/resume-builder/preview"
-            className="hidden sm:flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-semibold text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/[0.08] hover:bg-cyan-100 dark:hover:bg-cyan-500/[0.16] hover:border-cyan-500/50 transition-all">
+            className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/[0.08] hover:bg-cyan-100 dark:hover:bg-cyan-500/[0.16] transition-all">
             <Eye className="w-3.5 h-3.5" />
-            <span>Full Preview</span>
+            <span>Preview</span>
           </Link>
           <AccountMenu />
         </div>

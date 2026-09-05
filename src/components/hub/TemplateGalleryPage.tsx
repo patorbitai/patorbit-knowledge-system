@@ -308,8 +308,7 @@ export function TemplateGalleryPage() {
         {/* Search + Description */}
         <div className="mb-6">
           <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-            Choose a template for your resume. Each template is designed for
-            specific career types and optimized for ATS systems.
+            Choose a layout that fits your career stage and style. You can change templates without losing your resume content.
           </p>
           <div className="relative max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-slate-500" />

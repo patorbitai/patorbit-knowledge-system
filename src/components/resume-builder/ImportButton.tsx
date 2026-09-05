@@ -22,45 +22,35 @@ type ImportButtonProps = {
   className?: string;
 };
 
-const stages = [
-  { label: "Uploading resume", progress: 15 },
-  { label: "Reading document", progress: 30 },
-  { label: "Extracting text", progress: 55 },
-  { label: "Analyzing resume structure", progress: 75 },
-  { label: "Mapping resume fields", progress: 90 },
-  { label: "Preparing review", progress: 95 },
-  { label: "Import complete", progress: 100 },
-];
+/* ── Import stages ── */
 
-function CircularProgress({ progress }: { progress: number }) {
-  const radius = 16;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (progress / 100) * circumference;
+const STAGE_LABELS = [
+  "Receiving file",
+  "Reading content",
+  "Organizing sections",
+  "Preparing review",
+  "Import complete",
+] as const;
 
+function StepIndicator({ currentStep }: { currentStep: number }) {
   return (
-    <div className="relative flex items-center justify-center w-8 h-8 shrink-0">
-      <svg className="w-8 h-8 transform -rotate-90" viewBox="0 0 36 36">
-        <path
-          className="text-white/10"
-          strokeWidth="3.5"
-          stroke="currentColor"
-          fill="none"
-          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-        />
-        <path
-          className="text-cyan-400 transition-all duration-300 ease-out"
-          strokeDasharray={circumference}
-          strokeDashoffset={strokeDashoffset}
-          strokeWidth="3.5"
-          strokeLinecap="round"
-          stroke="currentColor"
-          fill="none"
-          d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
-        />
-      </svg>
-      <div className="absolute inset-0 flex items-center justify-center text-[9px] font-bold text-white">
-        {progress}%
-      </div>
+    <div className="flex items-center gap-1.5">
+      {STAGE_LABELS.map((label, i) => {
+        const done = i < currentStep;
+        const active = i === currentStep;
+        return (
+          <div key={label} className="flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full transition-all ${
+              done ? "bg-cyan-400" : active ? "bg-cyan-400 animate-pulse" : "bg-white/20"
+            }`} />
+            {active && (
+              <span className="text-[11px] font-medium text-cyan-300 whitespace-nowrap">
+                {label}
+              </span>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -79,21 +69,31 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
     setCurrentStageIndex(0);
     setError(null);
 
-    const interval = setInterval(() => {
-      setCurrentStageIndex((prev) => (prev < 4 ? prev + 1 : prev));
-    }, 400);
+    // Advance stages at realistic intervals (no fake percentage)
+    const stageTimers: ReturnType<typeof setTimeout>[] = [
+      setTimeout(() => setCurrentStageIndex(1), 600),   // Reading content
+      setTimeout(() => setCurrentStageIndex(2), 1400),  // Organizing sections
+    ];
 
     try {
       const formData = new FormData();
       formData.append("file", file);
       const res = await fetch("/api/import", { method: "POST", body: formData });
-      clearInterval(interval);
-      if (!res.ok) throw new Error((await res.json()).error || "Import failed");
+      stageTimers.forEach(clearTimeout);
 
-      setCurrentStageIndex(5); // Preparing review
+      if (!res.ok) {
+        let msg = "We couldn\u2019t read this file. Please try a different resume.";
+        try {
+          const body = await res.json();
+          if (body.error) msg = body.error;
+        } catch { /* use default */ }
+        throw new Error(msg);
+      }
+
+      setCurrentStageIndex(3); // Preparing review
       const data = await res.json();
 
-      setCurrentStageIndex(6); // Import complete
+      setCurrentStageIndex(4); // Import complete
       await new Promise((r) => setTimeout(r, 200));
 
       setPending({
@@ -101,8 +101,8 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
         meta: data.meta ?? { path: "regex", truncated: false, charCount: 0, rawText: "" },
       });
     } catch (err: unknown) {
-      clearInterval(interval);
-      setError(err instanceof Error ? err.message : "Import failed");
+      stageTimers.forEach(clearTimeout);
+      setError(err instanceof Error ? err.message : "Something went wrong while importing. Please try again.");
     } finally {
       setImporting(false);
       e.target.value = "";
@@ -116,7 +116,7 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
     setPending(null);
   };
 
-  const currentStage = stages[currentStageIndex];
+
 
   return (
     <>
@@ -135,16 +135,18 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
         >
           {importing ? (
             <>
-              <CircularProgress progress={currentStage.progress} />
-              <span
-                className={clsx(
-                  variant === "hero"
-                    ? "text-sm font-semibold text-white"
-                    : "text-[10px] font-medium"
-                )}
-              >
-                Importing your resume...
-              </span>
+              <div className="flex flex-col items-center gap-1.5">
+                <span
+                  className={clsx(
+                    variant === "hero"
+                      ? "text-sm font-semibold text-white"
+                      : "text-[10px] font-medium"
+                  )}
+                >
+                  Reading your resume...
+                </span>
+                {variant === "hero" && <StepIndicator currentStep={currentStageIndex} />}
+              </div>
             </>
           ) : (
             <>
