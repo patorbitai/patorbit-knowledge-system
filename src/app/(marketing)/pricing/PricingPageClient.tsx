@@ -231,6 +231,8 @@ function CheckItem({ children }: { children: React.ReactNode }) {
 
 export function PricingPageClient() {
   const [openFaq, setOpenFaq] = useState<number | null>(0);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
   const tableWrapperRef = useRef<HTMLDivElement>(null);
   const [showLeftFade, setShowLeftFade] = useState(false);
   const [showRightFade, setShowRightFade] = useState(false);
@@ -264,6 +266,9 @@ export function PricingPageClient() {
       return;
     }
 
+    setCheckoutError(null);
+    setCheckoutLoading(true);
+
     try {
       // 1. Create subscription on server
       const res = await fetch("/api/razorpay/checkout", {
@@ -277,8 +282,9 @@ export function PricingPageClient() {
         return;
       }
       if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Failed to start checkout");
+        const err = await res.json().catch(() => ({}));
+        setCheckoutError(err.error || "Something went wrong. Please try again.");
+        setCheckoutLoading(false);
         return;
       }
 
@@ -301,8 +307,7 @@ export function PricingPageClient() {
         },
         modal: {
           ondismiss: function () {
-            // User closed the modal
-            console.log("Checkout dismissed");
+            setCheckoutLoading(false);
           }
         }
       };
@@ -315,14 +320,17 @@ export function PricingPageClient() {
         script.onload = () => {
           const rzp = new w.Razorpay!(options);
           rzp.open();
+          setCheckoutLoading(false);
         };
         document.body.appendChild(script);
       } else if (w.Razorpay) {
         const rzp = new w.Razorpay(options);
         rzp.open();
+        setCheckoutLoading(false);
       }
     } catch {
-      alert("Network error. Please try again.");
+      setCheckoutError("Something went wrong. Please check your connection and try again.");
+      setCheckoutLoading(false);
     }
   };
 
@@ -404,6 +412,19 @@ export function PricingPageClient() {
       {/* ── Pricing Cards ── */}
       <section className="pt-8 pb-24">
         <div className="mx-auto max-w-6xl px-6">
+          {/* Checkout error banner */}
+          {checkoutError && (
+            <div className="mx-auto max-w-md rounded-xl border border-rose-500/30 bg-rose-500/10 px-5 py-3 text-center">
+              <p className="text-sm font-medium text-rose-300">{checkoutError}</p>
+              <button
+                onClick={() => setCheckoutError(null)}
+                className="mt-1 text-xs text-rose-400 hover:text-rose-300 transition-colors"
+              >
+                Dismiss
+              </button>
+            </div>
+          )}
+
           <div className="grid gap-8 lg:grid-cols-3 items-center">
             {plans.map((plan, i) => {
               const isHighlighted = plan.badges && plan.badges.length > 0;
@@ -460,8 +481,8 @@ export function PricingPageClient() {
                           : "border border-slate-700 text-slate-200 hover:border-slate-600 hover:bg-slate-800/40"
                     }`}
                   >
-                    {plan.cta}
-                    <ArrowRight className="w-4 h-4" />
+                    {checkoutLoading && isHighlighted ? "Starting..." : plan.cta}
+                    {!checkoutLoading && <ArrowRight className="w-4 h-4" />}
                   </button>
                 </motion.div>
               );

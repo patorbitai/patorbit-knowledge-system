@@ -58,6 +58,7 @@ export default function BillingPage() {
   const [cancelling, setCancelling] = useState(false);
   const [success, setSuccess] = useState(false);
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authStatus === "unauthenticated") {
@@ -120,8 +121,8 @@ export default function BillingPage() {
         return;
       }
       if (!res.ok) {
-        const err = await res.json();
-        alert(err.error || "Failed to start checkout");
+        const err = await res.json().catch(() => ({}));
+        setCheckoutError(err.error || "Something went wrong. Please try again.");
         setCheckoutLoading(false);
         return;
       }
@@ -153,7 +154,7 @@ export default function BillingPage() {
         new w.Razorpay(options).open();
       }
     } catch {
-      alert("Network error. Please try again.");
+      setCheckoutError("Something went wrong. Please check your connection and try again.");
       setCheckoutLoading(false);
     }
   };
@@ -173,7 +174,7 @@ export default function BillingPage() {
         );
       }
     } catch {
-      alert("Failed to cancel subscription");
+      setCheckoutError("Unable to cancel subscription. Please try again.");
     } finally {
       setCancelling(false);
     }
@@ -217,6 +218,18 @@ export default function BillingPage() {
             <p className="text-sm text-emerald-300">
               Payment successful! Your subscription is now active.
             </p>
+          </div>
+        )}
+
+        {checkoutError && (
+          <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 p-4 flex items-center justify-between gap-3">
+            <p className="text-sm text-rose-300">{checkoutError}</p>
+            <button
+              onClick={() => setCheckoutError(null)}
+              className="text-xs text-rose-400 hover:text-rose-300 transition-colors shrink-0"
+            >
+              Dismiss
+            </button>
           </div>
         )}
 
