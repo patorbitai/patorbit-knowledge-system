@@ -528,6 +528,15 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
       {/* ── E. JOB APPLICATIONS ── */}
       <div id="applications">
         <JobApplicationsSection />
+        <div className="mt-4 text-center">
+          <Link
+            href="/jobs"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:underline"
+          >
+            View all applications
+            <ArrowRight className="h-3 w-3" />
+          </Link>
+        </div>
       </div>
 
       {/* ── F. PROFESSIONAL IDENTITY WIDGETS ── */}

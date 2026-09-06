@@ -200,7 +200,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
     try {
       const res = await fetch(`/api/applications/${app.applicationId}`, { method: "DELETE" });
       if (res.ok) {
-        window.location.href = "/overview";
+        window.location.href = "/jobs";
       }
     } catch {
       setDeleting(false);
@@ -236,7 +236,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
       {/* Header */}
       <div className="flex items-start gap-4">
         <Link
-          href="/overview"
+          href="/jobs"
           className="mt-1 rounded-lg p-2 text-gray-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-600 dark:hover:text-white transition-colors"
         >
           <ArrowLeft className="h-4 w-4" />

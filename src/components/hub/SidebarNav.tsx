@@ -6,6 +6,7 @@ import { clsx } from "clsx";
 import {
   LayoutDashboard,
   FileText,
+  Briefcase,
   Palette,
   Sparkles,
   Settings,
@@ -20,6 +21,7 @@ type NavItem = {
 const PRIMARY_ITEMS: NavItem[] = [
   { label: "Dashboard", href: "/overview", icon: LayoutDashboard },
   { label: "Resumes", href: "/resume-builder", icon: FileText },
+  { label: "Jobs", href: "/jobs", icon: Briefcase },
   { label: "AI Workspace", href: "/ai", icon: Sparkles },
   { label: "Templates", href: "/templates", icon: Palette },
 ];
@@ -34,6 +36,9 @@ export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) 
   const isActive = (href: string) => {
     if (href === "/resume-builder") {
       return pathname === "/resume-builder" || pathname.startsWith("/resume-builder/");
+    }
+    if (href === "/jobs") {
+      return pathname === "/jobs" || pathname.startsWith("/jobs/");
     }
     return pathname === href || pathname.startsWith(href + "/");
   };
