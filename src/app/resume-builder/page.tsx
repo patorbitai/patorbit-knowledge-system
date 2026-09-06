@@ -15,6 +15,7 @@ import { ResumeServerSyncMonitor } from "@/components/resume-builder/ResumeServe
 import { ResumeMigrationUI } from "@/components/resume-builder/ResumeMigrationUI";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import AccountMenu from "@/components/hub/AccountMenu";
+import { SaveToIdentityButton } from "@/components/resume-builder/SaveToIdentityButton";
 import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine, Target } from "lucide-react";
 import { PreviewErrorBoundary } from "@/components/resume-builder/PreviewErrorBoundary";
 import { MobilePreview } from "@/components/resume-builder/MobilePreview";
@@ -218,6 +219,7 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
             <span className="hidden sm:inline">Tailor to Job</span>
             <span className="sm:hidden">Tailor</span>
           </button>
+          <SaveToIdentityButton />
           <ImportButton variant="card" label="Import" />
           <Link href="/resume-builder/preview"
             className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/[0.08] hover:bg-cyan-100 dark:hover:bg-cyan-500/[0.16] transition-all">

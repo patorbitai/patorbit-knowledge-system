@@ -71,9 +71,35 @@ export async function PUT(req: NextRequest) {
       if (typeof payload.profileData !== "object" || payload.profileData === null) {
         return NextResponse.json({ error: "profileData must be an object" }, { status: 400 });
       }
+
+      // Merge incoming profileData with existing profileData to prevent
+      // accidental erasure of fields not present in the incoming payload.
+      // This preserves existing fields that the caller did not explicitly send.
+      const existingIdentity = await identityService.getIdentity(session.user.id);
+      const existingProfileData = (existingIdentity?.profileData ?? {}) as Record<string, unknown>;
+      const incomingProfileData = JSON.parse(JSON.stringify(payload.profileData)) as Record<string, unknown>;
+
+      // Shallow merge: incoming values overwrite existing values at the top level.
+      // For array fields (experience, education, skills, etc.), an explicitly sent
+      // non-empty array replaces the existing one; an omitted/empty array leaves
+      // the existing one intact.
+      const mergedProfileData: Record<string, unknown> = { ...existingProfileData };
+      for (const [key, value] of Object.entries(incomingProfileData)) {
+        if (value === undefined || value === null || value === "") {
+          // Skip empty scalar values — preserve existing
+          continue;
+        }
+        if (Array.isArray(value) && value.length === 0) {
+          // Skip empty arrays — preserve existing section
+          continue;
+        }
+        // Include populated values (including populated arrays)
+        mergedProfileData[key] = value;
+      }
+
       identity = await identityService.updateProfileData(
         session.user.id,
-        JSON.parse(JSON.stringify(payload.profileData)),
+        mergedProfileData,
       );
     }
 
