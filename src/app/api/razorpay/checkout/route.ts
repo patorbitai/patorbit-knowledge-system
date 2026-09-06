@@ -53,18 +53,39 @@ export async function POST(req: NextRequest) {
     let customerId = user.razorpayCustomerId;
 
     if (!customerId) {
-      // Create new Razorpay customer
-      const customer = await razorpay.customers.create({
-        name: user.name,
-        email: user.email,
-      });
-      customerId = customer.id;
+      // Look up an existing Razorpay customer by email first. Razorpay's
+      // customers list endpoint does not filter by email server-side, so fetch
+      // recent customers and match the email in code. This reuses the existing
+      // customer when one already exists for this email — Razorpay rejects
+      // creating a duplicate ("Customer already exists for the merchant"),
+      // which can happen when the user's DB row lost its razorpayCustomerId or
+      // the customer was created earlier under this account.
+      if (user.email) {
+        const existing = await razorpay.customers.all({ count: 100 });
+        const match = existing.items?.find(
+          (c) => c.email?.toLowerCase() === user.email?.toLowerCase()
+        );
+        if (match) {
+          customerId = match.id;
+        }
+      }
 
-      // Update user with customer ID
-      await prisma.user.update({
-        where: { id: user.id },
-        data: { razorpayCustomerId: customerId },
-      });
+      // Create a new Razorpay customer only if none exists for this email
+      if (!customerId) {
+        const customer = await razorpay.customers.create({
+          name: user.name,
+          email: user.email,
+        });
+        customerId = customer.id;
+      }
+
+      // Persist the customer ID back to the user
+      if (customerId) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { razorpayCustomerId: customerId },
+        });
+      }
     }
 
     // 5. Get plan ID for the interval
