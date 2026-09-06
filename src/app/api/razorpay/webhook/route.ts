@@ -9,6 +9,48 @@ import { verifyWebhookSignature } from "@/lib/razorpay";
  * Uses the WebhookEvent table for idempotency — each Razorpay event ID
  * is processed exactly once even if delivered multiple times.
  */
+
+/**
+ * Activate a subscription and grant Professional entitlement.
+ *
+ * Shared by subscription.started / subscription.activated /
+ * subscription.charged / subscription.resumed so the state transition stays
+ * consistent. The Subscription is looked up by its Razorpay subscription ID
+ * (never user-supplied data), and only the owning user is upgraded.
+ */
+async function activateSubscription(opts: {
+  subId: string;
+  paymentId?: string;
+  currentEnd?: number;
+}) {
+  const { subId, paymentId, currentEnd } = opts;
+  const currentPeriodEnd = currentEnd ? new Date(currentEnd * 1000) : undefined;
+
+  await prisma.subscription.update({
+    where: { razorpaySubscriptionId: subId },
+    data: {
+      status: "active",
+      razorpayPaymentId: paymentId || undefined,
+      currentPeriodEnd: currentPeriodEnd || undefined,
+    },
+  });
+
+  const dbSub = await prisma.subscription.findUnique({
+    where: { razorpaySubscriptionId: subId },
+  });
+  if (dbSub) {
+    await prisma.user.update({
+      where: { id: dbSub.userId },
+      data: {
+        subscriptionTier: "Professional",
+        subscriptionStatus: "active",
+        currentPeriodEnd: currentPeriodEnd || undefined,
+        cancelAtPeriodEnd: false,
+      },
+    });
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Verify webhook signature (must use raw body, not parsed JSON)
@@ -55,75 +97,23 @@ export async function POST(req: NextRequest) {
 
     // 5. Handle subscription events
     switch (eventType) {
-      case "subscription.activated": {
+      case "subscription.started":
+      case "subscription.activated":
+      case "subscription.charged":
+      case "subscription.resumed": {
+        // Payment collected / billing cycle began — activate the subscription
+        // and grant Professional entitlement. Razorpay fires these events at
+        // different points depending on event configuration ("started" when the
+        // first billing cycle begins, "charged" on payment capture, "activated"
+        // when the subscription becomes active, "resumed" after a pause), but
+        // they all converge on the same state: active + Professional.
         if (!subId) break;
 
-        await prisma.subscription.update({
-          where: { razorpaySubscriptionId: subId },
-          data: {
-            status: "active",
-            razorpayPaymentId: paymentEntity?.id || undefined,
-            currentPeriodEnd: subEntity?.current_end
-              ? new Date(subEntity.current_end * 1000)
-              : undefined,
-          },
+        await activateSubscription({
+          subId,
+          paymentId: paymentEntity?.id,
+          currentEnd: subEntity?.current_end,
         });
-
-        // Update user entitlement
-        const dbSub = await prisma.subscription.findUnique({
-          where: { razorpaySubscriptionId: subId },
-        });
-        if (dbSub) {
-          await prisma.user.update({
-            where: { id: dbSub.userId },
-            data: {
-              subscriptionTier: "Professional",
-              subscriptionStatus: "active",
-              currentPeriodEnd: subEntity?.current_end
-                ? new Date(subEntity.current_end * 1000)
-                : undefined,
-              cancelAtPeriodEnd: false,
-            },
-          });
-        }
-        break;
-      }
-
-      case "subscription.charged": {
-        if (!subId) break;
-
-        // Payment successful — activate/extend the subscription.
-        // A charged event means a payment was collected. This can arrive for
-        // both renewals AND the initial payment (in lieu of subscription.activated
-        // depending on Razorpay event configuration). Fully synchronize the
-        // Subscription and User so Professional entitlement is granted.
-        await prisma.subscription.update({
-          where: { razorpaySubscriptionId: subId },
-          data: {
-            status: "active",
-            razorpayPaymentId: paymentEntity?.id || undefined,
-            currentPeriodEnd: subEntity?.current_end
-              ? new Date(subEntity.current_end * 1000)
-              : undefined,
-          },
-        });
-
-        const dbSub2 = await prisma.subscription.findUnique({
-          where: { razorpaySubscriptionId: subId },
-        });
-        if (dbSub2) {
-          await prisma.user.update({
-            where: { id: dbSub2.userId },
-            data: {
-              subscriptionTier: "Professional",
-              subscriptionStatus: "active",
-              currentPeriodEnd: subEntity?.current_end
-                ? new Date(subEntity.current_end * 1000)
-                : undefined,
-              cancelAtPeriodEnd: false,
-            },
-          });
-        }
         break;
       }
 
@@ -217,38 +207,6 @@ export async function POST(req: NextRequest) {
           await prisma.user.update({
             where: { id: dbSub6.userId },
             data: { subscriptionStatus: "inactive" },
-          });
-        }
-        break;
-      }
-
-      case "subscription.resumed": {
-        if (!subId) break;
-
-        await prisma.subscription.update({
-          where: { razorpaySubscriptionId: subId },
-          data: {
-            status: "active",
-            currentPeriodEnd: subEntity?.current_end
-              ? new Date(subEntity.current_end * 1000)
-              : undefined,
-          },
-        });
-
-        const dbSub7 = await prisma.subscription.findUnique({
-          where: { razorpaySubscriptionId: subId },
-        });
-        if (dbSub7) {
-          await prisma.user.update({
-            where: { id: dbSub7.userId },
-            data: {
-              subscriptionTier: "Professional",
-              subscriptionStatus: "active",
-              currentPeriodEnd: subEntity?.current_end
-                ? new Date(subEntity.current_end * 1000)
-                : undefined,
-              cancelAtPeriodEnd: false,
-            },
           });
         }
         break;

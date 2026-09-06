@@ -621,6 +621,49 @@ describe("Subscription Lifecycle", () => {
     );
   });
 
+  it("subscription.started → activates subscription and grants Professional", async () => {
+    const futureEnd = Math.floor(Date.now() / 1000) + 30 * 86400;
+    const event = buildSubscriptionEvent("subscription.started", {
+      id: "sub_start1",
+      current_end: futureEnd,
+    });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue({ userId: "u_start" });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    // Subscription activated
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { razorpaySubscriptionId: "sub_start1" },
+        data: expect.objectContaining({ status: "active" }),
+      }),
+    );
+    // User upgraded to Professional
+    expect(mocks.userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          subscriptionTier: "Professional",
+          subscriptionStatus: "active",
+          cancelAtPeriodEnd: false,
+        }),
+      }),
+    );
+    // Webhook event recorded for idempotency
+    expect(mocks.webhookEventCreate).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        eventType: "subscription.started",
+        subscriptionId: "sub_start1",
+      }),
+    });
+  });
+
   it("skips processing when subscription entity is missing", async () => {
     const event = {
       event: "subscription.activated",

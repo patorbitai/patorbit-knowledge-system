@@ -217,7 +217,7 @@ export default function BillingPage() {
           <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-4 flex items-center gap-3">
             <Check className="w-5 h-5 text-emerald-400 shrink-0" />
             <p className="text-sm text-emerald-300">
-              Payment successful! Your subscription is now active.
+              Payment received — your subscription will be activated shortly.
             </p>
           </div>
         )}
