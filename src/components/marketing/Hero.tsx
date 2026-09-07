@@ -242,10 +242,10 @@ export default function Hero() {
                 <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/templates"
+                href="/free-analysis"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
               >
-                Explore Templates
+                Analyze a Job Free
               </Link>
             </div>
 

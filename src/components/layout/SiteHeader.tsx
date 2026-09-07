@@ -10,6 +10,7 @@ import { useTheme } from "@/components/providers/ThemeProvider";
 import { Sun, Moon } from "lucide-react";
 
 const navLinks = [
+  { href: "/free-analysis", label: "Free Analysis" },
   { href: "/platform", label: "Platform" },
   { href: "/features", label: "Features" },
   { href: "/solutions", label: "Solutions" },
