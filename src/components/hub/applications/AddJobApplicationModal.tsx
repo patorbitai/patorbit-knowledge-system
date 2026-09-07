@@ -125,19 +125,19 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-      <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#0C1322] border border-gray-200 dark:border-white/[0.08] shadow-2xl">
+    <div className="fixed inset-0 z-50 flex items-start justify-center bg-black/60 backdrop-blur-sm pt-[8vh] px-4">
+      <div className="w-full max-w-xl max-h-[84vh] overflow-y-auto rounded-2xl bg-white dark:bg-[#0C1322] border border-gray-200 dark:border-white/[0.08] shadow-2xl">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-white/[0.06]">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center">
-              <Briefcase className="h-4.5 w-4.5 text-blue-500 dark:text-blue-400" />
+        <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 dark:border-white/[0.06] sticky top-0 bg-white dark:bg-[#0C1322] z-10">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+              <Briefcase className="h-4 w-4 text-white" />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900 dark:text-white">
+              <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
                 Add Job Application
               </h2>
-              <p className="text-xs text-gray-500 dark:text-slate-400">
+              <p className="text-[11px] text-gray-500 dark:text-slate-400">
                 Track a job you&apos;re preparing for
               </p>
             </div>
@@ -152,72 +152,73 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
         </div>
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="px-6 py-5 space-y-4">
+        <form onSubmit={handleSubmit} className="p-5 space-y-3.5">
           {error && (
-            <div className="rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 px-4 py-2.5 text-sm text-red-600 dark:text-red-400">
+            <div className="rounded-lg bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 px-3 py-2 text-xs text-red-600 dark:text-red-400">
               {error}
             </div>
           )}
 
-          {/* Company */}
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-              <Building2 className="h-3.5 w-3.5 text-gray-400" />
-              Company
-            </label>
-            <input
-              type="text"
-              value={companyName}
-              onChange={(e) => setCompanyName(e.target.value)}
-              placeholder="e.g. Microsoft"
-              className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
-            />
-          </div>
-
-          {/* Job Title */}
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-              <Briefcase className="h-3.5 w-3.5 text-gray-400" />
-              Job Title
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Senior Data Engineer"
-              className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
-            />
+          {/* Company + Job Title - Side by side */}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                <Building2 className="h-3 w-3 text-gray-400" />
+                Company
+              </label>
+              <input
+                type="text"
+                value={companyName}
+                onChange={(e) => setCompanyName(e.target.value)}
+                placeholder="e.g. Microsoft"
+                className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all"
+              />
+            </div>
+            <div className="space-y-1">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                <Briefcase className="h-3 w-3 text-gray-400" />
+                Job Title
+              </label>
+              <input
+                type="text"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Senior Data Engineer"
+                className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all"
+              />
+            </div>
           </div>
 
           {/* Job Description */}
-          <div className="space-y-1.5">
-            <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-              <FileText className="h-3.5 w-3.5 text-gray-400" />
+          <div className="space-y-1">
+            <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+              <FileText className="h-3 w-3 text-gray-400" />
               Job Description
             </label>
             <textarea
               value={jobDescription}
               onChange={(e) => setJobDescription(e.target.value)}
               placeholder="Paste the full job description here..."
-              rows={6}
-              className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all resize-none"
+              rows={4}
+              className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all resize-none"
             />
-            <p className="text-[11px] text-gray-400 dark:text-slate-500">
+            <p className="text-[10px] text-gray-400 dark:text-slate-500">
               Patorbit will analyze this job against your resume to suggest truthful improvements.
             </p>
           </div>
 
           {/* Resume Selection */}
           {resumes.length > 0 && (
-            <div className="space-y-1.5">
-              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                <FileCheck className="h-3.5 w-3.5 text-gray-400" />
-                Link Resume (optional)
+            <div className="space-y-1">
+              <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                <FileCheck className="h-3 w-3 text-gray-400" />
+                Link Resume
+                <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
               </label>
               <select
                 value={selectedResumeId}
                 onChange={(e) => setSelectedResumeId(e.target.value)}
-                className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all"
               >
                 <option value="">No resume selected</option>
                 {resumes.map((r) => (
@@ -226,7 +227,7 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] text-gray-400 dark:text-slate-500">
+              <p className="text-[10px] text-gray-400 dark:text-slate-500">
                 You can also link a resume later after tailoring.
               </p>
             </div>
@@ -236,130 +237,136 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
           <button
             type="button"
             onClick={() => setShowMoreDetails(!showMoreDetails)}
-            className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+            className="flex items-center gap-1.5 text-xs font-medium text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300 transition-colors"
           >
             {showMoreDetails ? (
-              <ChevronUp className="h-4 w-4" />
+              <ChevronUp className="h-3.5 w-3.5" />
             ) : (
-              <ChevronDown className="h-4 w-4" />
+              <ChevronDown className="h-3.5 w-3.5" />
             )}
-            More details
+            {showMoreDetails ? "Less details" : "More details"}
           </button>
 
           {/* More Details Section */}
           {showMoreDetails && (
-            <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-white/[0.06]">
+            <div className="space-y-3 pt-2 border-t border-gray-100 dark:border-white/[0.06]">
               {/* Job URL */}
-              <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  <Link className="h-3.5 w-3.5 text-gray-400" />
-                  Job URL (optional)
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                  <Link className="h-3 w-3 text-gray-400" />
+                  Job URL
+                  <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
                 </label>
                 <input
                   type="url"
                   value={jobUrl}
                   onChange={(e) => setJobUrl(e.target.value)}
                   placeholder="https://careers.company.com/job/123"
-                  className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                  className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all"
                 />
               </div>
 
-              {/* Location */}
-              <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  <MapPin className="h-3.5 w-3.5 text-gray-400" />
-                  Location (optional)
-                </label>
-                <input
-                  type="text"
-                  value={location}
-                  onChange={(e) => setLocation(e.target.value)}
-                  placeholder="e.g. San Francisco, CA or Remote"
-                  className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
-                />
+              {/* Location + Employment Type - Side by side */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                    <MapPin className="h-3 w-3 text-gray-400" />
+                    Location
+                    <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={location}
+                    onChange={(e) => setLocation(e.target.value)}
+                    placeholder="e.g. San Francisco, CA"
+                    className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                    <Briefcase className="h-3 w-3 text-gray-400" />
+                    Employment Type
+                    <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
+                  </label>
+                  <select
+                    value={employmentType}
+                    onChange={(e) => setEmploymentType(e.target.value)}
+                    className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all"
+                  >
+                    <option value="">Select type</option>
+                    <option value="full_time">Full-time</option>
+                    <option value="part_time">Part-time</option>
+                    <option value="contract">Contract</option>
+                    <option value="internship">Internship</option>
+                  </select>
+                </div>
               </div>
 
-              {/* Employment Type */}
-              <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  <Briefcase className="h-3.5 w-3.5 text-gray-400" />
-                  Employment Type (optional)
-                </label>
-                <select
-                  value={employmentType}
-                  onChange={(e) => setEmploymentType(e.target.value)}
-                  className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
-                >
-                  <option value="">Select type</option>
-                  <option value="full_time">Full-time</option>
-                  <option value="part_time">Part-time</option>
-                  <option value="contract">Contract</option>
-                  <option value="internship">Internship</option>
-                </select>
-              </div>
-
-              {/* Dates */}
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                    <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                    Applied Date (optional)
+              {/* Dates - Side by side */}
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                    <Calendar className="h-3 w-3 text-gray-400" />
+                    Applied Date
+                    <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
                   </label>
                   <input
                     type="date"
                     value={appliedDate}
                     onChange={(e) => setAppliedDate(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                    className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all"
                   />
                 </div>
-                <div className="space-y-1.5">
-                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                    <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                    Follow-up Date (optional)
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                    <Calendar className="h-3 w-3 text-gray-400" />
+                    Follow-up Date
+                    <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
                   </label>
                   <input
                     type="date"
                     value={followUpDate}
                     onChange={(e) => setFollowUpDate(e.target.value)}
-                    className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                    className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all"
                   />
                 </div>
               </div>
 
               {/* Notes */}
-              <div className="space-y-1.5">
-                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
-                  <FileText className="h-3.5 w-3.5 text-gray-400" />
-                  Notes (optional)
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-400">
+                  <FileText className="h-3 w-3 text-gray-400" />
+                  Notes
+                  <span className="text-gray-400 dark:text-slate-500 font-normal">(optional)</span>
                 </label>
                 <textarea
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
                   placeholder="Any additional notes about this application..."
-                  rows={3}
-                  className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all resize-none"
+                  rows={2}
+                  className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 dark:focus:border-blue-500/40 transition-all resize-none"
                 />
               </div>
             </div>
           )}
 
           {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex items-center justify-end gap-2 pt-1">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-sm font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+              className="px-3 py-1.5 rounded-lg text-xs font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-blue-500 dark:bg-[#0ea5e9] text-sm font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center gap-1.5 px-4 py-1.5 rounded-lg bg-gradient-to-r from-blue-500 to-cyan-500 text-xs font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm shadow-blue-500/20"
             >
               {loading ? (
                 <>
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <Loader2 className="h-3 w-3 animate-spin" />
                   Creating...
                 </>
               ) : (
