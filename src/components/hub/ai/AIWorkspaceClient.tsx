@@ -38,7 +38,8 @@ import type { EvidenceOptimizerResult, OptimizerChange } from "@/types/evidence-
 
 // ── Types ──────────────────────────────────────────────────────────────────────
 
-type JobApplication = {
+// Minimal type for the legacy JobSelector (will be replaced by store-driven display)
+type LegacyJobApplication = {
   applicationId: string;
   title: string;
   companyName: string;
@@ -161,7 +162,7 @@ function JobSelector({
   onSelect,
   loading,
 }: {
-  applications: JobApplication[];
+  applications: LegacyJobApplication[];
   selectedId: string | null;
   onSelect: (id: string | null) => void;
   loading: boolean;
@@ -234,6 +235,56 @@ function JobSelector({
   );
 }
 
+// ── Active Job Display (reads from Zustand store) ─────────────────────────────
+
+function ActiveJobDisplay({
+  application,
+}: {
+  application: {
+    applicationId: string;
+    title: string;
+    companyName: string;
+    matchScore: number | null;
+  } | null;
+}) {
+  if (!application) {
+    return (
+      <Link
+        href="/resume-builder"
+        className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-dashed border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] hover:bg-gray-50 dark:hover:bg-white/[0.05] transition-colors text-left"
+      >
+        <Briefcase className="w-4 h-4 text-gray-400 shrink-0" />
+        <div className="flex-1 min-w-0">
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            No job selected
+          </p>
+          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+            Select a job in Resume Builder to enable match &amp; tailor
+          </p>
+        </div>
+        <ArrowRight className="w-3.5 h-3.5 text-gray-400" />
+      </Link>
+    );
+  }
+
+  return (
+    <div className="flex items-center gap-3 w-full px-4 py-3 rounded-xl border border-violet-500/20 bg-violet-500/[0.06]">
+      <Briefcase className="w-4 h-4 text-violet-500 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+          {application.title}
+        </p>
+        <p className="text-[11px] text-gray-500 dark:text-slate-500 truncate mt-0.5">
+          {application.companyName}
+        </p>
+      </div>
+      {application.matchScore !== null && (
+        <span className="text-[11px] font-semibold text-violet-500 tabular-nums">{application.matchScore}%</span>
+      )}
+    </div>
+  );
+}
+
 // ── JD Input (lightweight inline) ──────────────────────────────────────────────
 
 function InlineJDInput({
@@ -288,18 +339,17 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
   const createResume = useResumeBuilder((s) => s.createResume);
 
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
-  const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<TabId>("score");
   const [tailorOpen, setTailorOpen] = useState(false);
 
-  // Job applications
-  const [applications, setApplications] = useState<JobApplication[]>([]);
-  const [appsLoading, setAppsLoading] = useState(true);
+  // Canonical job context from Zustand store
+  const activeJobApplicationId = useResumeBuilder((s) => s.activeJobApplicationId);
+  const activeJobApplication = useResumeBuilder((s) => s.activeJobApplication);
 
   // Optimization hook (score, match, keywords, bullets, summary)
   const opt = useOptimization();
 
-  // JD text for manual input
+  // JD text for manual input (fallback when no job application selected)
   const [jdText, setJdText] = useState("");
 
   // M4 Evidence Optimizer state
@@ -311,16 +361,7 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
     setMounted(true);
   }, []);
 
-  // Fetch job applications
-  useEffect(() => {
-    fetch("/api/applications")
-      .then((r) => r.json())
-      .then((data) => setApplications(data.applications || []))
-      .catch(() => setApplications([]))
-      .finally(() => setAppsLoading(false));
-  }, []);
-
-  // Set default resume selection
+  // Set default resume selection from Zustand activeResumeId
   useEffect(() => {
     if (mounted && resumes.length > 0 && !selectedResumeId) {
       setSelectedResumeId(activeResumeId || resumes[0]?.resumeId || null);
@@ -332,14 +373,9 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
     [resumes, selectedResumeId],
   );
 
-  const selectedJob = useMemo(
-    () => applications.find((a) => a.applicationId === selectedJobId) || null,
-    [applications, selectedJobId],
-  );
-
   const hasResumes = resumes.length > 0;
 
-  // Handle resume selection
+  // Handle resume selection — syncs with Zustand activeResumeId
   const handleResumeSelect = useCallback((id: string) => {
     setSelectedResumeId(id);
     switchResume(id);
@@ -350,25 +386,25 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
     setJdText("");
   }, [switchResume, opt]);
 
-  // Handle job selection
-  const handleJobSelect = useCallback((id: string | null) => {
-    setSelectedJobId(id);
+  // Clear AI results when active job changes (job switching)
+  useEffect(() => {
     opt.resetMatch();
     opt.resetKeywords();
-    if (id) {
-      const job = applications.find((a) => a.applicationId === id);
-      if (job) setJdText(job.jobDescription);
-    } else {
-      setJdText("");
-    }
-  }, [applications, opt]);
+  }, [activeJobApplicationId]);
 
-  // Get effective JD
+  // Sync jdText from active JobApplication when it changes
+  useEffect(() => {
+    if (activeJobApplication?.jobDescription) {
+      setJdText(""); // Clear manual input — application JD takes precedence
+    }
+  }, [activeJobApplicationId]);
+
+  // Get effective JD — canonical from active JobApplication or manual input
   const effectiveJD = useMemo(() => {
-    if (selectedJob?.jobDescription) return selectedJob.jobDescription;
+    if (activeJobApplication?.jobDescription) return activeJobApplication.jobDescription;
     if (jdText.trim()) return jdText.trim();
     return "";
-  }, [selectedJob, jdText]);
+  }, [activeJobApplication, jdText]);
 
   // Tab actions
   const handleScore = useCallback(() => {
@@ -473,12 +509,7 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
           selectedId={selectedResumeId}
           onSelect={handleResumeSelect}
         />
-        <JobSelector
-          applications={applications}
-          selectedId={selectedJobId}
-          onSelect={handleJobSelect}
-          loading={appsLoading}
-        />
+        <ActiveJobDisplay application={activeJobApplication} />
       </div>
 
       {/* Resume info chip */}
@@ -495,8 +526,8 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
         </div>
       )}
 
-      {/* JD manual input (when no job selected) */}
-      {!selectedJobId && (
+      {/* JD manual input (when no job application selected) */}
+      {!activeJobApplicationId && (
         <div className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4 space-y-3">
           <div className="flex items-center gap-2">
             <Target className="w-3.5 h-3.5 text-violet-400" />
@@ -525,18 +556,18 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
       )}
 
       {/* Job context summary */}
-      {selectedJob && (
+      {activeJobApplication && (
         <div className="rounded-xl border border-violet-500/20 bg-violet-500/[0.06] p-4">
           <div className="flex items-center gap-2 mb-1.5">
             <Briefcase className="w-3.5 h-3.5 text-violet-400" />
             <p className="text-[11px] font-semibold text-violet-300 uppercase tracking-wider">Target Job</p>
           </div>
-          <p className="text-sm font-medium text-white">{selectedJob.title}</p>
-          <p className="text-[11px] text-slate-400">{selectedJob.companyName}</p>
-          {selectedJob.matchScore !== null && (
+          <p className="text-sm font-medium text-white">{activeJobApplication.title}</p>
+          <p className="text-[11px] text-slate-400">{activeJobApplication.companyName}</p>
+          {activeJobApplication.matchScore != null && (
             <div className="mt-2 flex items-center gap-2">
               <span className="text-[11px] text-slate-500">Last match:</span>
-              <span className="text-[11px] font-bold text-violet-400">{selectedJob.matchScore}%</span>
+              <span className="text-[11px] font-bold text-violet-400">{activeJobApplication.matchScore}%</span>
             </div>
           )}
         </div>
@@ -796,7 +827,7 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
           onClose={() => setTailorOpen(false)}
           initialJobDescription={effectiveJD || undefined}
           initialResumeId={selectedResumeId || undefined}
-          applicationId={selectedJobId || undefined}
+          applicationId={activeJobApplicationId || undefined}
           onApproved={handleTailorApproved}
         />
       )}
