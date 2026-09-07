@@ -1,5 +1,6 @@
 "use strict";
 
+import { prisma } from "@/lib/prisma";
 import { jobApplicationRepository, type JobApplicationRecord } from "@/repositories/job-application.repository";
 
 /** Canonical API representation returned by the API. */
@@ -110,6 +111,27 @@ export class JobApplicationService {
     return this.toJobApplicationData(record);
   }
 
+  /** Validate that a resumeId belongs to the given ProfessionalIdentity. */
+  private async validateResumeOwnership(
+    professionalIdentityId: string,
+    resumeId: string | null | undefined,
+  ): Promise<void> {
+    if (!resumeId) return; // null/undefined is allowed (no resume linked)
+
+    const resume = await prisma.resume.findFirst({
+      where: {
+        resumeId,
+        professionalIdentityId,
+      },
+    });
+
+    if (!resume) {
+      throw new JobApplicationValidationError(
+        "The selected resume does not belong to your account.",
+      );
+    }
+  }
+
   /** Create a new job application. */
   async create(
     professionalIdentityId: string,
@@ -124,6 +146,9 @@ export class JobApplicationService {
     if (!input.jobDescription?.trim()) {
       throw new JobApplicationValidationError("Job description is required");
     }
+
+    // Validate resume ownership before creating
+    await this.validateResumeOwnership(professionalIdentityId, input.resumeId);
 
     const applicationId = `app_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const id = `approw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
@@ -171,6 +196,8 @@ export class JobApplicationService {
       data.status = this.validateStatus(input.status);
     }
     if (input.resumeId !== undefined) {
+      // Validate resume ownership before updating
+      await this.validateResumeOwnership(professionalIdentityId, input.resumeId);
       data.resumeId = input.resumeId;
     }
     if (input.matchScore !== undefined) {

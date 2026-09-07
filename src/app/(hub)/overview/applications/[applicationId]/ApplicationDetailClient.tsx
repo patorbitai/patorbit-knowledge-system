@@ -20,6 +20,7 @@ import {
   XCircle,
   Clock,
   Plus,
+  BarChart3,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
@@ -105,6 +106,22 @@ const OUTCOMES: { value: string; label: string; color: string }[] = [
   { value: "no_response", label: "No Response", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
 ];
 
+/** Application progress steps. */
+const PROGRESS_STEPS = [
+  { key: "saved", label: "Saved" },
+  { key: "ready_to_apply", label: "Ready" },
+  { key: "applied", label: "Applied" },
+  { key: "interview", label: "Interview" },
+  { key: "offer", label: "Offer" },
+];
+
+/** Get progress index from status. */
+function getProgressIndex(status: string): number {
+  if (status === "rejected") return -1; // Terminal state
+  const idx = PROGRESS_STEPS.findIndex((s) => s.key === status);
+  return idx >= 0 ? idx : 0;
+}
+
 export function ApplicationDetailClient({ application: initialApp, userName }: Props) {
   const [app, setApp] = useState<JobApplication>(initialApp);
   const [events, setEvents] = useState<ApplicationEvent[]>([]);
@@ -119,6 +136,8 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
   const [interviewForm, setInterviewForm] = useState({ stage: "phone_screen", type: "video", date: "", notes: "" });
   const [outcomeForm, setOutcomeForm] = useState({ outcome: "offer", notes: "" });
   const [submittingEvent, setSubmittingEvent] = useState(false);
+  const [analyzingMatch, setAnalyzingMatch] = useState(false);
+  const [matchError, setMatchError] = useState<string | null>(null);
 
   const updateStatus = useCallback(async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -221,6 +240,54 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
     }
   }, [app.applicationId]);
 
+  // Standalone Analyze Match handler
+  const handleAnalyzeMatch = useCallback(async () => {
+    if (!app.resumeId || analyzingMatch) return;
+    setAnalyzingMatch(true);
+    setMatchError(null);
+    try {
+      // Fetch resume data from store
+      const resumeRes = await fetch(`/api/resumes/${app.resumeId}`);
+      if (!resumeRes.ok) throw new Error("Could not load resume");
+      const resumeData = await resumeRes.json();
+      const resume = resumeData.resume;
+
+      // Call match API
+      const matchRes = await fetch("/api/ai/match", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ resume, jobDescription: app.jobDescription }),
+      });
+      const matchResult = await matchRes.json();
+      if (!matchRes.ok) throw new Error(matchResult.error || "Match analysis failed");
+
+      // Persist match data to application
+      await fetch(`/api/applications/${app.applicationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          matchScore: matchResult.matchScore,
+          matchData: {
+            matched: matchResult.matchedKeywords || [],
+            partial: matchResult.partialMatches || [],
+            missing: matchResult.missingKeywords || [],
+          },
+        }),
+      });
+
+      // Refetch application to get updated data
+      const appRes = await fetch(`/api/applications/${app.applicationId}`);
+      if (appRes.ok) {
+        const updated = await appRes.json();
+        setApp(updated);
+      }
+    } catch (err) {
+      setMatchError(err instanceof Error ? err.message : "Failed to analyze match");
+    } finally {
+      setAnalyzingMatch(false);
+    }
+  }, [app.applicationId, app.resumeId, app.jobDescription, analyzingMatch]);
+
   const statusStyle = STATUS_STYLES[app.status] || STATUS_STYLES.saved;
   const statusLabel = STATUS_OPTIONS.find((s) => s.value === app.status)?.label || "Saved";
 
@@ -233,6 +300,40 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-6 sm:py-8 space-y-6">
+      {/* Progress indicator */}
+      {app.status !== "rejected" && (
+        <div className="flex items-center gap-1 sm:gap-2">
+          {PROGRESS_STEPS.map((step, idx) => {
+            const currentIdx = getProgressIndex(app.status);
+            const isCompleted = idx <= currentIdx;
+            const isCurrent = idx === currentIdx;
+            return (
+              <React.Fragment key={step.key}>
+                {idx > 0 && (
+                  <div className={`flex-1 h-0.5 rounded ${isCompleted ? "bg-amber-500 dark:bg-amber-400" : "bg-gray-200 dark:bg-white/[0.06]"}`} />
+                )}
+                <div className="flex flex-col items-center gap-1">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold transition-all ${
+                    isCompleted
+                      ? "bg-amber-500 dark:bg-amber-400 text-white"
+                      : "bg-gray-100 dark:bg-white/[0.06] text-gray-400 dark:text-slate-500"
+                  } ${isCurrent ? "ring-2 ring-amber-300 dark:ring-amber-500/50" : ""}`}>
+                    {idx + 1}
+                  </div>
+                  <span className="text-[9px] text-gray-500 dark:text-slate-400 hidden sm:block">{step.label}</span>
+                </div>
+              </React.Fragment>
+            );
+          })}
+        </div>
+      )}
+      {app.status === "rejected" && (
+        <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-red-50 dark:bg-red-500/10">
+          <XCircle className="h-4 w-4 text-red-500" />
+          <span className="text-xs font-medium text-red-600 dark:text-red-400">Application Rejected</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-start gap-4">
         <Link
@@ -393,9 +494,44 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
           {!matchData && (
             <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] px-5 py-6 text-center">
               <Target className="h-5 w-5 text-gray-300 dark:text-slate-600 mx-auto mb-2" />
-              <p className="text-xs text-gray-500 dark:text-slate-400">
-                Not analyzed yet. Tailor a resume to see match analysis.
+              <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
+                Not analyzed yet. Tailor a resume or run a match analysis.
               </p>
+              {app.resumeId && (
+                <button
+                  onClick={handleAnalyzeMatch}
+                  disabled={analyzingMatch}
+                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500 dark:bg-blue-500/90 text-xs font-semibold text-white hover:brightness-110 transition-all disabled:opacity-50"
+                >
+                  {analyzingMatch ? (
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                  ) : (
+                    <BarChart3 className="h-3 w-3" />
+                  )}
+                  Analyze Match
+                </button>
+              )}
+              {matchError && (
+                <p className="mt-2 text-[11px] text-red-500 dark:text-red-400">{matchError}</p>
+              )}
+            </div>
+          )}
+
+          {/* Re-analyze button when match exists */}
+          {matchData && app.resumeId && (
+            <div className="flex justify-end">
+              <button
+                onClick={handleAnalyzeMatch}
+                disabled={analyzingMatch}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] text-[11px] font-medium text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-all disabled:opacity-50"
+              >
+                {analyzingMatch ? (
+                  <Loader2 className="h-3 w-3 animate-spin" />
+                ) : (
+                  <BarChart3 className="h-3 w-3" />
+                )}
+                Re-analyze Match
+              </button>
             </div>
           )}
         </div>
@@ -404,14 +540,22 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
         <div className="space-y-4">
           {/* Resume card */}
           <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-3">
-            <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">
-              Resume
+            <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-500" />
+              Linked Resume
             </h3>
             {app.resumeId ? (
               <div className="space-y-2">
-                <div className="flex items-center gap-1.5 text-xs text-green-600 dark:text-green-400">
-                  <CheckCircle2 className="h-3 w-3" />
-                  Tailored resume linked
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-green-50 dark:bg-green-500/10">
+                  <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                  <div className="min-w-0">
+                    <p className="text-xs font-medium text-green-700 dark:text-green-400 truncate">
+                      Resume linked
+                    </p>
+                    <p className="text-[10px] text-green-600/70 dark:text-green-400/60 truncate">
+                      ID: {app.resumeId.slice(0, 16)}...
+                    </p>
+                  </div>
                 </div>
                 <Link
                   href="/resume-builder"
@@ -423,8 +567,14 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
               </div>
             ) : (
               <div className="space-y-2">
-                <p className="text-xs text-gray-500 dark:text-slate-400">
-                  No resume linked yet. Tailor a resume for this job to get started.
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-50 dark:bg-white/[0.02]">
+                  <FileText className="h-4 w-4 text-gray-300 dark:text-slate-600 shrink-0" />
+                  <p className="text-xs text-gray-500 dark:text-slate-400">
+                    No resume linked yet.
+                  </p>
+                </div>
+                <p className="text-[11px] text-gray-400 dark:text-slate-500">
+                  Tailor a resume for this job to link it automatically.
                 </p>
               </div>
             )}

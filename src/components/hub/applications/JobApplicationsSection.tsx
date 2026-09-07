@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import Link from "next/link";
 import {
   Briefcase,
@@ -12,6 +12,8 @@ import {
   Trash2,
   ExternalLink,
   ChevronRight,
+  Search,
+  ArrowUpDown,
 } from "lucide-react";
 import { AddJobApplicationModal } from "./AddJobApplicationModal";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
@@ -55,12 +57,37 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   rejected: { bg: "bg-red-50 dark:bg-red-500/10", text: "text-red-600 dark:text-red-400", label: "Rejected" },
 };
 
+/** Status filter options. */
+const STATUS_FILTERS = [
+  { value: "all", label: "All" },
+  { value: "saved", label: "Saved" },
+  { value: "ready_to_apply", label: "Ready" },
+  { value: "applied", label: "Applied" },
+  { value: "interview", label: "Interview" },
+  { value: "offer", label: "Offer" },
+  { value: "rejected", label: "Rejected" },
+];
+
+/** Sort options. */
+const SORT_OPTIONS = [
+  { value: "newest", label: "Newest" },
+  { value: "oldest", label: "Oldest" },
+  { value: "company_az", label: "Company A–Z" },
+  { value: "company_za", label: "Company Z–A" },
+  { value: "match_high", label: "Match Score" },
+];
+
 export function JobApplicationsSection() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
+
+  // Search, filter, sort state
+  const [searchQuery, setSearchQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
 
   const fetchApplications = useCallback(async () => {
     try {
@@ -97,6 +124,48 @@ export function JobApplicationsSection() {
     fetchApplications();
   };
 
+  // Filter and sort applications
+  const filteredApplications = useMemo(() => {
+    let result = [...applications];
+
+    // Search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      result = result.filter(
+        (app) =>
+          app.title.toLowerCase().includes(query) ||
+          app.companyName.toLowerCase().includes(query) ||
+          app.jobDescription.toLowerCase().includes(query)
+      );
+    }
+
+    // Status filter
+    if (statusFilter !== "all") {
+      result = result.filter((app) => app.status === statusFilter);
+    }
+
+    // Sort
+    switch (sortBy) {
+      case "newest":
+        result.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+        break;
+      case "oldest":
+        result.sort((a, b) => new Date(a.updatedAt).getTime() - new Date(b.updatedAt).getTime());
+        break;
+      case "company_az":
+        result.sort((a, b) => a.companyName.localeCompare(b.companyName));
+        break;
+      case "company_za":
+        result.sort((a, b) => b.companyName.localeCompare(a.companyName));
+        break;
+      case "match_high":
+        result.sort((a, b) => (b.matchScore ?? -1) - (a.matchScore ?? -1));
+        break;
+    }
+
+    return result;
+  }, [applications, searchQuery, statusFilter, sortBy]);
+
   return (
     <section className="space-y-4">
       <div className="flex items-center justify-between">
@@ -109,7 +178,7 @@ export function JobApplicationsSection() {
               Job Applications
             </h2>
             <p className="text-xs text-gray-500 dark:text-slate-400">
-              Track jobs you&apos;re preparing for
+              {applications.length} application{applications.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
@@ -121,6 +190,54 @@ export function JobApplicationsSection() {
           Add Job
         </button>
       </div>
+
+      {/* Search, Filter, Sort controls */}
+      {!loading && applications.length > 0 && (
+        <div className="flex flex-col sm:flex-row gap-3">
+          {/* Search */}
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-slate-500" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search jobs..."
+              className="w-full pl-9 pr-3 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-300 dark:focus:border-amber-500/40 transition-all"
+            />
+          </div>
+
+          {/* Status filter */}
+          <div className="flex gap-1 overflow-x-auto pb-1">
+            {STATUS_FILTERS.map((filter) => (
+              <button
+                key={filter.value}
+                onClick={() => setStatusFilter(filter.value)}
+                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all ${
+                  statusFilter === filter.value
+                    ? "bg-amber-500 dark:bg-amber-500/90 text-white"
+                    : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/[0.1]"
+                }`}
+              >
+                {filter.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Sort */}
+          <div className="relative">
+            <ArrowUpDown className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400 dark:text-slate-500 pointer-events-none" />
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="pl-8 pr-8 py-2 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-xs text-gray-700 dark:text-slate-300 focus:outline-none focus:ring-2 focus:ring-amber-500/40 appearance-none cursor-pointer"
+            >
+              {SORT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
 
       {/* Empty state */}
       {!loading && applications.length === 0 && (
@@ -144,6 +261,16 @@ export function JobApplicationsSection() {
         </div>
       )}
 
+      {/* No results state */}
+      {!loading && applications.length > 0 && filteredApplications.length === 0 && (
+        <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] px-6 py-8 text-center">
+          <Search className="h-5 w-5 text-gray-300 dark:text-slate-600 mx-auto mb-2" />
+          <p className="text-sm text-gray-500 dark:text-slate-400">
+            No applications match your search or filter.
+          </p>
+        </div>
+      )}
+
       {/* Loading */}
       {loading && (
         <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] px-6 py-8 text-center">
@@ -155,9 +282,9 @@ export function JobApplicationsSection() {
       )}
 
       {/* Application list */}
-      {!loading && applications.length > 0 && (
+      {!loading && filteredApplications.length > 0 && (
         <div className="space-y-3">
-          {applications.map((app) => {
+          {filteredApplications.map((app) => {
             const statusStyle = STATUS_STYLES[app.status] || STATUS_STYLES.saved;
             const timeAgo = formatRelativeTime(app.updatedAt);
 
@@ -208,7 +335,7 @@ export function JobApplicationsSection() {
                     </div>
 
                     {/* Meta row */}
-                    <div className="flex items-center gap-3 mt-2">
+                    <div className="flex items-center gap-3 mt-2 flex-wrap">
                       {/* Status badge */}
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium ${statusStyle.bg} ${statusStyle.text}`}>
                         {statusStyle.label}
@@ -222,9 +349,10 @@ export function JobApplicationsSection() {
                         </span>
                       )}
 
-                      {/* Resume linked */}
+                      {/* Resume linked indicator */}
                       {app.resumeId && (
-                        <span className="inline-flex items-center gap-1 text-[11px] text-gray-400 dark:text-slate-500">
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-50 dark:bg-green-500/10 text-[10px] font-medium text-green-600 dark:text-green-400">
+                          <ExternalLink className="h-2.5 w-2.5" />
                           Resume linked
                         </span>
                       )}

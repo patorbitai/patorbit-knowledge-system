@@ -1,7 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
-import { X, Briefcase, Building2, FileText, Loader2 } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { X, Briefcase, Building2, FileText, Loader2, FileCheck } from "lucide-react";
+
+/** Minimal resume shape for the selector. */
+type ResumeOption = {
+  resumeId: string;
+  resumeName: string;
+  templateId: string;
+};
 
 type Props = {
   open: boolean;
@@ -17,14 +24,32 @@ type Props = {
  * AddJobApplicationModal — creates a new Job Application.
  *
  * C55: The user provides company, title, and job description.
- * Resume association and tailoring happen after creation.
+ * Optional resume association at creation time.
  */
 export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
   const [title, setTitle] = useState("");
   const [companyName, setCompanyName] = useState("");
   const [jobDescription, setJobDescription] = useState("");
+  const [selectedResumeId, setSelectedResumeId] = useState<string>("");
+  const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Load resumes when modal opens
+  useEffect(() => {
+    if (!open) return;
+    fetch("/api/resumes")
+      .then((r) => r.json())
+      .then((data) => {
+        const list: ResumeOption[] = (data.resumes ?? []).map((r: any) => ({
+          resumeId: r.resumeId,
+          resumeName: r.resumeName || "Untitled",
+          templateId: r.templateId || "modern-clean",
+        }));
+        setResumes(list);
+      })
+      .catch(() => setResumes([]));
+  }, [open]);
 
   if (!open) return null;
 
@@ -54,6 +79,7 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
           title: title.trim(),
           companyName: companyName.trim(),
           jobDescription: jobDescription.trim(),
+          resumeId: selectedResumeId || null,
         }),
       });
 
@@ -66,6 +92,7 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
       setTitle("");
       setCompanyName("");
       setJobDescription("");
+      setSelectedResumeId("");
       onCreated(application);
       onClose();
     } catch (err) {
@@ -157,6 +184,31 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
               Patorbit will analyze this job against your resume to suggest truthful improvements.
             </p>
           </div>
+
+          {/* Resume Selection */}
+          {resumes.length > 0 && (
+            <div className="space-y-1.5">
+              <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
+                <FileCheck className="h-3.5 w-3.5 text-gray-400" />
+                Link Resume (optional)
+              </label>
+              <select
+                value={selectedResumeId}
+                onChange={(e) => setSelectedResumeId(e.target.value)}
+                className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+              >
+                <option value="">No resume selected</option>
+                {resumes.map((r) => (
+                  <option key={r.resumeId} value={r.resumeId}>
+                    {r.resumeName}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-gray-400 dark:text-slate-500">
+                You can also link a resume later after tailoring.
+              </p>
+            </div>
+          )}
 
           {/* Actions */}
           <div className="flex items-center justify-end gap-3 pt-2">
