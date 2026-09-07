@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import Link from "next/link";
+import { useSession } from "next-auth/react";
 import {
   FileSearch,
   Briefcase,
@@ -19,9 +20,18 @@ import {
   Zap,
   Target,
   ChevronDown,
+  Mail,
+  ExternalLink,
+  TrendingUp,
+  AlertTriangle,
+  Check,
+  X,
+  User,
 } from "lucide-react";
 import { buildJobProfile } from "@/lib/job-profile";
+import { computeJobMatch } from "@/lib/job-match";
 import type { JobProfile, JobSkill } from "@/types/job-profile";
+import type { MatchResult, MatchLevel, UserClaim } from "@/lib/job-match";
 
 /* ── Validation ──────────────────────────────────────────────────────────── */
 
@@ -61,6 +71,7 @@ function SectionHeader({
     purple: { text: "text-purple-300", bg: "bg-purple-500/10" },
     amber: { text: "text-amber-300", bg: "bg-amber-500/10" },
     emerald: { text: "text-emerald-300", bg: "bg-emerald-500/10" },
+    red: { text: "text-red-300", bg: "bg-red-500/10" },
   };
 
   const colors = colorMap[color] || colorMap.cyan;
@@ -111,7 +122,232 @@ function SkillChips({ skills }: { skills: JobSkill[] }) {
   );
 }
 
-/* ── Results Card ────────────────────────────────────────────────────────── */
+/* ── Match Score Badge ───────────────────────────────────────────────────── */
+
+function MatchScoreBadge({ level, score }: { level: MatchLevel; score: number }) {
+  const config: Record<MatchLevel, { label: string; color: string; bg: string }> = {
+    strong: { label: "Strong Match", color: "text-emerald-300", bg: "bg-emerald-500/15 border-emerald-500/30" },
+    good: { label: "Good Match", color: "text-cyan-300", bg: "bg-cyan-500/15 border-cyan-500/30" },
+    partial: { label: "Partial Match", color: "text-amber-300", bg: "bg-amber-500/15 border-amber-500/30" },
+    limited: { label: "Limited Match", color: "text-orange-300", bg: "bg-orange-500/15 border-orange-500/30" },
+    "insufficient-data": { label: "Insufficient Data", color: "text-slate-400", bg: "bg-slate-500/15 border-slate-500/30" },
+  };
+
+  const c = config[level];
+
+  return (
+    <div className={`inline-flex items-center gap-3 rounded-xl border px-5 py-3 ${c.bg}`}>
+      <span className={`text-3xl font-bold tabular-nums ${c.color}`}>{score}</span>
+      <div>
+        <p className={`text-sm font-semibold ${c.color}`}>{c.label}</p>
+        <p className="text-[11px] text-slate-500">out of 100</p>
+      </div>
+    </div>
+  );
+}
+
+/* ── Personalized Match Card ─────────────────────────────────────────────── */
+
+function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile: JobProfile }) {
+  const [expanded, setExpanded] = useState(true);
+
+  return (
+    <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-sm overflow-hidden shadow-xl shadow-black/20">
+      {/* Card Header */}
+      <div
+        className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer hover:bg-white/[0.04] transition-colors"
+        onClick={() => setExpanded(!expanded)}
+      >
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-cyan-500/20 to-blue-500/20 border border-cyan-500/30">
+            <TrendingUp className="h-5 w-5 text-cyan-400" />
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-white">How You Match This Job</p>
+            <p className="text-[11px] text-slate-500">Based on your Patorbit professional profile</p>
+          </div>
+        </div>
+        <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+      </div>
+
+      {expanded && (
+        <div className="px-6 py-5 space-y-5">
+          {/* Job Title */}
+          {profile.title && (
+            <div className="pb-4 border-b border-white/[0.06]">
+              <p className="text-xl font-bold text-white tracking-tight">{profile.title}</p>
+            </div>
+          )}
+
+          {/* Score */}
+          <MatchScoreBadge level={match.level} score={match.score} />
+          <p className="text-[13px] text-slate-400 leading-relaxed">{match.explanation}</p>
+
+          {/* Matched Skills */}
+          {match.matchedSkills.filter((s) => s.matched).length > 0 && (
+            <div>
+              <SectionHeader
+                icon={<Check className="h-3.5 w-3.5" />}
+                title="Strong Matches"
+                count={match.matchedSkills.filter((s) => s.matched).length}
+                color="emerald"
+              />
+              <div className="flex flex-wrap gap-2">
+                {match.matchedSkills.filter((s) => s.matched).map((s, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 px-3 py-1.5 text-[11px] font-medium text-emerald-300"
+                  >
+                    <CheckCircle2 className="h-3 w-3" />
+                    {s.skill}
+                    {s.supportingClaim?.verificationStatus === "verified" && (
+                      <span className="text-emerald-400" title="Verified claim">
+                        <Shield className="h-3 w-3" />
+                      </span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Missing Skills */}
+          {match.missingSkills.length > 0 && (
+            <div>
+              <SectionHeader
+                icon={<AlertTriangle className="h-3.5 w-3.5" />}
+                title="Potential Gaps"
+                count={match.missingSkills.length}
+                color="amber"
+              />
+              <div className="flex flex-wrap gap-2">
+                {match.missingSkills.map((skill, i) => (
+                  <span
+                    key={i}
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/10 border border-amber-500/20 px-3 py-1.5 text-[11px] font-medium text-amber-300"
+                  >
+                    <X className="h-3 w-3" />
+                    {skill}
+                  </span>
+                ))}
+              </div>
+              <p className="mt-2 text-[11px] text-slate-500">
+                These skills appear in the job description but are not currently in your Patorbit profile.
+              </p>
+            </div>
+          )}
+
+          {/* Experience */}
+          <div>
+            <SectionHeader
+              icon={<Briefcase className="h-3.5 w-3.5" />}
+              title="Experience"
+              count={1}
+              color="blue"
+            />
+            <p className="text-[13px] text-slate-300 leading-relaxed">{match.experienceAssessment}</p>
+          </div>
+
+          {/* Relevant Claims */}
+          {match.relevantClaims.length > 0 && (
+            <div>
+              <SectionHeader
+                icon={<User className="h-3.5 w-3.5" />}
+                title="Relevant Profile Evidence"
+                count={match.relevantClaims.length}
+                color="purple"
+              />
+              <div className="space-y-2">
+                {match.relevantClaims.map((claim) => (
+                  <div
+                    key={claim.id}
+                    className="rounded-xl bg-white/[0.02] border border-white/[0.04] px-3.5 py-3"
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="text-[13px] text-slate-200 leading-relaxed">{claim.assertionText}</p>
+                      <span className={`shrink-0 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium ${
+                        claim.verificationStatus === "verified"
+                          ? "bg-emerald-500/10 text-emerald-400"
+                          : claim.verificationStatus === "evidence-added"
+                          ? "bg-blue-500/10 text-blue-400"
+                          : "bg-slate-500/10 text-slate-500"
+                      }`}>
+                        {claim.verificationStatus === "verified" && <Shield className="h-2.5 w-2.5" />}
+                        {claim.verificationStatus}
+                      </span>
+                    </div>
+                    <p className="mt-1 text-[10px] text-slate-600">{claim.claimType}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Recommendations */}
+          {match.missingSkills.length > 0 && (
+            <div className="rounded-xl bg-cyan-500/[0.04] border border-cyan-500/10 px-4 py-3">
+              <p className="text-[12px] font-semibold text-cyan-300 mb-1">Recommendations</p>
+              <ul className="space-y-1">
+                {match.missingSkills.slice(0, 3).map((skill, i) => (
+                  <li key={i} className="text-[11px] text-slate-400 leading-relaxed">
+                    • Consider adding <span className="text-slate-300 font-medium">{skill}</span> to your profile if you have this experience.
+                  </li>
+                ))}
+                {match.matchedSkills.filter((s) => s.matched).length > 0 && (
+                  <li className="text-[11px] text-slate-400 leading-relaxed">
+                    • Highlight your {match.matchedSkills.filter((s) => s.matched).slice(0, 2).map((s) => s.skill).join(" and ")} experience when applying.
+                  </li>
+                )}
+              </ul>
+            </div>
+          )}
+
+          {/* Recruiter Email */}
+          {match.recruiterEmail && (
+            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-5 py-4">
+              <p className="text-[12px] font-semibold text-white mb-2">Interested in this role?</p>
+              <div className="flex items-center gap-3 flex-wrap">
+                <a
+                  href={`mailto:${match.recruiterEmail}?subject=${encodeURIComponent(`Application – ${profile.title || "Position"}`)}&body=${encodeURIComponent(`Dear Hiring Manager,\n\nI am interested in the ${profile.title || "position"} role and would like to express my interest.\n\nBest regards`)}`}
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-[12px] font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+                >
+                  <Mail className="h-3.5 w-3.5" />
+                  Email Recruiter
+                </a>
+                <span className="text-[12px] text-slate-400">
+                  {match.recruiterEmail}
+                </span>
+              </div>
+              <p className="mt-2 text-[10px] text-slate-600">
+                Opens your email client with a draft — review before sending.
+              </p>
+            </div>
+          )}
+
+          {/* Application Action */}
+          <div className="flex flex-col sm:flex-row gap-3 pt-2">
+            <Link
+              href="/jobs/new"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] border border-white/[0.10] px-5 py-3 text-[12px] font-medium text-slate-300 transition-all duration-200 hover:bg-white/[0.10] hover:border-white/[0.15] hover:text-white"
+            >
+              <Briefcase className="h-3.5 w-3.5" />
+              Prepare My Application
+            </Link>
+            <Link
+              href="/overview"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.06] px-5 py-3 text-[12px] font-medium text-slate-500 transition-all duration-200 hover:bg-white/[0.04] hover:text-slate-300"
+            >
+              View Dashboard
+              <ExternalLink className="h-3 w-3" />
+            </Link>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ── JD Analysis Result Card (original, for all users) ───────────────────── */
 
 function ResultCard({ profile }: { profile: JobProfile }) {
   const [expanded, setExpanded] = useState(true);
@@ -119,7 +355,7 @@ function ResultCard({ profile }: { profile: JobProfile }) {
   return (
     <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-sm overflow-hidden shadow-xl shadow-black/20">
       {/* Card Header */}
-      <div 
+      <div
         className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer hover:bg-white/[0.04] transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
@@ -277,7 +513,7 @@ function ResultCard({ profile }: { profile: JobProfile }) {
   );
 }
 
-/* ── CTA Card ────────────────────────────────────────────────────────────── */
+/* ── CTA Card (for logged-out users) ─────────────────────────────────────── */
 
 function ConversionCTA() {
   return (
@@ -332,21 +568,97 @@ function ConversionCTA() {
   );
 }
 
+/* ── Insufficient Profile Card (for logged-in users with no data) ────────── */
+
+function InsufficientProfileCard() {
+  return (
+    <div className="rounded-2xl border border-amber-500/20 bg-gradient-to-br from-amber-500/[0.06] to-white/[0.02] p-6 relative overflow-hidden">
+      <div className="flex items-start gap-3">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-amber-500/15 border border-amber-500/30 shrink-0">
+          <AlertTriangle className="h-5 w-5 text-amber-400" />
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-white mb-1">
+            Your profile needs more data for a personalized match
+          </p>
+          <p className="text-[13px] text-slate-400 leading-relaxed mb-4">
+            Add professional experience, skills, or education to your Patorbit profile to see how you match this job.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Link
+              href="/resume-builder"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-amber-500/20 border border-amber-500/30 px-4 py-2 text-[12px] font-medium text-amber-300 transition-all hover:bg-amber-500/30"
+            >
+              Build Your Profile
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+            <Link
+              href="/overview"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.06] px-4 py-2 text-[12px] font-medium text-slate-500 transition-all hover:bg-white/[0.04] hover:text-slate-300"
+            >
+              View Dashboard
+            </Link>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ── Main Component ──────────────────────────────────────────────────────── */
 
 export function FreeJDAnalysis() {
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
+
   const [input, setInput] = useState("");
   const [analyzed, setAnalyzed] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [userClaims, setUserClaims] = useState<UserClaim[]>([]);
+  const [claimsLoaded, setClaimsLoaded] = useState(false);
 
   const trimmedInput = input.trim();
   const canAnalyze = trimmedInput.length >= MIN_CHARS;
+
+  // Fetch user claims when authenticated
+  const fetchClaims = useCallback(async () => {
+    if (!isAuthenticated) {
+      setClaimsLoaded(true);
+      return;
+    }
+    try {
+      const res = await fetch("/api/claims");
+      if (res.ok) {
+        const data = await res.json();
+        setUserClaims(data.claims || []);
+      }
+    } catch {
+      // Silently handle — fall back to no-match behavior
+    } finally {
+      setClaimsLoaded(true);
+    }
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    if (status !== "loading") {
+      fetchClaims();
+    }
+  }, [status, fetchClaims]);
 
   // Live preview (deterministic, no AI, no network)
   const liveProfile = useMemo<JobProfile | null>(() => {
     if (trimmedInput.length < MIN_CHARS) return null;
     return buildJobProfile(trimmedInput);
   }, [trimmedInput]);
+
+  // Compute match for authenticated users
+  const matchResult = useMemo<MatchResult | null>(() => {
+    if (!analyzed || !liveProfile || !isAuthenticated || !claimsLoaded) return null;
+    if (userClaims.length === 0) return null;
+    return computeJobMatch(liveProfile, userClaims, trimmedInput);
+  }, [analyzed, liveProfile, isAuthenticated, claimsLoaded, userClaims, trimmedInput]);
+
+  const hasProfileData = userClaims.length > 0;
 
   const handleAnalyze = () => {
     const validationError = validateInput(input);
@@ -471,8 +783,28 @@ export function FreeJDAnalysis() {
       {/* Results */}
       {profile && (
         <div className="space-y-5 animate-in fade-in slide-in-from-bottom-3 duration-400">
+          {/* Always show the JD analysis result */}
           <ResultCard profile={profile} />
-          <ConversionCTA />
+
+          {/* Auth-conditional: personalized match or CTA */}
+          {isAuthenticated ? (
+            claimsLoaded ? (
+              hasProfileData && matchResult ? (
+                <PersonalizedMatchCard match={matchResult} profile={profile} />
+              ) : (
+                <InsufficientProfileCard />
+              )
+            ) : (
+              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
+                <div className="animate-pulse space-y-2">
+                  <div className="h-4 bg-white/[0.06] rounded w-1/3 mx-auto" />
+                  <div className="h-3 bg-white/[0.04] rounded w-1/2 mx-auto" />
+                </div>
+              </div>
+            )
+          ) : (
+            <ConversionCTA />
+          )}
         </div>
       )}
 
