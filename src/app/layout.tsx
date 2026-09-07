@@ -10,6 +10,8 @@ import SessionProvider from "@/components/providers/SessionProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import { InactivityProvider } from "@/components/providers/InactivityProvider";
 import { InactivityWarning } from "@/components/providers/InactivityWarning";
+import { FeatureAccessProvider } from "@/components/providers/FeatureAccessProvider";
+import { AccessRestrictionDialog } from "@/components/common/AccessRestrictionDialog";
 import { DeploymentUpdateBanner } from "@/components/common/DeploymentUpdateBanner";
 import { ToastProvider } from "@/components/common/Toast";
 import "./globals.css";
@@ -66,12 +68,15 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col">
         <ThemeProvider>
           <SessionProvider>
-            <ToastProvider>
-              <InactivityProvider>
-                {children}
-                <InactivityWarning />
-              </InactivityProvider>
-            </ToastProvider>
+            <FeatureAccessProvider>
+              <ToastProvider>
+                <InactivityProvider>
+                  {children}
+                  <InactivityWarning />
+                  <AccessRestrictionDialog />
+                </InactivityProvider>
+              </ToastProvider>
+            </FeatureAccessProvider>
           </SessionProvider>
         </ThemeProvider>
         <DeploymentUpdateBanner />

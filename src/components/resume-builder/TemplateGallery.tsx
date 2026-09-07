@@ -6,6 +6,7 @@ import { clsx } from "clsx";
 import { X, Check, Eye, Shield, Layers, AlertTriangle, Sparkles, Search } from "lucide-react";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { useResumeBuilder } from "@/store/resume-builder";
+import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { FullTemplatePreview } from "@/components/resume-builder/FullTemplatePreview";
 import { filterTemplates } from "@/lib/template-search";
@@ -76,6 +77,7 @@ function hasResumeData(resume: any): boolean {
 export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
   const applyTemplate = useResumeBuilder((s) => s.applyTemplate);
+  const { hasFeature, showRestriction } = useFeatureAccess();
   const [activeCategory, setActiveCategory] = useState("Recommended");
   const [searchQuery, setSearchQuery] = useState("");
   const [previewing, setPreviewing] = useState<string | null>(null);
@@ -83,6 +85,17 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
   const searchRef = useRef<HTMLInputElement>(null);
 
   const handleSelect = (id: string) => {
+    // Check if this is a premium template and user has access
+    if (PREMIUM_IDS.has(id) && !hasFeature("allTemplates")) {
+      const template = TEMPLATES.find((t) => t.id === id);
+      showRestriction({
+        type: "template",
+        featureName: template?.name,
+        requiredPlan: "Professional",
+      });
+      return;
+    }
+
     if (hasResumeData(resume)) {
       // Close the full preview so the overwrite confirm dialog stays visible.
       setPreviewing(null);

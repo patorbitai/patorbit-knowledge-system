@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 import { TEMPLATES, type ResumeTemplate } from "@/app/resume-builder/templates";
 import { useResumeBuilder } from "@/store/resume-builder";
+import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { FullTemplatePreview } from "@/components/resume-builder/FullTemplatePreview";
 import { filterTemplates } from "@/lib/template-search";
@@ -230,10 +231,13 @@ function TemplateCard({
  * Main Page Component
  * ══════════════════════════════════════════════════════════════════════════ */
 
+const PREMIUM_IDS = new Set(["patorbit-modern", "executive-pro", "minimal-ats", "engineering-clean"]);
+
 export function TemplateGalleryPage() {
   const router = useRouter();
   const resume = useResumeBuilder((s) => s.resume);
   const applyTemplate = useResumeBuilder((s) => s.applyTemplate);
+  const { hasFeature, showRestriction } = useFeatureAccess();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
@@ -255,11 +259,22 @@ export function TemplateGalleryPage() {
   /* ── Handlers ── */
   const handleUseTemplate = useCallback(
     (templateId: string) => {
+      // Check if this is a premium template and user has access
+      if (PREMIUM_IDS.has(templateId) && !hasFeature("allTemplates")) {
+        const template = TEMPLATES.find((t) => t.id === templateId);
+        showRestriction({
+          type: "template",
+          featureName: template?.name,
+          requiredPlan: "Professional",
+        });
+        return;
+      }
+
       applyTemplate(templateId);
       setPreviewTemplate(null);
       router.push("/resume-builder");
     },
-    [applyTemplate, router]
+    [applyTemplate, router, hasFeature, showRestriction]
   );
 
   const handlePreview = useCallback((template: ResumeTemplate) => {
