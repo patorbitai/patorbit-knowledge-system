@@ -190,6 +190,55 @@ Migration happens **domain-by-domain**, never in one change:
 6. Trust
 7. Passport
 
+---
+
+## Implementation Status (updated 2026-09-07)
+
+The following table reflects the actual repository state after ADR-002
+Phases 2–3 implementation. This section supplements the original 2026-08-16
+audit; the historical sections above remain unchanged.
+
+| Domain | Status | Migration | Evidence |
+|---|---|---|---|
+| **1. Professional Identity** | ✅ COMPLETE | Existing `ProfessionalIdentity` table | PI model with profileData, onboarding, resume seeding |
+| **2. Resume** | ✅ COMPLETE | Existing `Resume` table under PI | ADR-003/004/005; hybrid relational metadata + JSON payload |
+| **3. Claims** | ✅ COMPLETE | `20260907010000_add_claim_model_and_evidence_fk` | First-class `Claim` entity under ProfessionalIdentity with repository, service, and API |
+| **4. Evidence FK** | ✅ COMPLETE | Same migration as Claims | `EvidenceRecord.claimId` is now a real nullable FK to `Claim` with `ON DELETE SET NULL` |
+| **5. Verification** | ✅ COMPLETE | `20260907020000_add_verification_events` | `VerificationEvent` append-only audit trail with status transitions and ownership enforcement |
+| **6. Trust** | ✅ COMPLETE | `GET /api/trust` — dynamically derived from Claims + Evidence + VerificationEvent | Server-side pure derivation algorithm (`src/lib/trust/derivation.ts`); no persisted Trust entity |
+| **7. Passport** | 🔶 FUTURE | Not yet started | Client-side share cache exists; server-side projection is a future phase |
+
+### Canonical domains now in PostgreSQL
+
+The following domains now have canonical PostgreSQL representation:
+
+- **User identity** — `User` table
+- **Professional identity** — `ProfessionalIdentity` table (1:1 with User)
+- **Resume** — `Resume` table under ProfessionalIdentity
+- **Claims** — `Claim` table under ProfessionalIdentity (first-class server entity)
+- **Evidence metadata** — `EvidenceRecord` table with enforceable FK to `Claim`
+- **Verification history** — `VerificationEvent` append-only table with FK to `Claim`
+
+### What still uses client-side state
+
+- Resume content (Zustand store + localStorage) — server stores a snapshot but the client remains authoritative for editing
+- Trust display — `GET /api/trust` is authoritative; client caches result for UI responsiveness
+- Passport rendering — derived from client resume + trust data
+- Knowledge Graph — derived in-memory from resume data
+
+Trust derivation is now server-side. Passport rendering and Knowledge Graph remain client-derived projections.
+
+### Migration files
+
+| Migration | Status | Description |
+|---|---|---|
+| `20260907010000_add_claim_model_and_evidence_fk` | Created | Adds `Claim` model, makes `EvidenceRecord.claimId` nullable FK |
+| `20260907020000_add_verification_events` | Created | Adds `VerificationEvent` append-only audit trail |
+
+> **Note:** These migrations have been created and validated (`npx prisma
+> validate`). Application to the production database has not been independently
+> verified in this documentation update.
+
 Each domain migration must:
 
 - **preserve existing data** (no destructive rewrite),

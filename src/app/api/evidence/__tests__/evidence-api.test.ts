@@ -46,6 +46,22 @@ vi.mock("@/services/evidence-storage.service", () => ({
     deleteFile: vi.fn(),
   },
 }));
+vi.mock("@/services/identity.service", () => ({
+  identityService: {
+    ensureProfessionalIdentity: vi.fn().mockResolvedValue({ id: "pi_1", userId: "user1" }),
+  },
+}));
+vi.mock("@/services/claim.service", () => ({
+  claimService: {
+    getById: vi.fn().mockResolvedValue({ id: "c1", professionalIdentityId: "pi_1" }),
+  },
+  ClaimValidationError: class ClaimValidationError extends Error {
+    constructor(message: string) {
+      super(message);
+      this.name = "ClaimValidationError";
+    }
+  },
+}));
 
 import { getServerSession } from "next-auth";
 import { GET, POST } from "@/app/api/evidence/route";

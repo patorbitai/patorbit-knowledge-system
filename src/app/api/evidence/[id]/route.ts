@@ -33,7 +33,7 @@ export async function GET(req: NextRequest, context: RouteContext) {
     if (record.evidenceType === "link") {
       return NextResponse.json({
         id: record.id,
-        claimId: record.claimId,
+        claimId: record.claimId ?? "",
         evidenceType: record.evidenceType,
         evidenceKind: record.evidenceKind,
         content: record.content,

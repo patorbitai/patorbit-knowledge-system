@@ -4,18 +4,15 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { Resume, Evidence } from "@/types/resume";
-import type { TrustReport } from "@/types/knowledge-graph";
 import { ShieldCheck, CheckCircle2, Clock, Globe, Award, FileText, Sparkles, Users, Briefcase } from "lucide-react";
 import { IdentityNav } from "./IdentityNav";
 import { clsx } from "clsx";
-import { GraphService } from "@/services/graph-service";
-import { TrustService } from "@/services/trust-service";
-import { resumeToGraph } from "@/services/graph-mapper";
+import type { ServerTrustReport } from "@/lib/trust/types";
 
 export interface TrustViewProps {
   resume?: Resume;
   evidence?: Evidence[];
-  trustReport?: TrustReport | null;
+  trustReport?: ServerTrustReport | null;
 }
 
 function getScoreStatus(score: number | null): string {
@@ -89,7 +86,7 @@ function CircularScoreGauge({ score }: { score: number | null }) {
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-3xl font-extrabold text-white leading-none font-mono">{score !== null ? score : "—"}</span>
+            <span className="text-3xl font-extrabold text-white leading-none font-mono">{score !== null ? score : "—"}</span>
           <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">/ 100</span>
         </div>
       </div>
@@ -108,32 +105,34 @@ export function TrustView({
   evidence: propEvidence,
   trustReport: propTrustReport,
 }: TrustViewProps = {}) {
-  const storeTrustReport = useResumeBuilder((s) => s.trustReport);
-  const storeTrustScore = useResumeBuilder((s) => s.trustScore);
   const storeResume = useResumeBuilder((s) => s.resume);
   const storeEvidence = useResumeBuilder((s) => s.evidence ?? []);
 
-  const trustReport = propTrustReport ?? storeTrustReport;
-  const trustScore = storeTrustScore;
   const resume = propResume ?? storeResume;
   const evidence = propEvidence ?? storeEvidence;
 
+  const [serverTrustReport, setServerTrustReport] = useState<ServerTrustReport | null>(null);
+  const [loading, setLoading] = useState(!propTrustReport);
   const [shareEnabled, setShareEnabled] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
 
-  let report = trustReport;
-  if (!report && resume) {
-    try {
-      const graphService = new GraphService();
-      const trustService = new TrustService(graphService);
-      const graph = resumeToGraph(resume, "user-input", evidence);
-      graphService.setGraph(graph);
-      report = trustService.calculateTrustReport();
-    } catch (e) {
-      console.error(e);
-    }
-  }
+  // Fetch server-derived Trust on mount
+  useEffect(() => {
+    if (propTrustReport) return; // Use prop if provided
+    setLoading(true);
+    fetch("/api/trust")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.score === "number") {
+          setServerTrustReport(data as ServerTrustReport);
+        }
+      })
+      .catch(() => {}) // Silent fallback — empty state shown below
+      .finally(() => setLoading(false));
+  }, [propTrustReport]);
+
+  const report = propTrustReport ?? serverTrustReport;
 
   useEffect(() => {
     fetch("/api/trust/share")
@@ -149,10 +148,12 @@ export function TrustView({
 
   const handleToggleShare = async () => {
     const action = shareEnabled ? "disable" : "enable";
+    // SECURITY: Never send trustReport to the server.
+    // Server derives Trust from canonical data automatically.
     const res = await fetch("/api/trust/share", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, trustReport: report }),
+      body: JSON.stringify({ action }),
     });
     const data = await res.json();
     if (res.ok) {
@@ -169,13 +170,41 @@ export function TrustView({
     setTimeout(() => setCopying(false), 2000);
   };
 
-  const snapshot = report?.snapshot ?? trustScore;
-  const verification = report?.verificationSummary;
-  const coverage = report?.evidenceCoverage;
+  // ServerTrustReport uses .score, .summary, and .breakdown directly
+  const verification = report?.summary ? {
+    total: report.summary.totalClaims,
+    verified: report.summary.verifiedClaims,
+    pending: 0,
+    unverified: report.summary.totalClaims - report.summary.verifiedClaims,
+    disputed: 0,
+    expired: 0,
+    coverage: report.summary.verificationRate,
+  } : null;
+  const coverage = report?.summary ? {
+    totalClaims: report.summary.totalClaims,
+    claimsWithEvidence: report.summary.claimsWithEvidence,
+    claimsWithoutEvidence: report.summary.claimsWithoutEvidence,
+    coveragePercent: report.summary.evidenceCoveragePercent,
+  } : null;
 
-  const isEmpty = !resume || (!resume.name && !resume.title && (resume.claims ?? []).length === 0 && evidence.length === 0);
+  const isEmpty = !report || (!resume?.name && !resume?.title && (resume?.claims ?? []).length === 0 && evidence.length === 0);
 
-  if (isEmpty || !snapshot) {
+  if (loading) {
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 font-sans space-y-8">
+        <IdentityNav />
+        <div className="rounded-2xl border border-gray-200 dark:border-[rgba(148,163,184,.14)] bg-white dark:bg-gradient-to-br dark:from-[rgba(10,18,32,0.96)] dark:to-[rgba(7,14,26,0.92)] p-12 text-center space-y-3 shadow-xl">
+          <ShieldCheck className="w-10 h-10 text-cyan-500 dark:text-cyan-400 mx-auto animate-pulse" />
+          <h3 className="text-sm font-bold text-gray-900 dark:text-white">Loading trust data…</h3>
+          <p className="text-xs text-gray-500 dark:text-slate-400 max-w-md mx-auto">
+            Deriving trust from your verified claims and evidence.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (isEmpty) {
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 font-sans space-y-8">
       <IdentityNav />
@@ -220,7 +249,7 @@ export function TrustView({
           
           {/* Left: Trust Score Gauge */}
           <div className="flex justify-center border-b lg:border-b-0 lg:border-r border-[rgba(148,163,184,.14)] pb-6 lg:pb-0 lg:pr-8">
-            <CircularScoreGauge score={snapshot.overall} />
+            <CircularScoreGauge score={report?.score ?? null} />
           </div>
 
           {/* Center: Evidence-Based Trust Analysis */}
@@ -347,10 +376,9 @@ export function TrustView({
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {snapshot.components.map((comp, idx) => {
-              const compScore = comp.score ?? 0;
-              const compMax = comp.maxScore ?? 100;
-              const pct = Math.min(Math.round((compScore / compMax) * 100), 100);
+            {report?.breakdown.map((comp, idx) => {
+              const compScore = comp.score;
+              const pct = Math.min(compScore, 100);
               const colorInfo = getFactorColor(comp.label);
               const factorIcon = getFactorIcon(comp.label);
 
@@ -367,7 +395,7 @@ export function TrustView({
                       </div>
                     </div>
                     <span className="text-xs font-bold text-white font-mono">
-                      {comp.score !== null ? `${comp.score} / ${comp.maxScore}` : "0 / 100"}
+                      {comp.score} / 100
                     </span>
                   </div>
 
@@ -382,7 +410,6 @@ export function TrustView({
                     </div>
                     <div className="flex justify-between text-[10px] text-slate-500 font-mono">
                       <span>{pct}%</span>
-                      {comp.improvementTip && <span className={clsx("truncate max-w-[180px]", colorInfo.text)} title={comp.improvementTip}>Tip: {comp.improvementTip}</span>}
                     </div>
                   </div>
                 </div>

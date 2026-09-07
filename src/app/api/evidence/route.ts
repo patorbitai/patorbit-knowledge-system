@@ -4,6 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { handleApiError } from "@/lib/api-error";
+import { identityService } from "@/services/identity.service";
+import { claimService } from "@/services/claim.service";
 import { evidenceStorageService } from "@/services/evidence-storage.service";
 import { evidenceRepository } from "@/repositories/evidence.repository";
 import { entitlementService } from "@/services/entitlement.service";
@@ -71,6 +73,18 @@ export async function POST(req: NextRequest) {
     if (!claimId) {
       return NextResponse.json({ error: "Missing claimId" }, { status: 400 });
     }
+
+    // ADR-002 Phase 2: Validate claimId belongs to the authenticated user's PI
+    const identity = await identityService.ensureProfessionalIdentity(session.user.id);
+    try {
+      await claimService.getById(claimId, identity.id);
+    } catch {
+      return NextResponse.json(
+        { error: "Invalid claimId: claim not found or does not belong to you" },
+        { status: 400 },
+      );
+    }
+
     if (!consent) {
       return NextResponse.json({ error: "Consent is required" }, { status: 400 });
     }
@@ -121,7 +135,7 @@ export async function POST(req: NextRequest) {
 
     const responseEvidence: Evidence = {
       id: record.id,
-      claimId: record.claimId,
+      claimId: record.claimId ?? "",
       evidenceType: record.evidenceType as EvidenceType,
       evidenceKind: record.evidenceKind as EvidenceKind,
       content: record.content,
@@ -153,7 +167,7 @@ export async function GET() {
     const records = await evidenceRepository.findByUserId(session.user.id);
     const evidenceList: Evidence[] = records.map((r) => ({
       id: r.id,
-      claimId: r.claimId,
+      claimId: r.claimId ?? "",
       evidenceType: r.evidenceType as EvidenceType,
       evidenceKind: r.evidenceKind as EvidenceKind,
       content: r.content,

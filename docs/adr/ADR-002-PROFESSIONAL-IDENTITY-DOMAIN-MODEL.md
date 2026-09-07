@@ -275,16 +275,88 @@ Those belong to the Professional Identity.
 
 ## Current vs Target
 
-| Domain | CURRENT | TARGET |
+| Domain | CURRENT (as of 2026-09-07) | TARGET |
 |---|---|---|
-| ProfessionalIdentity | Exists but is mostly a shell (share flags + caches) | Root persistent identity |
-| Resume | Client-only (Zustand + localStorage) | Server entity under ProfessionalIdentity |
-| Claim | Nested in Resume / client-only | Server entity under ProfessionalIdentity |
-| Evidence | `EvidenceRecord` server-side; `claimId` unenforced | `EvidenceRecord` belongs to Claim (enforceable) |
-| Verification | Status-based | Verification history belongs to Claim/Evidence |
-| Trust | Derived client-side + share cache | Derived |
-| Passport | Live client data + share cache | Derived |
-| Knowledge Graph | Derived in-memory | Derived |
+| ProfessionalIdentity | ✅ Server entity with profileData, onboarding, resume seeding | Root persistent identity |
+| Resume | ✅ Server entity under ProfessionalIdentity (ADR-003/004/005) | Server entity under ProfessionalIdentity |
+| Claim | ✅ **First-class server entity under ProfessionalIdentity** — `Claim` table with repository, service, and API (ADR-002 Phase 2) | Server entity under ProfessionalIdentity |
+| Evidence | ✅ **`EvidenceRecord` belongs to Claim via enforceable FK** — `claimId` is nullable FK with `ON DELETE SET NULL` (ADR-002 Phase 2) | `EvidenceRecord` belongs to Claim (enforceable) |
+| Verification | ✅ **`VerificationEvent` append-only audit trail** — events belong to Claim, optionally reference EvidenceRecord; controlled status transitions (ADR-002 Phase 3) | Verification history belongs to Claim/Evidence |
+| Trust | ✅ **Server-side derivation** — `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm in `src/lib/trust/derivation.ts`; no persisted Trust entity | Server-side derivation from Claims + Evidence + Verification |
+| Passport | Live client data + share cache | 🔶 **FUTURE** — server-side projection from canonical data |
+| Knowledge Graph | Derived in-memory | Derived in-memory |
+
+### Implemented domain relationships (2026-09-07)
+
+```
+ProfessionalIdentity
+       │
+       ├── Resume (server entity, ADR-003)
+       │     └── source activities / client representation
+       │
+       └── Claim (first-class server entity, ADR-002 Phase 2)
+             │
+             ├── EvidenceRecord[] (enforceable FK, ADR-002 Phase 2)
+             │
+             └── VerificationEvent[] (append-only audit trail, ADR-002 Phase 3)
+```
+
+### VerificationEvent architecture
+
+```
+Claim
+  │
+  ├── EvidenceRecord A
+  ├── EvidenceRecord B
+  │
+  └── VerificationEvent[]
+          │
+          ├── verification requested
+          ├── evidence reviewed
+          ├── verified
+          ├── rejected
+          ├── disputed
+          ├── revoked
+          └── expired
+```
+
+`Claim.verificationStatus` remains the **current projected state**.
+`VerificationEvent[]` provides the **immutable historical audit trail**.
+
+### Status transitions (implemented)
+
+```
+suggested     → accepted
+accepted      → evidence-added, under-review
+evidence-added → under-review, accepted
+under-review  → verified, rejected, disputed
+verified      → expired, revoked, disputed
+rejected      → under-review, disputed
+disputed      → under-review, verified, rejected
+expired       → under-review
+revoked       → under-review
+```
+
+`evidence_reviewed` is a no-op status transition (stays in current status)
+and is an audit event only.
+
+### Security / ownership chain
+
+```
+Authenticated User
+        ↓
+ProfessionalIdentity
+        ↓
+Claim
+        ↓
+EvidenceRecord
+        ↓
+VerificationEvent
+```
+
+Every API operation resolves the authenticated user's ProfessionalIdentity
+and enforces ownership. Users cannot access, modify, or delete another
+user's Claims, Evidence, or Verification history.
 
 ## Consequences
 
@@ -307,15 +379,15 @@ Those belong to the Professional Identity.
 
 ## Migration Principles
 
-**Do not migrate in one giant change.** Future sequence:
+**Do not migrate in one giant change.** Sequence:
 
-1. ProfessionalIdentity domain foundation
-2. Resume server entity
-3. Claims server entity
-4. Evidence Claim FK
-5. Verification records/events
-6. Trust server-side derivation
-7. Passport server-side projection
+1. ProfessionalIdentity domain foundation — ✅ COMPLETE
+2. Resume server entity — ✅ COMPLETE (ADR-003/004/005)
+3. Claims server entity — ✅ COMPLETE (ADR-002 Phase 2)
+4. Evidence Claim FK — ✅ COMPLETE (ADR-002 Phase 2)
+5. Verification records/events — ✅ COMPLETE (ADR-002 Phase 3)
+6. Trust server-side derivation — ✅ COMPLETE (ADR-002 Phase 4)
+7. Passport server-side projection — 🔶 FUTURE
 
 For every migration:
 

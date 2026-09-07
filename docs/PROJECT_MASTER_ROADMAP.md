@@ -56,14 +56,12 @@ A **three-layer platform**:
 | **Dashboard (Overview)** | ✅ Deployed | 85% | Professional Identity hub, widget system |
 | **Pricing** | ✅ Deployed | 100% | 3-tier model (Starter free, Professional $29/mo, Enterprise) |
 | **Career Passport** | 🚧 In Progress | 40% | UI complete, verification pipeline WIP |
-| **Trust Score** | 🚧 In Progress | 35% | Core pipeline built, UI integration pending |
+| **Trust Score** | ✅ Implemented | 75% | Server-side derivation complete (`GET /api/trust`); external verification future |
 | **Knowledge Graph** | 🚧 In Progress | 30% | Backend services ready, visualization pending |
 | **AI Copilot** | ✅ Deployed | 75% | Resume analysis, ATS optimization, tone improvement |
-| **Evidence Management** | 🚧 In Progress | 25% | Storage layer ready, attachment flow pending |
+| **Evidence Management** | ✅ Implemented | 75% | Server entity + Claim FK + ownership enforcement; hashing/provenance future |
 | **Network/Connections** | 📋 Planned | 0% | Not started |
-| **Settings** | ✅ Deployed | 60% | Basic profile, preferences stubbed |
-
-**Overall Project Completion: ~65%**
+| **Settings** | ✅ Deployed | 60% | Basic profile, preferences stubbed| **Overall Project Completion: ~82%** (updated 2026-09-07) |
 
 ---
 
@@ -151,12 +149,14 @@ A **three-layer platform**:
   - Graph Service (knowledge graph management)
   - Trust Service (scoring algorithm)
   - Evidence storage (IndexedDB for large attachments)
-- **Scoring Factors:**
-  - Claim verification coverage
-  - Evidence strength (document types, recency)
-  - Credential authority (issuer reputation)
-  - Activity recency
-- **Files:** `src/services/identity-pipeline-coordinator.ts`, `src/services/trust-service.ts`
+- **Scoring Factors (server-derived v1):**
+  - Verification Strength (35%) — verified vs disputed/revoked claims
+  - Evidence Coverage (25%) — claims with supporting evidence
+  - Claim Completeness (20%) — acceptance rate and confidence
+  - Evidence Diversity (10%) — variety of evidence types
+  - Review Activity (10%) — verification events per claim
+- **Files:** `src/lib/trust/derivation.ts` (pure algorithm), `src/app/api/trust/route.ts`
+- **Legacy:** `src/services/trust-service.ts` (deprecated as authoritative; kept for Knowledge Graph compatibility)
 
 #### 6. AI Copilot
 - **Status:** ✅ Integrated into Resume Builder
@@ -388,7 +388,7 @@ A **three-layer platform**:
 
 ## Conclusion
 
-Patorbit is **65% complete** toward a production-ready MVP. Sprint 4 delivered critical polish for the Resume Builder and established production deployment infrastructure. Sprint 5 will focus on **Trust Score UI integration** and **Professional Passport functionality** — the differentiating features that transform Patorbit from "another resume builder" into a **Professional Identity Platform**.
+Patorbit is **82% complete** toward a production-ready MVP (updated 2026-09-07). Sprint 4 delivered critical polish for the Resume Builder and established production deployment infrastructure. ADR-002 Phases 2–4 are now complete: Claim server entity, Evidence FK enforcement, VerificationEvent audit trail, and **server-side Trust derivation**. The next milestone is **Professional Passport server-side projection**.
 
 The roadmap balances **shipping fast** (Resume Builder is live and monetizable) with **building moats** (Trust Score + Knowledge Graph create defensible competitive advantages).
 

@@ -35,11 +35,14 @@ architecture will become**, and why.
 | Claims (suggested/accepted in builder store) | ✅ **CURRENT — partial (builder-scoped)** |
 | Evidence (upload/link, badge, IndexedDB storage) | ✅ **CURRENT — partial (builder-scoped)** |
 | Trust Score backend pipeline (services, graph, coordinator) | ✅ **CURRENT — backend implemented, UI wiring partial** |
+| **Server-side Trust derivation** | ✅ **IMPLEMENTED — ADR-002 Phase 4; `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm in `src/lib/trust/derivation.ts`** |
 | Professional Passport surface | ✅ **CURRENT — surface exists; data wiring partial** |
-| First-class Claim/Identity domain model with provenance | 🔶 **FUTURE — proposed (PKS-SRS-PIP-1 Part 2)** |
+| **First-class Claim server entity** | ✅ **IMPLEMENTED — ADR-002 Phase 2; Claim table under ProfessionalIdentity with repository, service, API** |
+| **Evidence → Claim FK enforcement** | ✅ **IMPLEMENTED — ADR-002 Phase 2; EvidenceRecord.claimId is nullable FK with ON DELETE SET NULL** |
+| **Verification history / audit trail** | ✅ **IMPLEMENTED — ADR-002 Phase 3; VerificationEvent append-only table with status transitions** |
+| **Verification status transition control** | ✅ **IMPLEMENTED — ADR-002 Phase 3; controlled state machine with ownership enforcement** |
 | Verification levels L0–L3 | 🔶 **FUTURE — proposed** |
 | Conflict Detection Engine | 🔶 **FUTURE — proposed** |
-| Evidence History / Audit Ledger | 🔶 **FUTURE — proposed** |
 | Trusted Issuer Network / verifiable credentials | 🔶 **FUTURE — proposed** |
 | Scalable Core Platform service separation | 🔶 **FUTURE — proposed** |
 
@@ -151,7 +154,7 @@ independently (see §12 Platform Architecture).
 
 ---
 
-## 5. Claim Model (proposed / future)
+## 5. Claim Model (implemented — ADR-002 Phase 2)
 
 A **Claim** is an assertion about the user's professional identity. Examples:
 
@@ -161,26 +164,43 @@ A **Claim** is an assertion about the user's professional identity. Examples:
 - Holds certification Y
 - Completed project Z
 
-**Status: FUTURE (first-class model).** A builder-scoped `Claim` type exists in
-`src/types/resume.ts` and is used by the Claims Review flow today, but the
-first-class, identity-centric Claim model from PKS-SRS-PIP-1 Part 2 is **not**
-yet implemented as the canonical domain object.
+**Status: IMPLEMENTED.** Claim is now a first-class server-side entity under
+ProfessionalIdentity (`ProfessionalIdentity 1:N Claim`). The builder-scoped
+`Claim` type in `src/types/resume.ts` coexists with the server entity during
+the transition period.
 
-A first-class Claim should eventually support concepts such as:
+### Implemented fields
 
-- `claimId`
-- `identityId`
-- `type`
-- `subject`
-- `predicate`
-- `value`
-- `validFrom`
-- `validTo`
-- `status`
-- `confidence`
-- `createdAt`
-- `updatedAt`
-- `provenance` / `history`
+- `id` — stable unique identifier
+- `professionalIdentityId` — FK to ProfessionalIdentity (ownership)
+- `assertionText` — the claim as a clear, specific sentence
+- `claimType` — Employment | Education | Project | Skill | Certification | Contribution
+- `sourceActivityId` — optional link to resume/activity information
+- `confidence` — 0–1, how strongly the underlying data supports the claim
+- `reasoning` — one sentence on why this is verifiable
+- `verificationStatus` — current projected state (suggested | accepted | evidence-added | under-review | verified | expired | revoked | disputed)
+- `reviewed` — whether accepted/rejected by the user via Claims Review
+- `accepted` — whether the claim was accepted
+- `createdAt` / `updatedAt`
+
+### Relationships
+
+```
+Claim
+  ├── ProfessionalIdentity (required FK, CASCADE delete)
+  ├── EvidenceRecord[] (one-to-many)
+  └── VerificationEvent[] (one-to-many, append-only audit trail)
+```
+
+### API endpoints
+
+- `GET /api/claims` — list claims for authenticated user
+- `POST /api/claims` — create a claim
+- `GET /api/claims/[claimId]` — get a specific claim
+- `PATCH /api/claims/[claimId]` — update a claim
+- `DELETE /api/claims/[claimId]` — delete a claim
+
+All endpoints enforce ProfessionalIdentity ownership via session authentication.
 
 ---
 
@@ -201,9 +221,20 @@ Evidence is **separate from claims**. Evidence examples:
 
 ### 6.1 Current implementation
 
-- Evidence records (uploaded file or link) exist in the builder store
-  (`evidence: Evidence[]` in `src/store/resume-builder.ts`), persisted via
-  Zustand `persist` (`partialize` includes `evidence`).
+**Server-side (ADR-002 Phase 2):**
+- `EvidenceRecord` is a first-class PostgreSQL entity with an enforceable FK to `Claim`.
+- `claimId` is nullable (`String?`) with `ON DELETE SET NULL` — deleting a Claim
+  sets `claimId` to NULL rather than deleting the evidence.
+- Evidence ownership is enforced: the Evidence API validates that the supplied
+  `claimId` belongs to the authenticated user's ProfessionalIdentity.
+- `evidenceRepository` provides CRUD operations; `evidenceStorageService` handles
+  server-side file storage.
+- `GET/POST /api/evidence` and `GET/DELETE /api/evidence/[id]` routes exist with
+  authentication and entitlement checks.
+
+**Client-side (still in use):**
+- Evidence records also exist in the builder store (`evidence: Evidence[]` in
+  `src/store/resume-builder.ts`), persisted via Zustand `persist`.
 - `src/lib/evidence/` provides validation (`validate.ts`), storage
   (`storage.ts`, IndexedDB-backed file persistence), and badge derivation
   (`badge.ts`).
@@ -340,23 +371,57 @@ Potential conflict types:
 
 ---
 
-## 10. Evidence History / Audit Ledger (proposed / future)
+## 10. Verification History / Audit Trail (implemented — ADR-002 Phase 3)
 
-Historical evidence must be preserved.
+Historical verification decisions are preserved as an append-only audit trail.
 
-Example:
+**Status: IMPLEMENTED.** The `VerificationEvent` model provides immutable,
+chronological verification history for each Claim.
 
-- 2026: Google experience letter uploaded
-- 2026: Evidence checked
-- 2026: Credential verified
-- 2028: User edits resume
+### Current implementation
 
-The original evidence remains in the evidence history. Patorbit should be able
-to answer: *"Why does Patorbit currently consider this claim verified?"*
+- `VerificationEvent` is a PostgreSQL table with FK to `Claim` and optional FK
+  to `EvidenceRecord`.
+- Events are append-only: there are no update or delete operations in the
+  repository.
+- Each event records: event type, previous status, resulting status, outcome
+  (for evidence review), reason, actor, and timestamp.
+- `Claim.verificationStatus` is the current projected state; `VerificationEvent[]`
+  is the source of audit history.
 
-This requires **provenance / history**. An immutable blockchain is **not**
-required; the initial implementation can use normal secure backend storage plus
-an audit/event history.
+### Event types
+
+`requested`, `started`, `evidence_reviewed`, `verified`, `rejected`,
+`disputed`, `revoked`, `expired`
+
+### Example audit trail
+
+```
+2026-09-01: verification requested (accepted → under-review)
+2026-09-02: evidence reviewed — supports (under-review → under-review)
+2026-09-03: verified (under-review → verified)
+2028-01-15: revoked — evidence found to be fabricated (verified → revoked)
+```
+
+Event 1 and Event 3 are **not mutated** when Event 2 is added. The history
+is immutable.
+
+### API endpoints
+
+- `GET /api/claims/[claimId]/verification` — list verification history
+- `POST /api/claims/[claimId]/verification` — create a verification event
+
+### What this does NOT yet provide
+
+- External verification providers
+- AI verification
+- Evidence authenticity determination
+- Evidence hashing/fingerprinting
+- Automated verification workflows
+
+> Evidence upload ≠ verification. Verification events record application
+> decisions/actions; they do not independently prove that an uploaded
+> document is authentic.
 
 ---
 
@@ -366,11 +431,15 @@ Trust should **not** simply be "how complete is the resume?".
 
 ### 11.1 Current implementation
 
-- `src/services/trust-service.ts`, `graph-service.ts`, `graph-mapper.ts`
-- `identity-pipeline-coordinator.ts` + `identity-pipeline-subscriber.ts`
-  orchestrate a debounced refresh pipeline
-- The store exposes `trustScore` / `trustReport` snapshots; UI wiring is
-  partial (see §1 Architecture Status)
+- **Server-side Trust derivation (ADR-002 Phase 4):** `GET /api/trust`
+  returns a `ServerTrustReport` derived from canonical Claims + Evidence + VerificationEvents.
+  Pure algorithm in `src/lib/trust/derivation.ts` — deterministic, side-effect-free, no DB queries.
+- `TrustView` and `TrustWidget` fetch from `GET /api/trust` on mount
+  (client no longer calculates authoritative Trust).
+- Share flow (`/api/trust/share`) now derives Trust server-side before caching;
+  client-supplied `trustReport` is no longer accepted.
+- Legacy client-side `TrustService` / `GraphService` pipeline remains in the
+  codebase but is no longer the authoritative Trust source.
 
 ### 11.2 Future direction
 
@@ -535,15 +604,17 @@ kept separate from the future Identity/Claims/Evidence architecture.
   derivation; builder-scoped)
 - Trust Score backend pipeline (services, graph, coordinator, subscriber)
 - Professional Passport surface + share control (wiring partial)
+- **First-class Claim server entity** (ADR-002 Phase 2) — `Claim` table under
+  ProfessionalIdentity with repository, service, and API
+- **Evidence → Claim FK enforcement** (ADR-002 Phase 2) — `EvidenceRecord.claimId`
+  is nullable FK with `ON DELETE SET NULL`
+- **VerificationEvent audit trail** (ADR-002 Phase 3) — append-only verification
+  history with controlled status transitions and ownership enforcement
 
 ### 15.2 PROPOSED / FUTURE
 
-- First-class Claim model with provenance/history (PKS-SRS-PIP-1 Part 2)
-- First-class Professional Identity / Career Journey domain model
-- Evidence Ledger (hashes/fingerprints, verification events, audit history)
-- Advanced provenance
+- Trust server-side derivation — ✅ **COMPLETE** (ADR-002 Phase 4)
 - Conflict Detection Engine
-- Trust Engine with issuer/corroboration inputs + full explainability
 - Cryptographically verifiable credentials
 - Trusted issuer network (employer, university, certification, professional
   organization integrations)
@@ -552,8 +623,7 @@ kept separate from the future Identity/Claims/Evidence architecture.
 - Shareable verified professional identity / Passport with selective
   disclosure
 
-> Nothing in 15.2 is implemented today. These items are agreed product
-> direction, not shipping functionality.
+> Items in 15.2 are agreed product direction, not shipping functionality.
 
 ---
 
@@ -572,31 +642,41 @@ largely what the current repository already covers; Phases 2–6 are future.
 
 > Do not over-engineer Phase 1 with future infrastructure unless needed.
 
-### PHASE 2 — Evidence + Provenance foundation (future)
+### PHASE 2 — Evidence + Provenance foundation (✅ COMPLETE)
 
-- Evidence records (first-class)
-- Evidence storage (secure backend)
-- hashes / fingerprints
-- provenance
-- claim ↔ evidence relationships
-- history
+- ✅ Evidence records (first-class server entity)
+- ✅ Evidence storage (secure backend)
+- ✅ Claim ↔ Evidence relationships (enforceable FK)
+- ✅ Ownership enforcement
+- hashes / fingerprints — 🔶 FUTURE
+- provenance — 🔶 FUTURE
 
-### PHASE 3 — Verification engine (future)
+### PHASE 3 — Verification history / audit trail (✅ COMPLETE)
 
-- document checks (L1)
-- corroboration (L2)
-- identity binding
-- conflict detection
-- verification states
+- ✅ VerificationEvent model (append-only)
+- ✅ Status transition control
+- ✅ Audit trail with ownership enforcement
+- document checks (L1) — 🔶 FUTURE
+- corroboration (L2) — 🔶 FUTURE
+- identity binding — 🔶 FUTURE
+- conflict detection — 🔶 FUTURE
 
-### PHASE 4 — Professional Passport (future)
+### PHASE 4 — Trust Server-Side Derivation (✅ COMPLETE)
+
+- ✅ Pure derivation algorithm (`src/lib/trust/derivation.ts`)
+- ✅ `GET /api/trust` endpoint
+- ✅ TrustView + TrustWidget migrated to server-derived Trust
+- ✅ Share flow security fixed (no client-supplied TrustReport)
+- ✅ Deterministic, auditable, explainable Trust from canonical data
+
+### PHASE 5 — Professional Passport (future)
 
 - verified claims
 - evidence-backed profile
 - explainable trust
 - selective sharing
 
-### PHASE 5 — Issuer Network (future)
+### PHASE 6 — Issuer Network (future)
 
 - employer issuer integrations
 - university issuer integrations
@@ -604,7 +684,7 @@ largely what the current repository already covers; Phases 2–6 are future.
 - digitally signed credentials
 - credential status / revocation
 
-### PHASE 6 — Patorbit Platform (future)
+### PHASE 7 — Patorbit Platform (future)
 
 - scalable API
 - service / domain separation
@@ -616,7 +696,7 @@ largely what the current repository already covers; Phases 2–6 are future.
 
 ## 17. Document Quality
 
-- **Last Updated:** 2026-08-16
+- **Last Updated:** 2026-09-07
 - **Architecture Status:** see §1
 - **Current vs Future:** see §15
 - **Canonical source of truth:** `docs/adr/ADR-001-CANONICAL-SOURCE-OF-TRUTH.md`
@@ -653,3 +733,5 @@ largely what the current repository already covers; Phases 2–6 are future.
 | Version | Date | Summary |
 |---|---|---|
 | 1.0.0 | 2026-08-16 | Initial master architecture document — current-vs-future direction, product principles, claim/evidence/verification/conflict/trust models, platform architecture, resume import, A4 pagination, roadmap. |
+| 1.1.0 | 2026-09-07 | Updated architecture status to reflect ADR-002 Phase 2 (Claim server entity, Evidence FK enforcement) and Phase 3 (VerificationEvent audit trail). Updated Current vs Future sections. |
+| 1.2.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 4 — Trust Server-Side Derivation. `GET /api/trust` now derives Trust from canonical Claims + Evidence + VerificationEvents. Client TrustService deprecated as authoritative source. Share flow security fixed. |

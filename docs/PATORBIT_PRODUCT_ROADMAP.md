@@ -1,7 +1,7 @@
 # Patorbit Product Roadmap
 
-**Last Updated:** 2026-08-16  
-**Version:** 2.1.0  
+**Last Updated:** 2026-09-07  
+**Version:** 2.2.0  
 **Status:** Active — Career Intelligence (Phase 1); identity/trust direction documented in [MASTER_ARCHITECTURE.md](./MASTER_ARCHITECTURE.md)
 
 ---
@@ -278,7 +278,7 @@ Career Memory closes the loop begun in M5: accumulated, evidence-based knowledge
 
 ## Current State
 
-**Overall completion: ~75%** (as of C55.1, 2026-09-03); Phase 1 M1 implemented; Job Application Workspace complete.
+**Overall completion: ~80%** (as of 2026-09-07); Phase 1 Career Intelligence complete; ADR-002 Phases 2–3 complete; Trust derivation is the next architectural milestone.
 
 | Module | Status | Completion |
 |---|---|---|
@@ -297,9 +297,11 @@ Career Memory closes the loop begun in M5: accumulated, evidence-based knowledge
 | Export (PDF/DOCX) | Deployed | 90% (A4 parity, style config) |
 | Sharing | Deployed | 85% (public share URLs, owner controls) |
 | Career Passport | In Progress | 40% |
-| Trust Score | In Progress | 35% |
+| Trust Score | Implemented | 75% (server-side derivation complete; external verification future) |
 | Knowledge Graph | In Progress | 30% |
-| Evidence Management | In Progress | 25% |
+| Evidence Management | Implemented | 75% (server entity + Claim FK + ownership enforcement; hashing/provenance future) |
+| Claim Server Entity | Implemented | 100% (ADR-002 Phase 2) |
+| Verification History | Implemented | 100% (ADR-002 Phase 3 — VerificationEvent audit trail) |
 | Career Profile (M1) | Implemented | 100% |
 | Network / Connections | Planned | 0% |
 
@@ -473,7 +475,7 @@ A milestone is not done until all ten items are complete.
 ## CURRENT POSITION
 
 - Phase 0 (Foundation / Beta Stability) is complete.
-- **M1 - Career Profile Foundation** implemented and verified.
+- **M1-M5 — Career Intelligence** complete (M1 Career Profile → M2 Job Understanding → M3 Qualification Match → M4 Evidence Optimizer → M5 Outcome Feedback).
 - **C33-C33.3** — AI provider migration to Gemini complete; server-authoritative tailoring with trust/factuality safeguards.
 - **C35-C36.1** — Professional Identity architecture: PI as canonical source, resume seeding, server-authoritative creation.
 - **C40-C40.2** — Template system redesign: 32 templates, 7 genuine structural layouts.
@@ -484,8 +486,11 @@ A milestone is not done until all ten items are complete.
 - **C53** — Product hardening and end-to-end validation.
 - **C54-C54.1** — Authenticated home at `/solutions`; `/overview` redirect cleanup.
 - **C55-C55.1** — Job Application Workspace with tailoring integration.
-- The next development focus should be **product development based on user value**, not another audit cycle.
-- The forward sequence for Phase 1 is: **M1 ✅ → M2 → M3 → M4 → M5**, followed by Phase 2 (Customer Acquisition) and Phase 3 (Career Platform).
+- **ADR-002 Phase 2** — Evidence + Provenance Foundation: Claim server entity, Evidence → Claim FK enforcement.
+- **ADR-002 Phase 3** — Verification Records / Events: VerificationEvent audit trail, status transitions.
+- **ADR-002 Phase 4** — Trust Server-Side Derivation: `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm; client TrustService deprecated as authoritative.
+- The next architectural milestone is **ADR-002 Phase 5 — Professional Passport server-side projection** (FUTURE / NEXT).
+- The forward sequence for Phase 1 is: **M1 ✅ → M2 ✅ → M3 ✅ → M4 ✅ → M5 ✅**, followed by Phase 2 (Customer Acquisition) and Phase 3 (Career Platform).
 
 ---
 

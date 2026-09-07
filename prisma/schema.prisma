@@ -92,6 +92,7 @@ model ProfessionalIdentity {
   user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   resumes           Resume[]
   jobApplications   JobApplication[]
+  claims            Claim[]
 }
 
 // ─── Resume (Phase 0 — server persistence foundation) ───────────
@@ -204,10 +205,37 @@ model CareerMemory {
   @@index([professionalIdentityId, category])
 }
 
+// ─── Claims (ADR-002 Phase 2 — first-class server entity) ─────
+//
+// A Claim is a discrete, verifiable assertion about the user's professional
+// identity. Claims belong to ProfessionalIdentity, NOT to Resume.
+// Deleting a resume must NOT destroy identity-level claims.
+model Claim {
+  id                     String   @id @default(cuid())
+  professionalIdentityId String
+  assertionText          String   @db.Text
+  claimType              String   // Employment | Education | Project | Skill | Certification | Contribution
+  sourceActivityId       String?  // Links to resume/activity information
+  confidence             Float    @default(0.5)
+  reasoning              String?  @db.Text
+  verificationStatus     String   @default("suggested") // suggested | accepted | evidence-added | under-review | verified | expired | revoked | disputed
+  reviewed               Boolean  @default(false)
+  accepted               Boolean  @default(false)
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  professionalIdentity ProfessionalIdentity @relation(fields: [professionalIdentityId], references: [id], onDelete: Cascade)
+  evidence              EvidenceRecord[]
+  verificationEvents    VerificationEvent[]
+
+  @@index([professionalIdentityId])
+  @@index([professionalIdentityId, claimType])
+}
+
 model EvidenceRecord {
   id           String   @id @default(cuid())
   userId       String
-  claimId      String
+  claimId      String?
   evidenceType String
   evidenceKind String
   content      String   @db.Text
@@ -221,7 +249,39 @@ model EvidenceRecord {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  claim  Claim?  @relation(fields: [claimId], references: [id], onDelete: SetNull)
+  verificationEvents VerificationEvent[]
+
+  @@index([claimId])
+}
+
+// ─── Verification Events (ADR-002 Phase 3 — audit history) ─────
+//
+// Append-only audit trail for claim verification lifecycle.
+// Each event records a single state transition. The Claim.verificationStatus
+// field is the current projected state; this table is the source of truth
+// for history and auditability.
+model VerificationEvent {
+  id                 String   @id @default(cuid())
+  claimId            String
+  evidenceRecordId   String?  // Optional — the specific evidence reviewed in this event
+  eventType          String   // requested | started | evidence_reviewed | verified | rejected | disputed | revoked | expired
+  previousStatus     String?  // Claim.verificationStatus before this event
+  resultingStatus    String   // Claim.verificationStatus after this event
+  outcome            String?  // supports | does_not_support | inconclusive (for evidence_reviewed)
+  reason             String?  @db.Text // Human-readable reason for the status change
+  actorId            String?  // userId of the person who initiated this event (null for system)
+  actorType          String   @default("user") // user | system | issuer (future)
+  metadata           Json?    // Structured event-specific data
+  createdAt          DateTime @default(now())
+
+  claim         Claim          @relation(fields: [claimId], references: [id], onDelete: Cascade)
+  evidenceRecord EvidenceRecord? @relation(fields: [evidenceRecordId], references: [id], onDelete: SetNull)
+
+  @@index([claimId])
+  @@index([claimId, createdAt])
+  @@index([evidenceRecordId])
 }
 
 // ─── Razorpay Subscriptions ────────────────────────────────

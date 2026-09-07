@@ -34,6 +34,13 @@ export const evidenceRepository = {
     return prisma.evidenceRecord.findMany({ where: { claimId } });
   },
 
+  async findByClaimIdWithClaim(claimId: string): Promise<(EvidenceRecord & { claim: import("@prisma/client").Claim | null })[]> {
+    return prisma.evidenceRecord.findMany({
+      where: { claimId },
+      include: { claim: true },
+    });
+  },
+
   async delete(id: string): Promise<EvidenceRecord> {
     return prisma.evidenceRecord.delete({ where: { id } });
   },
