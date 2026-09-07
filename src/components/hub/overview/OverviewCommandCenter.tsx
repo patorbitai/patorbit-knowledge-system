@@ -161,7 +161,9 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   // Derive workflow state from current active resume + persisted job applications
   const activeResume = resumeList.find((r) => r.resumeId === activeResumeId) || resumeList[0];
 
-  // Fetch recent job applications for context
+  // Prefer the explicitly selected active job application from the store.
+  // Fall back to most-recently-updated application only if nothing is selected.
+  const storeActiveJobApplication = useResumeBuilder((s) => s.activeJobApplication);
   const [recentApplications, setRecentApplications] = useState<Array<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null; status: string; updatedAt: string }>>([]);
   useEffect(() => {
     fetch("/api/applications")
@@ -172,10 +174,13 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
       .catch(() => {});
   }, []);
 
-  // Use the most recently updated application for workflow state
-  const recentApplication = recentApplications.length > 0
-    ? recentApplications.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0]
-    : null;
+  // Use the active application from store if available;
+  // otherwise fall back to the most recently updated application
+  const recentApplication = storeActiveJobApplication ?? (
+    recentApplications.length > 0
+      ? recentApplications.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0]
+      : null
+  );
 
   const hasJobFromApplication = !!recentApplication;
   const hasMatchFromApplication = recentApplication?.matchScore != null;

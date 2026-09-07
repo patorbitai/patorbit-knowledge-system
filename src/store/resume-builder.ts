@@ -732,10 +732,23 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         setCopilotOpen: (open) => set({ isCopilotOpen: open }), setJobMatchOpen: (open) => set({ isJobMatchOpen: open }), setPreviewTab: (tab) => set({ previewTab: tab }),
         setHasExported: (value) => set({ hasExported: value }),
 
-        setActiveJobApplication: (app) => set({
-          activeJobApplicationId: app?.applicationId ?? null,
-          activeJobApplication: app,
-        }),
+        setActiveJobApplication: (app) => {
+          // Clear stale session-level analysis that belongs exclusively to the previous job.
+          // This prevents cross-contamination: Job A's match score must NOT appear for Job B.
+          const previousId = get().activeJobApplicationId;
+          const isNewJob = app && app.applicationId !== previousId;
+
+          set({
+            activeJobApplicationId: app?.applicationId ?? null,
+            activeJobApplication: app,
+            // Clear session-level derived state when switching jobs
+            ...(isNewJob || (!app && previousId) ? {
+              jobProfile: null,
+              qualificationMatch: null,
+              jobMatch: null,
+            } : {}),
+          });
+        },
 
         loadActiveJobApplication: async () => {
           const { activeJobApplicationId } = get();
@@ -744,22 +757,36 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             const res = await fetch(`/api/applications/${activeJobApplicationId}`);
             if (res.ok) {
               const data = await res.json();
+              const restoredJd = data.jobDescription || "";
               set({
                 activeJobApplication: {
                   applicationId: data.applicationId,
                   title: data.title,
                   companyName: data.companyName,
-                  jobDescription: data.jobDescription,
+                  jobDescription: restoredJd,
                   status: data.status,
                   resumeId: data.resumeId,
                   matchScore: data.matchScore,
                   matchData: data.matchData,
                 },
-                jobDescription: data.jobDescription || "",
+                jobDescription: restoredJd,
+                // Hydrate jobProfile deterministically from the persisted JD.
+                // buildJobProfile() is pure/synchronous — zero AI/API cost.
+                jobProfile: restoredJd ? buildJobProfile(restoredJd) : null,
+                // qualificationMatch is NOT hydrated from matchData — they are
+                // different data structures (matchData = keyword lists,
+                // qualificationMatch = structured career-level match).
+                // The user must re-run the match to produce a fresh qualificationMatch.
+              });
+            } else if (res.status === 404 || res.status === 403) {
+              // Application was deleted or is unauthorized — clear stale reference
+              set({
+                activeJobApplicationId: null,
+                activeJobApplication: null,
               });
             }
           } catch {
-            // Silently handle — session-level state remains as fallback
+            // Network error — session-level state remains as fallback
           }
         },
 
@@ -1145,7 +1172,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     {
       name: "patorbit-resume-v2",
       merge: mergePersistedResumeState,
-      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes, shareStates: state.shareStates }),
+      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, activeJobApplicationId: state.activeJobApplicationId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes, shareStates: state.shareStates }),
       onRehydrateStorage: () => (snapshot) => {
         // In Zustand v5 the `snapshot` parameter may be stale — the persist
         // middleware's own internal setState(merged) may not have fired yet.
@@ -1202,6 +1229,16 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
         // This catches the case where Zustand v5's internal merge overwrites
         // our correction, or the snapshot was stale.
         setTimeout(applyReconciled, 0);
+
+        // Auto-restore active JobApplication from API after rehydration.
+        // The persisted activeJobApplicationId survives localStorage round-trips,
+        // but the full application data must be fetched from the server.
+        setTimeout(() => {
+          const live = useResumeBuilder.getState();
+          if (live.activeJobApplicationId) {
+            live.loadActiveJobApplication();
+          }
+        }, 100);
       },
     },
   ),

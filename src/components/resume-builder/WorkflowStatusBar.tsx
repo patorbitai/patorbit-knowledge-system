@@ -35,15 +35,24 @@ function useStepAction() {
   const resume = useResumeBuilder((s) => s.resume);
   const activeJobApplication = useResumeBuilder((s) => s.activeJobApplication);
 
-  // Use persisted job application data if available, fallback to session-level
-  const hasJobFromApplication = !!activeJobApplication;
+  // Use persisted job application data as fallback when session-level state is cleared
+  // (e.g., after page reload or job switch).
+  // The JD step is complete if EITHER jobProfile exists OR a job application has a JD.
+  const hasJobFromApplication = !!activeJobApplication?.jobDescription;
   const hasMatchFromApplication = activeJobApplication?.matchScore != null;
 
-  // The workflow state reflects the CURRENT active resume + job combination
+  // The workflow state reflects the CURRENT active resume + job combination.
+  // For the 'job' step: use jobProfile if available, otherwise check if the
+  // active application has a job description (persisted JD = job was analyzed).
+  // For the 'match' step: use qualificationMatch if available, otherwise check
+  // if the active application has a persisted match score.
+  const jobStepData = jobProfile || (hasJobFromApplication ? { title: activeJobApplication?.title || "" } as any : null);
+  const matchStepData = qualificationMatch || (hasMatchFromApplication ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null);
+
   const state = deriveWorkflowState(
     resume,
-    jobProfile || (hasJobFromApplication ? { title: activeJobApplication?.title || "" } as any : null),
-    qualificationMatch || (hasMatchFromApplication ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null),
+    jobStepData,
+    matchStepData,
     hasExported || hasMatchFromApplication,
   );
   const currentStep = getCurrentStep(state);

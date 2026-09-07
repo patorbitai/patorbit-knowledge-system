@@ -97,6 +97,9 @@ export function JobApplicationSelector() {
       matchScore: app.matchScore,
       matchData: app.matchData,
     });
+    // setActiveJobApplication already clears stale jobProfile/qualificationMatch.
+    // Set the new job description; the workflow state will recalculate from the
+    // active application's persisted data (matchScore, etc.).
     setJobDescription(app.jobDescription);
     setIsOpen(false);
   }, [setActiveJobApplication, setJobDescription]);
