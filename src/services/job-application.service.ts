@@ -16,6 +16,8 @@ export interface JobApplicationData {
   qualificationMatch: unknown;
   matchedResumeId: string | null;
   matchedAt: string | null;
+  exportedResumeId: string | null;
+  exportedAt: string | null;
   jobUrl: string | null;
   location: string | null;
   employmentType: string | null;
@@ -51,6 +53,7 @@ export interface UpdateJobApplicationInput {
   matchData?: Record<string, unknown>;
   qualificationMatch?: Record<string, unknown> | null;
   matchedResumeId?: string | null;
+  exportedResumeId?: string | null;
   jobUrl?: string | null;
   location?: string | null;
   employmentType?: string | null;
@@ -110,6 +113,8 @@ export class JobApplicationService {
       qualificationMatch: (record as any).qualificationMatch ?? null,
       matchedResumeId: (record as any).matchedResumeId ?? null,
       matchedAt: (record as any).matchedAt?.toISOString() ?? null,
+      exportedResumeId: (record as any).exportedResumeId ?? null,
+      exportedAt: (record as any).exportedAt?.toISOString() ?? null,
       jobUrl: record.jobUrl,
       location: record.location,
       employmentType: record.employmentType,
@@ -388,6 +393,16 @@ export class JobApplicationService {
       }
     }
 
+    // Handle exportedResumeId — mark resume as exported with server timestamp
+    if (input.exportedResumeId !== undefined && input.exportedResumeId !== null) {
+      await this.validateResumeOwnership(professionalIdentityId, input.exportedResumeId);
+      record = await jobApplicationRepository.markResumeExported(
+        applicationId,
+        professionalIdentityId,
+        input.exportedResumeId,
+      );
+    }
+
     if (!record) {
       // If no updates were made, fetch the current record
       record = await jobApplicationRepository.findByApplicationIdAndIdentity(
@@ -395,6 +410,37 @@ export class JobApplicationService {
         professionalIdentityId,
       );
     }
+
+    if (!record) {
+      throw new JobApplicationNotFoundError();
+    }
+
+    return this.toJobApplicationData(record);
+  }
+
+  /** Mark a resume as successfully exported for this application. */
+  async markResumeExported(
+    professionalIdentityId: string,
+    applicationId: string,
+    exportedResumeId: string,
+  ): Promise<JobApplicationData> {
+    // Validate the application exists and is owned by this identity
+    const existing = await jobApplicationRepository.findByApplicationIdAndIdentity(
+      applicationId,
+      professionalIdentityId,
+    );
+    if (!existing) {
+      throw new JobApplicationNotFoundError();
+    }
+
+    // Validate the resume exists and belongs to this identity
+    await this.validateResumeOwnership(professionalIdentityId, exportedResumeId);
+
+    const record = await jobApplicationRepository.markResumeExported(
+      applicationId,
+      professionalIdentityId,
+      exportedResumeId,
+    );
 
     if (!record) {
       throw new JobApplicationNotFoundError();

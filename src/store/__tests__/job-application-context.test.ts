@@ -412,4 +412,114 @@ describe("Job Application Context", () => {
       expect(app?.matchScore).toBe(90);
     });
   });
+
+  describe("Export state persistence", () => {
+    it("includes exportedResumeId and exportedAt from persisted application", () => {
+      const { setActiveJobApplication } = useResumeBuilder.getState();
+
+      const jobWithExport = {
+        ...JOB_A,
+        exportedResumeId: "r1",
+        exportedAt: "2026-09-07T12:00:00.000Z",
+      };
+      setActiveJobApplication(jobWithExport as any);
+
+      const app = useResumeBuilder.getState().activeJobApplication;
+      expect(app?.exportedResumeId).toBe("r1");
+      expect(app?.exportedAt).toBe("2026-09-07T12:00:00.000Z");
+    });
+
+    it("export is current when exportedResumeId matches activeResumeId", () => {
+      const { setActiveJobApplication } = useResumeBuilder.getState();
+      const activeResumeId = useResumeBuilder.getState().activeResumeId;
+
+      const jobWithExport = {
+        ...JOB_A,
+        exportedResumeId: activeResumeId,
+        exportedAt: new Date().toISOString(),
+      };
+      setActiveJobApplication(jobWithExport as any);
+
+      const app = useResumeBuilder.getState().activeJobApplication;
+      expect(app?.exportedResumeId).toBe(activeResumeId);
+      // Export is current for this resume
+      expect(app?.exportedResumeId).toBe(useResumeBuilder.getState().activeResumeId);
+    });
+
+    it("export is stale when exportedResumeId differs from activeResumeId", () => {
+      const { setActiveJobApplication } = useResumeBuilder.getState();
+
+      const jobWithExport = {
+        ...JOB_A,
+        exportedResumeId: "old-resume",
+        exportedAt: new Date().toISOString(),
+      };
+      setActiveJobApplication(jobWithExport as any);
+
+      const app = useResumeBuilder.getState().activeJobApplication;
+      expect(app?.exportedResumeId).toBe("old-resume");
+      // Export is stale — exported for a different resume
+      expect(app?.exportedResumeId).not.toBe(useResumeBuilder.getState().activeResumeId);
+    });
+
+    it("Job A and Job B have independent export state", () => {
+      const { setActiveJobApplication } = useResumeBuilder.getState();
+
+      const jobAWithExport = {
+        ...JOB_A,
+        exportedResumeId: "r1",
+        exportedAt: "2026-09-07T12:00:00.000Z",
+      };
+      const jobBNoExport = {
+        ...JOB_B,
+        exportedResumeId: null,
+        exportedAt: null,
+      };
+
+      setActiveJobApplication(jobAWithExport as any);
+      expect(useResumeBuilder.getState().activeJobApplication?.exportedResumeId).toBe("r1");
+
+      setActiveJobApplication(jobBNoExport as any);
+      expect(useResumeBuilder.getState().activeJobApplication?.exportedResumeId).toBeNull();
+
+      // Switch back to Job A
+      setActiveJobApplication(jobAWithExport as any);
+      expect(useResumeBuilder.getState().activeJobApplication?.exportedResumeId).toBe("r1");
+    });
+
+    it("tailoring after export makes export stale", () => {
+      const { setActiveJobApplication } = useResumeBuilder.getState();
+
+      // Job A: Resume A was exported
+      const jobAExported = {
+        ...JOB_A,
+        exportedResumeId: "r1",
+        exportedAt: new Date().toISOString(),
+      };
+      setActiveJobApplication(jobAExported as any);
+
+      // Resume is exported
+      let app = useResumeBuilder.getState().activeJobApplication;
+      expect(app?.exportedResumeId).toBe("r1");
+      expect(app?.exportedResumeId).toBe(useResumeBuilder.getState().activeResumeId);
+
+      // Simulate tailor: resumeId changes to tailored resume
+      // Also switch active resume to the tailored resume (as TailorResumeModal does)
+      const tailoredId = "tailored-resume-a";
+      const tailoredResume = { ...useResumeBuilder.getState().resume, resumeId: tailoredId, resumeName: "Test — Tailored" };
+      useResumeBuilder.setState((s) => ({
+        activeResumeId: tailoredId,
+        resume: tailoredResume,
+        resumes: [...s.resumes, tailoredResume],
+        activeJobApplication: s.activeJobApplication
+          ? { ...s.activeJobApplication, resumeId: tailoredId }
+          : null,
+      }));
+
+      // Export is now stale — exported for r1, but active resume is tailored-resume-a
+      app = useResumeBuilder.getState().activeJobApplication;
+      expect(app?.exportedResumeId).toBe("r1");
+      expect(app?.exportedResumeId).not.toBe(useResumeBuilder.getState().activeResumeId);
+    });
+  });
 });

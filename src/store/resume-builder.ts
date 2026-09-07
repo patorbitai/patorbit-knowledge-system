@@ -184,11 +184,14 @@ export interface ResumeBuilderState {
     qualificationMatch: unknown;
     matchedResumeId: string | null;
     matchedAt: string | null;
+    exportedResumeId: string | null;
+    exportedAt: string | null;
   } | null;
-  setActiveJobApplication: (app: { applicationId: string; title: string; companyName: string; jobDescription: string; status: string; resumeId: string | null; matchScore: number | null; matchData: unknown; qualificationMatch?: unknown; matchedResumeId?: string | null; matchedAt?: string | null } | null) => void; // qualificationMatch, matchedResumeId, matchedAt are optional on input — defaults applied in implementation
+  setActiveJobApplication: (app: { applicationId: string; title: string; companyName: string; jobDescription: string; status: string; resumeId: string | null; matchScore: number | null; matchData: unknown; qualificationMatch?: unknown; matchedResumeId?: string | null; matchedAt?: string | null; exportedResumeId?: string | null; exportedAt?: string | null } | null) => void;
   loadActiveJobApplication: () => Promise<void>;
   saveJobDescriptionToApplication: (jobDescription: string, title?: string, companyName?: string) => Promise<void>;
   saveQualificationMatchToApplication: (match: QualificationMatch, matchScore: number) => Promise<void>;
+  markResumeExported: () => Promise<void>;
   /** Visual customization per resume, stored separately from resume content. */
   styleConfigs: Record<string, ResumeStyleConfig>;
   setStyleConfig: (resumeId: string, patch: Partial<ResumeStyleConfig>) => void;
@@ -754,6 +757,8 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             qualificationMatch: app.qualificationMatch ?? null,
             matchedResumeId: app.matchedResumeId ?? null,
             matchedAt: app.matchedAt ?? null,
+            exportedResumeId: app.exportedResumeId ?? null,
+            exportedAt: app.exportedAt ?? null,
           } : null;
 
           // Hydrate session-level qualificationMatch from persisted application data.
@@ -798,6 +803,8 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                   qualificationMatch: persistedMatch ?? null,
                   matchedResumeId: data.matchedResumeId ?? null,
                   matchedAt: data.matchedAt ?? null,
+                  exportedResumeId: data.exportedResumeId ?? null,
+                  exportedAt: data.exportedAt ?? null,
                 },
                 jobDescription: restoredJd,
                 // Hydrate jobProfile deterministically from the persisted JD.
@@ -866,6 +873,8 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                     qualificationMatch: data.qualificationMatch ?? null,
                     matchedResumeId: data.matchedResumeId ?? null,
                     matchedAt: data.matchedAt ?? null,
+                    exportedResumeId: data.exportedResumeId ?? null,
+                    exportedAt: data.exportedAt ?? null,
                   },
                 });
               }
@@ -906,6 +915,33 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             }
           } catch {
             // Non-critical — the match was computed successfully.
+            // The persistence can be retried.
+          }
+        },
+
+        markResumeExported: async () => {
+          const { activeJobApplicationId, activeResumeId } = get();
+          if (!activeJobApplicationId || !activeResumeId) return;
+          try {
+            const res = await fetch(`/api/applications/${activeJobApplicationId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ exportedResumeId: activeResumeId }),
+            });
+            if (res.ok) {
+              const updated = await res.json();
+              set((s) => ({
+                activeJobApplication: s.activeJobApplication
+                  ? {
+                      ...s.activeJobApplication,
+                      exportedResumeId: activeResumeId,
+                      exportedAt: updated.exportedAt ?? new Date().toISOString(),
+                    }
+                  : null,
+              }));
+            }
+          } catch {
+            // Non-critical — the file export itself succeeded.
             // The persistence can be retried.
           }
         },

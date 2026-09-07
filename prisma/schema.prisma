@@ -146,6 +146,8 @@ model JobApplication {
   qualificationMatch     Json?    // Full structured QualificationMatch (M3)
   matchedResumeId        String?  // Resume ID that was current when match was computed
   matchedAt              DateTime? // When the match was last computed
+  exportedResumeId       String?  // Resume ID that was most recently exported
+  exportedAt             DateTime? // When the export was last successful
   jobUrl                 String?  // URL to the job posting
   location               String?  // Job location (e.g. "San Francisco, CA" or "Remote")
   employmentType         String?  // full_time | part_time | contract | internship

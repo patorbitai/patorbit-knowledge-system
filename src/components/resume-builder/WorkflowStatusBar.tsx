@@ -29,7 +29,6 @@ const STEPS: Step[] = [
  * Navigates to or focuses the appropriate feature.
  */
 function useStepAction() {
-  const hasExported = useResumeBuilder((s) => s.hasExported);
   const jobProfile = useResumeBuilder((s) => s.jobProfile);
   const qualificationMatch = useResumeBuilder((s) => s.qualificationMatch);
   const resume = useResumeBuilder((s) => s.resume);
@@ -48,12 +47,14 @@ function useStepAction() {
     activeJobApplication.matchedResumeId !== activeResumeId
   );
 
+  // Export-version awareness: export is complete only if the currently active
+  // resume is the same one that was exported.
+  const exportVersionCurrent = !!(
+    activeJobApplication?.exportedResumeId &&
+    activeJobApplication.exportedResumeId === activeResumeId
+  );
+
   // The workflow state reflects the CURRENT active resume + job combination.
-  // For the 'job' step: use jobProfile if available, otherwise check if the
-  // active application has a job description (persisted JD = job was analyzed).
-  // For the 'match' step: use qualificationMatch if available, otherwise check
-  // if the active application has a persisted match score.
-  // If the match is stale (computed for a different resume), treat it as incomplete.
   const jobStepData = jobProfile || (hasJobFromApplication ? { title: activeJobApplication?.title || "" } as any : null);
   const effectiveMatch = matchVersionStale ? null : qualificationMatch;
   const matchStepData = effectiveMatch || (hasMatchFromApplication && !matchVersionStale ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null);
@@ -62,7 +63,7 @@ function useStepAction() {
     resume,
     jobStepData,
     matchStepData,
-    hasExported || (hasMatchFromApplication && !matchVersionStale),
+    exportVersionCurrent,
   );
   const currentStep = getCurrentStep(state);
 

@@ -165,7 +165,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   // Prefer the explicitly selected active job application from the store.
   // Fall back to most-recently-updated application only if nothing is selected.
   const storeActiveJobApplication = useResumeBuilder((s) => s.activeJobApplication);
-  const [recentApplications, setRecentApplications] = useState<Array<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null; matchedResumeId: string | null; status: string; updatedAt: string }>>([]);
+  const [recentApplications, setRecentApplications] = useState<Array<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null; matchedResumeId: string | null; exportedResumeId: string | null; status: string; updatedAt: string }>>([]);
   useEffect(() => {
     fetch("/api/applications")
       .then((r) => r.ok ? r.json() : null)
@@ -192,11 +192,15 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   const matchIsStale = hasJobFromApplication &&
     recentApplication.matchScore != null &&
     !matchIsCurrent;
+  // Export is current only if the exported resume matches the active resume
+  const exportIsCurrent = hasJobFromApplication &&
+    recentApplication.exportedResumeId != null &&
+    recentApplication.exportedResumeId === activeResume?.resumeId;
   const workflowState = deriveWorkflowState(
     activeResume || null,
     hasJobFromApplication ? { title: recentApplication.title } as any : null,
     hasMatchFromApplication ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null,
-    false,
+    exportIsCurrent,
   );
   const nextStep = hasResumes ? getNextStepRecommendation(workflowState, activeResume?.resumeName) : null;
 

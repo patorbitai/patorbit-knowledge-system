@@ -134,6 +134,27 @@ export const jobApplicationRepository = {
     });
   },
 
+  /** Mark a resume as successfully exported for this application. */
+  async markResumeExported(
+    applicationId: string,
+    professionalIdentityId: string,
+    exportedResumeId: string,
+  ): Promise<JobApplicationRecord | null> {
+    const existing = await this.findByApplicationIdAndIdentity(
+      applicationId,
+      professionalIdentityId,
+    );
+    if (!existing) return null;
+
+    return prisma.jobApplication.update({
+      where: { id: existing.id },
+      data: {
+        exportedResumeId,
+        exportedAt: new Date(),
+      },
+    });
+  },
+
   /** Delete a job application row (scoped to its owner identity). */
   async deleteByApplicationIdAndIdentity(
     applicationId: string,
