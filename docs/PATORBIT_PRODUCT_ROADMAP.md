@@ -297,7 +297,7 @@ Career Memory closes the loop begun in M5: accumulated, evidence-based knowledge
 | Export (PDF/DOCX) | Deployed | 90% (A4 parity, style config) |
 | Sharing | Deployed | 85% (public share URLs, owner controls) |
 | Career Passport | In Progress | 40% |
-| Trust Score | Implemented | 75% (server-side derivation complete; external verification future) |
+| Trust Score | Implemented | 90% (Trust v2 server-side derivation complete with per-claim scoring, evidence strength, conflict integration; external verification future) |
 | Knowledge Graph | In Progress | 30% |
 | Evidence Management | Implemented | 75% (server entity + Claim FK + ownership enforcement; hashing/provenance future) |
 | Claim Server Entity | Implemented | 100% (ADR-002 Phase 2) |
@@ -492,6 +492,7 @@ A milestone is not done until all ten items are complete.
 - **ADR-002 Phase 5** — Conflict Detection Engine: `ConflictRecord` model + pure detection algorithm; detects overlapping dates, contradictory employers, duplicate credentials, status mismatches.
 - **ADR-002 Phase 6** — Professional Passport server-side projection: `buildPassport()` derives from canonical data; public share derives server-side; client-submitted data no longer accepted.
 - **ADR-002 Phase 8** — Security & Canonical Integrity Fixes: cross-user Trust isolation, verification lifecycle enforcement, evidence ownership validation, Passport token rotation.
+- **ADR-002 Phase 9B** — Trust v2: Per-claim Trust scoring algorithm with evidence strength (4 levels), verification status, conflict integration, status caps, evidence diversity, and explainable TrustReport. `algorithmVersion: "v2"`. No schema changes.
 - The forward sequence for Phase 1 is: **M1 ✅ → M2 ✅ → M3 ✅ → M4 ✅ → M5 ✅**, followed by Phase 2 (Customer Acquisition) and Phase 3 (Career Platform).
 
 ---

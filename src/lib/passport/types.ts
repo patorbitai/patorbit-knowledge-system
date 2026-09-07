@@ -8,7 +8,16 @@
  * system currently knows, with appropriate verification context.
  */
 
-import type { ServerTrustReport } from "@/lib/trust/types";
+/**
+ * Minimal Trust report shape required by Passport projection.
+ * Accepts both Trust v1 (ServerTrustReport) and v2 (ServerTrustReportV2).
+ * Structural typing: any object with score, level, algorithmVersion is accepted.
+ */
+export interface TrustReportForPassport {
+  score: number;
+  level: string;
+  algorithmVersion: string;
+}
 
 // ── Passport Schema ────────────────────────────────────────────
 
@@ -132,5 +141,5 @@ export interface PassportProjectionInput {
   evidence: CanonicalEvidenceForPassport[];
   verificationEvents: CanonicalVerificationEventForPassport[];
   conflicts: CanonicalConflictForPassport[];
-  trustReport: ServerTrustReport | null;
+  trustReport: TrustReportForPassport | null;
 }

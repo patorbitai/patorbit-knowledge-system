@@ -19,6 +19,11 @@ vi.mock("@/lib/prisma", () => ({
       update: updateMock,
       create: createMock,
     },
+    claim: { findMany: vi.fn().mockResolvedValue([]) },
+    evidenceRecord: { findMany: vi.fn().mockResolvedValue([]) },
+    verificationEvent: { findMany: vi.fn().mockResolvedValue([]) },
+    conflictRecord: { findMany: vi.fn().mockResolvedValue([]) },
+    user: { findUnique: vi.fn().mockResolvedValue(null) },
   },
 }));
 
@@ -126,13 +131,13 @@ describe("Passport Share — Token Security", () => {
     expect(body.enabled).toBe(false);
   });
 
-  it("reuses existing token when re-enabling", async () => {
+  it("generates a new token when re-enabling (token rotation)", async () => {
     mockSession.mockResolvedValue({ user: { id: "user1" } });
     findUniqueMock.mockResolvedValue({
       id: "pi1",
       userId: "user1",
       passportShareEnabled: false,
-      passportShareToken: "existing-token-xyz",
+      passportShareToken: "old-token-xyz",
       passportDataCache: null,
     });
     updateMock.mockResolvedValue({});
@@ -149,8 +154,12 @@ describe("Passport Share — Token Security", () => {
     const res = await POST(req as any);
     const body = await res.json();
 
-    expect(body.token).toBe("existing-token-xyz");
-    expect(body.shareUrl).toBe("/passport/share/existing-token-xyz");
+    // Phase 8 (P2-3): Token is ALWAYS rotated on enable.
+    // The old token should NOT be reused.
+    expect(body.enabled).toBe(true);
+    expect(body.token).toBeDefined();
+    expect(body.token).not.toBe("old-token-xyz");
+    expect(body.shareUrl).toMatch(/^\/passport\/share\/[a-f0-9-]+$/);
   });
 });
 

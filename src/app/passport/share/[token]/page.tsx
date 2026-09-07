@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { PublicPassportView } from "@/components/identity/PublicPassportView";
 import { ShieldCheck } from "lucide-react";
 import { buildPassport } from "@/lib/passport/projection";
-import { deriveTrustForUser } from "@/lib/trust/canonical-loader";
+import { deriveTrustForUserV2 } from "@/lib/trust/canonical-loader";
 import type {
   CanonicalClaimForPassport,
   CanonicalEvidenceForPassport,
@@ -55,8 +55,8 @@ async function derivePassportFromCanonical(
     where: { professionalIdentityId },
   });
 
-  // Phase 8: Derive Trust via canonical loader (same as GET /api/trust)
-  const trustReport = await deriveTrustForUser(userId);
+  // Phase 9B: Derive Trust v2 via canonical loader (same as GET /api/trust)
+  const trustReport = await deriveTrustForUserV2(userId);
 
   // Map to Passport projection input
   const passportClaims: CanonicalClaimForPassport[] = claims.map((c) => ({

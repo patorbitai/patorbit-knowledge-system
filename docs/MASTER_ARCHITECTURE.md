@@ -35,7 +35,7 @@ architecture will become**, and why.
 | Claims (suggested/accepted in builder store) | ✅ **CURRENT — partial (builder-scoped)** |
 | Evidence (upload/link, badge, IndexedDB storage) | ✅ **CURRENT — partial (builder-scoped)** |
 | Trust Score backend pipeline (services, graph, coordinator) | ✅ **CURRENT — backend implemented, UI wiring partial** |
-| **Server-side Trust derivation** | ✅ **IMPLEMENTED — ADR-002 Phase 4; `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm in `src/lib/trust/derivation.ts`** |
+| **Server-side Trust derivation** | ✅ **IMPLEMENTED — ADR-002 Phase 4 + Phase 9B (Trust v2); `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents + Conflicts; per-claim Trust scoring with evidence strength, verification status, conflict integration; pure algorithm in `src/lib/trust/v2/derivation.ts`** |
 | Professional Passport surface | ✅ **IMPLEMENTED — ADR-002 Phase 6; `buildPassport()` derives from canonical data; public share derives server-side; client-submitted data no longer accepted** |
 | **First-class Claim server entity** | ✅ **IMPLEMENTED — ADR-002 Phase 2; Claim table under ProfessionalIdentity with repository, service, API** |
 | **Evidence → Claim FK enforcement** | ✅ **IMPLEMENTED — ADR-002 Phase 2; EvidenceRecord.claimId is nullable FK with ON DELETE SET NULL** |
@@ -683,13 +683,16 @@ largely what the current repository already covers; Phases 2–6 are future.
 - identity binding — 🔶 FUTURE
 - conflict detection — 🔶 FUTURE
 
-### PHASE 4 — Trust Server-Side Derivation (✅ COMPLETE)
+### PHASE 4 — Trust Server-Side Derivation (✅ COMPLETE → Trust v2)
 
-- ✅ Pure derivation algorithm (`src/lib/trust/derivation.ts`)
-- ✅ `GET /api/trust` endpoint
-- ✅ TrustView + TrustWidget migrated to server-derived Trust
-- ✅ Share flow security fixed (no client-supplied TrustReport)
+- ✅ Trust v1: Pure derivation algorithm (`src/lib/trust/derivation.ts`)
+- ✅ Trust v2: Per-claim Trust with evidence strength, verification, conflicts (`src/lib/trust/v2/derivation.ts`)
+- ✅ `GET /api/trust` returns Trust v2 (`algorithmVersion: "v2"`)
+- ✅ TrustView + TrustWidget migrated to v2 (per-claim breakdown, supporting/reducing factors)
+- ✅ Share flow derives Trust v2 server-side
+- ✅ Passport projection accepts Trust v2 reports
 - ✅ Deterministic, auditable, explainable Trust from canonical data
+- ✅ v2 constants from approved Phase 9A Product Decision Matrix
 
 ### PHASE 5 — Conflict Detection Engine (✅ COMPLETE)
 
@@ -771,3 +774,4 @@ largely what the current repository already covers; Phases 2–6 are future.
 | 1.3.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 5 — Conflict Detection Engine. `ConflictRecord` model + pure detection algorithm. Detects overlapping dates, contradictory employers, duplicate credentials, status mismatches. Conflicts surfaced for user review, never silently resolved. |
 | 1.4.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 6 — Professional Passport server-side projection. `buildPassport()` derives from canonical Claims + Evidence + Verification + Conflicts + Trust. Public share now derives server-side; client-submitted `passportData` no longer accepted. Security fix: eliminated client-supplied Passport data injection. |
 | 1.5.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 8 — Security & Canonical Integrity Fixes. Single canonical Trust input loader (`canonical-loader.ts`) eliminates cross-user unclaimed evidence leak (P1-1) and ensures Trust/Share/Passport parity (P1-2). Claim verification lifecycle transitions now require VerificationEvent service (P2-1). VerificationEvent validates evidenceRecordId ownership (P2-2). Passport share tokens rotate on re-enable (P2-3). |
+| 1.6.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 9B — Trust v2. Per-claim Trust scoring with evidence strength (4 levels), verification strength, conflict integration, status caps, and evidence diversity. Two-layer model: ClaimTrust → Professional Trust via simple average. Explainable TrustReport with per-claim breakdown, supporting/reducing factors. `algorithmVersion: "v2"`. No schema changes required. |

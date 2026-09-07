@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { ShieldCheck, CheckCircle2, Clock, ArrowRight } from "lucide-react";
+import { ShieldCheck, CheckCircle2, AlertTriangle, ArrowRight } from "lucide-react";
 import WidgetCard from "./WidgetCard";
-import type { ServerTrustReport } from "@/lib/trust/types";
+import type { ServerTrustReportV2 } from "@/lib/trust/v2/types";
 
 export default function TrustWidget() {
-  const [report, setReport] = useState<ServerTrustReport | null>(null);
+  const [report, setReport] = useState<ServerTrustReportV2 | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -15,7 +15,7 @@ export default function TrustWidget() {
       .then((res) => res.json())
       .then((data) => {
         if (data && typeof data.score === "number") {
-          setReport(data as ServerTrustReport);
+          setReport(data as ServerTrustReportV2);
         }
       })
       .catch(() => {})
@@ -45,7 +45,7 @@ export default function TrustWidget() {
                 Evidence-Backed Profile
               </p>
               <p className="text-[10px] leading-relaxed text-gray-400 dark:text-slate-500">
-                Built from verified credentials, claims, and evidence
+                Built from verified claims, evidence, and verification history
               </p>
             </div>
           </div>
@@ -58,7 +58,7 @@ export default function TrustWidget() {
               Your Trust Score starts here
             </p>
             <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 leading-relaxed">
-              Your score becomes more meaningful as your professional information and supporting evidence grow.
+              Add claims, attach evidence, and request verification to increase your trust.
             </p>
             <Link
               href="/trust"
@@ -94,14 +94,17 @@ export default function TrustWidget() {
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                 {summary.verifiedClaims} Verified
               </span>
-              <span className="inline-flex items-center gap-1">
-                <Clock className="w-3 h-3 text-amber-400" />
-                {summary.totalClaims - summary.verifiedClaims} Pending
-              </span>
+              {summary.activeConflicts > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3 text-amber-400" />
+                  {summary.activeConflicts} Conflict{summary.activeConflicts !== 1 ? "s" : ""}
+                </span>
+              )}
             </div>
           ) : (
             <p className="text-[10px] text-gray-400 dark:text-slate-500">Derived from your claims and evidence</p>
           )}
+          <p className="text-[9px] text-slate-600 font-mono">v{report?.algorithmVersion}</p>
         </div>
       </div>
     </WidgetCard>

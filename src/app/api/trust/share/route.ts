@@ -5,17 +5,8 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api-error";
-import { deriveTrustForUser } from "@/lib/trust/canonical-loader";
+import { deriveTrustForUserV2 } from "@/lib/trust/canonical-loader";
 import crypto from "crypto";
-
-/**
- * Derive TrustReport from canonical server-side data for the given user.
- *
- * Phase 8: Uses the single canonical Trust input loader (canonical-loader.ts)
- * to ensure identical results with GET /api/trust and Passport derivation.
- *
- * SECURITY: This must NEVER accept client-supplied trust data.
- */
 
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -73,9 +64,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ enabled: false });
     }
 
-    // Derive TrustReport from canonical server-side data
-    // Phase 8: Uses canonical loader to ensure parity with GET /api/trust
-    const trustReport = await deriveTrustForUser(session.user.id);
+    // Phase 9B: Derive Trust v2 from canonical server-side data
+    const trustReport = await deriveTrustForUserV2(session.user.id);
 
     const token = crypto.randomUUID();
     await prisma.professionalIdentity.update({

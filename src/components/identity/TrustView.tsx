@@ -4,23 +4,53 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { Resume, Evidence } from "@/types/resume";
-import { ShieldCheck, CheckCircle2, Clock, Globe, Award, FileText, Sparkles, Users, Briefcase } from "lucide-react";
+import {
+  ShieldCheck,
+  CheckCircle2,
+  Clock,
+  Globe,
+  Award,
+  FileText,
+  Sparkles,
+  Users,
+  Briefcase,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+} from "lucide-react";
 import { IdentityNav } from "./IdentityNav";
 import { clsx } from "clsx";
-import type { ServerTrustReport } from "@/lib/trust/types";
+import type { ServerTrustReportV2, ClaimTrust } from "@/lib/trust/v2/types";
 
 export interface TrustViewProps {
   resume?: Resume;
   evidence?: Evidence[];
-  trustReport?: ServerTrustReport | null;
+  trustReport?: ServerTrustReportV2 | null;
 }
 
 function getScoreStatus(score: number | null): string {
   if (score === null) return "Not Evaluated";
-  if (score >= 80) return "Excellent";
-  if (score >= 60) return "Good";
-  if (score >= 40) return "Fair";
-  return "Poor";
+  if (score >= 90) return "Highly Supported";
+  if (score >= 70) return "Strong";
+  if (score >= 40) return "Supported";
+  if (score > 0) return "Developing";
+  return "Unrated";
+}
+
+function getScoreColor(score: number): string {
+  if (score >= 90) return "text-emerald-400";
+  if (score >= 70) return "text-cyan-400";
+  if (score >= 40) return "text-amber-400";
+  if (score > 0) return "text-orange-400";
+  return "text-slate-500";
+}
+
+function getScoreBg(score: number): string {
+  if (score >= 90) return "bg-emerald-500/10 border-emerald-500/30";
+  if (score >= 70) return "bg-cyan-500/10 border-cyan-500/30";
+  if (score >= 40) return "bg-amber-500/10 border-amber-500/30";
+  if (score > 0) return "bg-orange-500/10 border-orange-500/30";
+  return "bg-slate-500/10 border-slate-500/30";
 }
 
 function getFactorColor(label: string): { bg: string; text: string; gradient: string } {
@@ -57,12 +87,42 @@ function getFactorIcon(label: string) {
   return <ShieldCheck className="w-4 h-4 text-cyan-400" />;
 }
 
+function getEvidenceLevelBadge(level: string) {
+  switch (level) {
+    case "verified":
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+          <CheckCircle2 className="w-3 h-3" /> Verified
+        </span>
+      );
+    case "reviewed":
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/20">
+          <FileText className="w-3 h-3" /> Reviewed
+        </span>
+      );
+    case "attached":
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300 border border-amber-500/20">
+          <Award className="w-3 h-3" /> Attached
+        </span>
+      );
+    default:
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-500/10 text-slate-400 border border-slate-500/20">
+          <Clock className="w-3 h-3" /> Self-asserted
+        </span>
+      );
+  }
+}
+
 function CircularScoreGauge({ score }: { score: number | null }) {
   const safeScore = score ?? 0;
   const radius = 42;
   const circumference = 2 * Math.PI * radius;
   const offset = circumference * (1 - Math.min(safeScore, 100) / 100);
   const status = getScoreStatus(score);
+  const scoreColor = getScoreColor(safeScore);
 
   return (
     <div className="relative flex flex-col items-center justify-center">
@@ -86,15 +146,81 @@ function CircularScoreGauge({ score }: { score: number | null }) {
           </defs>
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-3xl font-extrabold text-white leading-none font-mono">{score !== null ? score : "—"}</span>
+            <span className={clsx("text-3xl font-extrabold leading-none font-mono", scoreColor)}>
+              {score !== null ? score : "—"}
+            </span>
           <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">/ 100</span>
         </div>
       </div>
       <div className="mt-3 text-center">
         <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block">OVERALL SCORE</span>
-        <span className="inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-bold bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+        <span className={clsx("inline-block mt-1 px-3 py-0.5 rounded-full text-xs font-bold border", getScoreBg(safeScore), getScoreColor(safeScore))}>
           {status}
         </span>
+      </div>
+    </div>
+  );
+}
+
+function ClaimTrustCard({ ct }: { ct: ClaimTrust }) {
+  const pct = Math.min(ct.score, 100);
+
+  return (
+    <div className="rounded-xl border border-[rgba(148,163,184,.14)] bg-[#070d18] p-4 space-y-3">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <h4 className="text-sm font-bold text-white truncate">{ct.claimType}</h4>
+            {getEvidenceLevelBadge(ct.evidenceLevel)}
+          </div>
+          {ct.assertionText && (
+            <p className="text-xs text-[#94a3b8] mt-1 line-clamp-2">{ct.assertionText}</p>
+          )}
+        </div>
+        <div className="text-right shrink-0">
+          <span className={clsx("text-lg font-extrabold font-mono", getScoreColor(ct.score))}>
+            {ct.score}
+          </span>
+        </div>
+      </div>
+
+      {/* Score bar */}
+      <div className="relative h-1.5 rounded-full bg-white/[0.06] overflow-hidden">
+        <div
+          className={clsx("absolute inset-y-0 left-0 rounded-full bg-gradient-to-r transition-all duration-500", getFactorColor(ct.claimType).gradient)}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+
+      {/* Factors */}
+      <div className="space-y-1.5">
+        {ct.factors.map((factor, idx) => (
+          <div key={idx} className={clsx(
+            "text-[11px] flex items-start gap-1.5",
+            factor.type === "supporting" ? "text-emerald-400/80" : factor.type === "reducing" ? "text-rose-400/80" : "text-slate-500"
+          )}>
+            {factor.type === "supporting" ? (
+              <TrendingUp className="w-3 h-3 mt-0.5 shrink-0" />
+            ) : factor.type === "reducing" ? (
+              <TrendingDown className="w-3 h-3 mt-0.5 shrink-0" />
+            ) : (
+              <span className="w-3 h-3 shrink-0" />
+            )}
+            <span>{factor.label}: {factor.description}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Meta row */}
+      <div className="flex flex-wrap gap-2 text-[10px] text-slate-500">
+        <span>Evidence: {ct.evidenceCount} ({ct.evidenceDiversity} type{ct.evidenceDiversity !== 1 ? "s" : ""})</span>
+        <span>Verification: {ct.verificationStatus}</span>
+        {ct.activeConflictCount > 0 && (
+          <span className="text-rose-400">{ct.activeConflictCount} conflict{ct.activeConflictCount !== 1 ? "s" : ""}</span>
+        )}
+        {ct.gateBlocked && ct.gateReason && (
+          <span className="text-amber-400">⚠ {ct.gateReason}</span>
+        )}
       </div>
     </div>
   );
@@ -111,24 +237,24 @@ export function TrustView({
   const resume = propResume ?? storeResume;
   const evidence = propEvidence ?? storeEvidence;
 
-  const [serverTrustReport, setServerTrustReport] = useState<ServerTrustReport | null>(null);
+  const [serverTrustReport, setServerTrustReport] = useState<ServerTrustReportV2 | null>(null);
   const [loading, setLoading] = useState(!propTrustReport);
   const [shareEnabled, setShareEnabled] = useState(false);
   const [shareUrl, setShareUrl] = useState<string | null>(null);
   const [copying, setCopying] = useState(false);
 
-  // Fetch server-derived Trust on mount
+  // Fetch server-derived Trust v2 on mount
   useEffect(() => {
-    if (propTrustReport) return; // Use prop if provided
+    if (propTrustReport) return;
     setLoading(true);
     fetch("/api/trust")
       .then((res) => res.json())
       .then((data) => {
-        if (data && typeof data.score === "number") {
-          setServerTrustReport(data as ServerTrustReport);
+        if (data && typeof data.score === "number" && data.algorithmVersion === "v2") {
+          setServerTrustReport(data as ServerTrustReportV2);
         }
       })
-      .catch(() => {}) // Silent fallback — empty state shown below
+      .catch(() => {})
       .finally(() => setLoading(false));
   }, [propTrustReport]);
 
@@ -148,8 +274,6 @@ export function TrustView({
 
   const handleToggleShare = async () => {
     const action = shareEnabled ? "disable" : "enable";
-    // SECURITY: Never send trustReport to the server.
-    // Server derives Trust from canonical data automatically.
     const res = await fetch("/api/trust/share", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -170,24 +294,22 @@ export function TrustView({
     setTimeout(() => setCopying(false), 2000);
   };
 
-  // ServerTrustReport uses .score, .summary, and .breakdown directly
-  const verification = report?.summary ? {
-    total: report.summary.totalClaims,
-    verified: report.summary.verifiedClaims,
+  const summary = report?.summary;
+  const verification = summary ? {
+    total: summary.totalClaims,
+    verified: summary.verifiedClaims,
     pending: 0,
-    unverified: report.summary.totalClaims - report.summary.verifiedClaims,
-    disputed: 0,
-    expired: 0,
-    coverage: report.summary.verificationRate,
+    unverified: summary.totalClaims - summary.verifiedClaims,
+    coverage: summary.verificationRate,
   } : null;
-  const coverage = report?.summary ? {
-    totalClaims: report.summary.totalClaims,
-    claimsWithEvidence: report.summary.claimsWithEvidence,
-    claimsWithoutEvidence: report.summary.claimsWithoutEvidence,
-    coveragePercent: report.summary.evidenceCoveragePercent,
+  const coverage = summary ? {
+    totalClaims: summary.totalClaims,
+    claimsWithEvidence: summary.claimsWithEvidence,
+    claimsWithoutEvidence: summary.claimsWithoutEvidence,
+    coveragePercent: summary.evidenceCoveragePercent,
   } : null;
 
-  const isEmpty = !report || (!resume?.name && !resume?.title && (resume?.claims ?? []).length === 0 && evidence.length === 0);
+  const isEmpty = !report || (!resume?.name && !resume?.title && (resume?.claims ?? []).length === 0 && evidence.length === 0 && report.claimTrusts.length === 0);
 
   if (loading) {
     return (
@@ -197,7 +319,7 @@ export function TrustView({
           <ShieldCheck className="w-10 h-10 text-cyan-500 dark:text-cyan-400 mx-auto animate-pulse" />
           <h3 className="text-sm font-bold text-gray-900 dark:text-white">Loading trust data…</h3>
           <p className="text-xs text-gray-500 dark:text-slate-400 max-w-md mx-auto">
-            Deriving trust from your verified claims and evidence.
+            Deriving trust from your claims, evidence, verification history, and conflicts.
           </p>
         </div>
       </div>
@@ -205,20 +327,20 @@ export function TrustView({
   }
 
   if (isEmpty) {
-  return (
-    <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 font-sans space-y-8">
-      <IdentityNav />
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mt-1">Professional Trust</h1>
+    return (
+      <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 font-sans space-y-8">
+        <IdentityNav />
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white mt-1">Professional Trust</h1>
           <p className="text-sm text-[#a9b9cf] font-light mt-1">
-            Understand and grow how trustworthy your professional profile is — backed by verifiable claims and evidence.
+            Understand how strongly your professional claims are supported by evidence and verification history.
           </p>
         </div>
         <div className="rounded-2xl border border-gray-200 dark:border-[rgba(148,163,184,.14)] bg-white dark:bg-gradient-to-br dark:from-[rgba(10,18,32,0.96)] dark:to-[rgba(7,14,26,0.92)] p-12 text-center space-y-3 shadow-xl">
           <ShieldCheck className="w-10 h-10 text-cyan-500 dark:text-cyan-400 mx-auto" />
           <h3 className="text-sm font-bold text-gray-900 dark:text-white">No trust data yet</h3>
           <p className="text-xs text-gray-500 dark:text-slate-400 max-w-md mx-auto">
-            Your Trust Score will become more meaningful as your professional information and supporting evidence grow.
+            Your Trust Score will become more meaningful as you add professional claims, attach evidence, and request verification.
           </p>
           <p className="text-xs text-gray-400 dark:text-slate-500 max-w-md mx-auto">
             Start by building your professional identity in the Resume Builder.
@@ -231,33 +353,36 @@ export function TrustView({
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 lg:px-12 font-sans space-y-10">
       <IdentityNav />
-      {/* ── PAGE HEADER ── */}
+      {/* PAGE HEADER */}
       <div className="space-y-2">
         <h1 className="text-3xl sm:text-4xl font-bold tracking-tight text-gray-900 dark:text-white flex items-center gap-3">
           <ShieldCheck className="w-8 h-8 text-cyan-400" />
           Professional Trust
         </h1>
         <p className="text-sm text-[#a9b9cf] font-light max-w-2xl leading-relaxed">
-          Understand and grow how trustworthy your professional profile is — backed by verifiable claims and evidence.
+          Understand how strongly your professional claims are supported by evidence, verification history, and conflict resolution.
+        </p>
+        <p className="text-[10px] text-slate-500 font-mono">
+          Algorithm v{report?.algorithmVersion ?? "v2"} • Derived {report?.derivedAt ? new Date(report.derivedAt).toLocaleString() : "—"}
         </p>
       </div>
 
-      {/* ── MAIN TRUST HERO (SCORE & ANALYSIS & TREND) ── */}
+      {/* MAIN TRUST HERO (SCORE & ANALYSIS) */}
       <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-8 shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/[0.03] rounded-full blur-3xl pointer-events-none" />
-        <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)_300px] gap-8 items-center relative z-10">
-          
+        <div className="grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] gap-8 items-center relative z-10">
+
           {/* Left: Trust Score Gauge */}
           <div className="flex justify-center border-b lg:border-b-0 lg:border-r border-[rgba(148,163,184,.14)] pb-6 lg:pb-0 lg:pr-8">
             <CircularScoreGauge score={report?.score ?? null} />
           </div>
 
-          {/* Center: Evidence-Based Trust Analysis */}
+          {/* Center: Summary & Factors */}
           <div className="space-y-4">
             <div className="text-[11px] font-extrabold tracking-[0.15em] uppercase text-[#60a5fa]">EVIDENCE-BASED TRUST ANALYSIS</div>
-            <h2 className="text-xl font-bold text-white tracking-tight">Profile Verification Breakdown</h2>
+            <h2 className="text-xl font-bold text-white tracking-tight">Trust Breakdown</h2>
             <p className="text-xs sm:text-sm text-[#cbd5e1] font-light leading-relaxed">
-              Your trust score is derived from verification coverage across your professional identity, claims, experience, skills, and attached evidence.
+              Your trust score is derived from per-claim evidence strength, verification status, active conflicts, and the aggregate support across all professional claims.
             </p>
             {verification && (
               <div className="flex flex-wrap items-center gap-3 pt-2 text-xs">
@@ -272,25 +397,35 @@ export function TrustView({
                 </span>
               </div>
             )}
-          </div>
 
-          {/* Right: Score Trend */}
-          <div className="rounded-xl border border-[rgba(148,163,184,.14)] bg-[#070d18]/90 backdrop-blur p-5 space-y-3 shadow-inner">
-            <div className="flex items-center justify-between border-b border-[rgba(148,163,184,.1)] pb-2">
-              <span className="text-xs font-bold text-white uppercase tracking-wider">SCORE TREND</span>
-              <span className="text-[10px] font-mono text-cyan-400 bg-cyan-500/10 px-2.5 py-0.5 rounded-full border border-cyan-500/20">90 Days</span>
-            </div>
-            <div className="h-32 rounded-lg bg-[rgba(255,255,255,.015)] border border-[rgba(148,163,184,.08)] flex flex-col items-center justify-center text-center p-3">
-              <Clock className="w-6 h-6 text-slate-500 mb-1.5 opacity-80" />
-              <p className="text-xs font-semibold text-white">No score history yet</p>
-              <p className="text-[10px] text-slate-400 mt-0.5 max-w-[200px]">Your trust score history will appear as your profile develops.</p>
+            {/* Supporting & Reducing Factors */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+              {report?.supportingFactors && report.supportingFactors.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                    <TrendingUp className="w-3 h-3" /> Supporting
+                  </div>
+                  {report.supportingFactors.map((f, i) => (
+                    <p key={i} className="text-[11px] text-emerald-400/70 leading-relaxed">{f.description}</p>
+                  ))}
+                </div>
+              )}
+              {report?.reducingFactors && report.reducingFactors.length > 0 && (
+                <div className="space-y-1.5">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-rose-400 flex items-center gap-1">
+                    <TrendingDown className="w-3 h-3" /> Reducing
+                  </div>
+                  {report.reducingFactors.map((f, i) => (
+                    <p key={i} className="text-[11px] text-rose-400/70 leading-relaxed">{f.description}</p>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
-
         </div>
       </section>
 
-      {/* ── PUBLIC TRUST SHARE LINK CARD ── */}
+      {/* PUBLIC TRUST SHARE LINK CARD */}
       <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 space-y-4 shadow-xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -300,7 +435,7 @@ export function TrustView({
             <div>
               <h3 className="text-base font-bold text-white">Public Trust Share Link</h3>
               <p className="text-xs text-[#a9b9cf] mt-0.5">
-                Generate a secure, read-only public URL to share your verified professional trust report with employers or clients.
+                Generate a secure, read-only public URL to share your professional trust report with employers or clients.
               </p>
             </div>
           </div>
@@ -336,10 +471,10 @@ export function TrustView({
         </div>
       </section>
 
-      {/* ── TRUST METRICS (3 CARDS) ── */}
+      {/* TRUST METRICS (3 CARDS) */}
       {coverage && (
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2 relative overflow-hidden">
+          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2">
             <div className="flex items-center justify-between">
               <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">EVIDENCE COVERAGE</div>
               <FileText className="w-4 h-4 text-cyan-400" />
@@ -347,142 +482,72 @@ export function TrustView({
             <div className="text-3xl font-extrabold text-white font-mono">{coverage.coveragePercent}%</div>
             <p className="text-xs text-[#a9b9cf]">{coverage.claimsWithEvidence} of {coverage.totalClaims} claims backed by evidence</p>
           </div>
-          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2 relative overflow-hidden">
+          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">TOTAL EVIDENCE ITEMS</div>
+              <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">TOTAL EVIDENCE</div>
               <Award className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-3xl font-extrabold text-white font-mono">{evidence.length}</div>
+            <div className="text-3xl font-extrabold text-white font-mono">{summary?.totalEvidence ?? 0}</div>
             <p className="text-xs text-[#a9b9cf]">Attached artifacts & links</p>
           </div>
-          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2 relative overflow-hidden">
+          <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 shadow-xl space-y-2">
             <div className="flex items-center justify-between">
-              <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">VERIFICATION STATUS</div>
-              <ShieldCheck className="w-4 h-4 text-purple-400" />
+              <div className="text-[10px] text-[#71839b] font-bold uppercase tracking-wider">ACTIVE CONFLICTS</div>
+              <AlertTriangle className="w-4 h-4 text-rose-400" />
             </div>
-            <div className="text-3xl font-extrabold text-emerald-400 font-mono">{verification?.coverage ?? 0}%</div>
-            <p className="text-xs text-[#a9b9cf]">Overall verification rate</p>
+            <div className={clsx("text-3xl font-extrabold font-mono", (summary?.activeConflicts ?? 0) > 0 ? "text-rose-400" : "text-emerald-400")}>
+              {summary?.activeConflicts ?? 0}
+            </div>
+            <p className="text-xs text-[#a9b9cf]">Unresolved professional conflicts</p>
           </div>
         </section>
       )}
 
-      {/* ── TRUST SCORE BREAKDOWN & IMPROVEMENT GUIDANCE (2 COLUMNS) ── */}
-      <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-        
-        {/* Left 2 Cols: Trust Score Breakdown */}
-        <div className="lg:col-span-2 rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 space-y-6 shadow-xl">
+      {/* PER-CLAIM TRUST BREAKDOWN */}
+      {report?.claimTrusts && report.claimTrusts.length > 0 && (
+        <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 space-y-6 shadow-xl">
           <div className="border-b border-[rgba(148,163,184,.1)] pb-3">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">TRUST SCORE BREAKDOWN (FACTORS & WEIGHTS)</h3>
+            <h3 className="text-xs font-bold text-white uppercase tracking-wider">PER-CLAIM TRUST BREAKDOWN</h3>
+            <p className="text-[11px] text-[#94a3b8] mt-1">
+              Each claim is scored independently based on its evidence support, verification status, and active conflicts.
+            </p>
           </div>
+          <div className="space-y-3">
+            {report.claimTrusts.map((ct) => (
+              <ClaimTrustCard key={ct.claimId} ct={ct} />
+            ))}
+          </div>
+        </section>
+      )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {report?.breakdown.map((comp, idx) => {
-              const compScore = comp.score;
-              const pct = Math.min(compScore, 100);
-              const colorInfo = getFactorColor(comp.label);
-              const factorIcon = getFactorIcon(comp.label);
-
-              return (
-                <div key={idx} className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-[#070d18] p-5 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2.5">
-                      <div className={clsx("w-8 h-8 rounded-xl border flex items-center justify-center shrink-0", colorInfo.bg)}>
-                        {factorIcon}
-                      </div>
-                      <div className="space-y-0.5">
-                        <h4 className="text-sm font-bold text-white">{comp.label}</h4>
-                        <span className="text-[10px] font-extrabold text-[#71839b] uppercase tracking-wider">Weight {comp.weight}%</span>
-                      </div>
-                    </div>
-                    <span className="text-xs font-bold text-white font-mono">
-                      {comp.score} / 100
-                    </span>
-                  </div>
-
-                  <p className="text-xs text-[#a9b9cf] leading-relaxed">{comp.explanation}</p>
-
-                  <div className="space-y-1 pt-1">
-                    <div className="relative h-2 rounded-full bg-white/[0.06] overflow-hidden">
-                      <div
-                        className={clsx("absolute inset-y-0 left-0 rounded-full bg-gradient-to-r transition-all duration-500", colorInfo.gradient)}
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] text-slate-500 font-mono">
-                      <span>{pct}%</span>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
+      {/* HOW TO IMPROVE */}
+      <section className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 space-y-5 shadow-xl">
+        <div className="border-b border-[rgba(148,163,184,.1)] pb-3">
+          <h3 className="text-xs font-bold text-white uppercase tracking-wider">HOW TO IMPROVE YOUR TRUST</h3>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="p-4 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18] space-y-2">
+            <h4 className="text-xs font-bold text-white">Verify credentials</h4>
+            <p className="text-[11px] text-[#94a3b8]">Request verification for your claims to increase verification strength.</p>
+            <Link href="/trust" className="text-xs font-bold text-cyan-400 hover:underline">Verify claims →</Link>
+          </div>
+          <div className="p-4 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18] space-y-2">
+            <h4 className="text-xs font-bold text-white">Add diverse evidence</h4>
+            <p className="text-[11px] text-[#94a3b8]">Attach multiple types of evidence to strengthen your claims.</p>
+            <Link href="/resume-builder" className="text-xs font-bold text-cyan-400 hover:underline">Add evidence →</Link>
+          </div>
+          <div className="p-4 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18] space-y-2">
+            <h4 className="text-xs font-bold text-white">Resolve conflicts</h4>
+            <p className="text-[11px] text-[#94a3b8]">Review and resolve active professional conflicts.</p>
+            <Link href="/trust" className="text-xs font-bold text-cyan-400 hover:underline">View conflicts →</Link>
+          </div>
+          <div className="p-4 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18] space-y-2">
+            <h4 className="text-xs font-bold text-white">Grow your profile</h4>
+            <p className="text-[11px] text-[#94a3b8]">Add more professional claims backed by evidence.</p>
+            <Link href="/resume-builder" className="text-xs font-bold text-cyan-400 hover:underline">Update profile →</Link>
           </div>
         </div>
-
-        {/* Right Col: How to Improve Your Score */}
-        <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-gradient-to-br from-[rgba(10,18,32,0.96)] to-[rgba(7,14,26,0.92)] p-6 space-y-5 shadow-xl">
-          <div className="border-b border-[rgba(148,163,184,.1)] pb-3">
-            <h3 className="text-xs font-bold text-white uppercase tracking-wider">HOW TO IMPROVE YOUR SCORE</h3>
-          </div>
-
-          <div className="space-y-4">
-            <div className="p-4 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18] space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h4 className="text-xs font-bold text-white">Verify more credentials</h4>
-                  <p className="text-xs text-[#94a3b8] mt-0.5">Add and verify degrees, certifications & licenses</p>
-                </div>
-                <Link href="/trust" className="text-xs font-bold text-cyan-400 hover:underline shrink-0">
-                  Verify credentials →
-                </Link>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18] space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h4 className="text-xs font-bold text-white">Add stronger evidence</h4>
-                  <p className="text-xs text-[#94a3b8] mt-0.5">Attach supporting documents, links and proof to your claims</p>
-                </div>
-                <Link href="/resume-builder" className="text-xs font-bold text-cyan-400 hover:underline shrink-0">
-                  Add evidence →
-                </Link>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18] space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h4 className="text-xs font-bold text-white">Grow your network</h4>
-                  <p className="text-xs text-[#94a3b8] mt-0.5">Connect with professionals and peers across your profile</p>
-                </div>
-                <Link href="/network/graph" className="text-xs font-bold text-cyan-400 hover:underline shrink-0">
-                  Explore network →
-                </Link>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl border border-[rgba(148,163,184,.12)] bg-[#070d18] space-y-2">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h4 className="text-xs font-bold text-white">Keep your profile updated</h4>
-                  <p className="text-xs text-[#94a3b8] mt-0.5">Regularly update your experience, skills, and summary</p>
-                </div>
-                <Link href="/resume-builder" className="text-xs font-bold text-cyan-400 hover:underline shrink-0">
-                  Update profile →
-                </Link>
-              </div>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-[rgba(148,163,184,.1)] text-right">
-            <Link href="/docs" className="text-[11px] font-semibold text-slate-400 hover:text-white transition-colors">
-              Learn more about Trust Score ↗
-            </Link>
-          </div>
-        </div>
-
       </section>
-
     </div>
   );
 }

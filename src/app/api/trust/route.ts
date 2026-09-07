@@ -4,17 +4,16 @@ import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { handleApiError } from "@/lib/api-error";
-import { deriveTrustForUser } from "@/lib/trust/canonical-loader";
+import { deriveTrustForUserV2 } from "@/lib/trust/canonical-loader";
 
 /**
  * GET /api/trust
  *
- * Returns a server-derived TrustReport for the authenticated user's
+ * Returns a server-derived TrustReportV2 for the authenticated user's
  * ProfessionalIdentity. All data is loaded from the canonical database;
  * no client-supplied data is accepted.
  *
- * Phase 8: Uses the single canonical Trust input loader (canonical-loader.ts)
- * to ensure identical results with Trust Share and Passport derivation.
+ * Phase 9B: Returns Trust v2 (per-claim breakdown with evidence/verification/conflict integration).
  *
  * Security:
  *  - Requires authentication
@@ -29,7 +28,7 @@ export async function GET() {
   }
 
   try {
-    const trustReport = await deriveTrustForUser(session.user.id);
+    const trustReport = await deriveTrustForUserV2(session.user.id);
     return NextResponse.json(trustReport);
   } catch (err: unknown) {
     return handleApiError(err, "trust:GET");

@@ -1,11 +1,13 @@
 /**
- * Professional Passport Projection — ADR-002 Phase 6
+ * Professional Passport Projection — ADR-002 Phase 6 + Phase 9B
  *
  * Pure, deterministic function that builds a ProfessionalPassport from
  * canonical server-side data. No DB calls, no auth, no side effects.
  *
  * The Passport is a PROJECTION — it presents what the canonical system
  * currently knows. It is NEVER the source of truth.
+ *
+ * Phase 9B: Accepts Trust v2 report type.
  *
  * Privacy rules:
  *  - email, phone, address are NEVER exposed

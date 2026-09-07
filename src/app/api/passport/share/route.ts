@@ -6,7 +6,7 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api-error";
 import { buildPassport } from "@/lib/passport/projection";
-import { deriveTrustForUser } from "@/lib/trust/canonical-loader";
+import { deriveTrustForUserV2 } from "@/lib/trust/canonical-loader";
 import type {
   CanonicalClaimForPassport,
   CanonicalEvidenceForPassport,
@@ -34,8 +34,8 @@ async function derivePassportForIdentity(professionalIdentityId: string, userId:
     ? await prisma.user.findUnique({ where: { id: identity.userId } })
     : null;
 
-  // Derive Trust using the same path as GET /api/trust (P1-2 parity)
-  const trustReport = await deriveTrustForUser(userId);
+  // Phase 9B: Derive Trust v2 using the same path as GET /api/trust (P1-2 parity)
+  const trustReport = await deriveTrustForUserV2(userId);
 
   // Load claims and evidence for Passport projection
   const claims = await prisma.claim.findMany({

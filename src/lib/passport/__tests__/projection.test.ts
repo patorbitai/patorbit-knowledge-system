@@ -103,17 +103,13 @@ describe("Passport Projection", () => {
         trustReport: {
           score: 75,
           level: "Strong",
-          algorithmVersion: "v1",
-          breakdown: [],
-          reasons: [],
-          derivedAt: new Date().toISOString(),
-          summary: { totalClaims: 1, verifiedClaims: 1, claimsWithEvidence: 1, claimsWithoutEvidence: 0, totalEvidence: 1, totalVerificationEvents: 1, evidenceCoveragePercent: 100, verificationRate: 100 },
+          algorithmVersion: "v2",
         },
       });
       expect(passport.trust).not.toBeNull();
       expect(passport.trust!.score).toBe(75);
       expect(passport.trust!.level).toBe("Strong");
-      expect(passport.trust!.algorithmVersion).toBe("v1");
+      expect(passport.trust!.algorithmVersion).toBe("v2");
     });
 
     it("returns null trust when not provided", () => {
