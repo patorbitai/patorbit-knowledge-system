@@ -1,11 +1,11 @@
-# ADR-002 Phase 10A — Resume ↔ Claim Synchronization Design (Corrected)
+# ADR-002 Phase 10A — Resume ↔ Claim Synchronization Design (Final)
 
 **Document ID:** ADR-002-PHASE-10A
 **Status:** 📋 DESIGN ONLY — not yet implemented
 **Date:** 2026-09-07
 **Type:** Architecture design (synchronization semantics)
 **Basis:** Phase 10 Architecture Audit (commit 45cbd99), ADR-001, ADR-002
-**Corrected:** This document resolves architectural contradictions from the initial design.
+**Final:** This document resolves all architectural contradictions.
 
 ---
 
@@ -195,212 +195,114 @@ Each Resume section item has a stable client-side `id`:
 | Scope | Globally unique |
 | Semantic | None (opaque identifier) |
 
-### sourceActivityId — Design Decision
+### Distinct Identity Concepts
 
-**Decision: sourceActivityId is the linkage key, NOT the canonical Claim identity.**
+| Concept | Purpose | Scope | Example |
+|---------|---------|-------|---------|
+| **Canonical Claim identity** | Unique identifier for a professional assertion | Global | `Claim.id = "clx111"` |
+| **Synchronization idempotency** | Prevent duplicate Claims from same Resume item | Per ProfessionalIdentity | `professionalFactKey` |
+| **Duplicate detection** | Find Claims representing same fact | Per ProfessionalIdentity | Candidate matching |
+| **Candidate matching** | Suggest potential duplicates for user review | Per ProfessionalIdentity | Fuzzy matching |
+| **Content fingerprinting** | Deterministic hash of content | Per Resume item | `professionalFactKey` |
 
-The canonical Claim identity is `Claim.id` (server-generated CUID).
+### professionalFactKey — Precise Definition
 
-`sourceActivityId` serves as:
-- **Linkage key** — connects Resume items to Claims
-- **Deduplication key** — prevents duplicate Claims from same Resume item
-- **NOT global identity** — different Resume items can link to different Claims
+**professionalFactKey is a synchronization idempotency key, NOT a canonical Claim identity.**
 
-### Answers to Critical Questions
+It serves ONE purpose: **prevent duplicate Claims when the same Resume item is synced multiple times**.
 
-1. **Is sourceActivityId globally unique?**
-   NO. It's either an index slug (`"experience-0"`) or a client-generated ID (`"id_12345_abc"`).
+It does NOT:
+- Define canonical Claim identity
+- Merge distinct professional facts
+- Replace Claim.id
+- Guarantee semantic equivalence
 
-2. **Is it unique only within a Resume?**
-   Effectively yes. Index slugs are Resume-scoped. Client IDs are session-scoped.
+**Scope**: Valid only within a single ProfessionalIdentity, for a single Resume item, at a single point in time.
 
-3. **Can two Resume items representing the same professional fact have different IDs?**
-   YES. Resume A item `"id_111"` and Resume B item `"id_222"` can represent the same employment.
+**Limitation**: Content equality does NOT guarantee semantic equivalence.
 
-4. **Can one Resume item ID appear in multiple Resumes?**
-   NO. Each Resume has its own items with unique IDs.
+Example:
+```
+Employment at ABC as Data Engineer (2020-2022)
+Employment at ABC as Data Engineer (2024-2026)
+```
 
-5. **Can an imported Resume preserve source IDs?**
-   NO. `withIds()` generates new sequential IDs for imported items.
+These may have similar content but represent **distinct professional facts** (different time periods).
 
-6. **What happens when a Resume item is deleted and recreated?**
-   New item gets a new ID → new Claim (unless semantic matching is implemented).
+### sourceActivityId — Precise Definition
 
-7. **Can sourceActivityId safely serve as canonical Claim identity?**
-   NO. It's a linkage key, not an identity. Different Resume items linking to the same professional fact will have different sourceActivityIds.
+**sourceActivityId is a presentation reference, NOT a canonical Claim identity.**
 
-8. **Can one Claim genuinely be referenced by multiple Resume items?**
-   YES, but only if they share the same sourceActivityId. With current architecture, this requires explicit design.
+It links a Resume item to the Claim it represents.
+
+| Property | Value |
+|----------|-------|
+| Scope | Per Resume item |
+| Format | Client-generated ID (`"id_12345_abc"`) or index slug (`"experience-0"`) |
+| Stability | Persists across edits (same item keeps same ID) |
+| Uniqueness | NOT unique across Resumes |
 
 ---
 
 ## 7. Resume ↔ Claim Relationship
 
-### Design Decision: Option C — Each Resume Item is a Distinct Presentation Reference
+### Design Decision: Narrowed Scope (Option D)
+
+**Decision: Phase 10 implements ONE Resume item → ONE Claim linkage only.**
+
+Multi-resume many-to-one linkage is NOT implemented in Phase 10.
 
 **Rationale**:
-- Resume items are presentation-layer objects
-- Claims are canonical assertions
-- The same professional fact may appear in multiple Resumes
-- Deleting a Resume must NOT destroy Claims
-- Verification belongs to Claims, not Resume items
+1. Current schema has single `sourceActivityId`, not array
+2. Adding array linkage requires schema migration (deferred to Phase 11)
+3. Narrowing scope produces stronger canonical architecture
+4. Avoids premature complexity
 
-### Relationship Model
-
-```
-Resume A                              Resume B
-┌─────────────────┐                  ┌─────────────────┐
-│ experience[0]   │                  │ experience[0]   │
-│ id: "id_111"    │                  │ id: "id_222"    │
-│ company: Google │                  │ company: Google │
-│ position: Eng   │                  │ position: Eng   │
-└────────┬────────┘                  └────────┬────────┘
-         │                                    │
-         │ sourceActivityId                   │ sourceActivityId
-         │ = "id_111"                         │ = "id_222"
-         │                                    │
-         ▼                                    ▼
-┌─────────────────┐                  ┌─────────────────┐
-│ Claim A         │                  │ Claim B         │
-│ id: "clx111"    │                  │ id: "clx222"    │
-│ assertion: ...  │                  │ assertion: ...  │
-│ status: verified│                  │ status: accepted│
-└─────────────────┘                  └─────────────────┘
-```
-
-**Problem**: This creates duplicate Claims for the same professional fact.
-
-### Corrected Design: Option A — One Claim, Multiple Presentation References
-
-**Decision**: Create ONE Claim per unique professional fact. Link multiple Resume items to the same Claim.
+### Relationship Model (Phase 10)
 
 ```
-Resume A                              Resume B
-┌─────────────────┐                  ┌─────────────────┐
-│ experience[0]   │                  │ experience[0]   │
-│ id: "id_111"    │                  │ id: "id_222"    │
-└────────┬────────┘                  └────────┬────────┘
-         │                                    │
-         │                                    │
-         ▼                                    ▼
+Resume A
+┌─────────────────┐
+│ experience[0]   │
+│ id: "id_111"    │
+│ company: Google │
+│ position: Eng   │
+└────────┬────────┘
+         │
+         │ sourceActivityId = "id_111"
+         │ professionalFactKey = "employment:google:engineer:2024-01"
+         │
+         ▼
 ┌─────────────────────────────────────────────────────┐
 │                    Claim                            │
 │ id: "clx111"                                        │
 │ assertion: "Worked at Google as Engineer"           │
-│ sourceActivityId: "id_111" (primary linkage)        │
-│ linkedResumeItemIds: ["id_111", "id_222"] (future)  │
-│ status: verified                                    │
+│ sourceActivityId: "id_111"                          │
+│ professionalFactKey: "employment:google:engineer:2024-01" │
+│ status: suggested                                   │
 └─────────────────────────────────────────────────────┘
 ```
 
-**Challenge**: Current schema has single `sourceActivityId`, not array.
+### Multi-Resume Behavior (Phase 10 Limitation)
 
-### Practical Solution: Synthesize a Stable Professional Fact Key
+**Phase 10 creates separate Claims for each Resume item, even if they represent the same professional fact.**
 
-Instead of using Resume item IDs directly, synthesize a **deterministic professional fact key** from the Resume item's content:
-
-```typescript
-function generateProfessionalFactKey(section: string, item: ResumeItem): string {
-  switch (section) {
-    case "experience":
-      // Normalize: lowercase, trim, collapse whitespace
-      const company = normalize(item.company);
-      const position = normalize(item.position);
-      const startDate = normalize(item.startDate);
-      return `employment:${company}:${position}:${startDate}`;
-    case "education":
-      return `education:${normalize(item.school)}:${normalize(item.degree)}:${normalize(item.year)}`;
-    case "skills":
-      return `skill:${normalize(item.name)}`;
-    case "certifications":
-      return `certification:${normalize(item.name)}:${normalize(item.issuer)}`;
-    // ...
-  }
-}
-
-function normalize(s: string): string {
-  return s.toLowerCase().trim().replace(/\s+/g, " ");
-}
+Example:
+```
+Resume A: experience[0] = Employment at Google → Claim A
+Resume B: experience[0] = Employment at Google → Claim B
 ```
 
-This key is:
-- **Deterministic** — same content → same key
-- **Semantic** — encodes what the fact represents
-- **Stable across edits** — minor edits don't change the key
-- **Cross-resume** — same fact in different Resumes gets same key
+**This is a known limitation**, documented explicitly.
 
-### Implementation
-
-Add `professionalFactKey` as a **derived field** (not stored, computed on sync):
-
-```typescript
-// On sync, compute the key and use it for deduplication:
-const factKey = generateProfessionalFactKey(section, item);
-const existing = await claimRepository.findByFactKey(professionalIdentityId, factKey);
-if (existing) {
-  // UPDATE existing Claim
-} else {
-  // CREATE new Claim
-}
-```
-
-**Schema Impact**: Requires adding `professionalFactKey` column to Claim table (optional, nullable).
+**Mitigation**:
+- Conflict Detection will surface duplicate Claims
+- User can manually merge/delete duplicates
+- Phase 11 adds `linkedResumeItemIds` for proper multi-resume support
 
 ---
 
-## 8. Multi-Resume Semantics
-
-### Case Analysis
-
-**Resume A**: Employment at Microsoft
-**Resume B**: Employment at Microsoft
-**Resume C**: Employment at Google
-
-**Questions and Answers**:
-
-1. **Are A and B one Claim?**
-   YES, if they represent the same professional fact (same company, position, dates).
-
-2. **Is C another Claim?**
-   YES, different company = different professional fact.
-
-3. **How are Resume items linked to Claims?**
-   Via `professionalFactKey` (deterministic from content).
-
-4. **What happens if A is deleted?**
-   Claim remains (linked to Resume B).
-
-5. **What happens if B remains?**
-   Claim remains, linked to Resume B.
-
-6. **What happens if both A and B are deleted?**
-   Claim remains (historical integrity). May be marked as "orphaned" in UI.
-
-7. **What happens if A is edited to Google?**
-   - Old Claim (Microsoft) may become orphaned
-   - New Claim (Google) created
-   - User prompted to review
-
-8. **What happens if A is imported again?**
-   Same fact key → same Claim (idempotent).
-
-9. **What happens if a verified Claim is represented in a new Resume?**
-   New Resume item links to existing verified Claim.
-
-### Schema Limitation
-
-Current `sourceActivityId` is a single string, not an array. This means:
-- One Claim can link to ONE Resume item (primary linkage)
-- Additional Resume items referencing the same Claim require either:
-  - Schema change (add `linkedResumeItemIds: String[]`)
-  - External mapping table
-  - Acceptance of limitation (only primary Resume item linked)
-
-**Recommendation**: Accept limitation initially. Add `linkedResumeItemIds` in Phase 11 if needed.
-
----
-
-## 9. Create Semantics
+## 8. Create Semantics
 
 ### When Resume Creates New Item
 
@@ -419,8 +321,8 @@ User adds:
    employment:google:data engineer:2024-01
    ```
 
-2. Check if Claim with this key exists:
-   - If YES → Update existing Claim (link new Resume item)
+2. Check if Claim with this key AND same `sourceActivityId` exists:
+   - If YES → Update existing Claim (same Resume item, same fact)
    - If NO → Create new Claim
 
 3. Create Claim:
@@ -429,7 +331,7 @@ User adds:
      professionalIdentityId: identity.id,
      assertionText: "Worked at Google as Data Engineer (Jan 2024 – Present)",
      claimType: "Employment",
-     sourceActivityId: "id_12345_abc",  // Primary Resume item ID
+     sourceActivityId: "id_12345_abc",  // Resume item ID
      professionalFactKey: "employment:google:data engineer:2024-01",
      confidence: 0.5,
      reasoning: "Stated in resume",
@@ -468,7 +370,7 @@ accepted: false
 
 ---
 
-## 10. Update Semantics
+## 9. Update Semantics
 
 ### When Resume Edits Existing Item
 
@@ -487,16 +389,16 @@ User edits:
 
 2. Compare with old key:
    - If SAME key → Minor edit (update assertionText, preserve verification)
-   - If DIFFERENT key → Material edit (requires lifecycle transition)
+   - If DIFFERENT key → Material edit (create new Claim)
 
 3. For Material Edit:
-   - Old Claim may become orphaned
+   - Old Claim remains unchanged (historical integrity)
    - New Claim created with new key
-   - Old Claim verification status unchanged (historical integrity)
+   - Old Claim may become orphaned
 
 ---
 
-## 11. Materiality Matrix
+## 10. Materiality Matrix
 
 ### Employment
 
@@ -562,7 +464,7 @@ User edits:
 
 ---
 
-## 12. Verification Preservation/Invalidation
+## 11. Verified Claim Protection
 
 ### Valid Status Transitions (from verification-event.service.ts)
 
@@ -590,13 +492,13 @@ Direct mutation of `claim.verificationStatus` is NOT allowed (Phase 8 P2-1 fix).
 
 When a material edit occurs (identity-defining or verification-relevant field changes):
 
-**Option A: Create New Claim (Recommended)**
+**Option A: Create New Claim (Implemented)**
 - Old Claim remains unchanged (verification preserved)
 - New Claim created with `verificationStatus: "suggested"`
 - User prompted to review old Claim (may be orphaned)
 - Trust impact: Old verified Claim still contributes to Trust
 
-**Option B: Transition Old Claim**
+**Option B: Transition Old Claim (Deferred)**
 - Would require VerificationEvent with type that transitions from `verified` to `accepted`
 - **NOT VALID** — `verified` → `accepted` is not in VALID_TRANSITIONS
 - Would require new event type (e.g., `superseded`)
@@ -611,6 +513,52 @@ This preserves:
 - Evidence associations
 - Trust contribution
 - Audit trail
+
+---
+
+## 12. Claim Recreation and Lineage
+
+### Scenario
+
+```
+Existing verified Claim:
+  Employment at Company X
+  status: verified
+
+User deletes Resume item.
+
+Later user creates new Resume item:
+  Employment at Company X
+```
+
+### Analysis
+
+**Does the current schema support lineage?**
+NO. There is no `lineageId`, `supersededBy`, or `previousClaimId` field.
+
+**Can sourceActivityId establish lineage?**
+NO. Different Resume items have different IDs.
+
+**Is lineage intentionally deferred?**
+YES. Phase 10 creates new Claims without lineage tracking.
+
+### Phase 10 Behavior
+
+1. Old Claim remains (verified, historical integrity preserved)
+2. New Claim created (suggested status)
+3. User sees two Claims for same professional fact
+4. User manually reconciles (delete one, keep one)
+
+### Known Limitation
+
+**Claim recreation without lineage is a Phase 10 limitation.**
+
+Users may accidentally create multiple Claims for the same fact.
+
+**Mitigation**:
+- Conflict Detection surfaces duplicates
+- User prompted to review
+- Phase 11 adds lineage tracking
 
 ---
 
@@ -643,7 +591,47 @@ This preserves:
 
 ---
 
-## 14. Import Semantics
+## 14. Orphan Claim Semantics
+
+### Definition
+
+An "orphaned Claim" is a Claim that:
+- Has no Resume item referencing it (via `sourceActivityId`)
+- Remains a canonical professional assertion
+- Retains all Evidence and VerificationEvents
+- Continues contributing to Trust
+
+### Distinguish
+
+| Concept | Meaning |
+|---------|---------|
+| Claim has no Resume representation | Orphaned (presentation reference lost) |
+| Claim has no source activity | Orphaned (linkage lost) |
+| Claim is no longer asserted by user | Orphaned (user removed from Resume) |
+| Claim remains a canonical professional assertion | YES — always true for orphaned Claims |
+
+### Behavior
+
+| Aspect | Behavior |
+|--------|----------|
+| Claim remain verified? | YES — verification unchanged |
+| Trust continue counting it? | YES — Trust uses canonical Claim state |
+| Passport continue displaying it? | Depends on product decision (see §20) |
+| Evidence remain attached? | YES — Evidence belongs to Claim |
+| Verification history remain intact? | YES — append-only audit trail |
+
+### Product Decision
+
+**Orphaned Claims should be flagged for user review, not automatically deleted.**
+
+User can:
+- Re-link to a Resume item (if same fact exists)
+- Delete the Claim (if fact is no longer relevant)
+- Keep as-is (if fact is still relevant but not in current Resume)
+
+---
+
+## 15. Import Semantics
 
 ### Import Behavior
 
@@ -652,8 +640,8 @@ Imported Resume data creates Claims just like manual edits:
 1. Parse imported file → Extract structured data
 2. For each imported item:
    - Compute `professionalFactKey`
-   - Check if Claim with this key exists
-   - If YES → Link to existing Claim (idempotent)
+   - Check if Claim with this key AND same `sourceActivityId` exists
+   - If YES → Update existing Claim (idempotent)
    - If NO → Create new Claim with `verificationStatus: "suggested"`
 
 ### Import Rules
@@ -671,7 +659,7 @@ Import B: Same Employment at Company X
 ```
 
 **Behavior**:
-- Same `professionalFactKey` → same Claim
+- Same `professionalFactKey` + same `sourceActivityId` → same Claim
 - Import B updates existing Claim (idempotent)
 - No duplicate Claims created
 
@@ -689,9 +677,18 @@ This means:
 - `sourceActivityId` will be new ID (e.g., `"1"`, `"2"`)
 - Deduplication via `professionalFactKey` (content-based), not ID
 
+### Distinction: Same Imported Source Item vs. Same Professional Fact
+
+| Concept | Meaning | Deduplication |
+|---------|---------|---------------|
+| Same imported source item | Same file/document imported twice | `professionalFactKey` + `sourceActivityId` |
+| Same professional fact | Different sources, same underlying fact | Content matching (future, Phase 11+) |
+
+**Phase 10 only deduplicates same imported source item, not same professional fact.**
+
 ---
 
-## 15. Idempotency
+## 16. Idempotency
 
 ### Definition
 
@@ -707,7 +704,7 @@ Running the same synchronization input repeatedly must not:
 
 | Key | Purpose | Scope |
 |-----|---------|-------|
-| `professionalFactKey` | Deduplication by content | Per ProfessionalIdentity |
+| `professionalFactKey` | Content-based fingerprint | Per ProfessionalIdentity |
 | `sourceActivityId` | Primary Resume item linkage | Per Resume |
 | `Claim.id` | Unique Claim identity | Global |
 
@@ -721,8 +718,12 @@ async function syncResumeItem(
 ): Promise<Claim> {
   const factKey = generateProfessionalFactKey(section, item);
   
-  // Check by professionalFactKey (content-based deduplication)
-  const existing = await claimRepository.findByFactKey(professionalIdentityId, factKey);
+  // Check by professionalFactKey + sourceActivityId (combined deduplication)
+  const existing = await claimRepository.findByFactKeyAndSource(
+    professionalIdentityId,
+    factKey,
+    item.id,
+  );
   
   if (existing) {
     // UPDATE if assertionText changed
@@ -747,82 +748,125 @@ async function syncResumeItem(
 
 ---
 
-## 16. Consistency Model
+## 17. Consistency Model
 
-### Recommended: Synchronous Claim Synchronization
+### Design: Synchronous Claim Synchronization with Bounded Eventual Consistency
 
-**Rationale**:
-- Resume save is already synchronous (server write-back)
-- Claim sync is fast (single DB operation per item)
-- Trust derivation is already on-demand (when `/api/trust` is called)
-- No need for async job/queue complexity
+**Primary**: Synchronous Claim synchronization after Resume save.
 
-### Implementation
+**Fallback**: If synchronous fails, bounded eventual consistency with retry.
 
-```typescript
-// In Resume write-back or save handler:
-async function onResumeSaved(resume: Resume, identityId: string) {
-  // 1. Save Resume to server (existing)
-  await resumeService.save(resume, identityId);
-  
-  // 2. S同步 Claims (synchronous, within same transaction if possible)
-  await resumeClaimSyncService.syncFromResume(identityId, resume);
-}
-```
+### Atomicity Analysis
 
-### Failure Handling
+**Can Resume save and Claim synchronization occur in the same database transaction?**
 
-If Claim sync fails:
-- Resume save already succeeded
-- Claim sync retried on next Resume save
-- User sees "Claims syncing..." status (optional UI)
+| Option | Feasibility | Recommendation |
+|--------|-------------|----------------|
+| A. Transactional Resume + Claim update | POSSIBLE but complex | Not recommended (Phase 10) |
+| B. Resume transaction followed by synchronous Claim transaction | POSSIBLE | **Recommended** |
+| C. Synchronous service with compensating retry | POSSIBLE | Fallback |
+| D. Outbox/event model | OVER-ENGINEERED | Not recommended |
+| E. Existing architecture's safest alternative | B or C | **Recommended** |
 
----
-
-## 17. Failure Recovery
-
-### Scenario: Resume saved, Claim sync fails
-
-**Behavior**:
-1. Resume is persisted to server
-2. Claim sync fails (network error, DB error)
-3. Next Resume save retries Claim sync
-4. Idempotency ensures no duplicates
-
-### Scenario: Claim created, Resume update fails
-
-**Behavior**:
-1. Claim is persisted to server
-2. Resume update fails
-3. Claim remains (orphaned if Resume not updated)
-4. User retries Resume save
-
-### Retry Mechanism
+### Recommended: Option B (Resume + Claim as Separate Transactions)
 
 ```typescript
-// Track pending sync status
-interface SyncStatus {
-  resumeId: string;
-  lastSyncAttempt: string;
-  pendingItems: string[];
-  error?: string;
-}
-
-// On Resume save, check for pending sync
 async function onResumeSaved(resume: Resume, identityId: string) {
+  // Transaction 1: Save Resume
   await resumeService.save(resume, identityId);
   
-  // Check for pending sync items
-  const pending = await syncStatusRepository.getPending(resume.resumeId);
-  if (pending.length > 0) {
+  // Transaction 2: Synchronize Claims (synchronous, best-effort)
+  try {
     await resumeClaimSyncService.syncFromResume(identityId, resume);
+  } catch (err) {
+    // Claim sync failed — will retry on next Resume save
+    console.error("Claim sync failed:", err);
   }
 }
 ```
 
+### Failure Behavior
+
+| Scenario | Behavior | Recovery |
+|----------|----------|----------|
+| Resume save succeeds, Claim sync fails | Resume persisted, Claims not synced | Retry on next Resume save |
+| Claim sync succeeds, Resume update fails | Claim persisted, Resume unchanged | User retries Resume save |
+| Process crash after Resume save | Resume persisted, Claim sync not started | Retry on next Resume save |
+| Process crash after Claim sync start | Partial Claim sync possible | Idempotency prevents duplicates |
+
+### Retry Behavior
+
+- Claim sync retried on next Resume save
+- Idempotency ensures no duplicates
+- Bounded by Resume save frequency
+
+### Duplicate Prevention
+
+- `professionalFactKey` + `sourceActivityId` combined deduplication
+- Same Resume item synced multiple times → same Claim (idempotent)
+
+### Stale Trust Behavior
+
+- Trust is derived on-demand (when `/api/trust` is called)
+- If Resume and Claim disagree, Trust uses Claim
+- Stale Trust is bounded by Resume save frequency
+- User sees Trust based on canonical data
+
+### Stale Passport Behavior
+
+- Passport is derived on-demand
+- If Resume and Claim disagree, Passport uses Claim
+- Stale Passport is bounded by Resume save frequency
+
+### Recovery After Process Crash
+
+1. Resume already persisted (Transaction 1 complete)
+2. Claim sync not started or partially complete
+3. Next Resume save triggers Claim sync
+4. Idempotency prevents duplicates
+
+### Recovery if Claim Synchronization Fails After Resume Persistence
+
+1. Resume already persisted
+2. Claim sync failed
+3. Next Resume save retries Claim sync
+4. Idempotency prevents duplicates
+5. Trust/Passport use canonical Claim state (may be stale)
+
+### Bounded Eventual Consistency
+
+**Acceptable because**:
+- Trust is derived on-demand (not real-time)
+- Passport is derived on-demand (not real-time)
+- Conflict Detection is user-triggered (not automatic)
+- Staleness bounded by Resume save frequency
+- No user-visible inconsistency in critical paths
+
 ---
 
-## 18. Conflict Interaction
+## 18. Trust Consistency
+
+### Principle
+
+Trust consumes **canonical Claim state**, not Resume data.
+
+### Scenario
+
+Resume shows: "Senior Data Engineer at Company X"
+Claim says: "Data Engineer at Company Y"
+
+**Trust derives from Claim** (Data Engineer at Company Y).
+
+### Stale State Handling
+
+- Trust is derived on-demand (when `/api/trust` is called)
+- If Resume and Claim disagree, Trust uses Claim
+- User sees Trust based on canonical data
+- UI can optionally show "Resume/Claim mismatch" indicator
+
+---
+
+## 19. Conflict Interaction
 
 ### Boundary
 
@@ -852,28 +896,6 @@ This compares Claims and surfaces inconsistencies.
 1. **Sync is fast, Conflict Detection is expensive** — don't run on every Resume save
 2. **User controls when to detect** — conflicts are surfaced for review
 3. **Clear separation of concerns** — sync creates Claims, detection finds issues
-
----
-
-## 19. Trust Interaction
-
-### Principle
-
-Trust consumes **canonical Claim state**, not Resume data.
-
-### Scenario
-
-Resume shows: "Senior Data Engineer at Company X"
-Claim says: "Data Engineer at Company Y"
-
-**Trust derives from Claim** (Data Engineer at Company Y).
-
-### Stale State Handling
-
-- Trust is derived on-demand (when `/api/trust` is called)
-- If Resume and Claim disagree, Trust uses Claim
-- User sees Trust based on canonical data
-- UI can optionally show "Resume/Claim mismatch" indicator
 
 ---
 
@@ -932,6 +954,17 @@ A user must never be able to:
 - Link Claims to another user's Resume items
 - Access another user's Claims via professionalFactKey
 
+### Client Forgery Prevention
+
+The synchronization service must NOT trust:
+- Client Claim IDs
+- Client verificationStatus
+- Client evidence status
+- Client Trust score
+- Client Passport data
+
+All canonical ownership derived from server-side data.
+
 ---
 
 ## 22. API/Service Boundary
@@ -981,7 +1014,11 @@ export class ResumeClaimSyncService {
     item: ResumeItem
   ): Promise<void> {
     const factKey = generateProfessionalFactKey(section, item);
-    const existing = await claimRepository.findByFactKey(professionalIdentityId, factKey);
+    const existing = await claimRepository.findByFactKeyAndSource(
+      professionalIdentityId,
+      factKey,
+      item.id,
+    );
     
     if (existing) {
       // UPDATE if assertionText changed
@@ -1016,7 +1053,7 @@ export class ResumeClaimSyncService {
 ```prisma
 model Claim {
   // ... existing fields
-  professionalFactKey String?   // Deterministic key for deduplication
+  professionalFactKey String?   // Synchronization idempotency key
   professionalIdentityId String
   
   @@index([professionalIdentityId, professionalFactKey])
@@ -1025,7 +1062,7 @@ model Claim {
 
 **Why needed**:
 - `sourceActivityId` is not sufficient for deduplication (different IDs for same fact)
-- Content-based key enables idempotent sync across Resumes and imports
+- Content-based key enables idempotent sync across Resume saves
 - Existing `sourceActivityId` remains for primary Resume item linkage
 
 **Migration impact**:
@@ -1064,98 +1101,91 @@ Rationale:
 
 ---
 
-## 25. Implementation Phases
+## 25. Phase 10 Implementation Scope
 
-### Phase 10B: Schema Foundation
+### Scope: Narrowed Foundation (Option B)
 
-1. Add `professionalFactKey` column to Claim table
-2. Create migration
-3. Add `findByFactKey()` to ClaimRepository
-4. Add tests
+**Phase 10 implements ONE Resume item → ONE Claim linkage only.**
 
-### Phase 10C: Synchronization Engine
+Multi-resume many-to-one linkage is NOT implemented.
 
-1. Create `ResumeClaimSyncService`
-2. Implement `generateProfessionalFactKey()`
-3. Implement `generateClaimText()`
-4. Implement `syncFromResume()`
-5. Integrate with Resume save handler
-6. Add tests
+### What Phase 10 Delivers
 
-### Phase 10D: Materiality Detection
+1. **Schema Foundation**
+   - Add `professionalFactKey` column to Claim table
+   - Add `findByFactKeyAndSource()` to ClaimRepository
 
-1. Implement materiality matrix
-2. Implement `isMaterialEdit()` function
-3. Handle material edits (create new Claim)
-4. Handle minor edits (update existing Claim)
-5. Add tests
+2. **Synchronization Engine**
+   - Create `ResumeClaimSyncService`
+   - Implement `generateProfessionalFactKey()`
+   - Implement `generateClaimText()`
+   - Implement `syncFromResume()`
+   - Integrate with Resume save handler
 
-### Phase 10E: Orphan Handling
+3. **Materiality Detection**
+   - Implement materiality matrix
+   - Implement `isMaterialEdit()` function
+   - Handle material edits (create new Claim)
+   - Handle minor edits (update existing Claim)
 
-1. Detect orphaned Claims (no Resume item references)
-2. Mark orphaned Claims in UI (optional)
-3. User prompt to review orphaned Claims
-4. Add tests
+4. **Orphan Handling**
+   - Detect orphaned Claims (no Resume item references)
+   - Mark orphaned Claims in UI (optional)
+   - User prompt to review orphaned Claims
 
-### Phase 10F: Import Integration
+5. **Import Integration**
+   - Integrate sync with import flow
+   - Handle imported items (new IDs, content-based dedup)
 
-1. Integrate sync with import flow
-2. Handle imported items (new IDs, content-based dedup)
-3. Add tests
+### What Phase 10 Does NOT Deliver
 
-### Phase 10G: UI Visibility (Optional)
+1. **Multi-resume many-to-one linkage** (deferred to Phase 11)
+2. **Claim lineage tracking** (deferred to Phase 11)
+3. **`superseded` Claim status** (deferred to Phase 11)
+4. **Client claims migration** (deferred to Phase 11)
+5. **UI visibility enhancements** (optional, Phase 10G)
 
-1. Show "Claim created" notifications
-2. Show "Verification needs review" badges
-3. Show Resume ↔ Claim link indicators
+### Justification for Narrowed Scope
 
----
-
-## 26. Explicit Product Decisions
-
-| Decision | Options | Recommended | Needs Approval? |
-|----------|---------|-------------|-----------------|
-| Sync direction | Resume → Claims | Resume → Claims | No |
-| Claim identity | professionalFactKey | professionalFactKey | No |
-| Material edit handling | Create new Claim | Create new Claim | No |
-| Delete behavior | Mark orphaned | Mark orphaned | No |
-| Multi-resume sharing | Content-based dedup | Content-based dedup | No |
-| Import behavior | Idempotent sync | Idempotent sync | No |
-| Consistency model | Synchronous | Synchronous | No |
-| Passport display | Accepted Claims only | Accepted Claims only | **Yes** |
-| Client claims migration | Ignore initially | Ignore initially | No |
-| Schema change | Add professionalFactKey | Add professionalFactKey | No |
+1. Current schema has single `sourceActivityId`, not array
+2. Adding array linkage requires schema migration (Phase 11)
+3. Narrowing scope produces stronger canonical architecture
+4. Avoids premature complexity
+5. Conflict Detection surfaces duplicates for user review
 
 ---
 
-## 27. Deferred Work
+## 26. Deferred Capabilities
 
 | Item | Deferred To | Reason |
 |------|-------------|--------|
+| Multi-resume many-to-one linkage | Phase 11 | Requires schema migration |
+| Claim lineage tracking | Phase 11 | Requires new fields |
+| `superseded` Claim status | Phase 11 | Requires lifecycle extension |
+| Client claims migration | Phase 11 | Complex, deferred |
 | AI claim extraction | Phase 11+ | Requires Gemini integration |
 | External verification | Phase 12+ | Requires issuer network |
 | Cryptographic evidence | Phase 11+ | Requires schema changes |
-| `superseded` status | Phase 11+ | Requires lifecycle extension |
-| Claim visibility field | Phase 11+ | Requires schema migration |
 | Resume ↔ Claim link UI | Phase 10G | Optional enhancement |
-| Client claims migration | Phase 11+ | Complex, deferred |
 | Conflict auto-detection on sync | Phase 11+ | Performance consideration |
 
 ---
 
-## 28. Risks and Limitations
+## 27. Risks and Limitations
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
 | professionalFactKey collisions | Wrong deduplication | Careful key design, user override |
 | Material edit detection false positives | Unnecessary Claim creation | Conservative heuristic |
 | Orphaned Claims accumulate | Trust Score inflated | UI prompt to review |
-| Multi-resume creates confusion | Same fact in multiple Resumes | Content-based dedup |
+| Multi-resume creates duplicate Claims | Same fact in multiple Resumes | Conflict Detection surfaces duplicates |
+| Claim recreation without lineage | Multiple Claims for same fact | Conflict Detection surfaces duplicates |
 | Schema migration required | Deployment complexity | Nullable column, backward compatible |
+| Bounded eventual consistency | Stale Trust/Passport | Acceptable for derived projections |
 
 ---
 
-## 29. Final Recommended Architecture
+## 28. Final Architecture Diagram
 
 ```
                 ProfessionalIdentity
@@ -1167,7 +1197,8 @@ Rationale:
        (presentation)               │
           │                         │
           │ (synchronization)        │
-          │ via professionalFactKey  │
+          │ ONE Resume item          │
+          │ → ONE Claim              │
           ▼                         │
        Claims ◄─────────────────────┘
        (canonical)
@@ -1185,17 +1216,19 @@ Rationale:
 
 ### Key Components
 
-1. **professionalFactKey** — Deterministic content-based key for deduplication
-2. **ResumeClaimSyncService** — Synchronization engine
-3. **Materiality Matrix** — Classifies edits as material vs minor
-4. **Orphan Detection** — Identifies Claims with no Resume references
-5. **Synchronous Consistency** — Claim sync happens with Resume save
+1. **professionalFactKey** — Synchronization idempotency key (NOT canonical identity)
+2. **sourceActivityId** — Primary Resume item linkage (NOT global identity)
+3. **ResumeClaimSyncService** — Synchronization engine
+4. **Materiality Matrix** — Classifies edits as material vs minor
+5. **Orphan Detection** — Identifies Claims with no Resume references
+6. **Synchronous Consistency** — Claim sync happens with Resume save (bounded eventual)
 
 ---
 
 ## Related Documents
 
 - `docs/ADR-002-PHASE-10-RESUME-CLAIM-SYNCHRONIZATION-DESIGN.md` — Initial design
+- `docs/ADR-002-PHASE-10A-RESUME-CLAIM-SYNCHRONIZATION-DESIGN.md` — Previous corrected design
 - `docs/PHASE-10-ARCHITECTURE-AND-PRODUCT-READINESS-AUDIT.md` — Audit findings
 - `docs/adr/ADR-001-CANONICAL-SOURCE-OF-TRUTH.md` — Canonical source of truth
 - `docs/adr/ADR-002-PROFESSIONAL-IDENTITY-DOMAIN-MODEL.md` — Domain model
