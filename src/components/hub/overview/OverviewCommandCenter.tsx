@@ -21,6 +21,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { useResumeBuilder, isResumeEffectivelyEmpty } from "@/store/resume-builder";
+import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
 import AICopilotWidget from "@/components/hub/widgets/AICopilotWidget";
 import TrustWidget from "@/components/hub/widgets/TrustWidget";
 import KnowledgeGraphWidget from "@/components/hub/widgets/KnowledgeGraphWidget";
@@ -99,6 +100,7 @@ function DashboardSkeleton() {
 /* ── Main Component ── */
 
 export function OverviewCommandCenter({ name, email, data, onboardingCompleted = true, subscriptionTier = "Free" }: Props) {
+  const { hasFeature, showRestriction } = useFeatureAccess();
   const [mounted, setMounted] = useState(false);
   const [shareModalResume, setShareModalResume] = useState<{ id: string; name: string } | null>(null);
   const [showOnboarding, setShowOnboarding] = useState(!onboardingCompleted);
@@ -162,6 +164,15 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
     });
 
   const handleCreateResume = () => {
+    // Check resume limit before creating
+    if (!hasFeature("maxResumes")) {
+      showRestriction({
+        type: "resume-limit",
+        detail: `${resumeList.length} of 2 resumes created on Free plan`,
+        requiredPlan: "Professional",
+      });
+      return;
+    }
     const id = createResume();
     switchResume(id);
     window.location.href = "/resume-builder";

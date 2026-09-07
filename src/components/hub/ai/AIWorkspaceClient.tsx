@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import { clsx } from "clsx";
 import { useResumeBuilder } from "@/store/resume-builder";
+import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
 import { useOptimization } from "@/lib/ai/useOptimization";
 import { ScoreCard, ScoreCardSkeleton } from "@/components/resume-builder/optimization/ScoreCard";
 import { MatchReport } from "@/components/resume-builder/optimization/MatchReport";
@@ -279,6 +280,7 @@ function InlineJDInput({
 // ── Main AI Workspace ──────────────────────────────────────────────────────────
 
 export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) {
+  const { hasFeature, showRestriction } = useFeatureAccess();
   const [mounted, setMounted] = useState(false);
   const resumes = useResumeBuilder((s) => s.resumes);
   const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
@@ -393,6 +395,17 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
   // M4 Evidence Optimization handler
   const handleEvidenceOptimize = useCallback(async () => {
     if (!selectedResume || !effectiveJD) return;
+
+    // Check entitlement before calling API
+    if (!hasFeature("careerProfileFull")) {
+      showRestriction({
+        type: "ai-feature",
+        featureName: "Evidence-Based Optimization",
+        requiredPlan: "Professional",
+      });
+      return;
+    }
+
     setEvidenceLoading(true);
     setEvidenceError(null);
     setEvidenceResult(null);
@@ -411,7 +424,7 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
     } finally {
       setEvidenceLoading(false);
     }
-  }, [selectedResume, effectiveJD]);
+  }, [selectedResume, effectiveJD, hasFeature, showRestriction]);
 
   const handleApplyEvidenceChanges = useCallback((acceptedChanges: OptimizerChange[]) => {
     if (!selectedResume || acceptedChanges.length === 0) return;
@@ -732,15 +745,35 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
         {/* ── Career Insights Tab ── */}
         {activeTab === "insights" && (
           <div className="space-y-4">
-            <div className="flex flex-col items-center py-4 text-center">
-              <Brain className="w-10 h-10 text-slate-600 mb-3" />
-              <p className="text-sm font-medium text-slate-300 mb-1">Career Memory</p>
-              <p className="text-[11px] text-slate-500 max-w-sm">
-                Patterns and insights derived from your application outcomes. The more you track,
-                the smarter your career recommendations become.
-              </p>
-            </div>
-            <CareerInsightsPanel />
+            {hasFeature("careerInsights") ? (
+              <>
+                <div className="flex flex-col items-center py-4 text-center">
+                  <Brain className="w-10 h-10 text-slate-600 mb-3" />
+                  <p className="text-sm font-medium text-slate-300 mb-1">Career Memory</p>
+                  <p className="text-[11px] text-slate-500 max-w-sm">
+                    Patterns and insights derived from your application outcomes. The more you track,
+                    the smarter your career recommendations become.
+                  </p>
+                </div>
+                <CareerInsightsPanel />
+              </>
+            ) : (
+              <div className="flex flex-col items-center py-12 text-center">
+                <Brain className="w-10 h-10 text-slate-600 mb-3" />
+                <p className="text-sm font-medium text-slate-300 mb-1">Career Insights</p>
+                <p className="text-[11px] text-slate-500 max-w-sm mb-4">
+                  Career Insights analyze your application outcomes to surface patterns, skill gaps, and role-fit signals.
+                  This feature requires a Professional subscription.
+                </p>
+                <button
+                  onClick={() => showRestriction({ type: "career-insights", featureName: "Career Insights", requiredPlan: "Professional" })}
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white text-sm font-semibold transition-all shadow-lg shadow-cyan-500/25"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Unlock Career Insights
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>

@@ -13,6 +13,7 @@ import { authOptions } from "@/lib/auth";
 import { handleApiError } from "@/lib/api-error";
 import { identityService } from "@/services/identity.service";
 import { careerMemoryService } from "@/services/career-memory.service";
+import { entitlementService } from "@/services/entitlement.service";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -21,6 +22,15 @@ export async function GET(req: NextRequest) {
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  // Check entitlement: Career Insights requires Professional plan
+  const entitlements = await entitlementService.getUserEntitlements(session.user.id);
+  if (!entitlements.features.careerInsights) {
+    return NextResponse.json(
+      { error: "Career Insights requires a Professional subscription.", code: "ENTITLEMENT_REQUIRED" },
+      { status: 403 },
+    );
   }
 
   try {
