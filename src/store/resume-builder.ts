@@ -169,6 +169,22 @@ export interface ResumeBuilderState {
   /** Workflow: whether the user has successfully exported the current resume (session-level). */
   hasExported: boolean;
   setHasExported: (value: boolean) => void;
+
+  /** Persistent Job Application context — connects Resume Builder to persisted Job Applications. */
+  activeJobApplicationId: string | null;
+  activeJobApplication: {
+    applicationId: string;
+    title: string;
+    companyName: string;
+    jobDescription: string;
+    status: string;
+    resumeId: string | null;
+    matchScore: number | null;
+    matchData: unknown;
+  } | null;
+  setActiveJobApplication: (app: { applicationId: string; title: string; companyName: string; jobDescription: string; status: string; resumeId: string | null; matchScore: number | null; matchData: unknown } | null) => void;
+  loadActiveJobApplication: () => Promise<void>;
+  saveJobDescriptionToApplication: (jobDescription: string, title?: string, companyName?: string) => Promise<void>;
   /** Visual customization per resume, stored separately from resume content. */
   styleConfigs: Record<string, ResumeStyleConfig>;
   setStyleConfig: (resumeId: string, patch: Partial<ResumeStyleConfig>) => void;
@@ -476,6 +492,8 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
         styleConfigs: {},
         hasExported: false,
+        activeJobApplicationId: null,
+        activeJobApplication: null,
         setStyleConfig: (resumeId, patch) => set((s) => {
           const current = s.styleConfigs[resumeId] ? resolveStyleConfig(s.styleConfigs[resumeId]) : DEFAULT_STYLE_CONFIG;
           const next = resolveStyleConfig({ ...current, ...patch });
@@ -556,7 +574,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           const currentTemplate = s.resume.templateId;
           const resetR: Resume = { ...defaultResume, resumeId: currentId, resumeName: currentName, templateId: currentTemplate };
           const resumes = s.resumes.map((r) => r.resumeId === currentId ? resetR : r);
-          return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null, hasExported: false };
+          return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null, hasExported: false, activeJobApplicationId: null, activeJobApplication: null };
         }),
         setSaveStatus: (status) => set({ saveStatus: status }),
         setServerVersion: (resumeId, version) => set((s) => ({
@@ -713,6 +731,90 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         setAIAction: (key, state) => set((s) => ({ aiActions: { ...s.aiActions, [key]: { ...(s.aiActions[key] ?? { status: "idle", result: null, error: null }), ...state } } })),
         setCopilotOpen: (open) => set({ isCopilotOpen: open }), setJobMatchOpen: (open) => set({ isJobMatchOpen: open }), setPreviewTab: (tab) => set({ previewTab: tab }),
         setHasExported: (value) => set({ hasExported: value }),
+
+        setActiveJobApplication: (app) => set({
+          activeJobApplicationId: app?.applicationId ?? null,
+          activeJobApplication: app,
+        }),
+
+        loadActiveJobApplication: async () => {
+          const { activeJobApplicationId } = get();
+          if (!activeJobApplicationId) return;
+          try {
+            const res = await fetch(`/api/applications/${activeJobApplicationId}`);
+            if (res.ok) {
+              const data = await res.json();
+              set({
+                activeJobApplication: {
+                  applicationId: data.applicationId,
+                  title: data.title,
+                  companyName: data.companyName,
+                  jobDescription: data.jobDescription,
+                  status: data.status,
+                  resumeId: data.resumeId,
+                  matchScore: data.matchScore,
+                  matchData: data.matchData,
+                },
+                jobDescription: data.jobDescription || "",
+              });
+            }
+          } catch {
+            // Silently handle — session-level state remains as fallback
+          }
+        },
+
+        saveJobDescriptionToApplication: async (jobDescription, title, companyName) => {
+          const { activeJobApplicationId, activeJobApplication } = get();
+          const trimmedJD = jobDescription.trim();
+          if (!trimmedJD) return;
+
+          try {
+            if (activeJobApplicationId) {
+              // Update existing application
+              const res = await fetch(`/api/applications/${activeJobApplicationId}`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ jobDescription: trimmedJD }),
+              });
+              if (res.ok) {
+                set((s) => ({
+                  activeJobApplication: s.activeJobApplication
+                    ? { ...s.activeJobApplication, jobDescription: trimmedJD }
+                    : null,
+                }));
+              }
+            } else {
+              // Create new application
+              const res = await fetch("/api/applications", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  title: title || "Job Application",
+                  companyName: companyName || "Company",
+                  jobDescription: trimmedJD,
+                }),
+              });
+              if (res.ok) {
+                const data = await res.json();
+                set({
+                  activeJobApplicationId: data.applicationId,
+                  activeJobApplication: {
+                    applicationId: data.applicationId,
+                    title: data.title,
+                    companyName: data.companyName,
+                    jobDescription: data.jobDescription,
+                    status: data.status,
+                    resumeId: data.resumeId,
+                    matchScore: data.matchScore,
+                    matchData: data.matchData,
+                  },
+                });
+              }
+            }
+          } catch {
+            // Silently handle — session-level state remains as fallback
+          }
+        },
         applyTemplate: (templateId) => {
           // Only the template changes — every other field of the user's resume
           // (name, contact, sections, font/color customization) stays intact.

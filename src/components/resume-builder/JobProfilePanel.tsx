@@ -73,6 +73,8 @@ export function JobProfilePanel() {
     return buildJobProfile(jobDescription);
   }, [jobDescription]);
 
+  const saveJobDescriptionToApplication = useResumeBuilder((s) => s.saveJobDescriptionToApplication);
+
   const handleAnalyze = () => {
     if (!canAnalyze) return;
     setAnalyzing(true);
@@ -80,6 +82,8 @@ export function JobProfilePanel() {
     requestAnimationFrame(() => {
       setJobProfile(live);
       setAnalyzing(false);
+      // Persist the JD to a JobApplication (creates or updates)
+      saveJobDescriptionToApplication(jobDescription);
     });
   };
 

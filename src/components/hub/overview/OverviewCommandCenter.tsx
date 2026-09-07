@@ -158,13 +158,34 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   const resumeList = mounted && resumes ? resumes : [];
   const hasResumes = resumeList.some((r) => !isResumeEffectivelyEmpty(r));
 
-  // Derive workflow state from current active resume
+  // Derive workflow state from current active resume + persisted job applications
   const activeResume = resumeList.find((r) => r.resumeId === activeResumeId) || resumeList[0];
+
+  // Fetch the most recent job application to determine workflow state
+  const [recentApplication, setRecentApplication] = useState<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null } | null>(null);
+  useEffect(() => {
+    fetch("/api/applications")
+      .then((r) => r.ok ? r.json() : null)
+      .then((data) => {
+        const apps = data?.applications || [];
+        if (apps.length > 0) {
+          // Use the most recently updated application
+          const mostRecent = apps.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
+          setRecentApplication(mostRecent);
+        }
+      })
+      .catch(() => {});
+  }, []);
+
+  // For workflow derivation, we use truthiness checks — the actual types don't matter
+  // because deriveWorkflowState only checks for null/undefined
+  const hasJobFromApplication = !!recentApplication;
+  const hasMatchFromApplication = recentApplication?.matchScore != null;
   const workflowState = deriveWorkflowState(
     activeResume || null,
-    null, // jobProfile is session-level, not persisted — Overview can't access it
-    null, // qualificationMatch is session-level
-    false, // hasExported is session-level
+    hasJobFromApplication ? { title: "", seniority: [], domain: [], requirements: [], responsibilities: [], qualifications: [], skills: [], implicitCompetencies: [] } as any : null,
+    hasMatchFromApplication ? { id: "", careerProfileId: "", jobProfileId: "", items: [], summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 }, createdAt: new Date().toISOString() } as any : null,
+    false,
   );
   const nextStep = hasResumes ? getNextStepRecommendation(workflowState, activeResume?.resumeName) : null;
 
@@ -257,6 +278,35 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
           </div>
         )}
       </section>
+
+      {/* ── ACTIVE JOB APPLICATION CONTEXT ── */}
+      {hasResumes && recentApplication && (
+        <section className="rounded-2xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/5 p-4">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-amber-500/10 flex items-center justify-center">
+              <Briefcase className="w-4 h-4 text-amber-500 dark:text-amber-400" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-semibold text-gray-900 dark:text-white truncate">
+                {recentApplication.title}
+              </p>
+              <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate">
+                {recentApplication.companyName}
+                {recentApplication.matchScore != null && (
+                  <span className="ml-2 text-blue-500 dark:text-blue-400">· {recentApplication.matchScore}% match</span>
+                )}
+              </p>
+            </div>
+            <Link
+              href="/resume-builder"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500 dark:bg-amber-500/90 text-[11px] font-semibold text-white hover:brightness-110 transition-all shrink-0"
+            >
+              Continue
+              <ArrowRight className="w-3 h-3" />
+            </Link>
+          </div>
+        </section>
+      )}
 
       {/* ── B. EMPTY STATE — New user ── */}
       {!hasResumes && (

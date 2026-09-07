@@ -15,7 +15,7 @@ const EMPTY_RESUME: Resume = {
   nationality: "",
   pronouns: "",
   summary: "",
-  social: {},
+  social: { linkedin: "", github: "", website: "", twitter: "", portfolio: "", stackoverflow: "" },
   experience: [],
   education: [],
   skills: [],
@@ -27,7 +27,7 @@ const EMPTY_RESUME: Resume = {
   references: [],
   portfolio: [],
   templateId: "modern-clean",
-  careerStage: "mid",
+  careerStage: "mid" as any,
   claims: [],
 };
 
@@ -35,8 +35,8 @@ const FILLED_RESUME: Resume = {
   ...EMPTY_RESUME,
   name: "John Doe",
   summary: "Experienced engineer",
-  experience: [{ id: "1", company: "Acme", position: "Engineer", startDate: "2020", endDate: "2024", bulletPoints: ["Built things"] }],
-  skills: [{ id: "1", name: "TypeScript", level: "Advanced", category: "Technical" }],
+  experience: [{ id: "1", company: "Acme", position: "Engineer", startDate: "2020", endDate: "2024", bulletPoints: ["Built things"], location: "", employmentType: "", industry: "", current: false, duration: "", description: "", achievements: "", techUsed: "" }],
+  skills: [{ id: "1", name: "TypeScript", level: "Advanced" as const, category: "Technical", years: "3" }],
 };
 
 const TAILORED_RESUME: Resume = {
@@ -45,6 +45,7 @@ const TAILORED_RESUME: Resume = {
 };
 
 const MOCK_JOB_PROFILE: JobProfile = {
+  id: "jp-1",
   title: "Senior Engineer",
   seniority: [],
   domain: [],
@@ -53,15 +54,21 @@ const MOCK_JOB_PROFILE: JobProfile = {
   qualifications: [],
   skills: [],
   implicitCompetencies: [],
-};
+  version: 1,
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
+  sourceLength: 100,
+} as any;
 
 const MOCK_MATCH: QualificationMatch = {
   id: "match-1",
+  version: 1,
   careerProfileId: "cp-1",
   jobProfileId: "jp-1",
   items: [],
   summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 },
-  createdAt: new Date(),
+  createdAt: new Date().toISOString(),
+  updatedAt: new Date().toISOString(),
 };
 
 describe("deriveWorkflowState", () => {

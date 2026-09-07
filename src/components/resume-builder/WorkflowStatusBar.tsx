@@ -33,8 +33,18 @@ function useStepAction() {
   const jobProfile = useResumeBuilder((s) => s.jobProfile);
   const qualificationMatch = useResumeBuilder((s) => s.qualificationMatch);
   const resume = useResumeBuilder((s) => s.resume);
+  const activeJobApplication = useResumeBuilder((s) => s.activeJobApplication);
 
-  const state = deriveWorkflowState(resume, jobProfile, qualificationMatch, hasExported);
+  // Use persisted job application data if available, fallback to session-level
+  const hasJobFromApplication = !!activeJobApplication;
+  const hasMatchFromApplication = activeJobApplication?.matchScore != null;
+
+  const state = deriveWorkflowState(
+    resume,
+    jobProfile || (hasJobFromApplication ? { title: "" } as any : null),
+    qualificationMatch || (hasMatchFromApplication ? { id: "" } as any : null),
+    hasExported || hasMatchFromApplication,
+  );
   const currentStep = getCurrentStep(state);
 
   const handleStepClick = useCallback((stepId: StepId) => {
