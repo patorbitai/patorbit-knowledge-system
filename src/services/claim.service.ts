@@ -114,15 +114,24 @@ export class ClaimService {
    * Find or create a Claim using professionalFactKey for idempotent synchronization.
    * If a Claim with the same professionalFactKey exists, return it.
    * Otherwise, create a new Claim.
+   *
+   * IMPORTANT: professionalFactKey must be a non-empty string.
+   * NULL or empty keys are rejected — they cannot serve as synchronization keys.
    */
   async findOrCreateByFactKey(
     professionalIdentityId: string,
     professionalFactKey: string,
     input: CreateClaimInput,
   ): Promise<Claim> {
+    if (!professionalFactKey || !professionalFactKey.trim()) {
+      throw new ClaimValidationError(
+        "professionalFactKey is required for synchronization operations",
+      );
+    }
+
     const existing = await claimRepository.findByProfessionalFactKey(
       professionalIdentityId,
-      professionalFactKey,
+      professionalFactKey.trim(),
     );
 
     if (existing) {
@@ -131,7 +140,7 @@ export class ClaimService {
 
     return this.create(professionalIdentityId, {
       ...input,
-      professionalFactKey,
+      professionalFactKey: professionalFactKey.trim(),
     });
   }
 

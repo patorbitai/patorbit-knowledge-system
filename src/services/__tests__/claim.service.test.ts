@@ -7,6 +7,7 @@ const mockPrisma = {
   claim: {
     create: vi.fn(),
     findUnique: vi.fn(),
+    findFirst: vi.fn(),
     findMany: vi.fn(),
     update: vi.fn(),
     delete: vi.fn(),
@@ -241,6 +242,169 @@ describe("ClaimService", () => {
 
       const result = await service.count(TEST_PI_ID);
       expect(result).toBe(5);
+    });
+  });
+
+  describe("professionalFactKey", () => {
+    describe("create with professionalFactKey", () => {
+      it("creates a claim with a professionalFactKey", async () => {
+        const claim = makeClaim({ professionalFactKey: "key_abc123" });
+        mockPrisma.claim.create.mockResolvedValue(claim);
+
+        const result = await service.create(TEST_PI_ID, {
+          assertionText: "Worked at Google",
+          claimType: "Employment",
+          professionalFactKey: "key_abc123",
+        });
+
+        expect(result.professionalFactKey).toBe("key_abc123");
+        expect(mockPrisma.claim.create).toHaveBeenCalledWith({
+          data: expect.objectContaining({
+            professionalFactKey: "key_abc123",
+          }),
+        });
+      });
+
+      it("creates a claim with NULL professionalFactKey when omitted", async () => {
+        const claim = makeClaim({ professionalFactKey: null });
+        mockPrisma.claim.create.mockResolvedValue(claim);
+
+        const result = await service.create(TEST_PI_ID, {
+          assertionText: "Worked at Google",
+          claimType: "Employment",
+        });
+
+        expect(result.professionalFactKey).toBeNull();
+      });
+    });
+
+    describe("list with professionalFactKey filter", () => {
+      it("filters claims by professionalFactKey", async () => {
+        mockPrisma.claim.findMany.mockResolvedValue([]);
+
+        await service.list(TEST_PI_ID, { professionalFactKey: "key_abc123" });
+        expect(mockPrisma.claim.findMany).toHaveBeenCalledWith(
+          expect.objectContaining({
+            where: { professionalIdentityId: TEST_PI_ID, professionalFactKey: "key_abc123" },
+          }),
+        );
+      });
+    });
+
+    describe("findOrCreateByFactKey", () => {
+      it("returns existing Claim when key matches", async () => {
+        const existing = makeClaim({ professionalFactKey: "key_abc123" });
+        mockPrisma.claim.findFirst.mockResolvedValue(existing);
+
+        const result = await service.findOrCreateByFactKey(TEST_PI_ID, "key_abc123", {
+          assertionText: "Worked at Google",
+          claimType: "Employment",
+        });
+
+        expect(result.id).toBe(existing.id);
+        expect(mockPrisma.claim.create).not.toHaveBeenCalled();
+      });
+
+      it("creates new Claim when key does not match", async () => {
+        mockPrisma.claim.findFirst.mockResolvedValue(null);
+        const created = makeClaim({ id: "claim_new", professionalFactKey: "key_new" });
+        mockPrisma.claim.create.mockResolvedValue(created);
+
+        const result = await service.findOrCreateByFactKey(TEST_PI_ID, "key_new", {
+          assertionText: "Worked at Google",
+          claimType: "Employment",
+        });
+
+        expect(result.id).toBe("claim_new");
+        expect(mockPrisma.claim.create).toHaveBeenCalled();
+      });
+
+      it("rejects NULL professionalFactKey", async () => {
+        await expect(
+          service.findOrCreateByFactKey(TEST_PI_ID, null as unknown as string, {
+            assertionText: "Test",
+            claimType: "Employment",
+          }),
+        ).rejects.toThrow("professionalFactKey is required");
+      });
+
+      it("rejects empty string professionalFactKey", async () => {
+        await expect(
+          service.findOrCreateByFactKey(TEST_PI_ID, "", {
+            assertionText: "Test",
+            claimType: "Employment",
+          }),
+        ).rejects.toThrow("professionalFactKey is required");
+      });
+
+      it("rejects whitespace-only professionalFactKey", async () => {
+        await expect(
+          service.findOrCreateByFactKey(TEST_PI_ID, "   ", {
+            assertionText: "Test",
+            claimType: "Employment",
+          }),
+        ).rejects.toThrow("professionalFactKey is required");
+      });
+
+      it("scopes lookup to ProfessionalIdentity (different PI = no match)", async () => {
+        // Simulate: PI_A has a Claim with key "key_123"
+        // PI_B should NOT find it
+        mockPrisma.claim.findFirst.mockResolvedValue(null);
+        const created = makeClaim({ id: "claim_for_b", professionalIdentityId: OTHER_PI_ID });
+        mockPrisma.claim.create.mockResolvedValue(created);
+
+        const result = await service.findOrCreateByFactKey(OTHER_PI_ID, "key_123", {
+          assertionText: "Test",
+          claimType: "Employment",
+        });
+
+        // The lookup should include OTHER_PI_ID in the where clause
+        expect(mockPrisma.claim.findFirst).toHaveBeenCalledWith({
+          where: {
+            professionalIdentityId: OTHER_PI_ID,
+            professionalFactKey: "key_123",
+          },
+        });
+        expect(result.professionalIdentityId).toBe(OTHER_PI_ID);
+      });
+
+      it("trims whitespace from professionalFactKey", async () => {
+        mockPrisma.claim.findFirst.mockResolvedValue(null);
+        const created = makeClaim({ professionalFactKey: "key_trimmed" });
+        mockPrisma.claim.create.mockResolvedValue(created);
+
+        await service.findOrCreateByFactKey(TEST_PI_ID, "  key_trimmed  ", {
+          assertionText: "Test",
+          claimType: "Employment",
+        });
+
+        expect(mockPrisma.claim.findFirst).toHaveBeenCalledWith({
+          where: {
+            professionalIdentityId: TEST_PI_ID,
+            professionalFactKey: "key_trimmed",
+          },
+        });
+      });
+
+      it("does not mutate existing Claim when key matches", async () => {
+        const existing = makeClaim({
+          professionalFactKey: "key_abc123",
+          verificationStatus: "verified",
+          assertionText: "Original text",
+        });
+        mockPrisma.claim.findFirst.mockResolvedValue(existing);
+
+        const result = await service.findOrCreateByFactKey(TEST_PI_ID, "key_abc123", {
+          assertionText: "Different text",
+          claimType: "Education",
+        });
+
+        // Should return the EXISTING claim unchanged, not create or update
+        expect(result.assertionText).toBe("Original text");
+        expect(result.verificationStatus).toBe("verified");
+        expect(mockPrisma.claim.create).not.toHaveBeenCalled();
+        expect(mockPrisma.claim.update).not.toHaveBeenCalled();
+      });
     });
   });
 });
