@@ -452,13 +452,25 @@ Trust should **not** simply be "how complete is the resume?".
 
 ### 11.1 Current implementation
 
-- **Server-side Trust derivation (ADR-002 Phase 4):** `GET /api/trust`
-  returns a `ServerTrustReport` derived from canonical Claims + Evidence + VerificationEvents.
-  Pure algorithm in `src/lib/trust/derivation.ts` — deterministic, side-effect-free, no DB queries.
+- **Trust v2 (ADR-002 Phase 9B):** `GET /api/trust` returns a `ServerTrustReportV2`
+  with per-claim Trust scoring. Pure algorithm in `src/lib/trust/v2/derivation.ts`.
+  `algorithmVersion: "v2"`.
+- **Per-Claim Trust model:** Each Claim is scored independently based on:
+  - EvidenceSupport (0–70): diminishing returns + diversity multiplier + review bonus
+  - VerificationStrength (0–30): based on current Claim.verificationStatus
+  - ConflictPenalty: info=-3, warning=-10 (soft); critical=hard cap at 60
+  - StatusCaps: revoked=20, disputed=30, expired=40
+  - Most restrictive constraint wins (double-counting protection)
+- **Professional Trust aggregation:** Simple average of all ClaimTrust scores.
+  Highest-tier gate (90+): requires no revoked/disputed claims, at least one
+  verified claim, no unresolved critical conflicts.
+- **Explainability:** TrustReport includes per-claim breakdown with factors,
+  overall supporting/reducing factors, and summary counts.
 - `TrustView` and `TrustWidget` fetch from `GET /api/trust` on mount
   (client no longer calculates authoritative Trust).
-- Share flow (`/api/trust/share`) now derives Trust server-side before caching;
+- Share flow (`/api/trust/share`) derives Trust v2 server-side;
   client-supplied `trustReport` is no longer accepted.
+- Passport projection consumes Trust v2 via structural typing.
 - Legacy client-side `TrustService` / `GraphService` pipeline remains in the
   codebase but is no longer the authoritative Trust source.
 
@@ -775,3 +787,4 @@ largely what the current repository already covers; Phases 2–6 are future.
 | 1.4.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 6 — Professional Passport server-side projection. `buildPassport()` derives from canonical Claims + Evidence + Verification + Conflicts + Trust. Public share now derives server-side; client-submitted `passportData` no longer accepted. Security fix: eliminated client-supplied Passport data injection. |
 | 1.5.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 8 — Security & Canonical Integrity Fixes. Single canonical Trust input loader (`canonical-loader.ts`) eliminates cross-user unclaimed evidence leak (P1-1) and ensures Trust/Share/Passport parity (P1-2). Claim verification lifecycle transitions now require VerificationEvent service (P2-1). VerificationEvent validates evidenceRecordId ownership (P2-2). Passport share tokens rotate on re-enable (P2-3). |
 | 1.6.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 9B — Trust v2. Per-claim Trust scoring with evidence strength (4 levels), verification strength, conflict integration, status caps, and evidence diversity. Two-layer model: ClaimTrust → Professional Trust via simple average. Explainable TrustReport with per-claim breakdown, supporting/reducing factors. `algorithmVersion: "v2"`. No schema changes required. |
+| 1.7.0 | 2026-09-07 | Phase 9B verification pass: removed unapproved critical soft penalty (-20), removed unapproved rejected status cap (15), added verified-claim requirement to highest-tier gate, added `insufficientData` flag for < 3 claims. 69 comprehensive tests. All 224 relevant tests passing. |

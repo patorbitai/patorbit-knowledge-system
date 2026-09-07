@@ -133,6 +133,8 @@ export interface TrustSummaryV2 {
   activeConflicts: number;
   evidenceCoveragePercent: number;
   verificationRate: number;
+  /** True when fewer than 3 Claims exist — Trust is flagged as preliminary. */
+  insufficientData: boolean;
 }
 
 export interface ServerTrustReportV2 {

@@ -64,9 +64,12 @@ function emptyInput(): TrustDerivationInputV2 {
   return { claims: [], evidence: [], verificationEvents: [], conflicts: [] };
 }
 
-// ── Tests ──────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════
+// Tests
+// ══════════════════════════════════════════════════════════════
 
 describe("Trust v2 Derivation Algorithm", () => {
+
   // ── Empty state ────────────────────────────────────────────
 
   describe("Empty state", () => {
@@ -82,12 +85,17 @@ describe("Trust v2 Derivation Algorithm", () => {
       const report = deriveTrustV2(emptyInput());
       expect(report.algorithmVersion).toBe("v2");
     });
+
+    it("marks insufficientData when fewer than 3 claims", () => {
+      const report = deriveTrustV2(emptyInput());
+      expect(report.summary.insufficientData).toBe(true);
+    });
   });
 
   // ── Evidence ───────────────────────────────────────────────
 
   describe("Evidence", () => {
-    it("claim without evidence has score 0", () => {
+    it("claim without evidence is self-asserted with score 0", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim({ verificationStatus: "suggested" })],
         evidence: [],
@@ -111,7 +119,7 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.claimTrusts[0].evidenceLevel).toBe("attached");
     });
 
-    it("two evidence records give 55 points", () => {
+    it("two evidence records give 55 points (40 + 15)", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim()],
         evidence: [makeEvidence({ id: "ev_1" }), makeEvidence({ id: "ev_2" })],
@@ -122,7 +130,7 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.claimTrusts[0].evidenceSupport).toBe(55);
     });
 
-    it("three evidence records give 63 points", () => {
+    it("three evidence records give 63 points (55 + 8)", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim()],
         evidence: [
@@ -137,7 +145,23 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.claimTrusts[0].evidenceSupport).toBe(63);
     });
 
-    it("evidence support is capped at 70", () => {
+    it("four evidence records give 66 points (63 + 3)", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim()],
+        evidence: [
+          makeEvidence({ id: "ev_1" }),
+          makeEvidence({ id: "ev_2" }),
+          makeEvidence({ id: "ev_3" }),
+          makeEvidence({ id: "ev_4" }),
+        ],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].evidenceSupport).toBe(66);
+    });
+
+    it("evidence support is capped at 70 regardless of count", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim()],
         evidence: Array.from({ length: 20 }, (_, i) =>
@@ -150,7 +174,24 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.claimTrusts[0].evidenceSupport).toBeLessThanOrEqual(70);
     });
 
-    it("evidence diversity multiplier applies", () => {
+    it("same evidenceKind does not increase diversity", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim()],
+        evidence: [
+          makeEvidence({ id: "ev_1", evidenceKind: "document" }),
+          makeEvidence({ id: "ev_2", evidenceKind: "document" }),
+          makeEvidence({ id: "ev_3", evidenceKind: "document" }),
+        ],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // 3 records, 1 kind → diversity ×1.0, base = 63
+      expect(report.claimTrusts[0].evidenceSupport).toBe(63);
+      expect(report.claimTrusts[0].evidenceDiversity).toBe(1);
+    });
+
+    it("2 distinct evidenceKind gives ×1.1 multiplier", () => {
       const input1Kind: TrustDerivationInputV2 = {
         claims: [makeClaim()],
         evidence: [
@@ -171,12 +212,30 @@ describe("Trust v2 Derivation Algorithm", () => {
       };
       const report1 = deriveTrustV2(input1Kind);
       const report2 = deriveTrustV2(input2Kinds);
-      expect(report2.claimTrusts[0].evidenceSupport).toBeGreaterThan(
-        report1.claimTrusts[0].evidenceSupport
-      );
+      // 2 records, 1 kind: 55 × 1.0 = 55
+      // 2 records, 2 kinds: 55 × 1.1 = 60.5 → 61
+      expect(report1.claimTrusts[0].evidenceSupport).toBe(55);
+      expect(report2.claimTrusts[0].evidenceSupport).toBe(61);
     });
 
-    it("evidence cap prevents multiplier from exceeding 70", () => {
+    it("3+ distinct evidenceKind gives ×1.2 multiplier", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim()],
+        evidence: [
+          makeEvidence({ id: "ev_1", evidenceKind: "document" }),
+          makeEvidence({ id: "ev_2", evidenceKind: "link" }),
+          makeEvidence({ id: "ev_3", evidenceKind: "screenshot" }),
+        ],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // 3 records, 3 kinds: 63 × 1.2 = 75.6 → capped to 70
+      expect(report.claimTrusts[0].evidenceSupport).toBe(70);
+      expect(report.claimTrusts[0].evidenceDiversity).toBe(3);
+    });
+
+    it("diversity multiplier never pushes evidence support above 70", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim()],
         evidence: [
@@ -212,16 +271,34 @@ describe("Trust v2 Derivation Algorithm", () => {
       };
       const report1 = deriveTrustV2(withoutReview);
       const report2 = deriveTrustV2(withReview);
-      expect(report2.claimTrusts[0].evidenceSupport).toBeGreaterThan(
-        report1.claimTrusts[0].evidenceSupport
-      );
+      // Without review: 40 × 1.0 = 40
+      // With review: 40 × 1.0 + 15 = 55
+      expect(report1.claimTrusts[0].evidenceSupport).toBe(40);
+      expect(report2.claimTrusts[0].evidenceSupport).toBe(55);
+    });
+
+    it("verified claim with attached-but-not-verified evidence is correctly classified", () => {
+      // Claim is verified, but evidence itself is only "attached" (not reviewed)
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "verified" })],
+        evidence: [makeEvidence()],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // Evidence level should be "verified" because claim status is verified
+      expect(report.claimTrusts[0].evidenceLevel).toBe("verified");
+      // But evidence support is from the attached evidence (40), not from verification
+      expect(report.claimTrusts[0].evidenceSupport).toBe(40);
+      // Verification strength is separate (30)
+      expect(report.claimTrusts[0].verificationStrength).toBe(30);
     });
   });
 
   // ── Verification ───────────────────────────────────────────
 
   describe("Verification strength", () => {
-    it("verified claim has verification strength 30", () => {
+    it("verified = 30", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim({ verificationStatus: "verified" })],
         evidence: [],
@@ -232,7 +309,7 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.claimTrusts[0].verificationStrength).toBe(30);
     });
 
-    it("accepted claim has verification strength 10", () => {
+    it("accepted = 10", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim({ verificationStatus: "accepted" })],
         evidence: [],
@@ -243,7 +320,62 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.claimTrusts[0].verificationStrength).toBe(10);
     });
 
-    it("disputed claim has verification strength 0", () => {
+    it("evidence-added = 8", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "evidence-added" })],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].verificationStrength).toBe(8);
+    });
+
+    it("under-review = 5", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "under-review" })],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].verificationStrength).toBe(5);
+    });
+
+    it("suggested = 3", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "suggested" })],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].verificationStrength).toBe(3);
+    });
+
+    it("expired = 5", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "expired" })],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].verificationStrength).toBe(5);
+    });
+
+    it("rejected = 0", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "rejected" })],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].verificationStrength).toBe(0);
+    });
+
+    it("disputed = 0", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim({ verificationStatus: "disputed" })],
         evidence: [],
@@ -254,7 +386,7 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.claimTrusts[0].verificationStrength).toBe(0);
     });
 
-    it("revoked claim has verification strength 0", () => {
+    it("revoked = 0", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim({ verificationStatus: "revoked" })],
         evidence: [],
@@ -265,14 +397,74 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.claimTrusts[0].verificationStrength).toBe(0);
     });
 
-    it("expired claim has verification strength 5", () => {
+    it("historical verified event does NOT override current revoked status", () => {
       const input: TrustDerivationInputV2 = {
-        claims: [makeClaim({ verificationStatus: "expired" })],
-        evidence: [],
-        verificationEvents: [],
+        claims: [makeClaim({ verificationStatus: "revoked" })],
+        evidence: [makeEvidence()],
+        verificationEvents: [
+          makeEvent({
+            eventType: "verified",
+            previousStatus: "under-review",
+            resultingStatus: "verified",
+            outcome: null,
+          }),
+          makeEvent({
+            eventType: "revoked",
+            previousStatus: "verified",
+            resultingStatus: "revoked",
+            outcome: null,
+          }),
+        ],
         conflicts: [],
       };
       const report = deriveTrustV2(input);
+      // Current status is revoked → verification strength = 0, not 30
+      expect(report.claimTrusts[0].verificationStrength).toBe(0);
+      expect(report.claimTrusts[0].verificationStatus).toBe("revoked");
+    });
+
+    it("historical verified event does NOT override current disputed status", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "disputed" })],
+        evidence: [makeEvidence()],
+        verificationEvents: [
+          makeEvent({
+            eventType: "verified",
+            previousStatus: "under-review",
+            resultingStatus: "verified",
+          }),
+          makeEvent({
+            eventType: "disputed",
+            previousStatus: "verified",
+            resultingStatus: "disputed",
+          }),
+        ],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].verificationStrength).toBe(0);
+    });
+
+    it("historical verified event does NOT override current expired status", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "expired" })],
+        evidence: [makeEvidence()],
+        verificationEvents: [
+          makeEvent({
+            eventType: "verified",
+            previousStatus: "under-review",
+            resultingStatus: "verified",
+          }),
+          makeEvent({
+            eventType: "expired",
+            previousStatus: "verified",
+            resultingStatus: "expired",
+          }),
+        ],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // expired = 5 (not penalized like revoked/disputed)
       expect(report.claimTrusts[0].verificationStrength).toBe(5);
     });
   });
@@ -324,12 +516,29 @@ describe("Trust v2 Derivation Algorithm", () => {
       const report = deriveTrustV2(input);
       expect(report.claimTrusts[0].score).toBeLessThanOrEqual(40);
     });
+
+    it("rejected claim has NO special cap (uses default 100)", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ verificationStatus: "rejected" })],
+        evidence: [
+          makeEvidence({ id: "ev_1" }),
+          makeEvidence({ id: "ev_2" }),
+          makeEvidence({ id: "ev_3" }),
+        ],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // Rejected has no special cap — verification strength is 0, so score is low
+      // but the cap itself is 100 (default), not 15
+      expect(report.claimTrusts[0].statusCap).toBe(100);
+    });
   });
 
   // ── Conflicts ──────────────────────────────────────────────
 
   describe("Conflicts", () => {
-    it("warning conflict reduces claim trust", () => {
+    it("info conflict reduces claim trust by 3", () => {
       const withoutConflict: TrustDerivationInputV2 = {
         claims: [makeClaim({ id: "c1", verificationStatus: "accepted" })],
         evidence: [makeEvidence({ claimId: "c1" })],
@@ -340,16 +549,40 @@ describe("Trust v2 Derivation Algorithm", () => {
         claims: [makeClaim({ id: "c1", verificationStatus: "accepted" })],
         evidence: [makeEvidence({ claimId: "c1" })],
         verificationEvents: [],
-        conflicts: [makeConflict({ claimIds: ["c1"], severity: "warning", status: "new" })],
+        conflicts: [makeConflict({ claimIds: ["c1"], severity: "info", conflictType: "contradictory_title", status: "new" })],
       };
       const report1 = deriveTrustV2(withoutConflict);
       const report2 = deriveTrustV2(withConflict);
-      expect(report2.claimTrusts[0].score).toBeLessThanOrEqual(
-        report1.claimTrusts[0].score
-      );
+      // Without: ev(40) + vs(10) = 50
+      // With: 50 - 3 = 47
+      expect(report1.claimTrusts[0].score).toBe(50);
+      expect(report2.claimTrusts[0].score).toBe(47);
+      expect(report2.claimTrusts[0].conflictPenalty).toBe(3);
     });
 
-    it("critical conflict caps claim at 60", () => {
+    it("warning conflict reduces claim trust by 10", () => {
+      const withoutConflict: TrustDerivationInputV2 = {
+        claims: [makeClaim({ id: "c1", verificationStatus: "accepted" })],
+        evidence: [makeEvidence({ claimId: "c1" })],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const withConflict: TrustDerivationInputV2 = {
+        claims: [makeClaim({ id: "c1", verificationStatus: "accepted" })],
+        evidence: [makeEvidence({ claimId: "c1" })],
+        verificationEvents: [],
+        conflicts: [makeConflict({ claimIds: ["c1"], severity: "warning", conflictType: "overlapping_dates", status: "new" })],
+      };
+      const report1 = deriveTrustV2(withoutConflict);
+      const report2 = deriveTrustV2(withConflict);
+      // Without: 40 + 10 = 50
+      // With: 50 - 10 = 40
+      expect(report1.claimTrusts[0].score).toBe(50);
+      expect(report2.claimTrusts[0].score).toBe(40);
+      expect(report2.claimTrusts[0].conflictPenalty).toBe(10);
+    });
+
+    it("critical conflict applies hard cap at 60 (no soft penalty)", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim({ id: "c1", verificationStatus: "verified" })],
         evidence: [
@@ -367,6 +600,9 @@ describe("Trust v2 Derivation Algorithm", () => {
         ],
       };
       const report = deriveTrustV2(input);
+      // ev(55) + vs(30) = 85, no soft penalty for critical, cap = 60
+      expect(report.claimTrusts[0].conflictPenalty).toBe(0);
+      expect(report.claimTrusts[0].criticalConflictCap).toBe(60);
       expect(report.claimTrusts[0].score).toBeLessThanOrEqual(60);
     });
 
@@ -385,6 +621,25 @@ describe("Trust v2 Derivation Algorithm", () => {
       };
       const report = deriveTrustV2(input);
       expect(report.claimTrusts[0].conflictPenalty).toBe(0);
+      expect(report.claimTrusts[0].criticalConflictCap).toBe(100);
+    });
+
+    it("resolved conflict has no impact", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ id: "c1", verificationStatus: "accepted" })],
+        evidence: [makeEvidence({ claimId: "c1" })],
+        verificationEvents: [],
+        conflicts: [
+          makeConflict({
+            claimIds: ["c1"],
+            severity: "critical",
+            status: "resolved",
+          }),
+        ],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].conflictPenalty).toBe(0);
+      expect(report.claimTrusts[0].criticalConflictCap).toBe(100);
     });
 
     it("conflict affects only the involved claims", () => {
@@ -405,15 +660,113 @@ describe("Trust v2 Derivation Algorithm", () => {
       const report = deriveTrustV2(input);
       const c1 = report.claimTrusts.find((ct) => ct.claimId === "c1")!;
       const c2 = report.claimTrusts.find((ct) => ct.claimId === "c2")!;
-      expect(c1.conflictPenalty).toBeGreaterThan(0);
+      expect(c1.conflictPenalty).toBe(10);
       expect(c2.conflictPenalty).toBe(0);
+      expect(c2.score).toBeGreaterThan(c1.score);
+    });
+
+    // ── All 8 conflict types ───────────────────────────────
+
+    describe("All 8 conflict types", () => {
+      it("overlapping_dates (warning) applies -10 penalty", () => {
+        const input: TrustDerivationInputV2 = {
+          claims: [makeClaim({ id: "c1" })],
+          evidence: [makeEvidence({ claimId: "c1" })],
+          verificationEvents: [],
+          conflicts: [makeConflict({ claimIds: ["c1"], conflictType: "overlapping_dates", severity: "warning", status: "new" })],
+        };
+        const report = deriveTrustV2(input);
+        expect(report.claimTrusts[0].conflictPenalty).toBe(10);
+      });
+
+      it("contradictory_employer (warning) applies -10 penalty", () => {
+        const input: TrustDerivationInputV2 = {
+          claims: [makeClaim({ id: "c1" })],
+          evidence: [makeEvidence({ claimId: "c1" })],
+          verificationEvents: [],
+          conflicts: [makeConflict({ claimIds: ["c1"], conflictType: "contradictory_employer", severity: "warning", status: "new" })],
+        };
+        const report = deriveTrustV2(input);
+        expect(report.claimTrusts[0].conflictPenalty).toBe(10);
+      });
+
+      it("contradictory_title (info) applies -3 penalty", () => {
+        const input: TrustDerivationInputV2 = {
+          claims: [makeClaim({ id: "c1" })],
+          evidence: [makeEvidence({ claimId: "c1" })],
+          verificationEvents: [],
+          conflicts: [makeConflict({ claimIds: ["c1"], conflictType: "contradictory_title", severity: "info", status: "new" })],
+        };
+        const report = deriveTrustV2(input);
+        expect(report.claimTrusts[0].conflictPenalty).toBe(3);
+      });
+
+      it("contradictory_dates (warning) applies -10 penalty", () => {
+        const input: TrustDerivationInputV2 = {
+          claims: [makeClaim({ id: "c1" })],
+          evidence: [makeEvidence({ claimId: "c1" })],
+          verificationEvents: [],
+          conflicts: [makeConflict({ claimIds: ["c1"], conflictType: "contradictory_dates", severity: "warning", status: "new" })],
+        };
+        const report = deriveTrustV2(input);
+        expect(report.claimTrusts[0].conflictPenalty).toBe(10);
+      });
+
+      it("duplicate_credential (warning) applies -10 penalty", () => {
+        const input: TrustDerivationInputV2 = {
+          claims: [makeClaim({ id: "c1" })],
+          evidence: [makeEvidence({ claimId: "c1" })],
+          verificationEvents: [],
+          conflicts: [makeConflict({ claimIds: ["c1"], conflictType: "duplicate_credential", severity: "warning", status: "new" })],
+        };
+        const report = deriveTrustV2(input);
+        expect(report.claimTrusts[0].conflictPenalty).toBe(10);
+      });
+
+      it("education_inconsistency (info) applies -3 penalty", () => {
+        const input: TrustDerivationInputV2 = {
+          claims: [makeClaim({ id: "c1" })],
+          evidence: [makeEvidence({ claimId: "c1" })],
+          verificationEvents: [],
+          conflicts: [makeConflict({ claimIds: ["c1"], conflictType: "education_inconsistency", severity: "info", status: "new" })],
+        };
+        const report = deriveTrustV2(input);
+        expect(report.claimTrusts[0].conflictPenalty).toBe(3);
+      });
+
+      it("status_mismatch (critical) applies hard cap at 60", () => {
+        const input: TrustDerivationInputV2 = {
+          claims: [makeClaim({ id: "c1", verificationStatus: "verified" })],
+          evidence: [
+            makeEvidence({ id: "ev_1", claimId: "c1" }),
+            makeEvidence({ id: "ev_2", claimId: "c1" }),
+          ],
+          verificationEvents: [],
+          conflicts: [makeConflict({ claimIds: ["c1"], conflictType: "status_mismatch", severity: "critical", status: "new" })],
+        };
+        const report = deriveTrustV2(input);
+        expect(report.claimTrusts[0].conflictPenalty).toBe(0);
+        expect(report.claimTrusts[0].criticalConflictCap).toBe(60);
+        expect(report.claimTrusts[0].score).toBeLessThanOrEqual(60);
+      });
+
+      it("location_inconsistency (info) applies -3 penalty", () => {
+        const input: TrustDerivationInputV2 = {
+          claims: [makeClaim({ id: "c1" })],
+          evidence: [makeEvidence({ claimId: "c1" })],
+          verificationEvents: [],
+          conflicts: [makeConflict({ claimIds: ["c1"], conflictType: "location_inconsistency", severity: "info", status: "new" })],
+        };
+        const report = deriveTrustV2(input);
+        expect(report.claimTrusts[0].conflictPenalty).toBe(3);
+      });
     });
   });
 
   // ── Double-counting ────────────────────────────────────────
 
   describe("Double-counting protection", () => {
-    it("most restrictive cap wins for disputed + critical conflict", () => {
+    it("most restrictive cap wins: disputed (30) < critical conflict cap (60)", () => {
       const input: TrustDerivationInputV2 = {
         claims: [makeClaim({ id: "c1", verificationStatus: "disputed" })],
         evidence: [
@@ -434,12 +787,68 @@ describe("Trust v2 Derivation Algorithm", () => {
       // disputed cap = 30, critical conflict cap = 60 → min = 30
       expect(report.claimTrusts[0].score).toBeLessThanOrEqual(30);
     });
+
+    it("most restrictive cap wins: revoked (20) < expired (40)", () => {
+      // A claim can't be both revoked and expired, but we test the cap logic
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ id: "c1", verificationStatus: "revoked" })],
+        evidence: [
+          makeEvidence({ id: "ev_1", claimId: "c1" }),
+          makeEvidence({ id: "ev_2", claimId: "c1" }),
+        ],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.claimTrusts[0].score).toBeLessThanOrEqual(20);
+    });
+
+    it("expired (40) < critical conflict cap (60) → effective max is 40", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ id: "c1", verificationStatus: "expired" })],
+        evidence: [
+          makeEvidence({ id: "ev_1", claimId: "c1" }),
+          makeEvidence({ id: "ev_2", claimId: "c1" }),
+          makeEvidence({ id: "ev_3", claimId: "c1" }),
+        ],
+        verificationEvents: [],
+        conflicts: [
+          makeConflict({
+            claimIds: ["c1"],
+            severity: "critical",
+            conflictType: "status_mismatch",
+            status: "new",
+          }),
+        ],
+      };
+      const report = deriveTrustV2(input);
+      // expired cap = 40, critical conflict cap = 60 → min = 40
+      expect(report.claimTrusts[0].score).toBeLessThanOrEqual(40);
+    });
   });
 
   // ── Aggregation ────────────────────────────────────────────
 
   describe("Aggregation", () => {
-    it("average of multiple claims", () => {
+    it("returns 0 for no claims", () => {
+      const report = deriveTrustV2(emptyInput());
+      expect(report.score).toBe(0);
+      expect(report.summary.insufficientData).toBe(true);
+    });
+
+    it("1 claim: returns that claim's score, marked insufficientData", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ id: "c1", verificationStatus: "verified" })],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.score).toBe(report.claimTrusts[0].score);
+      expect(report.summary.insufficientData).toBe(true);
+    });
+
+    it("2 claims: average, marked insufficientData", () => {
       const input: TrustDerivationInputV2 = {
         claims: [
           makeClaim({ id: "c1", verificationStatus: "verified" }),
@@ -455,25 +864,39 @@ describe("Trust v2 Derivation Algorithm", () => {
         (report.claimTrusts[0].score + report.claimTrusts[1].score) / 2
       );
       expect(report.score).toBe(avg);
+      expect(report.summary.insufficientData).toBe(true);
     });
 
-    it("returns 0 for no claims", () => {
-      const report = deriveTrustV2(emptyInput());
-      expect(report.score).toBe(0);
-    });
-
-    it("highest tier gate caps when revoked claim exists", () => {
+    it("3+ claims: average, NOT insufficientData", () => {
       const input: TrustDerivationInputV2 = {
         claims: [
           makeClaim({ id: "c1", verificationStatus: "verified" }),
-          makeClaim({ id: "c2", verificationStatus: "revoked" }),
+          makeClaim({ id: "c2", verificationStatus: "accepted" }),
+          makeClaim({ id: "c3", verificationStatus: "suggested" }),
         ],
         evidence: [],
         verificationEvents: [],
         conflicts: [],
       };
       const report = deriveTrustV2(input);
-      expect(report.score).toBeLessThanOrEqual(89);
+      expect(report.claimTrusts).toHaveLength(3);
+      expect(report.summary.insufficientData).toBe(false);
+    });
+
+    it("equal-weight average: weak claim reduces strong claim average", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [
+          makeClaim({ id: "c1", verificationStatus: "verified" }),
+          makeClaim({ id: "c2", verificationStatus: "suggested" }),
+        ],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // verified = 30, suggested = 3 → average = 16.5 → 17
+      const expected = Math.round((30 + 3) / 2);
+      expect(report.score).toBe(expected);
     });
   });
 
@@ -491,7 +914,39 @@ describe("Trust v2 Derivation Algorithm", () => {
         conflicts: [],
       };
       const report = deriveTrustV2(input);
+      expect(report.score).toBeLessThanOrEqual(89);
       expect(report.level).not.toBe("Highly Supported");
+    });
+
+    it("cannot reach Highly Supported with disputed claims", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [
+          makeClaim({ id: "c1", verificationStatus: "verified" }),
+          makeClaim({ id: "c2", verificationStatus: "disputed" }),
+        ],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      expect(report.score).toBeLessThanOrEqual(89);
+    });
+
+    it("cannot reach Highly Supported without any verified claim", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [
+          makeClaim({ id: "c1", verificationStatus: "accepted" }),
+          makeClaim({ id: "c2", verificationStatus: "accepted" }),
+          makeClaim({ id: "c3", verificationStatus: "accepted" }),
+        ],
+        evidence: [],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // All accepted = 10 each, average = 10
+      // No verified claim → capped at 89
+      expect(report.score).toBeLessThanOrEqual(89);
     });
 
     it("cannot reach Highly Supported with critical conflicts", () => {
@@ -513,6 +968,21 @@ describe("Trust v2 Derivation Algorithm", () => {
       };
       const report = deriveTrustV2(input);
       expect(report.score).toBeLessThanOrEqual(89);
+    });
+
+    it("boundary: score 39 → Developing, 40 → Supported", () => {
+      expect(scoreToTrustLevelV2(39)).toBe("Developing");
+      expect(scoreToTrustLevelV2(40)).toBe("Supported");
+    });
+
+    it("boundary: score 69 → Supported, 70 → Strong", () => {
+      expect(scoreToTrustLevelV2(69)).toBe("Supported");
+      expect(scoreToTrustLevelV2(70)).toBe("Strong");
+    });
+
+    it("boundary: score 89 → Strong, 90 → Highly Supported", () => {
+      expect(scoreToTrustLevelV2(89)).toBe("Strong");
+      expect(scoreToTrustLevelV2(90)).toBe("Highly Supported");
     });
   });
 
@@ -606,6 +1076,7 @@ describe("Trust v2 Derivation Algorithm", () => {
       expect(report.summary.totalEvidence).toBe(2);
       expect(report.summary.totalVerificationEvents).toBe(1);
       expect(report.summary.activeConflicts).toBe(1);
+      expect(report.summary.insufficientData).toBe(false);
     });
   });
 
@@ -632,6 +1103,40 @@ describe("Trust v2 Derivation Algorithm", () => {
       };
       const report = deriveTrustV2(input);
       expect(report.reducingFactors.length).toBeGreaterThan(0);
+    });
+  });
+
+  // ── Security / Canonical ───────────────────────────────────
+
+  describe("Security", () => {
+    it("cross-user evidence does not affect Trust", () => {
+      // User A's evidence should not appear in User B's Trust
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ id: "c1", professionalIdentityId: "pi_a" })],
+        evidence: [
+          makeEvidence({ id: "ev1", claimId: "c1" }),
+        ],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // Only the evidence linked to c1 should be counted
+      expect(report.claimTrusts[0].evidenceCount).toBe(1);
+    });
+
+    it("unclaimed evidence (claimId=null) does not appear in claim trust", () => {
+      const input: TrustDerivationInputV2 = {
+        claims: [makeClaim({ id: "c1" })],
+        evidence: [
+          makeEvidence({ id: "ev1", claimId: "c1" }),
+          makeEvidence({ id: "ev2", claimId: null }), // unclaimed
+        ],
+        verificationEvents: [],
+        conflicts: [],
+      };
+      const report = deriveTrustV2(input);
+      // Only ev1 is linked to c1
+      expect(report.claimTrusts[0].evidenceCount).toBe(1);
     });
   });
 });

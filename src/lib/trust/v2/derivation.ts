@@ -74,19 +74,18 @@ const VS_DISPUTED = 0;
 const VS_REVOKED = 0;
 const VS_DEFAULT = 3;
 
-// Conflict penalties (RECOMMENDED)
+// Conflict penalties (RECOMMENDED per Phase 9A)
+// Critical conflicts use ONLY the hard cap — no soft penalty.
 const CONFLICT_PENALTY_INFO = 3;
 const CONFLICT_PENALTY_WARNING = 10;
-const CONFLICT_PENALTY_CRITICAL_SOFT = 20;
 
-// Critical conflict cap (RECOMMENDED)
+// Critical conflict cap (RECOMMENDED per Phase 9A)
 const CRITICAL_CONFLICT_CAP = 60;
 
-// Status caps (RECOMMENDED)
+// Status caps (RECOMMENDED per Phase 9A)
 const STATUS_CAP_REVOKED = 20;
 const STATUS_CAP_DISPUTED = 30;
 const STATUS_CAP_EXPIRED = 40;
-const STATUS_CAP_REJECTED = 15;
 const STATUS_CAP_DEFAULT = 100;
 
 // Highest tier gate cap (RECOMMENDED)
@@ -156,6 +155,7 @@ export function deriveTrustV2(input: TrustDerivationInputV2): ServerTrustReportV
       claims.length > 0 ? Math.round((claimsWithEvidence / claims.length) * 100) : 0,
     verificationRate:
       claims.length > 0 ? Math.round((verifiedClaims / claims.length) * 100) : 0,
+    insufficientData: claims.length < MIN_CLAIMS_FOR_MEANINGFUL_TRUST,
   };
 
   // Build explanation
@@ -377,7 +377,8 @@ function computeConflictPenalty(
   for (const conflict of conflicts) {
     let penalty: number;
     switch (conflict.severity) {
-      case "critical": penalty = CONFLICT_PENALTY_CRITICAL_SOFT; break;
+      // Critical conflicts use ONLY the hard cap (60), no soft penalty.
+      case "critical": penalty = 0; break;
       case "warning":  penalty = CONFLICT_PENALTY_WARNING; break;
       case "info":     penalty = CONFLICT_PENALTY_INFO; break;
       default:         penalty = 0;
@@ -407,7 +408,7 @@ function getStatusCap(status: string): number {
     case "revoked":  return STATUS_CAP_REVOKED;
     case "disputed": return STATUS_CAP_DISPUTED;
     case "expired":  return STATUS_CAP_EXPIRED;
-    case "rejected": return STATUS_CAP_REJECTED;
+    // rejected has no special cap — uses verification strength (0) and default cap (100)
     default:         return STATUS_CAP_DEFAULT;
   }
 }
@@ -458,14 +459,22 @@ function aggregateTrust(
   const sum = claimTrusts.reduce((s, ct) => s + ct.score, 0);
   const average = sum / claimTrusts.length;
 
-  // Highest-tier gate: no disputed/revoked claims or critical conflicts allowed
+  // Highest-tier gate (Phase 9A §17): ALL conditions must pass
   const hasRevoked = claimTrusts.some((ct) => ct.verificationStatus === "revoked");
   const hasDisputed = claimTrusts.some((ct) => ct.verificationStatus === "disputed");
+  const hasVerified = claimTrusts.some((ct) => ct.verificationStatus === "verified");
   const hasCriticalConflict = activeConflicts.some(
     (c) => c.severity === "critical" && c.status !== "dismissed" && c.status !== "resolved"
   );
 
-  if (hasRevoked || hasDisputed || hasCriticalConflict) {
+  // To reach "Highly Supported" (90+), ALL conditions must pass:
+  // 1. No revoked claims
+  // 2. No disputed claims
+  // 3. At least one verified claim
+  // 4. No unresolved critical conflicts
+  const meetsHighestTier = !hasRevoked && !hasDisputed && hasVerified && !hasCriticalConflict;
+
+  if (!meetsHighestTier) {
     return clamp(Math.round(average), HIGHEST_TIER_GATE_CAP);
   }
 

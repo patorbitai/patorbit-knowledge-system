@@ -43,6 +43,7 @@ const v2Report: ServerTrustReportV2 = {
     activeConflicts: 0,
     evidenceCoveragePercent: 100,
     verificationRate: 0,
+    insufficientData: true,
   },
   supportingFactors: [],
   reducingFactors: [],

@@ -64,6 +64,7 @@ describe("Trust Score Breakdown (T-07)", () => {
         activeConflicts: 0,
         evidenceCoveragePercent: 0,
         verificationRate: 100,
+        insufficientData: true,
       },
       supportingFactors: [
         { type: "supporting", label: "Verified claims", description: "1 claim(s) have been independently verified." },
@@ -102,6 +103,7 @@ describe("Trust Score Breakdown (T-07)", () => {
         activeConflicts: 0,
         evidenceCoveragePercent: 0,
         verificationRate: 0,
+        insufficientData: true,
       },
       supportingFactors: [],
       reducingFactors: [],
