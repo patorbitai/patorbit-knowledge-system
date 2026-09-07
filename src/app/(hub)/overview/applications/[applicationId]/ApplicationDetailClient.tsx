@@ -27,10 +27,20 @@ import {
   Save,
   X,
   Briefcase,
+  AlertCircle,
+  Zap,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
+import {
+  getFollowUpState,
+  getFollowUpLabel,
+  getNextAction,
+  getNextActionLabel,
+  getNextActionColor,
+  toLocalDateString,
+} from "@/lib/job-workflow";
 
 type JobApplication = {
   applicationId: string;
@@ -350,6 +360,16 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
   const statusStyle = STATUS_STYLES[app.status] || STATUS_STYLES.saved;
   const statusLabel = STATUS_OPTIONS.find((s) => s.value === app.status)?.label || "Saved";
 
+  // Get today's date for workflow calculations
+  const today = toLocalDateString(new Date());
+
+  // Derive next action and follow-up state
+  const nextAction = getNextAction(app, today);
+  const nextActionLabel = getNextActionLabel(nextAction);
+  const nextActionColor = getNextActionColor(nextAction);
+  const followUpState = getFollowUpState(app, today);
+  const followUpLabel = getFollowUpLabel(followUpState, app.followUpDate);
+
   // Parse matchData if available
   const matchData = app.matchData as {
     matched?: string[];
@@ -489,6 +509,39 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                     <span className="text-sm text-gray-600 dark:text-slate-400">{EMPLOYMENT_TYPE_LABELS[app.employmentType] || app.employmentType}</span>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* Next Action */}
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="h-4 w-4 text-amber-500" />
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">Next Action</h3>
+            </div>
+            <div className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg ${nextActionColor}`}>
+              <span className="text-sm font-medium">{nextActionLabel}</span>
+            </div>
+          </div>
+
+          {/* Follow-up status */}
+          {followUpLabel && (
+            <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">Follow-up</h3>
+              </div>
+              <div className="flex items-center gap-2">
+                {followUpState === "overdue" && (
+                  <AlertCircle className="h-4 w-4 text-red-500" />
+                )}
+                <span className={`text-sm font-medium ${
+                  followUpState === "overdue" ? "text-red-600 dark:text-red-400" :
+                  followUpState === "today" ? "text-amber-600 dark:text-amber-400" :
+                  "text-gray-700 dark:text-slate-300"
+                }`}>
+                  {followUpLabel}
+                </span>
               </div>
             </div>
           )}

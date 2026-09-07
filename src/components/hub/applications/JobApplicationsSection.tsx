@@ -16,9 +16,25 @@ import {
   ArrowUpDown,
   MapPin,
   Calendar,
+  AlertCircle,
+  CheckCircle2,
+  Send,
+  MessageSquare,
+  Award,
 } from "lucide-react";
 import { AddJobApplicationModal } from "./AddJobApplicationModal";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
+import {
+  getFollowUpState,
+  getFollowUpLabel,
+  getNextAction,
+  getNextActionLabel,
+  getNextActionColor,
+  isNeedsAttention,
+  calculateSummaryMetrics,
+  toLocalDateString,
+  type JobApplicationLike,
+} from "@/lib/job-workflow";
 
 type JobApplication = {
   applicationId: string;
@@ -76,6 +92,7 @@ const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
 /** Status filter options. */
 const STATUS_FILTERS = [
   { value: "all", label: "All" },
+  { value: "needs_attention", label: "Needs Attention" },
   { value: "saved", label: "Saved" },
   { value: "ready_to_apply", label: "Ready" },
   { value: "applied", label: "Applied" },
@@ -140,6 +157,14 @@ export function JobApplicationsSection() {
     fetchApplications();
   };
 
+  // Get today's date for calculations
+  const today = toLocalDateString(new Date());
+
+  // Calculate summary metrics
+  const summaryMetrics = useMemo(() => {
+    return calculateSummaryMetrics(applications, today);
+  }, [applications, today]);
+
   // Filter and sort applications
   const filteredApplications = useMemo(() => {
     let result = [...applications];
@@ -156,7 +181,10 @@ export function JobApplicationsSection() {
     }
 
     // Status filter
-    if (statusFilter !== "all") {
+    if (statusFilter === "needs_attention") {
+      // Needs Attention filter: overdue/today follow-ups + interviews
+      result = result.filter((app) => isNeedsAttention(app, today));
+    } else if (statusFilter !== "all") {
       result = result.filter((app) => app.status === statusFilter);
     }
 
@@ -180,7 +208,7 @@ export function JobApplicationsSection() {
     }
 
     return result;
-  }, [applications, searchQuery, statusFilter, sortBy]);
+  }, [applications, searchQuery, statusFilter, sortBy, today]);
 
   return (
     <section className="space-y-4">
@@ -206,6 +234,47 @@ export function JobApplicationsSection() {
           Add Job
         </button>
       </div>
+
+      {/* Summary metrics */}
+      {!loading && applications.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+          <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2">
+              <Briefcase className="h-4 w-4 text-gray-400" />
+              <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Total</span>
+            </div>
+            <p className="mt-1 text-lg font-bold text-gray-900 dark:text-white">{summaryMetrics.total}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2">
+              <Send className="h-4 w-4 text-amber-500" />
+              <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Applied</span>
+            </div>
+            <p className="mt-1 text-lg font-bold text-amber-600 dark:text-amber-400">{summaryMetrics.applied}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4 text-purple-500" />
+              <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Interviews</span>
+            </div>
+            <p className="mt-1 text-lg font-bold text-purple-600 dark:text-purple-400">{summaryMetrics.interviews}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2">
+              <Award className="h-4 w-4 text-green-500" />
+              <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Offers</span>
+            </div>
+            <p className="mt-1 text-lg font-bold text-green-600 dark:text-green-400">{summaryMetrics.offers}</p>
+          </div>
+          <div className="rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-3">
+            <div className="flex items-center gap-2">
+              <AlertCircle className="h-4 w-4 text-red-500" />
+              <span className="text-xs font-medium text-gray-500 dark:text-slate-400">Follow-ups Due</span>
+            </div>
+            <p className="mt-1 text-lg font-bold text-red-600 dark:text-red-400">{summaryMetrics.followUpsDue}</p>
+          </div>
+        </div>
+      )}
 
       {/* Search, Filter, Sort controls */}
       {!loading && applications.length > 0 && (
@@ -397,12 +466,28 @@ export function JobApplicationsSection() {
                       )}
 
                       {/* Follow-up indicator */}
-                      {app.followUpDate && (
-                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-[10px] font-medium text-amber-600 dark:text-amber-400">
-                          <Calendar className="h-2.5 w-2.5" />
-                          Follow-up {new Date(app.followUpDate).toLocaleDateString()}
-                        </span>
-                      )}
+                      {(() => {
+                        const followUpState = getFollowUpState(app, today);
+                        const followUpLabel = getFollowUpLabel(followUpState, app.followUpDate);
+                        if (!followUpLabel) return null;
+                        
+                        const followUpStyles: Record<string, string> = {
+                          overdue: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
+                          today: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
+                          upcoming: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400",
+                        };
+                        
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${followUpStyles[followUpState] || followUpStyles.upcoming}`}>
+                            {followUpState === "overdue" ? (
+                              <AlertCircle className="h-2.5 w-2.5" />
+                            ) : (
+                              <Calendar className="h-2.5 w-2.5" />
+                            )}
+                            {followUpLabel}
+                          </span>
+                        );
+                      })()}
 
                       {/* Time */}
                       {timeAgo && (
