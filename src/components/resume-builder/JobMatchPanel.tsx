@@ -119,6 +119,16 @@ export function JobMatchPanel() {
     // Deterministic, synchronous pipeline: M1 → M2 → M3. No AI call.
     try {
       rebuildViaStore();
+      // Persist the match result to the active JobApplication.
+      // This survives page reload and navigation.
+      const state = useResumeBuilder.getState();
+      const match = state.qualificationMatch;
+      if (match && state.activeJobApplicationId) {
+        const score = match.summary.total > 0
+          ? Math.round(((match.summary.proven + match.summary.related) / match.summary.total) * 100)
+          : 0;
+        state.saveQualificationMatchToApplication(match, score);
+      }
     } catch (err) {
       console.error(err);
     } finally {

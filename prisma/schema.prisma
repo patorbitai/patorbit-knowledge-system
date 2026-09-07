@@ -143,6 +143,9 @@ model JobApplication {
   resumeId               String?  // Optional reference to a resume
   matchScore             Int?     // 0-100 match score if analyzed
   matchData              Json?    // Match analysis details (matched/partial/missing skills)
+  qualificationMatch     Json?    // Full structured QualificationMatch (M3)
+  matchedResumeId        String?  // Resume ID that was current when match was computed
+  matchedAt              DateTime? // When the match was last computed
   jobUrl                 String?  // URL to the job posting
   location               String?  // Job location (e.g. "San Francisco, CA" or "Remote")
   employmentType         String?  // full_time | part_time | contract | internship

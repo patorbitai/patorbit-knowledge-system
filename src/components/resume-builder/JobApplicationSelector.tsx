@@ -22,6 +22,9 @@ type JobApplication = {
   resumeId: string | null;
   matchScore: number | null;
   matchData: unknown;
+  qualificationMatch: unknown;
+  matchedResumeId: string | null;
+  matchedAt: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -96,6 +99,9 @@ export function JobApplicationSelector() {
       resumeId: app.resumeId,
       matchScore: app.matchScore,
       matchData: app.matchData,
+      qualificationMatch: app.qualificationMatch,
+      matchedResumeId: app.matchedResumeId,
+      matchedAt: app.matchedAt,
     });
     // setActiveJobApplication already clears stale jobProfile/qualificationMatch.
     // Set the new job description; the workflow state will recalculate from the

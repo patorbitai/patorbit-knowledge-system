@@ -33,27 +33,36 @@ function useStepAction() {
   const jobProfile = useResumeBuilder((s) => s.jobProfile);
   const qualificationMatch = useResumeBuilder((s) => s.qualificationMatch);
   const resume = useResumeBuilder((s) => s.resume);
+  const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
   const activeJobApplication = useResumeBuilder((s) => s.activeJobApplication);
 
   // Use persisted job application data as fallback when session-level state is cleared
   // (e.g., after page reload or job switch).
-  // The JD step is complete if EITHER jobProfile exists OR a job application has a JD.
   const hasJobFromApplication = !!activeJobApplication?.jobDescription;
   const hasMatchFromApplication = activeJobApplication?.matchScore != null;
+
+  // Match-version staleness detection: if the match was computed for a different
+  // resume than the currently active one, the match may no longer be accurate.
+  const matchVersionStale = !!(
+    activeJobApplication?.matchedResumeId &&
+    activeJobApplication.matchedResumeId !== activeResumeId
+  );
 
   // The workflow state reflects the CURRENT active resume + job combination.
   // For the 'job' step: use jobProfile if available, otherwise check if the
   // active application has a job description (persisted JD = job was analyzed).
   // For the 'match' step: use qualificationMatch if available, otherwise check
   // if the active application has a persisted match score.
+  // If the match is stale (computed for a different resume), treat it as incomplete.
   const jobStepData = jobProfile || (hasJobFromApplication ? { title: activeJobApplication?.title || "" } as any : null);
-  const matchStepData = qualificationMatch || (hasMatchFromApplication ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null);
+  const effectiveMatch = matchVersionStale ? null : qualificationMatch;
+  const matchStepData = effectiveMatch || (hasMatchFromApplication && !matchVersionStale ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null);
 
   const state = deriveWorkflowState(
     resume,
     jobStepData,
     matchStepData,
-    hasExported || hasMatchFromApplication,
+    hasExported || (hasMatchFromApplication && !matchVersionStale),
   );
   const currentStep = getCurrentStep(state);
 

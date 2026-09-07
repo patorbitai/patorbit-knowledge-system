@@ -13,6 +13,9 @@ export interface JobApplicationData {
   resumeId: string | null;
   matchScore: number | null;
   matchData: unknown;
+  qualificationMatch: unknown;
+  matchedResumeId: string | null;
+  matchedAt: string | null;
   jobUrl: string | null;
   location: string | null;
   employmentType: string | null;
@@ -46,6 +49,8 @@ export interface UpdateJobApplicationInput {
   resumeId?: string | null;
   matchScore?: number | null;
   matchData?: Record<string, unknown>;
+  qualificationMatch?: Record<string, unknown> | null;
+  matchedResumeId?: string | null;
   jobUrl?: string | null;
   location?: string | null;
   employmentType?: string | null;
@@ -102,6 +107,9 @@ export class JobApplicationService {
       resumeId: record.resumeId,
       matchScore: record.matchScore,
       matchData: record.matchData,
+      qualificationMatch: (record as any).qualificationMatch ?? null,
+      matchedResumeId: (record as any).matchedResumeId ?? null,
+      matchedAt: (record as any).matchedAt?.toISOString() ?? null,
       jobUrl: record.jobUrl,
       location: record.location,
       employmentType: record.employmentType,
@@ -350,6 +358,32 @@ export class JobApplicationService {
           professionalIdentityId,
           current.matchScore ?? 0,
           input.matchData as Record<string, unknown>,
+        );
+      }
+    }
+
+    // Update full structured QualificationMatch (M3) + match-version metadata
+    if (input.qualificationMatch !== undefined && input.qualificationMatch !== null) {
+      record = await jobApplicationRepository.updateQualificationMatch(
+        applicationId,
+        professionalIdentityId,
+        input.qualificationMatch as Record<string, unknown>,
+        input.matchScore ?? record?.matchScore ?? 0,
+        input.matchedResumeId ?? null,
+      );
+    } else if (input.matchedResumeId !== undefined) {
+      // Allow updating just the matchedResumeId without full qualificationMatch
+      const current = record || await jobApplicationRepository.findByApplicationIdAndIdentity(
+        applicationId,
+        professionalIdentityId,
+      );
+      if (current) {
+        record = await jobApplicationRepository.updateQualificationMatch(
+          applicationId,
+          professionalIdentityId,
+          (current as any).qualificationMatch ?? {},
+          current.matchScore ?? 0,
+          input.matchedResumeId,
         );
       }
     }

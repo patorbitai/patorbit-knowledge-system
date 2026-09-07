@@ -109,6 +109,31 @@ export const jobApplicationRepository = {
     });
   },
 
+  /** Update the full structured QualificationMatch (M3) plus match-version metadata. */
+  async updateQualificationMatch(
+    applicationId: string,
+    professionalIdentityId: string,
+    qualificationMatch: Record<string, unknown>,
+    matchScore: number,
+    matchedResumeId: string | null,
+  ): Promise<JobApplicationRecord | null> {
+    const existing = await this.findByApplicationIdAndIdentity(
+      applicationId,
+      professionalIdentityId,
+    );
+    if (!existing) return null;
+
+    return prisma.jobApplication.update({
+      where: { id: existing.id },
+      data: {
+        qualificationMatch: qualificationMatch as unknown as Prisma.InputJsonValue,
+        matchScore,
+        matchedResumeId,
+        matchedAt: new Date(),
+      },
+    });
+  },
+
   /** Delete a job application row (scoped to its owner identity). */
   async deleteByApplicationIdAndIdentity(
     applicationId: string,

@@ -181,10 +181,14 @@ export interface ResumeBuilderState {
     resumeId: string | null;
     matchScore: number | null;
     matchData: unknown;
+    qualificationMatch: unknown;
+    matchedResumeId: string | null;
+    matchedAt: string | null;
   } | null;
-  setActiveJobApplication: (app: { applicationId: string; title: string; companyName: string; jobDescription: string; status: string; resumeId: string | null; matchScore: number | null; matchData: unknown } | null) => void;
+  setActiveJobApplication: (app: { applicationId: string; title: string; companyName: string; jobDescription: string; status: string; resumeId: string | null; matchScore: number | null; matchData: unknown; qualificationMatch?: unknown; matchedResumeId?: string | null; matchedAt?: string | null } | null) => void; // qualificationMatch, matchedResumeId, matchedAt are optional on input — defaults applied in implementation
   loadActiveJobApplication: () => Promise<void>;
   saveJobDescriptionToApplication: (jobDescription: string, title?: string, companyName?: string) => Promise<void>;
+  saveQualificationMatchToApplication: (match: QualificationMatch, matchScore: number) => Promise<void>;
   /** Visual customization per resume, stored separately from resume content. */
   styleConfigs: Record<string, ResumeStyleConfig>;
   setStyleConfig: (resumeId: string, patch: Partial<ResumeStyleConfig>) => void;
@@ -738,15 +742,37 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           const previousId = get().activeJobApplicationId;
           const isNewJob = app && app.applicationId !== previousId;
 
+          const fullApp = app ? {
+            applicationId: app.applicationId,
+            title: app.title,
+            companyName: app.companyName,
+            jobDescription: app.jobDescription,
+            status: app.status,
+            resumeId: app.resumeId,
+            matchScore: app.matchScore,
+            matchData: app.matchData,
+            qualificationMatch: app.qualificationMatch ?? null,
+            matchedResumeId: app.matchedResumeId ?? null,
+            matchedAt: app.matchedAt ?? null,
+          } : null;
+
+          // Hydrate session-level qualificationMatch from persisted application data.
+          // This ensures the match is available immediately after selection, not just after loadActiveJobApplication.
+          const persistedMatch = fullApp?.qualificationMatch as QualificationMatch | null ?? null;
+
           set({
             activeJobApplicationId: app?.applicationId ?? null,
-            activeJobApplication: app,
-            // Clear session-level derived state when switching jobs
+            activeJobApplication: fullApp,
+            // Clear session-level derived state when switching jobs,
+            // then restore from the new application's persisted data.
             ...(isNewJob || (!app && previousId) ? {
               jobProfile: null,
-              qualificationMatch: null,
+              qualificationMatch: persistedMatch,
               jobMatch: null,
-            } : {}),
+            } : {
+              // Same job re-selection — update match if persisted data changed
+              ...(persistedMatch ? { qualificationMatch: persistedMatch } : {}),
+            }),
           });
         },
 
@@ -758,6 +784,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             if (res.ok) {
               const data = await res.json();
               const restoredJd = data.jobDescription || "";
+              const persistedMatch = data.qualificationMatch || null;
               set({
                 activeJobApplication: {
                   applicationId: data.applicationId,
@@ -768,15 +795,17 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                   resumeId: data.resumeId,
                   matchScore: data.matchScore,
                   matchData: data.matchData,
+                  qualificationMatch: persistedMatch ?? null,
+                  matchedResumeId: data.matchedResumeId ?? null,
+                  matchedAt: data.matchedAt ?? null,
                 },
                 jobDescription: restoredJd,
                 // Hydrate jobProfile deterministically from the persisted JD.
                 // buildJobProfile() is pure/synchronous — zero AI/API cost.
                 jobProfile: restoredJd ? buildJobProfile(restoredJd) : null,
-                // qualificationMatch is NOT hydrated from matchData — they are
-                // different data structures (matchData = keyword lists,
-                // qualificationMatch = structured career-level match).
-                // The user must re-run the match to produce a fresh qualificationMatch.
+                // Restore qualificationMatch from persisted data if available.
+                // This avoids requiring the user to re-run the match after reload.
+                qualificationMatch: persistedMatch as QualificationMatch | null,
               });
             } else if (res.status === 404 || res.status === 403) {
               // Application was deleted or is unauthorized — clear stale reference
@@ -834,6 +863,9 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                     resumeId: data.resumeId,
                     matchScore: data.matchScore,
                     matchData: data.matchData,
+                    qualificationMatch: data.qualificationMatch ?? null,
+                    matchedResumeId: data.matchedResumeId ?? null,
+                    matchedAt: data.matchedAt ?? null,
                   },
                 });
               }
@@ -842,6 +874,39 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             // Silently handle — session-level state remains as fallback
           }
         },
+
+        saveQualificationMatchToApplication: async (match, matchScore) => {
+          const { activeJobApplicationId, activeResumeId } = get();
+          if (!activeJobApplicationId) return;
+          try {
+            const res = await fetch(`/api/applications/${activeJobApplicationId}`, {
+              method: "PATCH",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                qualificationMatch: match as unknown as Record<string, unknown>,
+                matchScore,
+                matchedResumeId: activeResumeId,
+              }),
+            });
+            if (res.ok) {
+              set((s) => ({
+                activeJobApplication: s.activeJobApplication
+                  ? {
+                      ...s.activeJobApplication,
+                      qualificationMatch: match,
+                      matchScore,
+                      matchedResumeId: activeResumeId,
+                      matchedAt: new Date().toISOString(),
+                    }
+                  : null,
+              }));
+            }
+          } catch {
+            // Non-critical — the match was computed successfully.
+            // The persistence can be retried.
+          }
+        },
+
         applyTemplate: (templateId) => {
           // Only the template changes — every other field of the user's resume
           // (name, contact, sections, font/color customization) stays intact.
