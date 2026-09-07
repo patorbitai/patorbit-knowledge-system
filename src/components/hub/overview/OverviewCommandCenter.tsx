@@ -24,6 +24,7 @@ import {
 } from "lucide-react";
 import { useResumeBuilder, isResumeEffectivelyEmpty } from "@/store/resume-builder";
 import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
+import { deriveWorkflowState, getNextStepRecommendation } from "@/lib/workflow-state";
 import AICopilotWidget from "@/components/hub/widgets/AICopilotWidget";
 import TrustWidget from "@/components/hub/widgets/TrustWidget";
 import KnowledgeGraphWidget from "@/components/hub/widgets/KnowledgeGraphWidget";
@@ -157,6 +158,16 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   const resumeList = mounted && resumes ? resumes : [];
   const hasResumes = resumeList.some((r) => !isResumeEffectivelyEmpty(r));
 
+  // Derive workflow state from current active resume
+  const activeResume = resumeList.find((r) => r.resumeId === activeResumeId) || resumeList[0];
+  const workflowState = deriveWorkflowState(
+    activeResume || null,
+    null, // jobProfile is session-level, not persisted — Overview can't access it
+    null, // qualificationMatch is session-level
+    false, // hasExported is session-level
+  );
+  const nextStep = hasResumes ? getNextStepRecommendation(workflowState, activeResume?.resumeName) : null;
+
   const sortedResumes = [...resumeList]
     .filter((r) => !isResumeEffectivelyEmpty(r))
     .sort((a, b) => {
@@ -218,8 +229,8 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
           </p>
         </div>
 
-        {/* Next Step Recommendation */}
-        {hasResumes && (
+        {/* Next Step Recommendation — state-driven */}
+        {hasResumes && nextStep && (
           <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 p-4">
             <div className="flex items-center gap-2 mb-3">
               <Zap className="w-4 h-4 text-cyan-500" />
@@ -228,18 +239,18 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
             <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
               <div className="flex-1">
                 <p className="text-sm text-gray-700 dark:text-slate-300 font-medium">
-                  Analyze a job to see how well your resume matches the role.
+                  {nextStep.title}
                 </p>
                 <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                  Paste a job description and Patorbit will show your match score, missing skills, and tailoring suggestions.
+                  {nextStep.description}
                 </p>
               </div>
               <Link
-                href="/resume-builder"
+                href={nextStep.actionHref}
                 className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-xs font-semibold text-white transition-all shrink-0"
               >
                 <Target className="w-3.5 h-3.5" />
-                Tailor to Job
+                {nextStep.actionLabel}
                 <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>

@@ -21,6 +21,7 @@ import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine, Target } from "lucide-
 import { PreviewErrorBoundary } from "@/components/resume-builder/PreviewErrorBoundary";
 import { MobilePreview } from "@/components/resume-builder/MobilePreview";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
+import { ExportModal } from "@/components/resume-builder/ExportModal";
 import { debounce } from "@/lib/debounce";
 
 /* ── Dynamic imports for heavy panels (SSR=false to avoid layout-effect crashes) ── */
@@ -251,6 +252,19 @@ export default function ResumeBuilderPage() {
   const [rightMode, setRightMode] = useState<"preview" | "copilot">("preview");
   const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
   const [tailorOpen, setTailorOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
+
+  // Listen for custom events from WorkflowStatusBar
+  useEffect(() => {
+    const handleOpenTailor = () => setTailorOpen(true);
+    const handleOpenExport = () => setExportOpen(true);
+    window.addEventListener("patorbit:open-tailor", handleOpenTailor);
+    window.addEventListener("patorbit:open-export", handleOpenExport);
+    return () => {
+      window.removeEventListener("patorbit:open-tailor", handleOpenTailor);
+      window.removeEventListener("patorbit:open-export", handleOpenExport);
+    };
+  }, []);
 
   const debouncedAnalysis = useCallback(
     debounce(async (currentResume) => {
@@ -321,6 +335,7 @@ export default function ResumeBuilderPage() {
         <ResumeServerSyncMonitor />
         <ResumeMigrationUI />
         <TailorResumeModal open={tailorOpen} onClose={() => setTailorOpen(false)} />
+        <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />
       </div>
     </DndProvider>
   );

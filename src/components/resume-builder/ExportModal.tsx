@@ -12,6 +12,7 @@ import { resolveStyleConfig, resolveHeadingHex } from "@/lib/resume-design-syste
 export function ExportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
   const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
+  const setHasExported = useResumeBuilder((s) => s.setHasExported);
   const template = getActiveTemplate(resume);
 
   // The SAME resolved config the preview renders with. The heading sentinel
@@ -38,6 +39,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
     const prev = document.title;
     document.title = resume.name || "resume";
     setIsPrinting(true);
+    setHasExported(true);
     onClose();
     // Triple-rAF: first two let React unmount the modal, third fires print
     // after the DOM has settled so only #pdf-export-target is visible.
@@ -59,6 +61,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
         templateId: resume.templateId,
         styleConfig: exportStyle,
       });
+      setHasExported(true);
       onClose();
     } catch {
       setDocxError("Failed to generate DOCX. Please try again.");

@@ -166,6 +166,9 @@ export interface ResumeBuilderState {
   setSaveStatus: (status: SaveStatus) => void;
   setServerVersion: (resumeId: string, version: number) => void;
   triggerWriteBack: () => void;
+  /** Workflow: whether the user has successfully exported the current resume (session-level). */
+  hasExported: boolean;
+  setHasExported: (value: boolean) => void;
   /** Visual customization per resume, stored separately from resume content. */
   styleConfigs: Record<string, ResumeStyleConfig>;
   setStyleConfig: (resumeId: string, patch: Partial<ResumeStyleConfig>) => void;
@@ -472,6 +475,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
         styleConfigs: {},
+        hasExported: false,
         setStyleConfig: (resumeId, patch) => set((s) => {
           const current = s.styleConfigs[resumeId] ? resolveStyleConfig(s.styleConfigs[resumeId]) : DEFAULT_STYLE_CONFIG;
           const next = resolveStyleConfig({ ...current, ...patch });
@@ -552,7 +556,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           const currentTemplate = s.resume.templateId;
           const resetR: Resume = { ...defaultResume, resumeId: currentId, resumeName: currentName, templateId: currentTemplate };
           const resumes = s.resumes.map((r) => r.resumeId === currentId ? resetR : r);
-          return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null };
+          return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null, hasExported: false };
         }),
         setSaveStatus: (status) => set({ saveStatus: status }),
         setServerVersion: (resumeId, version) => set((s) => ({
@@ -708,6 +712,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),
         setAIAction: (key, state) => set((s) => ({ aiActions: { ...s.aiActions, [key]: { ...(s.aiActions[key] ?? { status: "idle", result: null, error: null }), ...state } } })),
         setCopilotOpen: (open) => set({ isCopilotOpen: open }), setJobMatchOpen: (open) => set({ isJobMatchOpen: open }), setPreviewTab: (tab) => set({ previewTab: tab }),
+        setHasExported: (value) => set({ hasExported: value }),
         applyTemplate: (templateId) => {
           // Only the template changes — every other field of the user's resume
           // (name, contact, sections, font/color customization) stays intact.
