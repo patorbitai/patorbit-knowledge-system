@@ -23,7 +23,6 @@ import {
   Award,
   ChevronDown,
 } from "lucide-react";
-import { AddJobApplicationModal } from "./AddJobApplicationModal";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import {
   getFollowUpState,
@@ -124,7 +123,7 @@ const SORT_OPTIONS = [
 export function JobApplicationsSection() {
   const [applications, setApplications] = useState<JobApplication[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
+
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; title: string } | null>(null);
 
@@ -335,13 +334,13 @@ export function JobApplicationsSection() {
             </p>
           </div>
         </div>
-        <button
-          onClick={() => setShowAddModal(true)}
+        <Link
+          href="/jobs/new"
           className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 dark:bg-amber-500/90 text-xs font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
         >
           <Plus className="h-3.5 w-3.5" />
           Add Job
-        </button>
+        </Link>
       </div>
 
       {/* Summary metrics */}
@@ -445,13 +444,13 @@ export function JobApplicationsSection() {
           <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 max-w-sm mx-auto">
             Add a job description, tailor the right resume, and keep your application materials together.
           </p>
-          <button
-            onClick={() => setShowAddModal(true)}
+          <Link
+            href="/jobs/new"
             className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 dark:bg-amber-500/90 text-xs font-semibold text-white hover:brightness-110 transition-all"
           >
             <Plus className="h-3.5 w-3.5" />
             Add Job Application
-          </button>
+          </Link>
         </div>
       )}
 
@@ -665,12 +664,7 @@ export function JobApplicationsSection() {
         onCancel={() => setDeleteTarget(null)}
       />
 
-      {/* Add modal */}
-      <AddJobApplicationModal
-        open={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onCreated={handleCreated}
-      />
+
     </section>
   );
 }
