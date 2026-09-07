@@ -39,10 +39,11 @@ function useStepAction() {
   const hasJobFromApplication = !!activeJobApplication;
   const hasMatchFromApplication = activeJobApplication?.matchScore != null;
 
+  // The workflow state reflects the CURRENT active resume + job combination
   const state = deriveWorkflowState(
     resume,
-    jobProfile || (hasJobFromApplication ? { title: "" } as any : null),
-    qualificationMatch || (hasMatchFromApplication ? { id: "" } as any : null),
+    jobProfile || (hasJobFromApplication ? { title: activeJobApplication?.title || "" } as any : null),
+    qualificationMatch || (hasMatchFromApplication ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null),
     hasExported || hasMatchFromApplication,
   );
   const currentStep = getCurrentStep(state);

@@ -17,6 +17,7 @@ import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import AccountMenu from "@/components/hub/AccountMenu";
 import { SaveToIdentityButton } from "@/components/resume-builder/SaveToIdentityButton";
 import { WorkflowStatusBar } from "@/components/resume-builder/WorkflowStatusBar";
+import { JobApplicationSelector } from "@/components/resume-builder/JobApplicationSelector";
 import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine, Target } from "lucide-react";
 import { PreviewErrorBoundary } from "@/components/resume-builder/PreviewErrorBoundary";
 import { MobilePreview } from "@/components/resume-builder/MobilePreview";
@@ -208,6 +209,8 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
           </Link>
           <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.08] shrink-0" />
           <ResumeSelector />
+          <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.08] shrink-0" />
+          <JobApplicationSelector />
         </div>
 
         {/* Center: workflow status */}

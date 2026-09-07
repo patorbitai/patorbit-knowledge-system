@@ -161,30 +161,28 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   // Derive workflow state from current active resume + persisted job applications
   const activeResume = resumeList.find((r) => r.resumeId === activeResumeId) || resumeList[0];
 
-  // Fetch the most recent job application to determine workflow state
-  const [recentApplication, setRecentApplication] = useState<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null } | null>(null);
+  // Fetch recent job applications for context
+  const [recentApplications, setRecentApplications] = useState<Array<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null; status: string; updatedAt: string }>>([]);
   useEffect(() => {
     fetch("/api/applications")
       .then((r) => r.ok ? r.json() : null)
       .then((data) => {
-        const apps = data?.applications || [];
-        if (apps.length > 0) {
-          // Use the most recently updated application
-          const mostRecent = apps.sort((a: any, b: any) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0];
-          setRecentApplication(mostRecent);
-        }
+        setRecentApplications(data?.applications || []);
       })
       .catch(() => {});
   }, []);
 
-  // For workflow derivation, we use truthiness checks — the actual types don't matter
-  // because deriveWorkflowState only checks for null/undefined
+  // Use the most recently updated application for workflow state
+  const recentApplication = recentApplications.length > 0
+    ? recentApplications.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime())[0]
+    : null;
+
   const hasJobFromApplication = !!recentApplication;
   const hasMatchFromApplication = recentApplication?.matchScore != null;
   const workflowState = deriveWorkflowState(
     activeResume || null,
-    hasJobFromApplication ? { title: "", seniority: [], domain: [], requirements: [], responsibilities: [], qualifications: [], skills: [], implicitCompetencies: [] } as any : null,
-    hasMatchFromApplication ? { id: "", careerProfileId: "", jobProfileId: "", items: [], summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 }, createdAt: new Date().toISOString() } as any : null,
+    hasJobFromApplication ? { title: recentApplication.title } as any : null,
+    hasMatchFromApplication ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null,
     false,
   );
   const nextStep = hasResumes ? getNextStepRecommendation(workflowState, activeResume?.resumeName) : null;
