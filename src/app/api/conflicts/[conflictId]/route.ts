@@ -18,10 +18,15 @@ import { conflictService } from "@/services/conflict.service";
  * All operations enforce ProfessionalIdentity ownership.
  */
 
+interface RouteContext {
+  params: Promise<{ conflictId: string }>;
+}
+
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { conflictId: string } },
+  context: RouteContext,
 ) {
+  const { conflictId } = await context.params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -32,7 +37,7 @@ export async function GET(
       session.user.id,
     );
     const conflict = await conflictService.getConflict(
-      params.conflictId,
+      conflictId,
       identity.id,
     );
     return NextResponse.json(conflict, { status: 200 });
@@ -46,8 +51,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  { params }: { params: { conflictId: string } },
+  context: RouteContext,
 ) {
+  const { conflictId } = await context.params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -59,7 +65,7 @@ export async function PATCH(
       session.user.id,
     );
     const conflict = await conflictService.updateConflictStatus(
-      params.conflictId,
+      conflictId,
       identity.id,
       body.status,
       body.resolution,
@@ -80,8 +86,9 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  { params }: { params: { conflictId: string } },
+  context: RouteContext,
 ) {
+  const { conflictId } = await context.params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -91,7 +98,7 @@ export async function DELETE(
     const identity = await identityService.ensureProfessionalIdentity(
       session.user.id,
     );
-    await conflictService.deleteConflict(params.conflictId, identity.id);
+    await conflictService.deleteConflict(conflictId, identity.id);
     return NextResponse.json({ deleted: true }, { status: 200 });
   } catch (err: unknown) {
     if (err instanceof Error && err.message === "Conflict not found") {

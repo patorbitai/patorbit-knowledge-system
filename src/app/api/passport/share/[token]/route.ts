@@ -13,12 +13,16 @@ import { handleApiError } from "@/lib/api-error";
  * No authentication required — this is the public sharing mechanism.
  * The Passport data was derived server-side when sharing was enabled.
  */
+interface RouteContext {
+  params: Promise<{ token: string }>;
+}
+
 export async function GET(
   _request: Request,
-  { params }: { params: { token: string } },
+  context: RouteContext,
 ) {
   try {
-    const { token } = params;
+    const { token } = await context.params;
 
     if (!token || token.length < 10) {
       return NextResponse.json({ error: "Invalid token" }, { status: 400 });
