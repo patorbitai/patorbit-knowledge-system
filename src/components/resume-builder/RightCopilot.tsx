@@ -101,6 +101,8 @@ export function RightCopilot() {
   const analysisLoading = useResumeBuilder((s) => s.analysisLoading);
   const progress = useResumeBuilder((s) => s.progress);
   const startAnalysis = useResumeBuilder((s) => s.startAnalysis);
+  const jobProfile = useResumeBuilder((s) => s.jobProfile);
+  const jobDescription = useResumeBuilder((s) => s.jobDescription);
 
   // C44.1: Defensive checks — resume may be partially hydrated during store rehydration
   const social = resume?.social ?? {};
@@ -189,31 +191,28 @@ export function RightCopilot() {
           </div>
         )}
 
-        {/* C41: AI Actions Quick Reference */}
-        <CollapsibleCard title="AI Actions" icon={<Sparkles className="w-3 h-3 text-cyan-400" />} color="#22d3ee" defaultOpen={!completed}>
-          <div className="space-y-2">
-            <p className="text-[10px] text-gray-500 dark:text-slate-400 leading-relaxed">
-              Use the section editor on the left to access AI features for each part of your resume.
-            </p>
-            <div className="space-y-1.5">
-              {[
-                { label: "Tailor to Job", desc: "Match your resume to a job description", header: true },
-                { label: "Summary AI", desc: "Generate, rewrite, or improve tone" },
-                { label: "Experience AI", desc: "Rewrite bullets, improve impact, generate achievements" },
-                { label: "Skills AI", desc: "Suggest relevant skills for your role" },
-                { label: "Project AI", desc: "Generate project descriptions" },
-              ].map((action) => (
-                <div key={action.label} className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-white/[0.03] dark:bg-white/[0.02]">
-                  <div className="w-1.5 h-1.5 rounded-full bg-cyan-400 shrink-0" />
-                  <div className="flex-1">
-                    <span className="text-[11px] font-medium text-gray-700 dark:text-slate-300">{action.label}</span>
-                    <span className="text-[10px] text-gray-400 dark:text-slate-500 ml-1.5">{action.desc}</span>
-                  </div>
-                </div>
-              ))}
+        {/* Job Context — PRIMARY WORKFLOW ACTION */}
+        {!jobProfile && (
+          <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <div className="h-7 w-7 rounded-xl bg-cyan-500/20 flex items-center justify-center">
+                <Briefcase className="w-3.5 h-3.5 text-cyan-400" />
+              </div>
+              <div>
+                <p className="text-xs font-bold text-gray-900 dark:text-white">Analyze a Job</p>
+                <p className="text-[10px] text-gray-500 dark:text-slate-400">Paste a job description to match and tailor your resume</p>
+              </div>
             </div>
+            <JobProfilePanel />
           </div>
-        </CollapsibleCard>
+        )}
+
+        {/* Job Match — shown when JD is available */}
+        {jobDescription && (
+          <CollapsibleCard title="Job Match" icon={<Briefcase className="w-3 h-3 text-purple-400" />} color="#8b5cf6" defaultOpen={true}>
+            <JobMatchPanel />
+          </CollapsibleCard>
+        )}
 
         {/* C41: Trust & Factuality */}
         <div className="rounded-xl border border-emerald-500/15 bg-emerald-500/[0.04] px-3.5 py-3">
@@ -303,15 +302,7 @@ export function RightCopilot() {
           )}
         </CollapsibleCard>
 
-        {/* Job Profile */}
-        <CollapsibleCard title="Job Profile" icon={<FileSearch className="w-3 h-3 text-cyan-400" />} color="#06b6d4" defaultOpen={false}>
-          <JobProfilePanel />
-        </CollapsibleCard>
 
-        {/* Job Match */}
-        <CollapsibleCard title="Job Match" icon={<Briefcase className="w-3 h-3 text-purple-400" />} color="#8b5cf6" defaultOpen={false}>
-          <JobMatchPanel />
-        </CollapsibleCard>
       </div>
     </div>
   );

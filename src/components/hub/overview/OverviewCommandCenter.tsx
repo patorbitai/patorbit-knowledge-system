@@ -19,6 +19,8 @@ import {
   Shield,
   BarChart3,
   TrendingUp,
+  CheckCircle2,
+  Zap,
 } from "lucide-react";
 import { useResumeBuilder, isResumeEffectivelyEmpty } from "@/store/resume-builder";
 import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
@@ -201,18 +203,48 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10 space-y-10">
-      {/* ── A. WELCOME HEADER ── */}
-      <section className="space-y-1">
-        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f8fafc]">
-          {getGreeting()}, {firstName}
-        </h1>
-        <p className="text-sm text-gray-500 dark:text-[#94a3b8] max-w-xl leading-relaxed">
-          {!hasResumes
-            ? "Start by creating or importing your first resume."
-            : sortedResumes.length === 1
-            ? `Your resume "${sortedResumes[0].resumeName || "Untitled"}" is ready. Continue improving it or create another.`
-            : `You have ${sortedResumes.length} resumes. Pick one to continue where you left off.`}
-        </p>
+      {/* ── A. WELCOME HEADER + NEXT STEP ── */}
+      <section className="space-y-3">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f8fafc]">
+            {getGreeting()}, {firstName}
+          </h1>
+          <p className="text-sm text-gray-500 dark:text-[#94a3b8] max-w-xl leading-relaxed">
+            {!hasResumes
+              ? "Start by creating or importing your first resume."
+              : sortedResumes.length === 1
+              ? `Your resume "${sortedResumes[0].resumeName || "Untitled"}" is ready. Continue improving it or create another.`
+              : `You have ${sortedResumes.length} resumes. Pick one to continue where you left off.`}
+          </p>
+        </div>
+
+        {/* Next Step Recommendation */}
+        {hasResumes && (
+          <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Zap className="w-4 h-4 text-cyan-500" />
+              <span className="text-xs font-bold text-gray-900 dark:text-white">Next Step</span>
+            </div>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
+              <div className="flex-1">
+                <p className="text-sm text-gray-700 dark:text-slate-300 font-medium">
+                  Analyze a job to see how well your resume matches the role.
+                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                  Paste a job description and Patorbit will show your match score, missing skills, and tailoring suggestions.
+                </p>
+              </div>
+              <Link
+                href="/resume-builder"
+                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-xs font-semibold text-white transition-all shrink-0"
+              >
+                <Target className="w-3.5 h-3.5" />
+                Tailor to Job
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ── B. EMPTY STATE — New user ── */}
