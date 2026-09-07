@@ -16,6 +16,12 @@ export interface JobApplicationCreateInput {
   status?: string;
   resumeId?: string | null;
   matchScore?: number | null;
+  jobUrl?: string | null;
+  location?: string | null;
+  employmentType?: string | null;
+  appliedDate?: Date | null;
+  followUpDate?: Date | null;
+  notes?: string | null;
 }
 
 /**
@@ -61,6 +67,12 @@ export const jobApplicationRepository = {
       status?: string;
       resumeId?: string | null;
       matchScore?: number | null;
+      jobUrl?: string | null;
+      location?: string | null;
+      employmentType?: string | null;
+      appliedDate?: Date | null;
+      followUpDate?: Date | null;
+      notes?: string | null;
     },
   ): Promise<JobApplicationRecord | null> {
     const existing = await this.findByApplicationIdAndIdentity(

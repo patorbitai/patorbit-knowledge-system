@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { X, Briefcase, Building2, FileText, Loader2, FileCheck } from "lucide-react";
+import { X, Briefcase, Building2, FileText, Loader2, FileCheck, Link, MapPin, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 
 /** Minimal resume shape for the selector. */
 type ResumeOption = {
@@ -34,6 +34,15 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
   const [resumes, setResumes] = useState<ResumeOption[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showMoreDetails, setShowMoreDetails] = useState(false);
+  
+  // New optional fields
+  const [jobUrl, setJobUrl] = useState("");
+  const [location, setLocation] = useState("");
+  const [employmentType, setEmploymentType] = useState("");
+  const [appliedDate, setAppliedDate] = useState("");
+  const [followUpDate, setFollowUpDate] = useState("");
+  const [notes, setNotes] = useState("");
 
   // Load resumes when modal opens
   useEffect(() => {
@@ -80,6 +89,12 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
           companyName: companyName.trim(),
           jobDescription: jobDescription.trim(),
           resumeId: selectedResumeId || null,
+          jobUrl: jobUrl.trim() || null,
+          location: location.trim() || null,
+          employmentType: employmentType || null,
+          appliedDate: appliedDate || null,
+          followUpDate: followUpDate || null,
+          notes: notes.trim() || null,
         }),
       });
 
@@ -93,6 +108,13 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
       setCompanyName("");
       setJobDescription("");
       setSelectedResumeId("");
+      setJobUrl("");
+      setLocation("");
+      setEmploymentType("");
+      setAppliedDate("");
+      setFollowUpDate("");
+      setNotes("");
+      setShowMoreDetails(false);
       onCreated(application);
       onClose();
     } catch (err) {
@@ -207,6 +229,117 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
               <p className="text-[11px] text-gray-400 dark:text-slate-500">
                 You can also link a resume later after tailoring.
               </p>
+            </div>
+          )}
+
+          {/* More Details Toggle */}
+          <button
+            type="button"
+            onClick={() => setShowMoreDetails(!showMoreDetails)}
+            className="flex items-center gap-2 text-sm font-medium text-gray-600 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white transition-colors"
+          >
+            {showMoreDetails ? (
+              <ChevronUp className="h-4 w-4" />
+            ) : (
+              <ChevronDown className="h-4 w-4" />
+            )}
+            More details
+          </button>
+
+          {/* More Details Section */}
+          {showMoreDetails && (
+            <div className="space-y-4 pt-2 border-t border-gray-100 dark:border-white/[0.06]">
+              {/* Job URL */}
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
+                  <Link className="h-3.5 w-3.5 text-gray-400" />
+                  Job URL (optional)
+                </label>
+                <input
+                  type="url"
+                  value={jobUrl}
+                  onChange={(e) => setJobUrl(e.target.value)}
+                  placeholder="https://careers.company.com/job/123"
+                  className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                />
+              </div>
+
+              {/* Location */}
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
+                  <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                  Location (optional)
+                </label>
+                <input
+                  type="text"
+                  value={location}
+                  onChange={(e) => setLocation(e.target.value)}
+                  placeholder="e.g. San Francisco, CA or Remote"
+                  className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                />
+              </div>
+
+              {/* Employment Type */}
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
+                  <Briefcase className="h-3.5 w-3.5 text-gray-400" />
+                  Employment Type (optional)
+                </label>
+                <select
+                  value={employmentType}
+                  onChange={(e) => setEmploymentType(e.target.value)}
+                  className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                >
+                  <option value="">Select type</option>
+                  <option value="full_time">Full-time</option>
+                  <option value="part_time">Part-time</option>
+                  <option value="contract">Contract</option>
+                  <option value="internship">Internship</option>
+                </select>
+              </div>
+
+              {/* Dates */}
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
+                    <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                    Applied Date (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={appliedDate}
+                    onChange={(e) => setAppliedDate(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
+                    <Calendar className="h-3.5 w-3.5 text-gray-400" />
+                    Follow-up Date (optional)
+                  </label>
+                  <input
+                    type="date"
+                    value={followUpDate}
+                    onChange={(e) => setFollowUpDate(e.target.value)}
+                    className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all"
+                  />
+                </div>
+              </div>
+
+              {/* Notes */}
+              <div className="space-y-1.5">
+                <label className="flex items-center gap-1.5 text-sm font-medium text-gray-700 dark:text-slate-300">
+                  <FileText className="h-3.5 w-3.5 text-gray-400" />
+                  Notes (optional)
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Any additional notes about this application..."
+                  rows={3}
+                  className="w-full rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] px-3.5 py-2.5 text-sm text-gray-900 dark:text-white placeholder:text-gray-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:border-blue-300 dark:focus:border-blue-500/40 transition-all resize-none"
+                />
+              </div>
             </div>
           )}
 

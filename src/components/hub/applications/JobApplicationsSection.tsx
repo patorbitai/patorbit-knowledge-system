@@ -14,6 +14,8 @@ import {
   ChevronRight,
   Search,
   ArrowUpDown,
+  MapPin,
+  Calendar,
 } from "lucide-react";
 import { AddJobApplicationModal } from "./AddJobApplicationModal";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
@@ -26,6 +28,12 @@ type JobApplication = {
   status: string;
   resumeId: string | null;
   matchScore: number | null;
+  jobUrl: string | null;
+  location: string | null;
+  employmentType: string | null;
+  appliedDate: string | null;
+  followUpDate: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -55,6 +63,14 @@ const STATUS_STYLES: Record<string, { bg: string; text: string; label: string }>
   interview: { bg: "bg-purple-50 dark:bg-purple-500/10", text: "text-purple-600 dark:text-purple-400", label: "Interview" },
   offer: { bg: "bg-green-50 dark:bg-green-500/10", text: "text-green-600 dark:text-green-400", label: "Offer" },
   rejected: { bg: "bg-red-50 dark:bg-red-500/10", text: "text-red-600 dark:text-red-400", label: "Rejected" },
+};
+
+/** Employment type labels. */
+const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
+  full_time: "Full-time",
+  part_time: "Part-time",
+  contract: "Contract",
+  internship: "Internship",
 };
 
 /** Status filter options. */
@@ -349,11 +365,42 @@ export function JobApplicationsSection() {
                         </span>
                       )}
 
+                      {/* Employment type */}
+                      {app.employmentType && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-gray-100 dark:bg-white/[0.06] text-[10px] font-medium text-gray-600 dark:text-slate-400">
+                          {EMPLOYMENT_TYPE_LABELS[app.employmentType] || app.employmentType}
+                        </span>
+                      )}
+
+                      {/* Location */}
+                      {app.location && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-slate-400">
+                          <MapPin className="h-3 w-3" />
+                          {app.location}
+                        </span>
+                      )}
+
                       {/* Resume linked indicator */}
                       {app.resumeId && (
                         <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-green-50 dark:bg-green-500/10 text-[10px] font-medium text-green-600 dark:text-green-400">
                           <ExternalLink className="h-2.5 w-2.5" />
                           Resume linked
+                        </span>
+                      )}
+
+                      {/* Applied date */}
+                      {app.appliedDate && (
+                        <span className="inline-flex items-center gap-1 text-[11px] text-gray-500 dark:text-slate-400">
+                          <Calendar className="h-3 w-3" />
+                          Applied {new Date(app.appliedDate).toLocaleDateString()}
+                        </span>
+                      )}
+
+                      {/* Follow-up indicator */}
+                      {app.followUpDate && (
+                        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-500/10 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                          <Calendar className="h-2.5 w-2.5" />
+                          Follow-up {new Date(app.followUpDate).toLocaleDateString()}
                         </span>
                       )}
 

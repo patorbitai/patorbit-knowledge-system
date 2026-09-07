@@ -21,6 +21,12 @@ import {
   Clock,
   Plus,
   BarChart3,
+  MapPin,
+  Link as LinkIcon,
+  Edit2,
+  Save,
+  X,
+  Briefcase,
 } from "lucide-react";
 import { clsx } from "clsx";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
@@ -35,6 +41,12 @@ type JobApplication = {
   resumeId: string | null;
   matchScore: number | null;
   matchData: unknown;
+  jobUrl: string | null;
+  location: string | null;
+  employmentType: string | null;
+  appliedDate: string | null;
+  followUpDate: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 };
@@ -106,6 +118,13 @@ const OUTCOMES: { value: string; label: string; color: string }[] = [
   { value: "no_response", label: "No Response", color: "bg-amber-500/10 text-amber-400 border-amber-500/20" },
 ];
 
+const EMPLOYMENT_TYPE_LABELS: Record<string, string> = {
+  full_time: "Full-time",
+  part_time: "Part-time",
+  contract: "Contract",
+  internship: "Internship",
+};
+
 /** Application progress steps. */
 const PROGRESS_STEPS = [
   { key: "saved", label: "Saved" },
@@ -138,6 +157,18 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
   const [submittingEvent, setSubmittingEvent] = useState(false);
   const [analyzingMatch, setAnalyzingMatch] = useState(false);
   const [matchError, setMatchError] = useState<string | null>(null);
+  
+  // Edit mode for tracking fields
+  const [editingFields, setEditingFields] = useState(false);
+  const [editForm, setEditForm] = useState({
+    jobUrl: initialApp.jobUrl || "",
+    location: initialApp.location || "",
+    employmentType: initialApp.employmentType || "",
+    appliedDate: initialApp.appliedDate ? initialApp.appliedDate.split('T')[0] : "",
+    followUpDate: initialApp.followUpDate ? initialApp.followUpDate.split('T')[0] : "",
+    notes: initialApp.notes || "",
+  });
+  const [savingFields, setSavingFields] = useState(false);
 
   const updateStatus = useCallback(async (newStatus: string) => {
     setUpdatingStatus(true);
@@ -239,6 +270,34 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
       // Non-critical — the modal already handled the approval
     }
   }, [app.applicationId]);
+
+  // Save tracking fields
+  const handleSaveFields = useCallback(async () => {
+    setSavingFields(true);
+    try {
+      const res = await fetch(`/api/applications/${app.applicationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          jobUrl: editForm.jobUrl.trim() || null,
+          location: editForm.location.trim() || null,
+          employmentType: editForm.employmentType || null,
+          appliedDate: editForm.appliedDate || null,
+          followUpDate: editForm.followUpDate || null,
+          notes: editForm.notes.trim() || null,
+        }),
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setApp(updated);
+        setEditingFields(false);
+      }
+    } catch {
+      // Silently handle
+    } finally {
+      setSavingFields(false);
+    }
+  }, [app.applicationId, editForm]);
 
   // Standalone Analyze Match handler
   const handleAnalyzeMatch = useCallback(async () => {
@@ -396,6 +455,78 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left column — Job details */}
         <div className="lg:col-span-2 space-y-6">
+          {/* Job posting link */}
+          {app.jobUrl && (
+            <a
+              href={app.jobUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-2 px-4 py-3 rounded-2xl border border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/5 hover:bg-blue-100 dark:hover:bg-blue-500/10 transition-colors"
+            >
+              <LinkIcon className="h-4 w-4 text-blue-500" />
+              <span className="text-sm font-medium text-blue-600 dark:text-blue-400">View Job Posting</span>
+              <ExternalLink className="h-3 w-3 text-blue-400 ml-auto" />
+            </a>
+          )}
+
+          {/* Job information */}
+          {(app.location || app.employmentType) && (
+            <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Building2 className="h-4 w-4 text-gray-400" />
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">Job Information</h3>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {app.location && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3.5 w-3.5 text-gray-400" />
+                    <span className="text-sm text-gray-600 dark:text-slate-400">{app.location}</span>
+                  </div>
+                )}
+                {app.employmentType && (
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-3.5 w-3.5 text-gray-400" />
+                    <span className="text-sm text-gray-600 dark:text-slate-400">{EMPLOYMENT_TYPE_LABELS[app.employmentType] || app.employmentType}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Tracking dates */}
+          {(app.appliedDate || app.followUpDate) && (
+            <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <Calendar className="h-4 w-4 text-gray-400" />
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">Tracking</h3>
+              </div>
+              <div className="flex flex-wrap gap-4">
+                {app.appliedDate && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-slate-400">Applied:</span>
+                    <span className="text-sm font-medium text-gray-700 dark:text-slate-300">{new Date(app.appliedDate).toLocaleDateString()}</span>
+                  </div>
+                )}
+                {app.followUpDate && (
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-gray-500 dark:text-slate-400">Follow-up:</span>
+                    <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{new Date(app.followUpDate).toLocaleDateString()}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {/* Notes */}
+          {app.notes && !editingFields && (
+            <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4">
+              <div className="flex items-center gap-2 mb-3">
+                <FileText className="h-4 w-4 text-gray-400" />
+                <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300">Notes</h3>
+              </div>
+              <p className="text-sm text-gray-600 dark:text-slate-400 whitespace-pre-wrap">{app.notes}</p>
+            </div>
+          )}
+
           {/* Job Description */}
           <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] overflow-hidden">
             <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.04] flex items-center gap-2">
@@ -538,6 +669,171 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
 
         {/* Right column — Actions */}
         <div className="space-y-4">
+          {/* Edit Tracking Fields */}
+          <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-2">
+                <Edit2 className="h-4 w-4 text-gray-400" />
+                Tracking Details
+              </h3>
+              {!editingFields ? (
+                <button
+                  onClick={() => setEditingFields(true)}
+                  className="text-xs text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-300"
+                >
+                  Edit
+                </button>
+              ) : (
+                <div className="flex gap-2">
+                  <button
+                    onClick={handleSaveFields}
+                    disabled={savingFields}
+                    className="inline-flex items-center gap-1 px-2 py-1 rounded-lg bg-blue-500 text-xs font-medium text-white hover:brightness-110 disabled:opacity-50"
+                  >
+                    {savingFields ? <Loader2 className="h-3 w-3 animate-spin" /> : <Save className="h-3 w-3" />}
+                    Save
+                  </button>
+                  <button
+                    onClick={() => {
+                      setEditingFields(false);
+                      setEditForm({
+                        jobUrl: app.jobUrl || "",
+                        location: app.location || "",
+                        employmentType: app.employmentType || "",
+                        appliedDate: app.appliedDate ? app.appliedDate.split('T')[0] : "",
+                        followUpDate: app.followUpDate ? app.followUpDate.split('T')[0] : "",
+                        notes: app.notes || "",
+                      });
+                    }}
+                    className="px-2 py-1 rounded-lg border border-gray-200 dark:border-white/[0.08] text-xs text-gray-500 hover:bg-gray-50 dark:hover:bg-white/[0.04]"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              )}
+            </div>
+            
+            {editingFields ? (
+              <div className="space-y-3">
+                {/* Job URL */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Job URL</label>
+                  <input
+                    type="url"
+                    value={editForm.jobUrl}
+                    onChange={(e) => setEditForm(p => ({ ...p, jobUrl: e.target.value }))}
+                    placeholder="https://..."
+                    className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm text-gray-900 dark:text-white"
+                  />
+                </div>
+                
+                {/* Location */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Location</label>
+                  <input
+                    type="text"
+                    value={editForm.location}
+                    onChange={(e) => setEditForm(p => ({ ...p, location: e.target.value }))}
+                    placeholder="e.g. San Francisco, CA"
+                    className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm text-gray-900 dark:text-white"
+                  />
+                </div>
+                
+                {/* Employment Type */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Employment Type</label>
+                  <select
+                    value={editForm.employmentType}
+                    onChange={(e) => setEditForm(p => ({ ...p, employmentType: e.target.value }))}
+                    className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm text-gray-900 dark:text-white"
+                  >
+                    <option value="">Select type</option>
+                    <option value="full_time">Full-time</option>
+                    <option value="part_time">Part-time</option>
+                    <option value="contract">Contract</option>
+                    <option value="internship">Internship</option>
+                  </select>
+                </div>
+                
+                {/* Dates */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Applied Date</label>
+                    <input
+                      type="date"
+                      value={editForm.appliedDate}
+                      onChange={(e) => setEditForm(p => ({ ...p, appliedDate: e.target.value }))}
+                      className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm text-gray-900 dark:text-white"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Follow-up Date</label>
+                    <input
+                      type="date"
+                      value={editForm.followUpDate}
+                      onChange={(e) => setEditForm(p => ({ ...p, followUpDate: e.target.value }))}
+                      className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm text-gray-900 dark:text-white"
+                    />
+                  </div>
+                </div>
+                
+                {/* Notes */}
+                <div className="space-y-1">
+                  <label className="text-xs font-medium text-gray-500 dark:text-slate-400">Notes</label>
+                  <textarea
+                    value={editForm.notes}
+                    onChange={(e) => setEditForm(p => ({ ...p, notes: e.target.value }))}
+                    placeholder="Application notes..."
+                    rows={3}
+                    className="w-full px-3 py-1.5 rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.03] text-sm text-gray-900 dark:text-white resize-none"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-2 text-xs text-gray-500 dark:text-slate-400">
+                {app.jobUrl && (
+                  <div className="flex items-center gap-2">
+                    <LinkIcon className="h-3 w-3" />
+                    <a href={app.jobUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 hover:underline truncate">Job posting</a>
+                  </div>
+                )}
+                {app.location && (
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-3 w-3" />
+                    <span>{app.location}</span>
+                  </div>
+                )}
+                {app.employmentType && (
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-3 w-3" />
+                    <span>{EMPLOYMENT_TYPE_LABELS[app.employmentType] || app.employmentType}</span>
+                  </div>
+                )}
+                {app.appliedDate && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3 w-3" />
+                    <span>Applied: {new Date(app.appliedDate).toLocaleDateString()}</span>
+                  </div>
+                )}
+                {app.followUpDate && (
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-3 w-3" />
+                    <span>Follow-up: {new Date(app.followUpDate).toLocaleDateString()}</span>
+                  </div>
+                )}
+                {app.notes && (
+                  <div className="flex items-start gap-2">
+                    <FileText className="h-3 w-3 mt-0.5" />
+                    <span className="whitespace-pre-wrap">{app.notes}</span>
+                  </div>
+                )}
+                {!app.jobUrl && !app.location && !app.employmentType && !app.appliedDate && !app.followUpDate && !app.notes && (
+                  <p className="text-gray-400 dark:text-slate-500">No tracking details added yet.</p>
+                )}
+              </div>
+            )}
+          </div>
+
           {/* Resume card */}
           <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] p-4 space-y-3">
             <h3 className="text-sm font-semibold text-gray-700 dark:text-slate-300 flex items-center gap-2">

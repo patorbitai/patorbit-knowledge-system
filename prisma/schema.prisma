@@ -141,6 +141,12 @@ model JobApplication {
   resumeId               String?  // Optional reference to a resume
   matchScore             Int?     // 0-100 match score if analyzed
   matchData              Json?    // Match analysis details (matched/partial/missing skills)
+  jobUrl                 String?  // URL to the job posting
+  location               String?  // Job location (e.g. "San Francisco, CA" or "Remote")
+  employmentType         String?  // full_time | part_time | contract | internship
+  appliedDate            DateTime? // When the application was submitted
+  followUpDate           DateTime? // Scheduled follow-up date
+  notes                  String?  @db.Text // Application-level notes
   createdAt              DateTime @default(now())
   updatedAt              DateTime @updatedAt
 

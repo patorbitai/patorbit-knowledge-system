@@ -13,6 +13,12 @@ export interface JobApplicationData {
   resumeId: string | null;
   matchScore: number | null;
   matchData: unknown;
+  jobUrl: string | null;
+  location: string | null;
+  employmentType: string | null;
+  appliedDate: string | null;
+  followUpDate: string | null;
+  notes: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -23,6 +29,12 @@ export interface CreateJobApplicationInput {
   companyName: string;
   jobDescription: string;
   resumeId?: string | null;
+  jobUrl?: string | null;
+  location?: string | null;
+  employmentType?: string | null;
+  appliedDate?: string | null;
+  followUpDate?: string | null;
+  notes?: string | null;
 }
 
 /** Input for updating a job application. */
@@ -34,6 +46,12 @@ export interface UpdateJobApplicationInput {
   resumeId?: string | null;
   matchScore?: number | null;
   matchData?: Record<string, unknown>;
+  jobUrl?: string | null;
+  location?: string | null;
+  employmentType?: string | null;
+  appliedDate?: string | null;
+  followUpDate?: string | null;
+  notes?: string | null;
 }
 
 /** Valid application statuses. */
@@ -47,6 +65,16 @@ export const VALID_STATUSES = [
 ] as const;
 
 export type ApplicationStatus = (typeof VALID_STATUSES)[number];
+
+/** Valid employment types. */
+export const VALID_EMPLOYMENT_TYPES = [
+  "full_time",
+  "part_time",
+  "contract",
+  "internship",
+] as const;
+
+export type EmploymentType = (typeof VALID_EMPLOYMENT_TYPES)[number];
 
 /** Validation failure → HTTP 400. */
 export class JobApplicationValidationError extends Error {}
@@ -74,6 +102,12 @@ export class JobApplicationService {
       resumeId: record.resumeId,
       matchScore: record.matchScore,
       matchData: record.matchData,
+      jobUrl: record.jobUrl,
+      location: record.location,
+      employmentType: record.employmentType,
+      appliedDate: record.appliedDate?.toISOString() ?? null,
+      followUpDate: record.followUpDate?.toISOString() ?? null,
+      notes: record.notes,
       createdAt: record.createdAt.toISOString(),
       updatedAt: record.updatedAt.toISOString(),
     };
@@ -86,6 +120,51 @@ export class JobApplicationService {
       );
     }
     return status as ApplicationStatus;
+  }
+
+  private validateEmploymentType(employmentType: string): EmploymentType {
+    if (!VALID_EMPLOYMENT_TYPES.includes(employmentType as EmploymentType)) {
+      throw new JobApplicationValidationError(
+        `Invalid employment type: ${employmentType}. Must be one of: ${VALID_EMPLOYMENT_TYPES.join(", ")}`,
+      );
+    }
+    return employmentType as EmploymentType;
+  }
+
+  private validateJobUrl(jobUrl: string | null | undefined): string | null {
+    if (!jobUrl) return null;
+    const trimmed = jobUrl.trim();
+    if (!trimmed) return null;
+    
+    // Must be a valid HTTP/HTTPS URL
+    try {
+      const url = new URL(trimmed);
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        throw new JobApplicationValidationError(
+          "Invalid job URL: only HTTP and HTTPS URLs are allowed."
+        );
+      }
+      return trimmed;
+    } catch (err) {
+      if (err instanceof JobApplicationValidationError) throw err;
+      throw new JobApplicationValidationError(
+        "Invalid job URL: please provide a valid URL."
+      );
+    }
+  }
+
+  private parseDate(dateString: string | null | undefined): Date | null {
+    if (!dateString) return null;
+    const trimmed = dateString.trim();
+    if (!trimmed) return null;
+    
+    const date = new Date(trimmed);
+    if (isNaN(date.getTime())) {
+      throw new JobApplicationValidationError(
+        `Invalid date: ${dateString}`
+      );
+    }
+    return date;
   }
 
   /** List all applications for an identity. */
@@ -150,6 +229,14 @@ export class JobApplicationService {
     // Validate resume ownership before creating
     await this.validateResumeOwnership(professionalIdentityId, input.resumeId);
 
+    // Validate optional fields
+    const jobUrl = this.validateJobUrl(input.jobUrl);
+    const employmentType = input.employmentType
+      ? this.validateEmploymentType(input.employmentType)
+      : null;
+    const appliedDate = this.parseDate(input.appliedDate);
+    const followUpDate = this.parseDate(input.followUpDate);
+
     const applicationId = `app_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
     const id = `approw_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`;
 
@@ -161,6 +248,12 @@ export class JobApplicationService {
       companyName: input.companyName.trim(),
       jobDescription: input.jobDescription.trim(),
       resumeId: input.resumeId ?? null,
+      jobUrl,
+      location: input.location?.trim() || null,
+      employmentType,
+      appliedDate,
+      followUpDate,
+      notes: input.notes || null,
     });
 
     return this.toJobApplicationData(record);
@@ -202,6 +295,28 @@ export class JobApplicationService {
     }
     if (input.matchScore !== undefined) {
       data.matchScore = input.matchScore;
+    }
+
+    // Handle new tracking fields
+    if (input.jobUrl !== undefined) {
+      data.jobUrl = this.validateJobUrl(input.jobUrl);
+    }
+    if (input.location !== undefined) {
+      data.location = input.location?.trim() || null;
+    }
+    if (input.employmentType !== undefined) {
+      data.employmentType = input.employmentType
+        ? this.validateEmploymentType(input.employmentType)
+        : null;
+    }
+    if (input.appliedDate !== undefined) {
+      data.appliedDate = this.parseDate(input.appliedDate);
+    }
+    if (input.followUpDate !== undefined) {
+      data.followUpDate = this.parseDate(input.followUpDate);
+    }
+    if (input.notes !== undefined) {
+      data.notes = input.notes || null;
     }
 
     let record;

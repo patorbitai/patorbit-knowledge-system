@@ -35,6 +35,12 @@ vi.mock("@/repositories/job-application.repository", () => ({
       resumeId: data.resumeId ?? null,
       matchScore: null,
       matchData: null,
+      jobUrl: data.jobUrl ?? null,
+      location: data.location ?? null,
+      employmentType: data.employmentType ?? null,
+      appliedDate: data.appliedDate ?? null,
+      followUpDate: data.followUpDate ?? null,
+      notes: data.notes ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     })),
@@ -49,6 +55,12 @@ vi.mock("@/repositories/job-application.repository", () => ({
       resumeId: data.resumeId ?? null,
       matchScore: null,
       matchData: null,
+      jobUrl: data.jobUrl ?? null,
+      location: data.location ?? null,
+      employmentType: data.employmentType ?? null,
+      appliedDate: data.appliedDate ?? null,
+      followUpDate: data.followUpDate ?? null,
+      notes: data.notes ?? null,
       createdAt: new Date(),
       updatedAt: new Date(),
     })),
@@ -185,6 +197,257 @@ describe("JobApplicationService — Resume Ownership Validation", () => {
       expect(result).toBeDefined();
       // Should NOT query for resume ownership when setting to null
       expect(resumeFindFirstMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("create — new tracking fields", () => {
+    it("creates an application with all six tracking fields", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+        jobUrl: "https://careers.techcorp.com/job/123",
+        location: "San Francisco, CA",
+        employmentType: "full_time",
+        appliedDate: "2026-09-07",
+        followUpDate: "2026-09-14",
+        notes: "Applied through referral",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.jobUrl).toBe("https://careers.techcorp.com/job/123");
+      expect(result.location).toBe("San Francisco, CA");
+      expect(result.employmentType).toBe("full_time");
+      expect(result.appliedDate).toBeDefined();
+      expect(result.followUpDate).toBeDefined();
+      expect(result.notes).toBe("Applied through referral");
+    });
+
+    it("creates an application without tracking fields (backward compatibility)", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+      });
+
+      expect(result).toBeDefined();
+      expect(result.jobUrl).toBeNull();
+      expect(result.location).toBeNull();
+      expect(result.employmentType).toBeNull();
+      expect(result.appliedDate).toBeNull();
+      expect(result.followUpDate).toBeNull();
+      expect(result.notes).toBeNull();
+    });
+
+    it("trims whitespace from jobUrl and location", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+        jobUrl: "  https://example.com  ",
+        location: "  Remote  ",
+      });
+
+      expect(result.jobUrl).toBe("https://example.com");
+      expect(result.location).toBe("Remote");
+    });
+  });
+
+  describe("update — new tracking fields", () => {
+    it("updates all six tracking fields", async () => {
+      const result = await service.update("pi_user_a", "app_123", {
+        jobUrl: "https://new-url.com",
+        location: "New York, NY",
+        employmentType: "part_time",
+        appliedDate: "2026-09-07",
+        followUpDate: "2026-09-20",
+        notes: "Updated notes",
+      });
+
+      expect(result).toBeDefined();
+    });
+
+    it("clears nullable fields by setting to null", async () => {
+      const result = await service.update("pi_user_a", "app_123", {
+        jobUrl: null,
+        location: null,
+        employmentType: null,
+        appliedDate: null,
+        followUpDate: null,
+        notes: null,
+      });
+
+      expect(result).toBeDefined();
+    });
+  });
+
+  describe("validation — jobUrl", () => {
+    it("rejects invalid job URL", async () => {
+      await expect(
+        service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          jobUrl: "not-a-url",
+        })
+      ).rejects.toThrow(JobApplicationValidationError);
+
+      await expect(
+        service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          jobUrl: "not-a-url",
+        })
+      ).rejects.toThrow("Invalid job URL");
+    });
+
+    it("rejects unsafe URL protocol (javascript:)", async () => {
+      await expect(
+        service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          jobUrl: "javascript:alert(1)",
+        })
+      ).rejects.toThrow(JobApplicationValidationError);
+
+      await expect(
+        service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          jobUrl: "javascript:alert(1)",
+        })
+      ).rejects.toThrow("only HTTP and HTTPS URLs are allowed");
+    });
+
+    it("accepts valid HTTP URL", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+        jobUrl: "http://example.com/job",
+      });
+
+      expect(result.jobUrl).toBe("http://example.com/job");
+    });
+
+    it("accepts valid HTTPS URL", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+        jobUrl: "https://example.com/job",
+      });
+
+      expect(result.jobUrl).toBe("https://example.com/job");
+    });
+
+    it("returns null for empty jobUrl", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+        jobUrl: "",
+      });
+
+      expect(result.jobUrl).toBeNull();
+    });
+  });
+
+  describe("validation — employmentType", () => {
+    it("rejects invalid employment type", async () => {
+      await expect(
+        service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          employmentType: "invalid_type",
+        })
+      ).rejects.toThrow(JobApplicationValidationError);
+
+      await expect(
+        service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          employmentType: "invalid_type",
+        })
+      ).rejects.toThrow("Invalid employment type");
+    });
+
+    it("accepts valid employment types", async () => {
+      const validTypes = ["full_time", "part_time", "contract", "internship"];
+      
+      for (const type of validTypes) {
+        const result = await service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          employmentType: type,
+        });
+        expect(result.employmentType).toBe(type);
+      }
+    });
+  });
+
+  describe("validation — dates", () => {
+    it("persists date fields correctly", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+        appliedDate: "2026-09-07",
+        followUpDate: "2026-09-14",
+      });
+
+      expect(result.appliedDate).toBeDefined();
+      expect(result.followUpDate).toBeDefined();
+    });
+
+    it("rejects invalid date format", async () => {
+      await expect(
+        service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          appliedDate: "not-a-date",
+        })
+      ).rejects.toThrow(JobApplicationValidationError);
+
+      await expect(
+        service.create("pi_user_a", {
+          title: "Software Engineer",
+          companyName: "Tech Corp",
+          jobDescription: "Build great things",
+          appliedDate: "not-a-date",
+        })
+      ).rejects.toThrow("Invalid date");
+    });
+  });
+
+  describe("validation — notes", () => {
+    it("persists notes correctly", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+        notes: "Line 1\nLine 2\nLine 3",
+      });
+
+      expect(result.notes).toBe("Line 1\nLine 2\nLine 3");
+    });
+
+    it("returns null for empty notes", async () => {
+      const result = await service.create("pi_user_a", {
+        title: "Software Engineer",
+        companyName: "Tech Corp",
+        jobDescription: "Build great things",
+        notes: "",
+      });
+
+      expect(result.notes).toBeNull();
     });
   });
 });
