@@ -18,15 +18,11 @@ import { conflictService } from "@/services/conflict.service";
  * All operations enforce ProfessionalIdentity ownership.
  */
 
-interface RouteContext {
-  params: Promise<{ conflictId: string }>;
-}
-
 export async function GET(
   _req: NextRequest,
-  context: RouteContext,
+  { params }: { params: Promise<{ conflictId: string }> },
 ) {
-  const { conflictId } = await context.params;
+  const { conflictId } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -51,9 +47,9 @@ export async function GET(
 
 export async function PATCH(
   req: NextRequest,
-  context: RouteContext,
+  { params }: { params: Promise<{ conflictId: string }> },
 ) {
-  const { conflictId } = await context.params;
+  const { conflictId } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -86,9 +82,9 @@ export async function PATCH(
 
 export async function DELETE(
   _req: NextRequest,
-  context: RouteContext,
+  { params }: { params: Promise<{ conflictId: string }> },
 ) {
-  const { conflictId } = await context.params;
+  const { conflictId } = await params;
   const session = await getServerSession(authOptions);
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
