@@ -217,6 +217,7 @@ model Claim {
   assertionText          String   @db.Text
   claimType              String   // Employment | Education | Project | Skill | Certification | Contribution
   sourceActivityId       String?  // Links to resume/activity information
+  professionalFactKey    String?  // Deterministic synchronization idempotency key (Phase 10)
   confidence             Float    @default(0.5)
   reasoning              String?  @db.Text
   verificationStatus     String   @default("suggested") // suggested | accepted | evidence-added | under-review | verified | expired | revoked | disputed
@@ -231,6 +232,7 @@ model Claim {
 
   @@index([professionalIdentityId])
   @@index([professionalIdentityId, claimType])
+  @@index([professionalIdentityId, professionalFactKey])
 }
 
 model EvidenceRecord {

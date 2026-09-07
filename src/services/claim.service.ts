@@ -59,6 +59,7 @@ export interface CreateClaimInput {
   assertionText: string;
   claimType: string;
   sourceActivityId?: string;
+  professionalFactKey?: string;
   confidence?: number;
   reasoning?: string;
 }
@@ -100,11 +101,37 @@ export class ClaimService {
       assertionText: input.assertionText.trim(),
       claimType: input.claimType,
       sourceActivityId: input.sourceActivityId,
+      professionalFactKey: input.professionalFactKey,
       confidence: input.confidence ?? 0.5,
       reasoning: input.reasoning,
       verificationStatus: "suggested",
       reviewed: false,
       accepted: false,
+    });
+  }
+
+  /**
+   * Find or create a Claim using professionalFactKey for idempotent synchronization.
+   * If a Claim with the same professionalFactKey exists, return it.
+   * Otherwise, create a new Claim.
+   */
+  async findOrCreateByFactKey(
+    professionalIdentityId: string,
+    professionalFactKey: string,
+    input: CreateClaimInput,
+  ): Promise<Claim> {
+    const existing = await claimRepository.findByProfessionalFactKey(
+      professionalIdentityId,
+      professionalFactKey,
+    );
+
+    if (existing) {
+      return existing;
+    }
+
+    return this.create(professionalIdentityId, {
+      ...input,
+      professionalFactKey,
     });
   }
 
@@ -130,7 +157,7 @@ export class ClaimService {
    */
   async list(
     professionalIdentityId: string,
-    options?: { claimType?: string },
+    options?: { claimType?: string; professionalFactKey?: string },
   ): Promise<Claim[]> {
     return claimRepository.findByProfessionalIdentityId(
       professionalIdentityId,

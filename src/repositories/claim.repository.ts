@@ -15,6 +15,7 @@ export const claimRepository = {
     assertionText: string;
     claimType: string;
     sourceActivityId?: string;
+    professionalFactKey?: string;
     confidence?: number;
     reasoning?: string;
     verificationStatus?: string;
@@ -27,6 +28,7 @@ export const claimRepository = {
         assertionText: data.assertionText,
         claimType: data.claimType,
         sourceActivityId: data.sourceActivityId ?? null,
+        professionalFactKey: data.professionalFactKey ?? null,
         confidence: data.confidence ?? 0.5,
         reasoning: data.reasoning ?? null,
         verificationStatus: data.verificationStatus ?? "suggested",
@@ -42,16 +44,31 @@ export const claimRepository = {
 
   async findByProfessionalIdentityId(
     professionalIdentityId: string,
-    options?: { claimType?: string; include?: Prisma.ClaimInclude },
+    options?: { claimType?: string; professionalFactKey?: string; include?: Prisma.ClaimInclude },
   ): Promise<Claim[]> {
     const where: Prisma.ClaimWhereInput = { professionalIdentityId };
     if (options?.claimType) {
       where.claimType = options.claimType;
     }
+    if (options?.professionalFactKey) {
+      where.professionalFactKey = options.professionalFactKey;
+    }
     return prisma.claim.findMany({
       where,
       include: options?.include,
       orderBy: { createdAt: "desc" },
+    });
+  },
+
+  async findByProfessionalFactKey(
+    professionalIdentityId: string,
+    professionalFactKey: string,
+  ): Promise<Claim | null> {
+    return prisma.claim.findFirst({
+      where: {
+        professionalIdentityId,
+        professionalFactKey,
+      },
     });
   },
 
