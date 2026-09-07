@@ -490,7 +490,8 @@ A milestone is not done until all ten items are complete.
 - **ADR-002 Phase 3** — Verification Records / Events: VerificationEvent audit trail, status transitions.
 - **ADR-002 Phase 4** — Trust Server-Side Derivation: `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm; client TrustService deprecated as authoritative.
 - **ADR-002 Phase 5** — Conflict Detection Engine: `ConflictRecord` model + pure detection algorithm; detects overlapping dates, contradictory employers, duplicate credentials, status mismatches.
-- The next architectural milestone is **ADR-002 Phase 6 — Professional Passport server-side projection** (FUTURE / NEXT).
+- **ADR-002 Phase 6** — Professional Passport server-side projection: `buildPassport()` derives from canonical data; public share derives server-side; client-submitted data no longer accepted.
+- **ADR-002 Phase 8** — Security & Canonical Integrity Fixes: cross-user Trust isolation, verification lifecycle enforcement, evidence ownership validation, Passport token rotation.
 - The forward sequence for Phase 1 is: **M1 ✅ → M2 ✅ → M3 ✅ → M4 ✅ → M5 ✅**, followed by Phase 2 (Customer Acquisition) and Phase 3 (Career Platform).
 
 ---

@@ -205,16 +205,13 @@ describe("ClaimService", () => {
       ).rejects.toThrow("Cannot set verification status to 'verified'");
     });
 
-    it("allows setting evidence-added status", async () => {
+    it("rejects setting evidence-added status directly (must use verification service)", async () => {
       const existing = makeClaim();
-      const updated = { ...existing, verificationStatus: "evidence-added" };
       mockPrisma.claim.findUnique.mockResolvedValue(existing);
-      mockPrisma.claim.update.mockResolvedValue(updated);
 
-      const result = await service.update("claim_1", TEST_PI_ID, {
-        verificationStatus: "evidence-added",
-      });
-      expect(result.verificationStatus).toBe("evidence-added");
+      await expect(
+        service.update("claim_1", TEST_PI_ID, { verificationStatus: "evidence-added" }),
+      ).rejects.toThrow("Cannot set verification status to 'evidence-added'");
     });
   });
 

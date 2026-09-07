@@ -17,28 +17,36 @@ const ALLOWED_CLAIM_TYPES = new Set([
 ]);
 
 /**
- * Allowed verification statuses — matches the client-side
- * ClaimVerificationStatus union. The service prevents clients from
- * arbitrarily setting "verified" — that requires the future verification
- * engine. Clients may only set statuses up to "accepted".
+ * Allowed verification statuses for claim creation.
+ * Clients may only create claims as "suggested" or "accepted".
  */
 const ALLOWED_STATUSES_FOR_CREATE = new Set([
   "suggested",
   "accepted",
 ]);
 
-const ALLOWED_STATUSES_FOR_UPDATE = new Set([
-  "suggested",
-  "accepted",
+/**
+ * Phase 8 (P2-1): Verification lifecycle statuses are NO LONGER allowed
+ * through normal Claim PATCH updates.
+ *
+ * All verification status transitions MUST go through:
+ *   POST /api/claims/[claimId]/verification
+ *   → verificationEventService.createEvent()
+ *
+ * This ensures every status change is recorded in the append-only
+ * VerificationEvent audit trail.
+ *
+ * Blocked statuses (must use verification event service):
+ *   verified, disputed, revoked, expired, evidence-added, under-review
+ */
+const VERIFICATION_LIFECYCLE_STATUSES = new Set([
+  "verified",
   "evidence-added",
   "under-review",
   "expired",
   "revoked",
   "disputed",
 ]);
-
-/** Statuses that only the server verification engine should set. */
-const SERVER_ONLY_STATUSES = new Set(["verified"]);
 
 export class ClaimValidationError extends Error {
   constructor(message: string) {
@@ -156,16 +164,21 @@ export class ClaimService {
       throw new ClaimValidationError("Assertion text cannot be empty");
     }
 
-    // Prevent clients from setting "verified" status
+    // P2-1 FIX: Phase 8 — Block ALL verification lifecycle status changes
+    // through normal Claim updates. Status transitions must go through the
+    // verification event service to maintain the append-only audit trail.
     if (input.verificationStatus !== undefined) {
-      if (SERVER_ONLY_STATUSES.has(input.verificationStatus)) {
+      if (VERIFICATION_LIFECYCLE_STATUSES.has(input.verificationStatus)) {
         throw new ClaimValidationError(
-          "Cannot set verification status to 'verified' directly. Use the verification engine.",
+          `Cannot set verification status to '${input.verificationStatus}' directly. ` +
+          "Use POST /api/claims/[claimId]/verification to record status transitions.",
         );
       }
-      if (!ALLOWED_STATUSES_FOR_UPDATE.has(input.verificationStatus)) {
+      // Only "suggested" and "accepted" are allowed for initial claim setup
+      if (!ALLOWED_STATUSES_FOR_CREATE.has(input.verificationStatus)) {
         throw new ClaimValidationError(
-          `Invalid verification status: ${input.verificationStatus}`,
+          `Invalid verification status: ${input.verificationStatus}. ` +
+          "Only 'suggested' and 'accepted' may be set directly."
         );
       }
     }

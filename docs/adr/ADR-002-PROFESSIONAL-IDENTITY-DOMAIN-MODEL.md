@@ -390,6 +390,12 @@ user's Claims, Evidence, or Verification history.
 6. Trust server-side derivation — ✅ COMPLETE (ADR-002 Phase 4)
 7. Conflict Detection Engine — ✅ COMPLETE (ADR-002 Phase 5)
 8. Professional Passport — ✅ COMPLETE (ADR-002 Phase 6)
+9. Security & Canonical Integrity Fixes — ✅ COMPLETE (ADR-002 Phase 8)
+   - P1-1: Cross-user unclaimed evidence isolation in Trust derivation
+   - P1-2: Trust derivation parity (canonical loader shared across Trust, Share, Passport)
+   - P2-1: Claim verification status transitions enforced via VerificationEvent service
+   - P2-2: VerificationEvent evidenceRecordId ownership validation
+   - P2-3: Passport share token rotation on re-enable
 
 For every migration:
 

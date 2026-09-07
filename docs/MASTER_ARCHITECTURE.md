@@ -41,6 +41,10 @@ architecture will become**, and why.
 | **Evidence → Claim FK enforcement** | ✅ **IMPLEMENTED — ADR-002 Phase 2; EvidenceRecord.claimId is nullable FK with ON DELETE SET NULL** |
 | **Verification history / audit trail** | ✅ **IMPLEMENTED — ADR-002 Phase 3; VerificationEvent append-only table with status transitions** |
 | **Verification status transition control** | ✅ **IMPLEMENTED — ADR-002 Phase 3; controlled state machine with ownership enforcement** |
+| **Canonical Trust input isolation** | ✅ **IMPLEMENTED — ADR-002 Phase 8; single canonical loader (`canonical-loader.ts`) shared across Trust, Share, Passport; cross-user unclaimed evidence eliminated** |
+| **Claim verification lifecycle enforcement** | ✅ **IMPLEMENTED — ADR-002 Phase 8; `claimService.update()` blocks verificationStatus changes; must go through VerificationEvent service** |
+| **Verification evidence ownership** | ✅ **IMPLEMENTED — ADR-002 Phase 8; `verificationEventService` validates evidenceRecordId belongs to the target claim** |
+| **Passport share token rotation** | ✅ **IMPLEMENTED — ADR-002 Phase 8; new token generated on every share enable; old token invalidated on disable** |
 | Verification levels L0–L3 | 🔶 **FUTURE — proposed** |
 | **Conflict Detection Engine** | ✅ **IMPLEMENTED — ADR-002 Phase 5; `ConflictRecord` model + pure detection algorithm; detects overlapping dates, contradictory employers, duplicate credentials, status mismatches** |
 | Trusted Issuer Network / verifiable credentials | 🔶 **FUTURE — proposed** |
@@ -766,3 +770,4 @@ largely what the current repository already covers; Phases 2–6 are future.
 | 1.2.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 4 — Trust Server-Side Derivation. `GET /api/trust` now derives Trust from canonical Claims + Evidence + VerificationEvents. Client TrustService deprecated as authoritative source. Share flow security fixed. |
 | 1.3.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 5 — Conflict Detection Engine. `ConflictRecord` model + pure detection algorithm. Detects overlapping dates, contradictory employers, duplicate credentials, status mismatches. Conflicts surfaced for user review, never silently resolved. |
 | 1.4.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 6 — Professional Passport server-side projection. `buildPassport()` derives from canonical Claims + Evidence + Verification + Conflicts + Trust. Public share now derives server-side; client-submitted `passportData` no longer accepted. Security fix: eliminated client-supplied Passport data injection. |
+| 1.5.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 8 — Security & Canonical Integrity Fixes. Single canonical Trust input loader (`canonical-loader.ts`) eliminates cross-user unclaimed evidence leak (P1-1) and ensures Trust/Share/Passport parity (P1-2). Claim verification lifecycle transitions now require VerificationEvent service (P2-1). VerificationEvent validates evidenceRecordId ownership (P2-2). Passport share tokens rotate on re-enable (P2-3). |

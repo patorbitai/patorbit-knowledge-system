@@ -44,14 +44,19 @@ describe("GET /api/trust", () => {
     expect(body.error).toBe("Unauthorized");
   });
 
-  it("returns 404 when ProfessionalIdentity not found", async () => {
+  it("returns 200 with Unrated TrustReport when ProfessionalIdentity not found", async () => {
+    // Phase 8: canonical loader returns empty TrustReport for missing PI
+    // instead of 404, because deriveTrust handles empty input gracefully
     vi.mocked(getServerSession).mockResolvedValue({
       user: { id: "user_1" },
     } as any);
     mockFindUnique.mockResolvedValue(null);
 
     const response = await GET();
-    expect(response.status).toBe(404);
+    const body = await response.json();
+    expect(response.status).toBe(200);
+    expect(body.score).toBe(0);
+    expect(body.level).toBe("Unrated");
   });
 
   it("returns TrustReport for authenticated user with identity", async () => {
@@ -62,11 +67,16 @@ describe("GET /api/trust", () => {
     // ProfessionalIdentity found
     mockFindUnique.mockResolvedValue({ id: "pi_1", userId: "user_1" });
 
-    // Claims, evidence, verification events
+    // Phase 8: canonical loader queries in order:
+    // 1. PI lookup (findUnique)
+    // 2. Claims (findMany)
+    // 3. Claimed evidence (findMany)
+    // 4. Unclaimed evidence (findMany)
+    // 5. Verification events (findMany)
     mockFindMany
       .mockResolvedValueOnce([{ id: "c1", professionalIdentityId: "pi_1", verificationStatus: "verified", confidence: 0.9, claimType: "Skill" }])
       .mockResolvedValueOnce([{ id: "ev1", claimId: "c1", evidenceKind: "document" }])
-      .mockResolvedValueOnce([])
+      .mockResolvedValueOnce([]) // unclaimed evidence (scoped to userId)
       .mockResolvedValueOnce([{ id: "ve1", claimId: "c1", eventType: "verified", previousStatus: "under-review", resultingStatus: "verified", outcome: null, createdAt: new Date() }]);
 
     const response = await GET();
@@ -87,6 +97,7 @@ describe("GET /api/trust", () => {
     } as any);
 
     mockFindUnique.mockResolvedValue({ id: "pi_1", userId: "user_1" });
+    // No claims → only one evidence call (unclaimed evidence)
     mockFindMany.mockResolvedValue([]);
 
     const response = await GET();

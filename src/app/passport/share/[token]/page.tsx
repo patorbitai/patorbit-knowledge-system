@@ -4,25 +4,27 @@ import { prisma } from "@/lib/prisma";
 import { PublicPassportView } from "@/components/identity/PublicPassportView";
 import { ShieldCheck } from "lucide-react";
 import { buildPassport } from "@/lib/passport/projection";
-import { deriveTrust } from "@/lib/trust/derivation";
+import { deriveTrustForUser } from "@/lib/trust/canonical-loader";
 import type {
   CanonicalClaimForPassport,
   CanonicalEvidenceForPassport,
   CanonicalVerificationEventForPassport,
   CanonicalConflictForPassport,
 } from "@/lib/passport/types";
-import type {
-  CanonicalClaimForTrust,
-  CanonicalEvidenceForTrust,
-  CanonicalVerificationEventForTrust,
-} from "@/lib/trust/types";
 
 /**
  * Derive a Passport from canonical server-side data.
+ *
+ * Phase 8: Trust is derived via the canonical loader to ensure parity with
+ * GET /api/trust and Trust Share. This eliminates P1-2 trust derivation inconsistency.
+ *
  * This ensures the public Passport always reflects the current state,
  * not a stale client-submitted cache.
  */
-async function derivePassportFromCanonical(professionalIdentityId: string) {
+async function derivePassportFromCanonical(
+  professionalIdentityId: string,
+  userId: string,
+) {
   const identity = await prisma.professionalIdentity.findUnique({
     where: { id: professionalIdentityId },
   });
@@ -53,37 +55,8 @@ async function derivePassportFromCanonical(professionalIdentityId: string) {
     where: { professionalIdentityId },
   });
 
-  // Derive Trust
-  const trustClaims: CanonicalClaimForTrust[] = claims.map((c) => ({
-    id: c.id,
-    professionalIdentityId: c.professionalIdentityId,
-    verificationStatus: c.verificationStatus,
-    confidence: c.confidence,
-    claimType: c.claimType,
-  }));
-
-  const trustEvidence: CanonicalEvidenceForTrust[] = evidence.map((e) => ({
-    id: e.id,
-    claimId: e.claimId,
-    evidenceKind: e.evidenceKind,
-  }));
-
-  const trustEvents: CanonicalVerificationEventForTrust[] = verificationEvents.map((ve) => ({
-    id: ve.id,
-    claimId: ve.claimId,
-    evidenceRecordId: ve.evidenceRecordId,
-    eventType: ve.eventType,
-    previousStatus: ve.previousStatus,
-    resultingStatus: ve.resultingStatus,
-    outcome: ve.outcome,
-    createdAt: ve.createdAt,
-  }));
-
-  const trustReport = deriveTrust({
-    claims: trustClaims,
-    evidence: trustEvidence,
-    verificationEvents: trustEvents,
-  });
+  // Phase 8: Derive Trust via canonical loader (same as GET /api/trust)
+  const trustReport = await deriveTrustForUser(userId);
 
   // Map to Passport projection input
   const passportClaims: CanonicalClaimForPassport[] = claims.map((c) => ({
@@ -162,7 +135,7 @@ export default async function PublicPassportSharePage({
   // Derive Passport from canonical server-side data (NOT from cache)
   let passport;
   try {
-    passport = await derivePassportFromCanonical(identity.id);
+    passport = await derivePassportFromCanonical(identity.id, identity.userId);
   } catch {
     return (
       <main className="min-h-screen bg-[#070911] text-slate-300 flex items-center justify-center p-6">

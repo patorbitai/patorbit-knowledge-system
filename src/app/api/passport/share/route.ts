@@ -6,28 +6,26 @@ import { authOptions } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { handleApiError } from "@/lib/api-error";
 import { buildPassport } from "@/lib/passport/projection";
-import { deriveTrust } from "@/lib/trust/derivation";
+import { deriveTrustForUser } from "@/lib/trust/canonical-loader";
 import type {
   CanonicalClaimForPassport,
   CanonicalEvidenceForPassport,
   CanonicalVerificationEventForPassport,
   CanonicalConflictForPassport,
 } from "@/lib/passport/types";
-import type {
-  CanonicalClaimForTrust,
-  CanonicalEvidenceForTrust,
-  CanonicalVerificationEventForTrust,
-} from "@/lib/trust/types";
 import crypto from "crypto";
 
 /**
  * Derive a complete ProfessionalPassport from canonical server-side data.
  *
+ * Phase 8: Trust is derived via the canonical loader to ensure parity with
+ * GET /api/trust and Trust Share.
+ *
  * SECURITY: This function NEVER accepts client-supplied data.
  * All data is loaded from PostgreSQL via authenticated session.
  */
-async function derivePassportForIdentity(professionalIdentityId: string) {
-  // Load all canonical data
+async function derivePassportForIdentity(professionalIdentityId: string, userId: string) {
+  // Load identity and user info
   const identity = await prisma.professionalIdentity.findUnique({
     where: { id: professionalIdentityId },
   });
@@ -36,6 +34,10 @@ async function derivePassportForIdentity(professionalIdentityId: string) {
     ? await prisma.user.findUnique({ where: { id: identity.userId } })
     : null;
 
+  // Derive Trust using the same path as GET /api/trust (P1-2 parity)
+  const trustReport = await deriveTrustForUser(userId);
+
+  // Load claims and evidence for Passport projection
   const claims = await prisma.claim.findMany({
     where: { professionalIdentityId },
   });
@@ -56,38 +58,6 @@ async function derivePassportForIdentity(professionalIdentityId: string) {
 
   const conflicts = await prisma.conflictRecord.findMany({
     where: { professionalIdentityId },
-  });
-
-  // Derive Trust from canonical data
-  const canonicalTrustClaims: CanonicalClaimForTrust[] = claims.map((c) => ({
-    id: c.id,
-    professionalIdentityId: c.professionalIdentityId,
-    verificationStatus: c.verificationStatus,
-    confidence: c.confidence,
-    claimType: c.claimType,
-  }));
-
-  const canonicalTrustEvidence: CanonicalEvidenceForTrust[] = evidence.map((e) => ({
-    id: e.id,
-    claimId: e.claimId,
-    evidenceKind: e.evidenceKind,
-  }));
-
-  const canonicalTrustEvents: CanonicalVerificationEventForTrust[] = verificationEvents.map((ve) => ({
-    id: ve.id,
-    claimId: ve.claimId,
-    evidenceRecordId: ve.evidenceRecordId,
-    eventType: ve.eventType,
-    previousStatus: ve.previousStatus,
-    resultingStatus: ve.resultingStatus,
-    outcome: ve.outcome,
-    createdAt: ve.createdAt,
-  }));
-
-  const trustReport = deriveTrust({
-    claims: canonicalTrustClaims,
-    evidence: canonicalTrustEvidence,
-    verificationEvents: canonicalTrustEvents,
   });
 
   // Map to Passport projection input
@@ -206,10 +176,12 @@ export async function POST(request: Request) {
     }
 
     // Derive Passport from canonical server-side data
-    const passport = await derivePassportForIdentity(identity.id);
+    // Phase 8: Pass userId for canonical Trust loader parity
+    const passport = await derivePassportForIdentity(identity.id, session.user.id);
 
-    // Generate a secure share token (reuse existing if present)
-    const token = identity.passportShareToken || crypto.randomUUID();
+    // P2-3 FIX: Always generate a new token on enable.
+    // Old token becomes invalid after disable+re-enable.
+    const token = crypto.randomUUID();
 
     await prisma.professionalIdentity.update({
       where: { id: identity.id },
