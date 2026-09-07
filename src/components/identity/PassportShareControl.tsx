@@ -44,10 +44,11 @@ export function PassportShareControl() {
 
   const handleToggleShare = async () => {
     const action = shareEnabled ? "disable" : "enable";
+    // SECURITY: passportData is NOT sent. Server derives Passport from canonical data.
     const res = await fetch("/api/passport/share", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, passportData: { resume, claims, evidence } }),
+      body: JSON.stringify({ action }),
     });
     const data = await res.json();
     if (res.ok) {

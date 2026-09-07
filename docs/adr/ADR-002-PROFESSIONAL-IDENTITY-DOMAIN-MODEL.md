@@ -284,7 +284,7 @@ Those belong to the Professional Identity.
 | Verification | ✅ **`VerificationEvent` append-only audit trail** — events belong to Claim, optionally reference EvidenceRecord; controlled status transitions (ADR-002 Phase 3) | Verification history belongs to Claim/Evidence |
 | Trust | ✅ **Server-side derivation** — `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm in `src/lib/trust/derivation.ts`; no persisted Trust entity | Server-side derivation from Claims + Evidence + Verification |
 | Conflict Detection | ✅ **Implemented** — `ConflictRecord` model + pure detection algorithm in `src/lib/conflict/detection.ts`; detects overlapping dates, contradictory employers, duplicate credentials, etc. | Conflict Detection Engine |
-| Passport | Live client data + share cache | 🔶 **FUTURE** — server-side projection from canonical data |
+| Passport | ✅ **Server-side projection** — `buildPassport()` derives from Claims + Evidence + Verification + Conflicts + Trust; public share derives from canonical data; client-submitted `passportData` no longer accepted | Server-side projection from canonical data |
 | Knowledge Graph | Derived in-memory | Derived in-memory |
 
 ### Implemented domain relationships (2026-09-07)
@@ -389,7 +389,7 @@ user's Claims, Evidence, or Verification history.
 5. Verification records/events — ✅ COMPLETE (ADR-002 Phase 3)
 6. Trust server-side derivation — ✅ COMPLETE (ADR-002 Phase 4)
 7. Conflict Detection Engine — ✅ COMPLETE (ADR-002 Phase 5)
-8. Passport server-side projection — 🔶 FUTURE
+8. Professional Passport — ✅ COMPLETE (ADR-002 Phase 6)
 
 For every migration:
 

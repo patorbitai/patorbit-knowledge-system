@@ -36,7 +36,7 @@ architecture will become**, and why.
 | Evidence (upload/link, badge, IndexedDB storage) | ✅ **CURRENT — partial (builder-scoped)** |
 | Trust Score backend pipeline (services, graph, coordinator) | ✅ **CURRENT — backend implemented, UI wiring partial** |
 | **Server-side Trust derivation** | ✅ **IMPLEMENTED — ADR-002 Phase 4; `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm in `src/lib/trust/derivation.ts`** |
-| Professional Passport surface | ✅ **CURRENT — surface exists; data wiring partial** |
+| Professional Passport surface | ✅ **IMPLEMENTED — ADR-002 Phase 6; `buildPassport()` derives from canonical data; public share derives server-side; client-submitted data no longer accepted** |
 | **First-class Claim server entity** | ✅ **IMPLEMENTED — ADR-002 Phase 2; Claim table under ProfessionalIdentity with repository, service, API** |
 | **Evidence → Claim FK enforcement** | ✅ **IMPLEMENTED — ADR-002 Phase 2; EvidenceRecord.claimId is nullable FK with ON DELETE SET NULL** |
 | **Verification history / audit trail** | ✅ **IMPLEMENTED — ADR-002 Phase 3; VerificationEvent append-only table with status transitions** |
@@ -632,6 +632,7 @@ kept separate from the future Identity/Claims/Evidence architecture.
 
 - Trust server-side derivation — ✅ **COMPLETE** (ADR-002 Phase 4)
 - Conflict Detection Engine — ✅ **COMPLETE** (ADR-002 Phase 5)
+- Professional Passport — ✅ **COMPLETE** (ADR-002 Phase 6)
 - Cryptographically verifiable credentials
 - Trusted issuer network (employer, university, certification, professional
   organization integrations)
@@ -694,12 +695,15 @@ largely what the current repository already covers; Phases 2–6 are future.
 - ✅ User-driven resolution (reviewing, dismissed, resolved)
 - ✅ Ownership enforcement
 
-### PHASE 6 — Professional Passport (future)
+### PHASE 6 — Professional Passport (✅ COMPLETE)
 
-- verified claims
-- evidence-backed profile
-- explainable trust
-- selective sharing
+- ✅ Pure projection function (`src/lib/passport/projection.ts`)
+- ✅ Server-derived Passport from Claims + Evidence + Verification + Conflicts + Trust
+- ✅ Public share endpoint derives from canonical data (no client-submitted data)
+- ✅ Privacy: email, phone, address never exposed; raw evidence never exposed
+- ✅ Trust integration with algorithm version
+- ✅ Conflict summary (neutral, never accusatory)
+- ✅ Schema versioning
 
 ### PHASE 7 — Issuer Network (future)
 
@@ -761,3 +765,4 @@ largely what the current repository already covers; Phases 2–6 are future.
 | 1.1.0 | 2026-09-07 | Updated architecture status to reflect ADR-002 Phase 2 (Claim server entity, Evidence FK enforcement) and Phase 3 (VerificationEvent audit trail). Updated Current vs Future sections. |
 | 1.2.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 4 — Trust Server-Side Derivation. `GET /api/trust` now derives Trust from canonical Claims + Evidence + VerificationEvents. Client TrustService deprecated as authoritative source. Share flow security fixed. |
 | 1.3.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 5 — Conflict Detection Engine. `ConflictRecord` model + pure detection algorithm. Detects overlapping dates, contradictory employers, duplicate credentials, status mismatches. Conflicts surfaced for user review, never silently resolved. |
+| 1.4.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 6 — Professional Passport server-side projection. `buildPassport()` derives from canonical Claims + Evidence + Verification + Conflicts + Trust. Public share now derives server-side; client-submitted `passportData` no longer accepted. Security fix: eliminated client-supplied Passport data injection. |
