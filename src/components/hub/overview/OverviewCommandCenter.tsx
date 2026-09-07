@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import Link from "next/link";
+import { clsx } from "clsx";
 import {
   Plus,
   Upload,
@@ -164,7 +165,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   // Prefer the explicitly selected active job application from the store.
   // Fall back to most-recently-updated application only if nothing is selected.
   const storeActiveJobApplication = useResumeBuilder((s) => s.activeJobApplication);
-  const [recentApplications, setRecentApplications] = useState<Array<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null; status: string; updatedAt: string }>>([]);
+  const [recentApplications, setRecentApplications] = useState<Array<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null; matchedResumeId: string | null; status: string; updatedAt: string }>>([]);
   useEffect(() => {
     fetch("/api/applications")
       .then((r) => r.ok ? r.json() : null)
@@ -183,7 +184,14 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   );
 
   const hasJobFromApplication = !!recentApplication;
-  const hasMatchFromApplication = recentApplication?.matchScore != null;
+  // Match is current only if matchedResumeId matches the active resume
+  const matchIsCurrent = hasJobFromApplication &&
+    recentApplication.matchScore != null &&
+    (!recentApplication.matchedResumeId || recentApplication.matchedResumeId === activeResume?.resumeId);
+  const hasMatchFromApplication = !!matchIsCurrent;
+  const matchIsStale = hasJobFromApplication &&
+    recentApplication.matchScore != null &&
+    !matchIsCurrent;
   const workflowState = deriveWorkflowState(
     activeResume || null,
     hasJobFromApplication ? { title: recentApplication.title } as any : null,
@@ -296,7 +304,14 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
               <p className="text-[11px] text-gray-500 dark:text-slate-400 truncate">
                 {recentApplication.companyName}
                 {recentApplication.matchScore != null && (
-                  <span className="ml-2 text-blue-500 dark:text-blue-400">· {recentApplication.matchScore}% match</span>
+                  <span className={clsx(
+                    "ml-2",
+                    matchIsStale
+                      ? "text-gray-400 dark:text-slate-500"
+                      : "text-blue-500 dark:text-blue-400",
+                  )}>
+                    · {recentApplication.matchScore}% match{matchIsStale ? " (stale)" : ""}
+                  </span>
                 )}
               </p>
             </div>

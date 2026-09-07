@@ -889,6 +889,9 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
               }),
             });
             if (res.ok) {
+              // matchedAt is generated server-side by the repository.
+              // Re-fetch to get the authoritative server timestamp.
+              const updated = await res.json();
               set((s) => ({
                 activeJobApplication: s.activeJobApplication
                   ? {
@@ -896,7 +899,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                       qualificationMatch: match,
                       matchScore,
                       matchedResumeId: activeResumeId,
-                      matchedAt: new Date().toISOString(),
+                      matchedAt: updated.matchedAt ?? s.activeJobApplication.matchedAt,
                     }
                   : null,
               }));

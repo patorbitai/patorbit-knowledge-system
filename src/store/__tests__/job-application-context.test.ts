@@ -325,4 +325,91 @@ describe("Job Application Context", () => {
       expect(useResumeBuilder.getState().activeJobApplication?.matchScore).toBe(87);
     });
   });
+
+  describe("Tailor does NOT corrupt match state", () => {
+    it("updating resumeId via tailor does not overwrite matchScore or qualificationMatch", () => {
+      const { setActiveJobApplication } = useResumeBuilder.getState();
+
+      // Set Job A with a match
+      setActiveJobApplication(JOB_A as any);
+      expect(useResumeBuilder.getState().activeJobApplication?.matchScore).toBe(87);
+      expect(useResumeBuilder.getState().activeJobApplication?.qualificationMatch).toEqual(JOB_A.qualificationMatch);
+
+      // Simulate what Tailor does: only update resumeId (not matchScore/matchData)
+      // This is the correct Tailor behavior after the fix.
+      useResumeBuilder.setState((s) => ({
+        activeJobApplication: s.activeJobApplication
+          ? { ...s.activeJobApplication, resumeId: "tailored-resume-a" }
+          : null,
+      }));
+
+      // Match data should be UNCHANGED
+      expect(useResumeBuilder.getState().activeJobApplication?.matchScore).toBe(87);
+      expect(useResumeBuilder.getState().activeJobApplication?.qualificationMatch).toEqual(JOB_A.qualificationMatch);
+      // Only resumeId should have changed
+      expect(useResumeBuilder.getState().activeJobApplication?.resumeId).toBe("tailored-resume-a");
+      // matchedResumeId should still point to the original resume (match was for original)
+      expect(useResumeBuilder.getState().activeJobApplication?.matchedResumeId).toBe("r1");
+    });
+
+    it("after tailor, matchedResumeId ≠ resumeId signals stale match", () => {
+      const { setActiveJobApplication } = useResumeBuilder.getState();
+
+      // Set Job A with match for resume r1
+      setActiveJobApplication(JOB_A as any);
+      expect(useResumeBuilder.getState().activeJobApplication?.matchedResumeId).toBe("r1");
+
+      // Simulate tailor: resumeId changes to tailored resume
+      useResumeBuilder.setState((s) => ({
+        activeJobApplication: s.activeJobApplication
+          ? { ...s.activeJobApplication, resumeId: "tailored-resume-a" }
+          : null,
+      }));
+
+      // matchedResumeId still points to r1, resumeId is now tailored-resume-a
+      // This mismatch signals the match is stale
+      const app = useResumeBuilder.getState().activeJobApplication;
+      expect(app?.matchedResumeId).toBe("r1");
+      expect(app?.resumeId).toBe("tailored-resume-a");
+      expect(app?.matchedResumeId).not.toBe(app?.resumeId);
+    });
+  });
+
+  describe("Match refresh after tailoring", () => {
+    it("re-matching after tailor updates matchedResumeId to the new resume", () => {
+      const { setActiveJobApplication } = useResumeBuilder.getState();
+
+      // Start with Job A matched to r1
+      setActiveJobApplication(JOB_A as any);
+      expect(useResumeBuilder.getState().activeJobApplication?.matchedResumeId).toBe("r1");
+
+      // Simulate tailor: resumeId changes
+      useResumeBuilder.setState((s) => ({
+        activeJobApplication: s.activeJobApplication
+          ? { ...s.activeJobApplication, resumeId: "tailored-resume-a" }
+          : null,
+      }));
+
+      // Now re-match: matchedResumeId should update to the new resume
+      const newMatch = { id: "qm-a-v2", summary: { total: 10, proven: 7, related: 2, communicationGap: 0, missing: 1 }, items: [] };
+      useResumeBuilder.setState((s) => ({
+        activeJobApplication: s.activeJobApplication
+          ? {
+              ...s.activeJobApplication,
+              qualificationMatch: newMatch,
+              matchScore: 90,
+              matchedResumeId: "tailored-resume-a",
+              matchedAt: new Date().toISOString(),
+            }
+          : null,
+      }));
+
+      // Now match is current for the tailored resume
+      const app = useResumeBuilder.getState().activeJobApplication;
+      expect(app?.matchedResumeId).toBe("tailored-resume-a");
+      expect(app?.resumeId).toBe("tailored-resume-a");
+      expect(app?.matchedResumeId).toBe(app?.resumeId);
+      expect(app?.matchScore).toBe(90);
+    });
+  });
 });

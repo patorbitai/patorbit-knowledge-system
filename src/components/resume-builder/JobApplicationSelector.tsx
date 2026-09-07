@@ -226,9 +226,18 @@ export function JobApplicationSelector() {
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       {app.matchScore != null && (
-                        <span className="inline-flex items-center gap-0.5 text-[10px] font-medium text-blue-500 dark:text-blue-400">
+                        <span className={clsx(
+                          "inline-flex items-center gap-0.5 text-[10px] font-medium",
+                          // Score is stale if matchedResumeId differs from the application's resumeId
+                          app.matchedResumeId && app.matchedResumeId !== app.resumeId
+                            ? "text-gray-400 dark:text-slate-500"
+                            : "text-blue-500 dark:text-blue-400",
+                        )}>
                           <Target className="w-2.5 h-2.5" />
                           {app.matchScore}%
+                          {app.matchedResumeId && app.matchedResumeId !== app.resumeId && (
+                            <span className="text-[8px] ml-0.5">stale</span>
+                          )}
                         </span>
                       )}
                       <span className={clsx(

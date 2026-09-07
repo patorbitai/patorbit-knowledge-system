@@ -303,21 +303,20 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     } as Partial<Resume>);
     switchResume(newResumeId);
 
-    // C55.1: If this is an application-context tailoring, persist match data
-    // and resume association to the JobApplication.
-    if (applicationId && tailorResult.matchAnalysis) {
+    // C55.1: If this is an application-context tailoring, update the resume
+    // association on the JobApplication.
+    // IMPORTANT: Do NOT overwrite matchScore/matchData/qualificationMatch here.
+    // The Match flow (JobMatchPanel) is the authoritative source for match data.
+    // Tailoring creates a new resume but does NOT produce a new structured match.
+    // The existing match becomes stale (matchedResumeId ≠ new resume) and the
+    // workflow correctly shows "Match needs refresh".
+    if (applicationId) {
       try {
         await fetch(`/api/applications/${applicationId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             resumeId: newResumeId,
-            matchScore: tailorResult.matchAnalysis.matchScore,
-            matchData: {
-              matched: tailorResult.matchAnalysis.matchedSkills,
-              partial: tailorResult.matchAnalysis.partialMatches,
-              missing: tailorResult.matchAnalysis.missingSkills,
-            },
           }),
         });
       } catch {
