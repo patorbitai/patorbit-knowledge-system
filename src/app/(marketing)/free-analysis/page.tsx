@@ -30,12 +30,15 @@ export default function FreeAnalysisPage() {
       {/* Background layers — matching Hero design */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.006)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.006)_1px,transparent_1px)] bg-[size:56px_56px]" />
       <div className="absolute inset-0 bg-gradient-to-b from-[#070B14]/80 via-[#070B14]/95 to-[#070B14]" />
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[400px] bg-gradient-radial from-cyan-500/[0.07] via-blue-500/[0.04] to-transparent rounded-full blur-3xl" />
-      <div className="absolute bottom-1/4 right-0 w-[400px] h-[300px] bg-gradient-radial from-purple-500/[0.05] via-transparent to-transparent rounded-full blur-3xl" />
+      
+      {/* Gradient orbs */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[500px] bg-gradient-radial from-cyan-500/[0.08] via-blue-500/[0.04] to-transparent rounded-full blur-3xl" />
+      <div className="absolute top-1/4 right-0 w-[500px] h-[400px] bg-gradient-radial from-purple-500/[0.06] via-transparent to-transparent rounded-full blur-3xl" />
+      <div className="absolute bottom-1/4 left-0 w-[400px] h-[300px] bg-gradient-radial from-blue-500/[0.05] via-transparent to-transparent rounded-full blur-3xl" />
 
       <div className="relative z-10 mx-auto max-w-3xl px-4 py-16 lg:px-8 lg:py-24">
         {/* Hero Header */}
-        <div className="mb-10 text-center">
+        <div className="mb-12 text-center">
           {/* Badge */}
           <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 backdrop-blur-sm px-4 py-1.5">
             <span className="relative flex h-1.5 w-1.5">
