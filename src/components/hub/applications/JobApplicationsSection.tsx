@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import Link from "next/link";
 import {
   Briefcase,
@@ -21,6 +21,7 @@ import {
   Send,
   MessageSquare,
   Award,
+  ChevronDown,
 } from "lucide-react";
 import { AddJobApplicationModal } from "./AddJobApplicationModal";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
@@ -101,6 +102,16 @@ const STATUS_FILTERS = [
   { value: "rejected", label: "Rejected" },
 ];
 
+/** All valid statuses for quick status update. */
+const VALID_STATUSES = [
+  { value: "saved", label: "Saved" },
+  { value: "ready_to_apply", label: "Ready to Apply" },
+  { value: "applied", label: "Applied" },
+  { value: "interview", label: "Interview" },
+  { value: "offer", label: "Offer" },
+  { value: "rejected", label: "Rejected" },
+];
+
 /** Sort options. */
 const SORT_OPTIONS = [
   { value: "newest", label: "Newest" },
@@ -156,6 +167,104 @@ export function JobApplicationsSection() {
     // Refetch to get the full application data
     fetchApplications();
   };
+
+  // Quick status update handler
+  const [updatingStatusId, setUpdatingStatusId] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<{ id: string; message: string } | null>(null);
+
+  const handleQuickStatusUpdate = useCallback(async (applicationId: string, newStatus: string) => {
+    setUpdatingStatusId(applicationId);
+    setStatusError(null);
+    
+    // Find the application to get its current status for rollback
+    const app = applications.find(a => a.applicationId === applicationId);
+    const previousStatus = app?.status;
+    
+    // Optimistic update
+    setApplications(prev => prev.map(a => 
+      a.applicationId === applicationId ? { ...a, status: newStatus } : a
+    ));
+    
+    try {
+      const res = await fetch(`/api/applications/${applicationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update status");
+      }
+      
+      const updated = await res.json();
+      // Update with server response to ensure consistency
+      setApplications(prev => prev.map(a => 
+        a.applicationId === applicationId ? updated : a
+      ));
+    } catch (err) {
+      // Rollback on error
+      if (previousStatus) {
+        setApplications(prev => prev.map(a => 
+          a.applicationId === applicationId ? { ...a, status: previousStatus } : a
+        ));
+      }
+      setStatusError({ 
+        id: applicationId, 
+        message: err instanceof Error ? err.message : "Failed to update status" 
+      });
+    } finally {
+      setUpdatingStatusId(null);
+    }
+  }, [applications]);
+
+  // Quick follow-up date update handler
+  const [updatingFollowUpId, setUpdatingFollowUpId] = useState<string | null>(null);
+  const [followUpError, setFollowUpError] = useState<{ id: string; message: string } | null>(null);
+
+  const handleQuickFollowUpUpdate = useCallback(async (applicationId: string, followUpDate: string | null) => {
+    setUpdatingFollowUpId(applicationId);
+    setFollowUpError(null);
+    
+    // Find the application to get its current followUpDate for rollback
+    const app = applications.find(a => a.applicationId === applicationId);
+    const previousFollowUpDate = app?.followUpDate ?? null;
+    
+    // Optimistic update
+    setApplications(prev => prev.map(a => 
+      a.applicationId === applicationId ? { ...a, followUpDate } : a
+    ));
+    
+    try {
+      const res = await fetch(`/api/applications/${applicationId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ followUpDate }),
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Failed to update follow-up date");
+      }
+      
+      const updated = await res.json();
+      // Update with server response to ensure consistency
+      setApplications(prev => prev.map(a => 
+        a.applicationId === applicationId ? updated : a
+      ));
+    } catch (err) {
+      // Rollback on error
+      setApplications(prev => prev.map(a => 
+        a.applicationId === applicationId ? { ...a, followUpDate: previousFollowUpDate } : a
+      ));
+      setFollowUpError({ 
+        id: applicationId, 
+        message: err instanceof Error ? err.message : "Failed to update follow-up date" 
+      });
+    } finally {
+      setUpdatingFollowUpId(null);
+    }
+  }, [applications]);
 
   // Get today's date for calculations
   const today = toLocalDateString(new Date());
@@ -421,10 +530,23 @@ export function JobApplicationsSection() {
 
                     {/* Meta row */}
                     <div className="flex items-center gap-3 mt-2 flex-wrap">
-                      {/* Status badge */}
-                      <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium ${statusStyle.bg} ${statusStyle.text}`}>
-                        {statusStyle.label}
-                      </span>
+                      {/* Quick status dropdown */}
+                      <div className="relative">
+                        <select
+                          value={app.status}
+                          onChange={(e) => handleQuickStatusUpdate(app.applicationId, e.target.value)}
+                          disabled={updatingStatusId === app.applicationId}
+                          className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium appearance-none cursor-pointer pr-5 ${statusStyle.bg} ${statusStyle.text} ${updatingStatusId === app.applicationId ? "opacity-50 cursor-not-allowed" : "hover:brightness-95"}`}
+                          style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='currentColor'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`, backgroundRepeat: "no-repeat", backgroundPosition: "right 4px center", backgroundSize: "12px" }}
+                        >
+                          {VALID_STATUSES.map((s) => (
+                            <option key={s.value} value={s.value}>{s.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {statusError?.id === app.applicationId && (
+                        <span className="text-[10px] text-red-500 dark:text-red-400">{statusError.message}</span>
+                      )}
 
                       {/* Match score */}
                       {app.matchScore !== null && (
@@ -465,29 +587,30 @@ export function JobApplicationsSection() {
                         </span>
                       )}
 
-                      {/* Follow-up indicator */}
-                      {(() => {
-                        const followUpState = getFollowUpState(app, today);
-                        const followUpLabel = getFollowUpLabel(followUpState, app.followUpDate);
-                        if (!followUpLabel) return null;
-                        
-                        const followUpStyles: Record<string, string> = {
-                          overdue: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
-                          today: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
-                          upcoming: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400",
-                        };
-                        
-                        return (
-                          <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium ${followUpStyles[followUpState] || followUpStyles.upcoming}`}>
-                            {followUpState === "overdue" ? (
-                              <AlertCircle className="h-2.5 w-2.5" />
-                            ) : (
-                              <Calendar className="h-2.5 w-2.5" />
-                            )}
-                            {followUpLabel}
-                          </span>
-                        );
-                      })()}
+                      {/* Quick follow-up date */}
+                      <div className="relative">
+                        <input
+                          type="date"
+                          value={app.followUpDate ? toLocalDateString(app.followUpDate) : ""}
+                          onChange={(e) => handleQuickFollowUpUpdate(app.applicationId, e.target.value || null)}
+                          disabled={updatingFollowUpId === app.applicationId}
+                          className={`text-[10px] px-1.5 py-0.5 rounded border cursor-pointer ${
+                            updatingFollowUpId === app.applicationId 
+                              ? "opacity-50 cursor-not-allowed border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03]"
+                              : (() => {
+                                  const state = getFollowUpState(app, today);
+                                  if (state === "overdue") return "border-red-200 dark:border-red-500/20 bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400";
+                                  if (state === "today") return "border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400";
+                                  if (state === "upcoming") return "border-blue-200 dark:border-blue-500/20 bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400";
+                                  return "border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.03] text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.06]";
+                                })()
+                          }`}
+                          title={app.followUpDate ? getFollowUpLabel(getFollowUpState(app, today), app.followUpDate) : "Set follow-up date"}
+                        />
+                        {followUpError?.id === app.applicationId && (
+                          <span className="absolute -bottom-4 left-0 text-[9px] text-red-500 dark:text-red-400 whitespace-nowrap">{followUpError.message}</span>
+                        )}
+                      </div>
 
                       {/* Time */}
                       {timeAgo && (

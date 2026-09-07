@@ -228,4 +228,134 @@ describe("toLocalDateString", () => {
   it("converts ISO string to YYYY-MM-DD", () => {
     expect(toLocalDateString("2026-09-07T14:30:00.000Z")).toBe("2026-09-07");
   });
+
+  it("does not shift date due to timezone conversion", () => {
+    // The toLocalDateString function uses local time methods (getFullYear, getMonth, getDate)
+    // so it correctly displays the date in the user's timezone
+    // A date created with new Date(2026, 8, 7) will always be September 7 in local time
+    const date = new Date(2026, 8, 7); // September 7, 2026 at midnight local
+    expect(toLocalDateString(date)).toBe("2026-09-07");
+    
+    // When the date input sends YYYY-MM-DD, it should remain YYYY-MM-DD
+    const selectedDate = "2026-09-07";
+    expect(toLocalDateString(selectedDate)).toBe("2026-09-07");
+  });
+
+  it("preserves calendar date from YYYY-MM-DD input", () => {
+    // When user selects 2026-09-07 in date picker, it should remain 2026-09-07
+    const selectedDate = "2026-09-07";
+    // The toLocalDateString function should handle this correctly
+    expect(toLocalDateString(selectedDate)).toBe("2026-09-07");
+  });
+});
+
+/* ── Quick Status Impact on Derived Values ──────────────────────────────── */
+
+describe("Quick Status Impact", () => {
+  it("status change from applied to offer removes active follow-up", () => {
+    const app = makeApp({ status: "applied", followUpDate: "2026-09-07" });
+    expect(getFollowUpState(app, "2026-09-07")).toBe("today");
+    expect(isNeedsAttention(app, "2026-09-07")).toBe(true);
+    
+    // After changing to offer
+    const updatedApp = makeApp({ status: "offer", followUpDate: "2026-09-07" });
+    expect(getFollowUpState(updatedApp, "2026-09-07")).toBe("none");
+    expect(isNeedsAttention(updatedApp, "2026-09-07")).toBe(false);
+  });
+
+  it("status change from applied to rejected removes active follow-up", () => {
+    const app = makeApp({ status: "applied", followUpDate: "2026-09-01" });
+    expect(getFollowUpState(app, "2026-09-07")).toBe("overdue");
+    expect(isNeedsAttention(app, "2026-09-07")).toBe(true);
+    
+    // After changing to rejected
+    const updatedApp = makeApp({ status: "rejected", followUpDate: "2026-09-01" });
+    expect(getFollowUpState(updatedApp, "2026-09-07")).toBe("none");
+    expect(isNeedsAttention(updatedApp, "2026-09-07")).toBe(false);
+  });
+
+  it("status change from saved to applied with follow-up becomes active", () => {
+    // Saved with follow-up still needs attention (not terminal)
+    const app = makeApp({ status: "saved", followUpDate: "2026-09-07" });
+    expect(getFollowUpState(app, "2026-09-07")).toBe("today");
+    expect(isNeedsAttention(app, "2026-09-07")).toBe(true);
+    
+    // After changing to applied, still needs attention
+    const updatedApp = makeApp({ status: "applied", followUpDate: "2026-09-07" });
+    expect(getFollowUpState(updatedApp, "2026-09-07")).toBe("today");
+    expect(isNeedsAttention(updatedApp, "2026-09-07")).toBe(true);
+  });
+
+  it("next action changes with status", () => {
+    const savedApp = makeApp({ status: "saved" });
+    expect(getNextAction(savedApp, "2026-09-07")).toBe("review_and_prepare");
+    
+    const appliedApp = makeApp({ status: "applied" });
+    expect(getNextAction(appliedApp, "2026-09-07")).toBe("wait_for_response");
+    
+    const interviewApp = makeApp({ status: "interview" });
+    expect(getNextAction(interviewApp, "2026-09-07")).toBe("prepare_for_interview");
+    
+    const offerApp = makeApp({ status: "offer" });
+    expect(getNextAction(offerApp, "2026-09-07")).toBe("review_offer");
+  });
+});
+
+/* ── Quick Follow-up Impact on Derived Values ──────────────────────────── */
+
+describe("Quick Follow-up Impact", () => {
+  it("setting follow-up date makes active application need attention", () => {
+    const app = makeApp({ status: "applied", followUpDate: null });
+    expect(getFollowUpState(app, "2026-09-07")).toBe("none");
+    expect(isNeedsAttention(app, "2026-09-07")).toBe(false);
+    
+    // After setting follow-up to today
+    const updatedApp = makeApp({ status: "applied", followUpDate: "2026-09-07" });
+    expect(getFollowUpState(updatedApp, "2026-09-07")).toBe("today");
+    expect(isNeedsAttention(updatedApp, "2026-09-07")).toBe(true);
+  });
+
+  it("clearing follow-up date removes active follow-up", () => {
+    const app = makeApp({ status: "applied", followUpDate: "2026-09-07" });
+    expect(getFollowUpState(app, "2026-09-07")).toBe("today");
+    expect(isNeedsAttention(app, "2026-09-07")).toBe(true);
+    
+    // After clearing follow-up
+    const updatedApp = makeApp({ status: "applied", followUpDate: null });
+    expect(getFollowUpState(updatedApp, "2026-09-07")).toBe("none");
+    expect(isNeedsAttention(updatedApp, "2026-09-07")).toBe(false);
+  });
+
+  it("changing follow-up from overdue to future removes active follow-up", () => {
+    const app = makeApp({ status: "applied", followUpDate: "2026-09-01" });
+    expect(getFollowUpState(app, "2026-09-07")).toBe("overdue");
+    expect(isNeedsAttention(app, "2026-09-07")).toBe(true);
+    
+    // After changing to future date
+    const updatedApp = makeApp({ status: "applied", followUpDate: "2026-09-14" });
+    expect(getFollowUpState(updatedApp, "2026-09-07")).toBe("upcoming");
+    expect(isNeedsAttention(updatedApp, "2026-09-07")).toBe(false);
+  });
+
+  it("terminal status with follow-up remains inactive", () => {
+    const offerApp = makeApp({ status: "offer", followUpDate: "2026-09-01" });
+    expect(getFollowUpState(offerApp, "2026-09-07")).toBe("none");
+    expect(isNeedsAttention(offerApp, "2026-09-07")).toBe(false);
+    
+    const rejectedApp = makeApp({ status: "rejected", followUpDate: "2026-09-01" });
+    expect(getFollowUpState(rejectedApp, "2026-09-07")).toBe("none");
+    expect(isNeedsAttention(rejectedApp, "2026-09-07")).toBe(false);
+  });
+
+  it("follow-up date today remains today, not overdue", () => {
+    const app = makeApp({ status: "applied", followUpDate: "2026-09-07" });
+    expect(getFollowUpState(app, "2026-09-07")).toBe("today");
+    expect(getFollowUpState(app, "2026-09-06")).toBe("upcoming");
+  });
+
+  it("follow-up date future remains upcoming, not due", () => {
+    const app = makeApp({ status: "applied", followUpDate: "2026-09-14" });
+    expect(getFollowUpState(app, "2026-09-07")).toBe("upcoming");
+    expect(isNeedsAttention(app, "2026-09-07")).toBe(false);
+  });
 });
