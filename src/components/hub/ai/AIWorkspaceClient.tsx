@@ -31,6 +31,7 @@ import { ErrorBox, LoadingRow } from "@/components/resume-builder/optimization/s
 import { EvidenceOptimizerReview } from "@/components/resume-builder/optimization/EvidenceOptimizerReview";
 import { CareerInsightsPanel } from "@/components/hub/ai/CareerInsightsPanel";
 import { TEMPLATES } from "@/app/resume-builder/templates";
+import { applyAcceptedChanges } from "@/lib/ai/apply-changes";
 import type { Resume } from "@/types/resume";
 import type { EvidenceOptimizerResult, OptimizerChange } from "@/types/evidence-optimizer";
 
@@ -282,6 +283,7 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
   const resumes = useResumeBuilder((s) => s.resumes);
   const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
   const switchResume = useResumeBuilder((s) => s.switchResume);
+  const createResume = useResumeBuilder((s) => s.createResume);
 
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
@@ -412,12 +414,21 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
   }, [selectedResume, effectiveJD]);
 
   const handleApplyEvidenceChanges = useCallback((acceptedChanges: OptimizerChange[]) => {
-    // For now, log the accepted changes. Full integration with resume store comes next.
-    console.log("Applying evidence-based changes:", acceptedChanges.length, "changes");
+    if (!selectedResume || acceptedChanges.length === 0) return;
+
+    // M4: Apply accepted changes to create a new Resume.
+    // The original Resume remains unchanged (ADR-001: original is canonical).
+    const tailoredResume = applyAcceptedChanges(selectedResume, acceptedChanges);
+    const baseName = selectedResume.name || selectedResume.resumeName || "Resume";
+    const newResumeId = createResume(`${baseName} — Evidence-Optimized`, {
+      ...tailoredResume,
+      templateId: selectedResume.templateId || "modern-clean",
+    } as Partial<Resume>);
+    switchResume(newResumeId);
     setEvidenceResult(null);
     opt.resetScore();
     opt.resetMatch();
-  }, [opt]);
+  }, [selectedResume, createResume, switchResume, opt]);
 
   const firstName = userName.split(" ")[0] || "there";
   const templateName = selectedResume
