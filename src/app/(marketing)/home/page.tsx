@@ -33,21 +33,14 @@ export const metadata: Metadata = {
   },
 };
 
-import { getServerSession } from "next-auth";
-import { redirect } from "next/navigation";
-import { authOptions } from "@/lib/auth";
-
 /**
- * Redirect authenticated users to the app instead of showing the public landing page.
- * Uses the existing per-page auth-guard pattern (same as /settings and /overview).
+ * Public marketing landing page.
+ * Accessible to both authenticated and unauthenticated visitors.
+ * Authenticated users are NOT redirected — they can view the landing page
+ * and navigate back to the app via the sidebar.
  */
 
 export default async function HomePage() {
-  const session = await getServerSession(authOptions);
-  if (session?.user?.id) {
-    redirect("/overview");
-  }
-
   return (
     <main className="bg-[#070B14] text-white">
       <Hero />

@@ -28,6 +28,17 @@ describe("Sidebar and Feature Routes Sprint Tests", () => {
     expect(html).toContain('href="/settings"');
   });
 
+  it("1b. Sidebar brand logo links to /home for public landing page", () => {
+    mockPathname.mockReturnValue("/overview");
+    const html = renderToString(<SidebarNav />);
+    expect(html).toContain('href="/home"');
+    // Brand logo must NOT point to /overview (that was the bug)
+    const brandMatch = html.match(/aria-label="Go to Patorbit home"[^>]*href="([^"]+)"/);
+    const reverseMatch = html.match(/href="([^"]+)"[^>]*aria-label="Go to Patorbit home"/);
+    const href = brandMatch?.[1] || reverseMatch?.[1];
+    expect(href).toBe("/home");
+  });
+
   it("2. Trust Score route (TrustView) renders successfully", () => {
     const resume = createMinimalResume("Test User");
     const html = renderToString(<TrustView resume={resume} evidence={[]} />);
