@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import Link from "next/link";
+import { Menu, X, Home } from "lucide-react";
 import SidebarNav from "./SidebarNav";
 import AccountMenu from "./AccountMenu";
 
@@ -51,12 +52,19 @@ export default function AppShell({
             >
               <Menu className="h-5 w-5" />
             </button>
-            <span className="text-sm font-semibold text-gray-900 dark:text-white lg:hidden">
+            <Link href="/home" className="text-sm font-semibold text-gray-900 dark:text-white lg:hidden hover:text-blue-600 dark:hover:text-blue-400 transition-colors">
               Patorbit
-            </span>
+            </Link>
           </div>
 
           <div className="flex items-center gap-3">
+            <Link
+              href="/home"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:text-gray-900 dark:hover:text-white transition-colors"
+            >
+              <Home className="h-3.5 w-3.5" />
+              Home
+            </Link>
             <AccountMenu />
           </div>
         </header>
