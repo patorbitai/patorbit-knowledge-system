@@ -206,7 +206,8 @@ audit; the historical sections above remain unchanged.
 | **4. Evidence FK** | ✅ COMPLETE | Same migration as Claims | `EvidenceRecord.claimId` is now a real nullable FK to `Claim` with `ON DELETE SET NULL` |
 | **5. Verification** | ✅ COMPLETE | `20260907020000_add_verification_events` | `VerificationEvent` append-only audit trail with status transitions and ownership enforcement |
 | **6. Trust** | ✅ COMPLETE | `GET /api/trust` — dynamically derived from Claims + Evidence + VerificationEvent | Server-side pure derivation algorithm (`src/lib/trust/derivation.ts`); no persisted Trust entity |
-| **7. Passport** | 🔶 FUTURE | Not yet started | Client-side share cache exists; server-side projection is a future phase |
+| **7. Conflicts** | ✅ COMPLETE | `ConflictRecord` model + pure detection algorithm | Detects overlapping dates, contradictory employers, duplicate credentials, status mismatches; user-driven resolution |
+| **8. Passport** | 🔶 FUTURE | Not yet started | Client-side share cache exists; server-side projection is a future phase |
 
 ### Canonical domains now in PostgreSQL
 
@@ -218,6 +219,7 @@ The following domains now have canonical PostgreSQL representation:
 - **Claims** — `Claim` table under ProfessionalIdentity (first-class server entity)
 - **Evidence metadata** — `EvidenceRecord` table with enforceable FK to `Claim`
 - **Verification history** — `VerificationEvent` append-only table with FK to `Claim`
+- **Conflict records** — `ConflictRecord` table under ProfessionalIdentity (detected inconsistencies between Claims)
 
 ### What still uses client-side state
 
@@ -234,6 +236,7 @@ Trust derivation is now server-side. Passport rendering and Knowledge Graph rema
 |---|---|---|
 | `20260907010000_add_claim_model_and_evidence_fk` | Created | Adds `Claim` model, makes `EvidenceRecord.claimId` nullable FK |
 | `20260907020000_add_verification_events` | Created | Adds `VerificationEvent` append-only audit trail |
+| `20260907030000_add_conflict_records` | Created | Adds `ConflictRecord` model for conflict detection engine |
 
 > **Note:** These migrations have been created and validated (`npx prisma
 > validate`). Application to the production database has not been independently

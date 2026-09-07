@@ -42,7 +42,7 @@ architecture will become**, and why.
 | **Verification history / audit trail** | ✅ **IMPLEMENTED — ADR-002 Phase 3; VerificationEvent append-only table with status transitions** |
 | **Verification status transition control** | ✅ **IMPLEMENTED — ADR-002 Phase 3; controlled state machine with ownership enforcement** |
 | Verification levels L0–L3 | 🔶 **FUTURE — proposed** |
-| Conflict Detection Engine | 🔶 **FUTURE — proposed** |
+| **Conflict Detection Engine** | ✅ **IMPLEMENTED — ADR-002 Phase 5; `ConflictRecord` model + pure detection algorithm; detects overlapping dates, contradictory employers, duplicate credentials, status mismatches** |
 | Trusted Issuer Network / verifiable credentials | 🔶 **FUTURE — proposed** |
 | Scalable Core Platform service separation | 🔶 **FUTURE — proposed** |
 
@@ -329,45 +329,62 @@ appropriate.
 
 ---
 
-## 9. Conflict Engine (proposed / future)
+## 9. Conflict Engine (implemented — ADR-002 Phase 5)
+
+**Status: IMPLEMENTED.** The Conflict Detection Engine identifies inconsistencies
+between Claims within the same ProfessionalIdentity.
+
+### Current implementation
+
+- `ConflictRecord` is a PostgreSQL table with FK to ProfessionalIdentity.
+- A pure detection algorithm (`src/lib/conflict/detection.ts`) compares Claims
+  and surfaces conflicts — it NEVER silently resolves them.
+- Conflicts are persisted for user review (new → reviewing → dismissed/resolved).
+- The user decides how to handle each conflict.
+
+### Detected conflict types
+
+- **overlapping_dates** — Employment claims with overlapping date ranges
+- **contradictory_employer** — Different employers during overlapping periods
+- **contradictory_title** — Different job titles during overlapping periods
+- **contradictory_dates** — Same employer but different date ranges
+- **duplicate_credential** — Similar certifications or same degree from different schools
+- **education_inconsistency** — Same school but different degrees
+- **status_mismatch** — Verified claim contradicts disputed claim about same topic
+- **location_inconsistency** — Same employer period but different locations
+
+### Severity levels
+
+- **info** — Minor inconsistency, likely legitimate (e.g., title change)
+- **warning** — Potential conflict requiring review (e.g., overlapping employment)
+- **critical** — Verified claim contradicts disputed claim
+
+### Key principle
 
 Patorbit must **not** use "latest uploaded evidence wins."
-
-Example:
-
-- Evidence A: Google, 2019–2023
-- Evidence B: XYZ Technologies, 2021–2025
-
-The system should detect the **timeline overlap**. It must **not**
-automatically accuse the user of fraud. Possible legitimate explanations:
-
-- part-time employment
-- consulting
-- contracting
-- concurrent roles
-- subsidiary
-- incorrect dates
-- other legitimate circumstances
-
-Therefore the system should surface:
+The system surfaces conflicts for user review:
 
 > **CONFLICT / CLARIFICATION REQUIRED**
 
-rather than silently choosing one claim.
+rather than silently choosing one claim. Possible legitimate explanations
+include part-time work, consulting, concurrent roles, subsidiaries,
+or simple data entry errors.
 
-Potential conflict types:
+### API endpoints
 
-- overlapping employment
-- contradictory dates
-- contradictory employer
-- contradictory job title
-- duplicate credential
-- education inconsistency
-- location inconsistency
-- changed historical information
-- revoked credential
-- suspicious evidence
-- identity mismatch
+- `GET /api/conflicts` — list all conflicts for authenticated user
+- `POST /api/conflicts` — run conflict detection across all Claims
+- `GET /api/conflicts/[conflictId]` — get a specific conflict
+- `PATCH /api/conflicts/[conflictId]` — update status (reviewing, dismissed, resolved)
+- `DELETE /api/conflicts/[conflictId]` — delete a conflict
+
+### What this does NOT yet provide
+
+- Automatic conflict resolution
+- AI-powered conflict analysis
+- Evidence-level conflict detection (currently claim-level only)
+- Cross-identity conflict detection
+- Timeline visualization of conflicts
 
 ---
 
@@ -614,7 +631,7 @@ kept separate from the future Identity/Claims/Evidence architecture.
 ### 15.2 PROPOSED / FUTURE
 
 - Trust server-side derivation — ✅ **COMPLETE** (ADR-002 Phase 4)
-- Conflict Detection Engine
+- Conflict Detection Engine — ✅ **COMPLETE** (ADR-002 Phase 5)
 - Cryptographically verifiable credentials
 - Trusted issuer network (employer, university, certification, professional
   organization integrations)
@@ -669,14 +686,22 @@ largely what the current repository already covers; Phases 2–6 are future.
 - ✅ Share flow security fixed (no client-supplied TrustReport)
 - ✅ Deterministic, auditable, explainable Trust from canonical data
 
-### PHASE 5 — Professional Passport (future)
+### PHASE 5 — Conflict Detection Engine (✅ COMPLETE)
+
+- ✅ ConflictRecord model
+- ✅ Pure detection algorithm (overlapping dates, contradictory employers, duplicate credentials, etc.)
+- ✅ API routes for detection and management
+- ✅ User-driven resolution (reviewing, dismissed, resolved)
+- ✅ Ownership enforcement
+
+### PHASE 6 — Professional Passport (future)
 
 - verified claims
 - evidence-backed profile
 - explainable trust
 - selective sharing
 
-### PHASE 6 — Issuer Network (future)
+### PHASE 7 — Issuer Network (future)
 
 - employer issuer integrations
 - university issuer integrations
@@ -684,7 +709,7 @@ largely what the current repository already covers; Phases 2–6 are future.
 - digitally signed credentials
 - credential status / revocation
 
-### PHASE 7 — Patorbit Platform (future)
+### PHASE 8 — Patorbit Platform (future)
 
 - scalable API
 - service / domain separation
@@ -735,3 +760,4 @@ largely what the current repository already covers; Phases 2–6 are future.
 | 1.0.0 | 2026-08-16 | Initial master architecture document — current-vs-future direction, product principles, claim/evidence/verification/conflict/trust models, platform architecture, resume import, A4 pagination, roadmap. |
 | 1.1.0 | 2026-09-07 | Updated architecture status to reflect ADR-002 Phase 2 (Claim server entity, Evidence FK enforcement) and Phase 3 (VerificationEvent audit trail). Updated Current vs Future sections. |
 | 1.2.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 4 — Trust Server-Side Derivation. `GET /api/trust` now derives Trust from canonical Claims + Evidence + VerificationEvents. Client TrustService deprecated as authoritative source. Share flow security fixed. |
+| 1.3.0 | 2026-09-07 | Updated to reflect ADR-002 Phase 5 — Conflict Detection Engine. `ConflictRecord` model + pure detection algorithm. Detects overlapping dates, contradictory employers, duplicate credentials, status mismatches. Conflicts surfaced for user review, never silently resolved. |

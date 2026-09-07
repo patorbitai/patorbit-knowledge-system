@@ -93,6 +93,7 @@ model ProfessionalIdentity {
   resumes           Resume[]
   jobApplications   JobApplication[]
   claims            Claim[]
+  conflicts         ConflictRecord[]
 }
 
 // ─── Resume (Phase 0 — server persistence foundation) ───────────
@@ -282,6 +283,32 @@ model VerificationEvent {
   @@index([claimId])
   @@index([claimId, createdAt])
   @@index([evidenceRecordId])
+}
+
+// ─── Conflict Records (ADR-002 Phase 5 — conflict detection) ──
+//
+// Detected inconsistencies between Claims within the same ProfessionalIdentity.
+// Conflicts are surfaced, NOT silently resolved. The user decides how to
+// handle each conflict (dismiss, resolve, or clarify).
+model ConflictRecord {
+  id                     String   @id @default(cuid())
+  professionalIdentityId String
+  conflictType           String   // overlapping_dates | contradictory_employer | contradictory_title | duplicate_credential | education_inconsistency | status_mismatch | contradictory_dates | location_inconsistency
+  severity               String   @default("warning") // info | warning | critical
+  description            String   @db.Text
+  claimIds               String[] // The IDs of the conflicting Claims
+  status                 String   @default("new") // new | reviewing | dismissed | resolved
+  resolution             String?  @db.Text // User-provided resolution note
+  detectedAt             DateTime @default(now())
+  resolvedAt             DateTime?
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  professionalIdentity ProfessionalIdentity @relation(fields: [professionalIdentityId], references: [id], onDelete: Cascade)
+
+  @@index([professionalIdentityId])
+  @@index([professionalIdentityId, status])
+  @@index([professionalIdentityId, conflictType])
 }
 
 // ─── Razorpay Subscriptions ────────────────────────────────

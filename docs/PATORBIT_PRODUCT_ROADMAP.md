@@ -278,7 +278,7 @@ Career Memory closes the loop begun in M5: accumulated, evidence-based knowledge
 
 ## Current State
 
-**Overall completion: ~80%** (as of 2026-09-07); Phase 1 Career Intelligence complete; ADR-002 Phases 2–3 complete; Trust derivation is the next architectural milestone.
+**Overall completion: ~83%** (as of 2026-09-07); Phase 1 Career Intelligence complete; ADR-002 Phases 2–5 complete; Conflict Detection is the next milestone.
 
 | Module | Status | Completion |
 |---|---|---|
@@ -489,7 +489,8 @@ A milestone is not done until all ten items are complete.
 - **ADR-002 Phase 2** — Evidence + Provenance Foundation: Claim server entity, Evidence → Claim FK enforcement.
 - **ADR-002 Phase 3** — Verification Records / Events: VerificationEvent audit trail, status transitions.
 - **ADR-002 Phase 4** — Trust Server-Side Derivation: `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm; client TrustService deprecated as authoritative.
-- The next architectural milestone is **ADR-002 Phase 5 — Professional Passport server-side projection** (FUTURE / NEXT).
+- **ADR-002 Phase 5** — Conflict Detection Engine: `ConflictRecord` model + pure detection algorithm; detects overlapping dates, contradictory employers, duplicate credentials, status mismatches.
+- The next architectural milestone is **ADR-002 Phase 6 — Professional Passport server-side projection** (FUTURE / NEXT).
 - The forward sequence for Phase 1 is: **M1 ✅ → M2 ✅ → M3 ✅ → M4 ✅ → M5 ✅**, followed by Phase 2 (Customer Acquisition) and Phase 3 (Career Platform).
 
 ---

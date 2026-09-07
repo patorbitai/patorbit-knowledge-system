@@ -283,6 +283,7 @@ Those belong to the Professional Identity.
 | Evidence | ✅ **`EvidenceRecord` belongs to Claim via enforceable FK** — `claimId` is nullable FK with `ON DELETE SET NULL` (ADR-002 Phase 2) | `EvidenceRecord` belongs to Claim (enforceable) |
 | Verification | ✅ **`VerificationEvent` append-only audit trail** — events belong to Claim, optionally reference EvidenceRecord; controlled status transitions (ADR-002 Phase 3) | Verification history belongs to Claim/Evidence |
 | Trust | ✅ **Server-side derivation** — `GET /api/trust` derives Trust from canonical Claims + Evidence + VerificationEvents; pure algorithm in `src/lib/trust/derivation.ts`; no persisted Trust entity | Server-side derivation from Claims + Evidence + Verification |
+| Conflict Detection | ✅ **Implemented** — `ConflictRecord` model + pure detection algorithm in `src/lib/conflict/detection.ts`; detects overlapping dates, contradictory employers, duplicate credentials, etc. | Conflict Detection Engine |
 | Passport | Live client data + share cache | 🔶 **FUTURE** — server-side projection from canonical data |
 | Knowledge Graph | Derived in-memory | Derived in-memory |
 
@@ -387,7 +388,8 @@ user's Claims, Evidence, or Verification history.
 4. Evidence Claim FK — ✅ COMPLETE (ADR-002 Phase 2)
 5. Verification records/events — ✅ COMPLETE (ADR-002 Phase 3)
 6. Trust server-side derivation — ✅ COMPLETE (ADR-002 Phase 4)
-7. Passport server-side projection — 🔶 FUTURE
+7. Conflict Detection Engine — ✅ COMPLETE (ADR-002 Phase 5)
+8. Passport server-side projection — 🔶 FUTURE
 
 For every migration:
 
