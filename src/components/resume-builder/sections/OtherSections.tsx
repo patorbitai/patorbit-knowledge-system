@@ -14,6 +14,7 @@ import { ai } from "@/lib/ai/client";
 import { AnalysisScore } from "../AnalysisScore";
 import { ProgressIndicator } from "../ProgressIndicator";
 import { useValidation } from "../hooks/useValidation";
+import { ResumeFont } from "../cards/ResumeFont";
 
 /* ====================================================================
  * ACHIEVEMENTS — content cards
@@ -76,15 +77,17 @@ export function AchievementsSection() {
                       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
                         <Trophy className="w-4 h-4" />
                       </span>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">{ach.title || "Untitled achievement"}</p>
-                        {(ach.issuer || ach.date) && (
-                          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
-                            {[ach.issuer, ach.date].filter(Boolean).join(" · ")}
-                          </p>
-                        )}
-                        {ach.description && <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 leading-relaxed">{ach.description}</p>}
-                      </div>
+                      <ResumeFont>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">{ach.title || "Untitled achievement"}</p>
+                          {(ach.issuer || ach.date) && (
+                            <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                              {[ach.issuer, ach.date].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                          {ach.description && <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 leading-relaxed">{ach.description}</p>}
+                        </div>
+                      </ResumeFont>
                       <div className="flex items-center gap-1 shrink-0">
                         <button onClick={() => toggleEdit(ach.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 rounded-md hover:bg-cyan-50 dark:hover:bg-cyan-500/10" title="Edit"><Pencil className="w-3 h-3" /></button>
                         <button onClick={() => removeAchievement(ach.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10" title="Delete"><Trash2 className="w-3 h-3" /></button>
@@ -156,56 +159,58 @@ export function LanguagesSection() {
         {resume.languages.length === 0 ? (
           <EmptyState icon={<Globe className="w-5 h-5" />} message="No languages added" submessage="Add languages to showcase your multilingual skills" action={handleAdd} actionLabel="Add Language" />
         ) : (
-          <div className="flex flex-wrap gap-2">
-            {resume.languages.map((lang) => (
-              <motion.span
-                key={lang.id}
-                layout
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.9 }}
-                className="group/lang inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.04] px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:border-cyan-400/40 transition-colors"
-              >
-                {editingId === lang.id ? (
-                  <>
-                    <input
-                      autoFocus
-                      value={draft}
-                      onChange={(e) => setDraft(e.target.value)}
-                      onBlur={() => commitEdit(lang.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") { e.preventDefault(); commitEdit(lang.id); }
-                        if (e.key === "Escape") setEditingId(null);
-                      }}
-                      aria-label="Language name"
-                      className="w-24 bg-transparent outline-none text-xs text-gray-900 dark:text-white"
-                    />
-                    <button onClick={() => commitEdit(lang.id)} className="text-emerald-500" aria-label="Save language"><Check className="w-3 h-3" /></button>
-                  </>
-                ) : (
-                  <>
-                    <button onClick={() => startEdit(lang.id, lang.name)} className="font-medium cursor-pointer text-left" title="Click to rename">{lang.name || "Language"}</button>
-                    <span className="text-[10px] text-gray-400 dark:text-slate-500">—</span>
-                    <select
-                      value={lang.proficiency}
-                      onChange={(e) => updateLanguage(lang.id, "proficiency", e.target.value)}
-                      aria-label={`Proficiency for ${lang.name}`}
-                      className="bg-transparent text-[10px] font-medium text-gray-500 dark:text-slate-400 outline-none cursor-pointer"
-                    >
-                      {proficiencyLevels.map((l) => <option key={l} value={l}>{l}</option>)}
-                    </select>
-                    <button
-                      onClick={() => removeLanguage(lang.id)}
-                      className="opacity-0 group-hover/lang:opacity-100 transition-opacity text-red-400 hover:text-red-300 cursor-pointer"
-                      aria-label={`Remove ${lang.name}`}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </>
-                )}
-              </motion.span>
-            ))}
-          </div>
+          <ResumeFont>
+            <div className="flex flex-wrap gap-2">
+              {resume.languages.map((lang) => (
+                <motion.span
+                  key={lang.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.9 }}
+                  className="group/lang inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.04] px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:border-cyan-400/40 transition-colors"
+                >
+                  {editingId === lang.id ? (
+                    <>
+                      <input
+                        autoFocus
+                        value={draft}
+                        onChange={(e) => setDraft(e.target.value)}
+                        onBlur={() => commitEdit(lang.id)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") { e.preventDefault(); commitEdit(lang.id); }
+                          if (e.key === "Escape") setEditingId(null);
+                        }}
+                        aria-label="Language name"
+                        className="w-24 bg-transparent outline-none text-xs text-gray-900 dark:text-white"
+                      />
+                      <button onClick={() => commitEdit(lang.id)} className="text-emerald-500" aria-label="Save language"><Check className="w-3 h-3" /></button>
+                    </>
+                  ) : (
+                    <>
+                      <button onClick={() => startEdit(lang.id, lang.name)} className="font-medium cursor-pointer text-left" title="Click to rename">{lang.name || "Language"}</button>
+                      <span className="text-[10px] text-gray-400 dark:text-slate-500">—</span>
+                      <select
+                        value={lang.proficiency}
+                        onChange={(e) => updateLanguage(lang.id, "proficiency", e.target.value)}
+                        aria-label={`Proficiency for ${lang.name}`}
+                        className="bg-transparent text-[10px] font-medium text-gray-500 dark:text-slate-400 outline-none cursor-pointer"
+                      >
+                        {proficiencyLevels.map((l) => <option key={l} value={l}>{l}</option>)}
+                      </select>
+                      <button
+                        onClick={() => removeLanguage(lang.id)}
+                        className="opacity-0 group-hover/lang:opacity-100 transition-opacity text-red-400 hover:text-red-300 cursor-pointer"
+                        aria-label={`Remove ${lang.name}`}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </>
+                  )}
+                </motion.span>
+              ))}
+            </div>
+          </ResumeFont>
         )}
       </SectionContent>
     </SectionCard>
@@ -284,7 +289,9 @@ export function PortfolioSection() {
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.title || "Untitled link"}</p>
+                      <ResumeFont>
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.title || "Untitled link"}</p>
+                      </ResumeFont>
                       {item.url && (
                         <a href={item.url.startsWith("http") ? item.url : `https://${item.url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-cyan-600 dark:text-cyan-400 hover:underline truncate max-w-full">
                           <ExternalLink className="w-3 h-3 shrink-0" />
@@ -294,7 +301,11 @@ export function PortfolioSection() {
                     </div>
                     <span className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-white/[0.05] text-[9px] font-medium uppercase tracking-wide text-gray-400 dark:text-slate-500 shrink-0">{item.type}</span>
                   </div>
-                  {item.description && <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{item.description}</p>}
+                  {item.description && (
+                    <ResumeFont>
+                      <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{item.description}</p>
+                    </ResumeFont>
+                  )}
                   <div className="flex items-center justify-end gap-1 opacity-0 group-hover/link:opacity-100 transition-opacity">
                     <button onClick={() => toggleEdit(item.id)} className="p-1 text-gray-400 dark:text-slate-500 hover:text-cyan-500 rounded-md" title="Edit"><Pencil className="w-3 h-3" /></button>
                     <button onClick={() => removePortfolio(item.id)} className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md" title="Delete"><Trash2 className="w-3 h-3" /></button>

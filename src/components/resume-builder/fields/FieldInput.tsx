@@ -1,10 +1,20 @@
 "use client";
 
+import { useMemo } from "react";
 import { clsx } from "clsx";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { AIActionState } from "@/types/resume";
 import { Sparkles, Check, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { FONT_OPTIONS, DEFAULT_STYLE_CONFIG, type ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+import { fontFamilies } from "@/lib/resume-design-system/fonts";
+
+/** Resolve the CSS font-family string from a stored style config. */
+function resolveFontFamily(stored?: ResumeStyleConfig): string {
+  const config = stored ?? DEFAULT_STYLE_CONFIG;
+  const option = FONT_OPTIONS.find((f) => f.id === config.fontFamily);
+  return option?.stack ?? fontFamilies.sans;
+}
 
 interface FieldInputProps {
   label: string;
@@ -34,6 +44,8 @@ export function FieldInput({
   disabled = false,
 }: FieldInputProps) {
   const aiActions = useResumeBuilder((s) => aiActionKey ? s.aiActions[aiActionKey] : undefined);
+  const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
+  const fontFamily = useMemo(() => resolveFontFamily(styleConfig), [styleConfig]);
 
   const charCount = typeof value === "string" ? value.length : 0;
 
@@ -75,9 +87,10 @@ export function FieldInput({
           value={value ?? ""}
           onChange={handleInput}
           onBlur={onBlur}
-        placeholder={placeholder}
-        rows={Math.max(rows, 5)}
+          placeholder={placeholder}
+          rows={Math.max(rows, 5)}
           disabled={disabled}
+          style={{ fontFamily }}
           className={inputClasses}
         />
       ) : (

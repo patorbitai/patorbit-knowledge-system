@@ -11,6 +11,7 @@ import { EmptyState } from "../cards/EmptyState";
 import { Plus, Sparkles, Filter, Zap, X, Check } from "lucide-react";
 import { motion } from "framer-motion";
 import { SKILL_LEVELS } from "@/utils/resume-parser";
+import { ResumeFont } from "../cards/ResumeFont";
 
 /** Display-only grouping: explicit category wins; otherwise keyword heuristic. */
 const TECH_KEYWORDS = /\b(python|java|javascript|typescript|react|node|sql|azure|aws|gcp|docker|kubernetes|pyspark|databricks|git|linux|html|css|go\b|rust|c\+\+|c#|php|ruby|r\b|sas|excel|power\s*bi|tableau|mlflow|tensorflow|pytorch|postgres|mysql|mongodb|redis|kafka|airflow|hadoop|spark|etl|api|rest|cloud|devops|ci\/cd|terraform|kubernetes|snowflake|data|machine\s*learning|ai\b|llm|genai)\b/i;
@@ -186,6 +187,7 @@ export function SkillsSection() {
                         </>
                       ) : (
                         <>
+                          <ResumeFont>
                           <button
                             onClick={() => startEdit(skill.id, skill.name)}
                             className="group-hover/chip:underline decoration-dotted underline-offset-4 cursor-pointer text-left"
@@ -193,6 +195,7 @@ export function SkillsSection() {
                           >
                             {skill.name || "Untitled"}
                           </button>
+                        </ResumeFont>
                           <select
                             value={skill.level}
                             onChange={(e) => updateSkill(skill.id, "level", e.target.value)}

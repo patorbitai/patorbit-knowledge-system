@@ -30,20 +30,20 @@ export function ClaimsReview() {
   if ((!suggestedClaims || suggestedClaims.length === 0) && (!acceptedClaims || acceptedClaims.length === 0)) return null;
 
   return (
-    <div className="fixed bottom-4 right-4 z-50 max-w-lg w-full">
+    <div className="fixed top-20 right-4 z-40 max-w-sm w-full">
       <AnimatePresence>
         {expanded && (
           <motion.div
-            initial={{ opacity: 0, y: 30, scale: 0.95 }}
+            initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 20, scale: 0.98 }}
-            className="rounded-2xl border border-blue-500/20 bg-slate-900/80 backdrop-blur-xl shadow-2xl shadow-blue-500/10 overflow-hidden"
+            exit={{ opacity: 0, y: -20, scale: 0.98 }}
+            className="rounded-2xl border border-blue-500/20 bg-slate-900/90 backdrop-blur-xl shadow-2xl shadow-blue-500/10 overflow-hidden"
           >
             {/* Header */}
-            <div className="flex items-center justify-between px-5 py-3 border-b border-blue-500/10">
-              <div className="flex items-center gap-3">
-                <Lightbulb className="w-5 h-5 text-blue-400" />
-                <h3 className="text-sm font-semibold text-white">
+            <div className="flex items-center justify-between px-4 py-2.5 border-b border-blue-500/10">
+              <div className="flex items-center gap-2">
+                <Lightbulb className="w-4 h-4 text-blue-400" />
+                <h3 className="text-xs font-semibold text-white">
                   {(() => {
                   const sc = suggestedClaims ?? [];
                   return sc.length > 0
@@ -56,21 +56,21 @@ export function ClaimsReview() {
                 onClick={() => setExpanded(false)}
                 className="p-1 rounded-full text-slate-500 hover:bg-slate-700 hover:text-white transition-colors"
               >
-                <X className="w-4 h-4" />
+                <X className="w-3.5 h-3.5" />
               </button>
             </div>
 
             {/* Claims list */}
-            <div className="p-3 space-y-2 max-h-[40vh] overflow-y-auto">
+            <div className="p-2 space-y-1.5 max-h-[35vh] overflow-y-auto">
               {/* Suggested (review) claims */}
               {suggestedClaims.map((claim, i) => (
                 <div
                   key={i}
-                  className="bg-slate-800/50 rounded-xl p-4 border border-slate-700/60"
+                  className="bg-slate-800/50 rounded-xl p-3 border border-slate-700/60"
                 >
                   {editingIndex === i ? (
                     // Edit mode
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       <textarea
                         value={editedText}
                         onChange={(e) => setEditedText(e.target.value)}
@@ -98,21 +98,21 @@ export function ClaimsReview() {
                   ) : (
                     // View mode
                     <>
-                      <p className="text-sm text-slate-200">{claim.assertionText}</p>
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <FileText className="w-3 h-3" />
+                      <p className="text-xs text-slate-200">{claim.assertionText}</p>
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                          <FileText className="w-2.5 h-2.5" />
                           <span>Source: {claim.sourceActivityId}</span>
                           <span className="text-slate-600">|</span>
                           <span>Confidence: {Math.round(claim.confidence * 100)}%</span>
                         </div>
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-0.5">
                           <button
                             title="Accept"
                             onClick={() => acceptClaim(claim)}
-                            className="p-1.5 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"
+                            className="p-1 rounded-lg text-emerald-400 hover:bg-emerald-500/10 transition-colors"
                           >
-                            <Check className="w-4 h-4" />
+                            <Check className="w-3.5 h-3.5" />
                           </button>
                           <button
                             title="Edit & Accept"
@@ -120,16 +120,16 @@ export function ClaimsReview() {
                               setEditingIndex(i);
                               setEditedText(claim.assertionText);
                             }}
-                            className="p-1.5 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors"
+                            className="p-1 rounded-lg text-blue-400 hover:bg-blue-500/10 transition-colors"
                           >
-                            <Edit2 className="w-3.5 h-3.5" />
+                            <Edit2 className="w-3 h-3" />
                           </button>
                           <button
                             title="Reject"
                             onClick={() => rejectClaim(i)}
-                            className="p-1.5 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
+                            className="p-1 rounded-lg text-rose-400 hover:bg-rose-500/10 transition-colors"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
@@ -140,25 +140,25 @@ export function ClaimsReview() {
 
               {/* Accepted claims → continue to evidence */}
               {acceptedClaims?.length > 0 && (
-                <div className="pt-2">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
-                    <span className="text-[11px] font-medium text-slate-400 uppercase tracking-wider">
+                <div className="pt-1.5">
+                  <div className="flex items-center gap-1.5 mb-1.5">
+                    <ShieldCheck className="w-3 h-3 text-emerald-400" />
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">
                       Accepted Claims ({acceptedClaims.length})
                     </span>
                   </div>
                   {acceptedClaims.map((claim) => (
                     <div
                       key={claim.id}
-                      className="bg-slate-800/30 rounded-xl p-3 border border-white/[0.04]"
+                      className="bg-slate-800/30 rounded-xl p-2.5 border border-white/[0.04]"
                     >
-                      <p className="text-sm text-slate-200">{claim.assertionText}</p>
+                      <p className="text-xs text-slate-200">{claim.assertionText}</p>
                       <button
                         onClick={() => setStrengthenClaim(claim)}
-                        className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg bg-blue-600/20 border border-blue-500/30 px-2.5 py-1.5 text-xs font-medium text-blue-300 hover:bg-blue-600/30 hover:text-blue-200 transition-colors"
+                        className="mt-2 inline-flex items-center gap-1 rounded-lg bg-blue-600/20 border border-blue-500/30 px-2 py-1 text-[10px] font-medium text-blue-300 hover:bg-blue-600/30 hover:text-blue-200 transition-colors"
                       >
-                        <ShieldCheck className="w-3.5 h-3.5" />
-                        Strengthen this claim
+                        <ShieldCheck className="w-2.5 h-2.5" />
+                        Strengthen
                       </button>
                     </div>
                   ))}
@@ -172,9 +172,9 @@ export function ClaimsReview() {
       {!expanded && (
         <button
           onClick={() => setExpanded(true)}
-          className="rounded-full bg-blue-600 text-white p-3 shadow-lg hover:bg-blue-500 transition-all"
+          className="rounded-full bg-blue-600 text-white p-2.5 shadow-lg hover:bg-blue-500 transition-all"
         >
-          <Lightbulb className="w-6 h-6" />
+          <Lightbulb className="w-5 h-5" />
           <span className="absolute -top-1 -right-1 flex h-4 w-4">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-4 w-4 bg-sky-500 items-center justify-center text-[10px]">

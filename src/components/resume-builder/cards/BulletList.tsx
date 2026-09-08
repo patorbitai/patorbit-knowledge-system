@@ -1,8 +1,11 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useMemo } from "react";
 import { clsx } from "clsx";
 import { Plus, Trash2, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
+import { useResumeBuilder } from "@/store/resume-builder";
+import { FONT_OPTIONS, DEFAULT_STYLE_CONFIG, type ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+import { fontFamilies } from "@/lib/resume-design-system/fonts";
 
 interface BulletListProps {
   bullets: string[];
@@ -11,6 +14,13 @@ interface BulletListProps {
   onImprove?: (text: string, index: number) => Promise<string> | void;
   placeholder?: string;
   className?: string;
+}
+
+/** Resolve the CSS font-family string from a stored style config. */
+function resolveFontFamily(stored?: ResumeStyleConfig): string {
+  const config = stored ?? DEFAULT_STYLE_CONFIG;
+  const option = FONT_OPTIONS.find((f) => f.id === config.fontFamily);
+  return option?.stack ?? fontFamilies.sans;
 }
 
 /**
@@ -25,6 +35,10 @@ interface BulletListProps {
 export function BulletList({ bullets, onChange, onImprove, placeholder = "Describe an achievement or responsibility…", className }: BulletListProps) {
   const inputRefs = useRef<(HTMLTextAreaElement | null)[]>([]);
   const [improvingIdx, setImprovingIdx] = useState<number | null>(null);
+
+  // Read the active resume's font from the store so the editor uses the same typeface as the preview.
+  const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
+  const fontFamily = useMemo(() => resolveFontFamily(styleConfig), [styleConfig]);
 
   const update = (index: number, value: string) => {
     const next = [...bullets];
@@ -111,6 +125,7 @@ export function BulletList({ bullets, onChange, onImprove, placeholder = "Descri
               rows={Math.min(6, lineCount)}
               placeholder={placeholder}
               aria-label={`Bullet ${index + 1}`}
+              style={{ fontFamily }}
               className="w-full bg-transparent text-sm text-gray-900 dark:text-slate-200 placeholder:text-gray-400 dark:placeholder:text-slate-600 outline-none py-1 resize-none leading-relaxed"
             />
             {/* Hover/focus controls */}

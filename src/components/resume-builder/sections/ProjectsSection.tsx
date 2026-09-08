@@ -13,6 +13,7 @@ import { ai } from "@/lib/ai/client";
 import { FolderKanban, ChevronUp, ChevronDown, Plus, Pencil, Trash2, Check, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
+import { ResumeFont } from "../cards/ResumeFont";
 
 export function ProjectsSection() {
   const claims = useResumeBuilder((s) => s.resume?.claims ?? []);
@@ -103,17 +104,19 @@ export function ProjectsSection() {
                 >
                   <div className="flex items-center gap-3 px-4 pt-3.5 pb-2.5">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{proj.name || "New Project"}</span>
-                        {proj.role && <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{proj.role}</span>}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {(proj.startDate || proj.endDate) && (
-                          <span className="text-[11px] text-gray-400 dark:text-slate-500">
-                            {[proj.startDate, proj.endDate].filter(Boolean).join(" — ")}
-                          </span>
-                        )}
-                      </div>
+                      <ResumeFont>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{proj.name || "New Project"}</span>
+                          {proj.role && <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{proj.role}</span>}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {(proj.startDate || proj.endDate) && (
+                            <span className="text-[11px] text-gray-400 dark:text-slate-500">
+                              {[proj.startDate, proj.endDate].filter(Boolean).join(" — ")}
+                            </span>
+                          )}
+                        </div>
+                      </ResumeFont>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {(() => {
@@ -142,7 +145,9 @@ export function ProjectsSection() {
                   {/* Content view */}
                   <div className="px-4 pb-4 space-y-3">
                     {proj.description && (
-                      <p className="text-[13px] leading-relaxed text-gray-600 dark:text-slate-400">{proj.description}</p>
+                      <ResumeFont>
+                        <p className="text-[13px] leading-relaxed text-gray-600 dark:text-slate-400">{proj.description}</p>
+                      </ResumeFont>
                     )}
                     <BulletList
                       bullets={proj.bulletPoints ?? []}

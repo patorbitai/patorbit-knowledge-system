@@ -1,9 +1,20 @@
 "use client";
 
+import { useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Lightbulb, Check, RefreshCw, X, Sparkles } from "lucide-react";
 import { clsx } from "clsx";
+import { useResumeBuilder } from "@/store/resume-builder";
+import { FONT_OPTIONS, DEFAULT_STYLE_CONFIG, type ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+import { fontFamilies } from "@/lib/resume-design-system/fonts";
 import type { SmartSuggestionProps } from "./shared-types";
+
+/** Resolve the CSS font-family string from a stored style config. */
+function resolveFontFamily(stored?: ResumeStyleConfig): string {
+  const config = stored ?? DEFAULT_STYLE_CONFIG;
+  const option = FONT_OPTIONS.find((f) => f.id === config.fontFamily);
+  return option?.stack ?? fontFamilies.sans;
+}
 
 const typeStyles = {
   improvement: "border-blue-500/30 bg-blue-500/5",
@@ -32,6 +43,10 @@ export function SmartSuggestion({
   isLoading = false,
   type = "improvement",
 }: SmartSuggestionProps) {
+  // Use the active resume's font so the suggestion content matches the resume's typeface.
+  const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
+  const fontFamily = useMemo(() => resolveFontFamily(styleConfig), [styleConfig]);
+
   return (
     <AnimatePresence>
       <motion.div
@@ -56,14 +71,20 @@ export function SmartSuggestion({
             {original && (
               <div className="space-y-1">
                 <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-medium">Current</span>
-                <div className="text-xs text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-white/[0.03] rounded-lg px-3 py-2 border border-gray-200 dark:border-white/[0.04]">
+                <div
+                  style={{ fontFamily }}
+                  className="text-xs text-gray-500 dark:text-slate-400 bg-gray-50 dark:bg-white/[0.03] rounded-lg px-3 py-2 border border-gray-200 dark:border-white/[0.04]"
+                >
                   {original}
                 </div>
               </div>
             )}
             <div className="space-y-1">
               <span className="text-[10px] text-gray-400 dark:text-slate-500 uppercase tracking-wider font-medium">Suggested</span>
-              <div className="text-xs text-gray-800 dark:text-slate-200 bg-gray-100 dark:bg-white/[0.06] rounded-lg px-3 py-2 border border-gray-200 dark:border-white/[0.06]">
+              <div
+                style={{ fontFamily }}
+                className="text-xs text-gray-800 dark:text-slate-200 bg-gray-100 dark:bg-white/[0.06] rounded-lg px-3 py-2 border border-gray-200 dark:border-white/[0.06]"
+              >
                 {suggestion}
               </div>
             </div>

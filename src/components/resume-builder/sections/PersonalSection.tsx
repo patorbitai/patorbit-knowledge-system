@@ -11,6 +11,7 @@ import { SmartSuggestion } from "../SmartSuggestion";
 import { ai } from "@/lib/ai/client";
 import { useValidation } from "../hooks/useValidation";
 import { Mail, Phone, MapPin, Link2, Globe, Pencil, Check, User, Sparkles } from "lucide-react";
+import { ResumeFont } from "../cards/ResumeFont";
 
 /** Initials from a name ("Arvind Abhay Narayan Chauhan" → "AC"). */
 function initialsOf(name: string): string {
@@ -111,11 +112,15 @@ export function PersonalSection() {
               <span className="text-lg font-bold text-cyan-600 dark:text-cyan-300">{initialsOf(resume.name || "?")}</span>
             </div>
             <div className="min-w-0">
-              <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
-                {resume.name || "Your Name"}
-              </h3>
+              <ResumeFont>
+                <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
+                  {resume.name || "Your Name"}
+                </h3>
+              </ResumeFont>
               {resume.title && (
-                <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{resume.title}</p>
+                <ResumeFont>
+                  <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{resume.title}</p>
+                </ResumeFont>
               )}
             </div>
           </div>
@@ -123,24 +128,26 @@ export function PersonalSection() {
           {/* Contact rows */}
           {(resume.email || resume.phone || resume.address) && (
             <div className="space-y-1.5">
-              {resume.email && (
-                <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
-                  <Mail className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
-                  <span className="truncate">{resume.email}</span>
-                </div>
-              )}
-              {resume.phone && (
-                <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
-                  <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
-                  <span className="truncate">{resume.phone}</span>
-                </div>
-              )}
-              {resume.address && (
-                <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
-                  <MapPin className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
-                  <span className="truncate">{resume.address}</span>
-                </div>
-              )}
+              <ResumeFont>
+                {resume.email && (
+                  <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
+                    <Mail className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
+                    <span className="truncate">{resume.email}</span>
+                  </div>
+                )}
+                {resume.phone && (
+                  <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
+                    <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
+                    <span className="truncate">{resume.phone}</span>
+                  </div>
+                )}
+                {resume.address && (
+                  <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
+                    <MapPin className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
+                    <span className="truncate">{resume.address}</span>
+                  </div>
+                )}
+              </ResumeFont>
             </div>
           )}
 
@@ -164,7 +171,9 @@ export function PersonalSection() {
           {resume.summary ? (
             <div>
               <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Summary</h4>
-              <p className="text-[13px] leading-relaxed text-gray-600 dark:text-slate-300 whitespace-pre-wrap">{resume.summary}</p>
+              <ResumeFont>
+                <p className="text-[13px] leading-relaxed text-gray-600 dark:text-slate-300 whitespace-pre-wrap">{resume.summary}</p>
+              </ResumeFont>
             </div>
           ) : (
             <button

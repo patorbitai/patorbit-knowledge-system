@@ -9,7 +9,8 @@ import { entitlementService } from "@/services/entitlement.service";
 /**
  * GET /api/account/usage
  *
- * Returns the current user's usage counts and limits for all tracked features.
+ * Returns the current user's usage counts and limits for all tracked features,
+ * plus subscription/entitlement data for FeatureAccessProvider.
  */
 export async function GET() {
   const session = await getServerSession(authOptions);
@@ -31,6 +32,17 @@ export async function GET() {
   const resumeLimit = await entitlementService.checkResumeLimit(userId);
 
   return NextResponse.json({
+    // Subscription data for FeatureAccessProvider
+    subscription: {
+      tier: entitlements.tier,
+      status: entitlements.status,
+      isActive: entitlements.isActive,
+    },
+    // Entitlements data for FeatureAccessProvider
+    entitlements: {
+      features: entitlements.features,
+    },
+    // Usage counts
     ai_generations: {
       current: aiGenerations,
       limit: entitlements.features.aiAdvanced ? -1 : 10,

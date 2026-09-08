@@ -10,6 +10,7 @@ import { EmptyState } from "../cards/EmptyState";
 import { GraduationCap, ChevronUp, ChevronDown, Plus, Pencil, Trash2, Check } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
+import { ResumeFont } from "../cards/ResumeFont";
 
 export function EducationSection() {
   const resume = useResumeBuilder((s) => s.resume);
@@ -84,22 +85,24 @@ export function EducationSection() {
                 >
                   <div className="flex items-center gap-3 px-4 pt-3.5 pb-3">
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
-                          {edu.degree || "Degree"}
-                        </span>
-                        {edu.school && (
-                          <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{edu.school}</span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        {(edu.field || edu.year) && (
-                          <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">
-                            {[edu.field, edu.year].filter(Boolean).join(" · ")}
+                      <ResumeFont>
+                        <div className="flex items-center gap-2">
+                          <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                            {edu.degree || "Degree"}
                           </span>
-                        )}
-                        {edu.gpa && <span className="text-[11px] text-gray-400 dark:text-slate-500">GPA {edu.gpa}</span>}
-                      </div>
+                          {edu.school && (
+                            <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{edu.school}</span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-0.5">
+                          {(edu.field || edu.year) && (
+                            <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">
+                              {[edu.field, edu.year].filter(Boolean).join(" · ")}
+                            </span>
+                          )}
+                          {edu.gpa && <span className="text-[11px] text-gray-400 dark:text-slate-500">GPA {edu.gpa}</span>}
+                        </div>
+                      </ResumeFont>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
                       {(() => {
