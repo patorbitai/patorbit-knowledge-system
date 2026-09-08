@@ -6,7 +6,8 @@ import { SectionCard } from "../section-card";
 import { FieldInput } from "../fields/FieldInput";
 import { VerificationBadge } from "../fields/VerificationBadge";
 import { AIActionButton } from "../AIActionButton";
-import { Trash2, ChevronUp, ChevronDown, Plus, Pencil } from "lucide-react";
+import { EmptyState } from "../cards/EmptyState";
+import { Award, ChevronUp, ChevronDown, Plus, Pencil, Trash2, Check, ExternalLink } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
@@ -23,9 +24,9 @@ export function CertificationsSection() {
       (c) => c.sourceActivityId === id || c.sourceActivityId === `certifications-${index}`,
     );
 
-  const [expandedIds, setExpandedIds] = useState<Set<string>>(new Set());
-  const toggleExpand = (id: string) => {
-    setExpandedIds((prev) => {
+  const [editingIds, setEditingIds] = useState<Set<string>>(new Set());
+  const toggleEdit = (id: string) => {
+    setEditingIds((prev) => {
       const next = new Set(prev);
       if (next.has(id)) next.delete(id);
       else next.add(id);
@@ -36,7 +37,7 @@ export function CertificationsSection() {
   const handleAddCertification = () => {
     addCertification();
     const newId = useResumeBuilder.getState().resume.certifications.at(-1)?.id;
-    if (newId) setExpandedIds((prev) => new Set([...prev, newId]));
+    if (newId) setEditingIds((prev) => new Set([...prev, newId]));
   };
 
   return (
@@ -57,20 +58,17 @@ export function CertificationsSection() {
     >
       <AnimatePresence>
         {resume.certifications.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="flex flex-col items-center justify-center py-14 text-center bg-gray-50 dark:bg-white/[0.02] rounded-xl border border-dashed border-gray-200 dark:border-white/[0.06]"
-          >
-            <AwardIcon />
-            <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-4">Boost your credibility</p>
-            <p className="text-xs text-gray-400 dark:text-slate-500 mb-5">Add professional certifications and credentials</p>
-            <AIActionButton label="Add Certification" onClick={handleAddCertification} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
-          </motion.div>
+          <EmptyState
+            icon={<Award className="w-5 h-5" />}
+            message="Boost your credibility"
+            submessage="Add professional certifications and credentials as compact cards."
+            action={handleAddCertification}
+            actionLabel="Add Certification"
+          />
         ) : (
           <div className="space-y-3">
             {resume.certifications.map((cert, idx) => {
-              const isExpanded = expandedIds.has(cert.id);
+              const isEditing = editingIds.has(cert.id);
               return (
                 <motion.div
                   key={cert.id}
@@ -78,63 +76,62 @@ export function CertificationsSection() {
                   initial={{ opacity: 0, y: 8 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -8, height: 0 }}
-                  className={`rounded-xl border overflow-hidden transition-colors ${
-                    isExpanded
-                      ? "border-cyan-500/20 bg-white dark:bg-[#0C1222]"
-                      : "border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.03]"
+                  className={`rounded-xl border transition-colors ${
+                    isEditing
+                      ? "border-cyan-500/25 bg-white dark:bg-[#0C1222]"
+                      : "border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#0A0E1B] hover:border-gray-300 dark:hover:border-white/[0.12]"
                   }`}
                 >
-                  {/* ── Collapsed card header ── */}
-                  <div
-                    className="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-100 dark:hover:bg-white/[0.02] transition-colors"
-                    onClick={(e) => { e.stopPropagation(); toggleExpand(cert.id); }}
-                  >
+                  <div className="flex items-center gap-3 px-4 pt-3.5 pb-3">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
                         <span className="text-sm font-semibold text-gray-900 dark:text-white truncate">{cert.name || "New Certification"}</span>
-                        {cert.issuer && (
-                          <>
-                            <span className="text-gray-300 dark:text-slate-600">·</span>
-                            <span className="text-xs text-gray-500 dark:text-slate-500 truncate">{cert.issuer}</span>
-                          </>
-                        )}
+                        {cert.issuer && <span className="text-[11px] text-gray-400 dark:text-slate-500 truncate">{cert.issuer}</span>}
                       </div>
                       <div className="flex items-center gap-2 mt-0.5">
-                        {cert.date && <span className="text-[11px] text-gray-400 dark:text-slate-500">{cert.date}</span>}
+                        {cert.date && <span className="text-[11px] text-gray-400 dark:text-slate-500">Issued {cert.date}</span>}
                         {cert.expiryDate && (
-                          <>
-                            <span className="text-gray-300 dark:text-slate-600">·</span>
-                            <span className="text-[11px] text-gray-400 dark:text-slate-500">Expires {cert.expiryDate}</span>
-                          </>
+                          <span className="text-[11px] text-gray-400 dark:text-slate-500">· Expires {cert.expiryDate}</span>
                         )}
                       </div>
                     </div>
                     <div className="flex items-center gap-1 shrink-0">
+                      {cert.link && (
+                        <a href={cert.link.startsWith("http") ? cert.link : `https://${cert.link}`} target="_blank" rel="noreferrer" className="p-1 text-gray-400 dark:text-slate-500 hover:text-cyan-500 rounded-md" title="Credential link"><ExternalLink className="w-3 h-3" /></a>
+                      )}
                       {(() => {
                         const claim = claimForCertification(cert.id, idx);
                         return claim ? <VerificationBadge claim={claim} size="sm" /> : null;
                       })()}
                       <div className="flex items-center gap-0.5">
-                        <button onClick={(e) => { e.stopPropagation(); moveCertification(cert.id, -1); }} disabled={idx === 0} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
-                        <button onClick={(e) => { e.stopPropagation(); moveCertification(cert.id, 1); }} disabled={idx === resume.certifications.length - 1} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
+                        <button onClick={() => moveCertification(cert.id, -1)} disabled={idx === 0} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronUp className="w-3 h-3" /></button>
+                        <button onClick={() => moveCertification(cert.id, 1)} disabled={idx === resume.certifications.length - 1} className="p-1 text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 rounded-md hover:bg-gray-100 dark:hover:bg-white/[0.06]"><ChevronDown className="w-3 h-3" /></button>
                       </div>
-                      <button onClick={(e) => { e.stopPropagation(); toggleExpand(cert.id); }} className="p-1 text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 rounded-md hover:bg-cyan-50 dark:hover:bg-cyan-500/10" title="Edit"><Pencil className="w-3 h-3" /></button>
-                      <button onClick={(e) => { e.stopPropagation(); removeCertification(cert.id); }} className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10" title="Delete"><Trash2 className="w-3 h-3" /></button>
+                      <button
+                        onClick={() => toggleEdit(cert.id)}
+                        className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium transition-colors ${
+                          isEditing
+                            ? "text-cyan-600 dark:text-cyan-400 bg-cyan-500/10"
+                            : "text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10"
+                        }`}
+                      >
+                        {isEditing ? <Check className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
+                        {isEditing ? "Done" : "Edit"}
+                      </button>
+                      <button onClick={() => removeCertification(cert.id)} className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10" title="Delete"><Trash2 className="w-3 h-3" /></button>
                     </div>
                   </div>
 
-                  {/* ── Expanded content ── */}
                   <AnimatePresence>
-                    {isExpanded && (
+                    {isEditing && (
                       <motion.div
                         initial={{ height: 0, opacity: 0 }}
                         animate={{ height: "auto", opacity: 1 }}
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="border-t border-gray-100 dark:border-white/[0.06]"
+                        className="border-t border-gray-100 dark:border-white/[0.06] overflow-hidden"
                       >
                         <div className="px-4 py-4 space-y-5">
-                          {/* ── Certification Details ── */}
                           <div>
                             <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Certification Details</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -146,7 +143,6 @@ export function CertificationsSection() {
                             </div>
                           </div>
 
-                          {/* ── Additional Info ── */}
                           <div>
                             <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Additional Info</h4>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -165,13 +161,5 @@ export function CertificationsSection() {
         )}
       </AnimatePresence>
     </SectionCard>
-  );
-}
-
-function AwardIcon() {
-  return (
-    <svg className="w-10 h-10 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1}>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-    </svg>
   );
 }

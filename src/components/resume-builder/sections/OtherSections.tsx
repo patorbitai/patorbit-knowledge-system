@@ -1,15 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
 import { SectionContent } from "../fields/SectionContent";
 import { FieldInput } from "../fields/FieldInput";
-import { VerificationBadge } from "../fields/VerificationBadge";
-import { AIActionButton, AIActionDropdown } from "../AIActionButton";
-import { SmartSuggestion } from "../SmartSuggestion";
-import { Trash2, GripVertical, ChevronUp, ChevronDown, Plus, Sparkles, Trophy, Globe, Link2, Award, Eye, CheckCircle2, AlertTriangle, XCircle, FileText } from "lucide-react";
+import { AIActionButton } from "../AIActionButton";
+import { EmptyState } from "../cards/EmptyState";
+import { Trash2, Plus, Sparkles, Trophy, Globe, Link2, Eye, CheckCircle2, AlertTriangle, XCircle, Pencil, Check, ExternalLink, X } from "lucide-react";
 import { clsx } from "clsx";
 import { ai } from "@/lib/ai/client";
 import { AnalysisScore } from "../AnalysisScore";
@@ -17,7 +16,7 @@ import { ProgressIndicator } from "../ProgressIndicator";
 import { useValidation } from "../hooks/useValidation";
 
 /* ====================================================================
- * ACHIEVEMENTS
+ * ACHIEVEMENTS — content cards
  * ==================================================================== */
 export function AchievementsSection() {
   const resume = useResumeBuilder((s) => s.resume);
@@ -26,6 +25,22 @@ export function AchievementsSection() {
   const removeAchievement = useResumeBuilder((s) => s.removeAchievement);
   const { touch, getFieldError } = useValidation();
 
+  const [editingIds, setEditingIds] = useState<Set<string>>(new Set());
+  const toggleEdit = (id: string) => {
+    setEditingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleAdd = () => {
+    addAchievement();
+    const newId = useResumeBuilder.getState().resume.achievements.at(-1)?.id;
+    if (newId) setEditingIds((prev) => new Set([...prev, newId]));
+  };
+
   return (
     <SectionCard
       id="achievements"
@@ -33,40 +48,65 @@ export function AchievementsSection() {
       description="Awards, honors, and major accomplishments"
       icon="🏆"
       actions={
-        <AIActionButton label="Add Achievement" onClick={addAchievement} variant="outline" icon={<Plus className="w-3 h-3" />} />
+        <AIActionButton label="Add Achievement" onClick={handleAdd} variant="outline" icon={<Plus className="w-3 h-3" />} />
       }
     >
       <SectionContent>
-        {resume.achievements.length === 0 ? (            <EmptyState icon={<Trophy className="w-8 h-8 text-gray-400 dark:text-slate-600" />} message="No achievements yet" submessage="Add awards and accomplishments to stand out" action={() => addAchievement()} actionLabel="Add Achievement" />
+        {resume.achievements.length === 0 ? (
+          <EmptyState icon={<Trophy className="w-5 h-5" />} message="No achievements yet" submessage="Add awards and accomplishments to stand out" action={handleAdd} actionLabel="Add Achievement" />
         ) : (
-          <div className="space-y-3">
-            {resume.achievements.map((ach, idx) => (
-              <motion.div
-                key={ach.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8, height: 0 }}
-                className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] p-4"
-              >
-                <div className="flex items-start gap-3">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400 text-xs font-bold shrink-0">
-                    {idx + 1}
-                  </span>
-                  <div className="flex-1 min-w-0 space-y-3">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      <FieldInput label="Title" placeholder="Employee of the Month" value={ach.title} onChange={(v) => updateAchievement(ach.id, "title", v)} onBlur={() => touch(`achievements.${idx}.title`)} error={getFieldError("achievements", "title", idx)} />
-                      <FieldInput label="Issuer" placeholder="Company Name" value={ach.issuer} onChange={(v) => updateAchievement(ach.id, "issuer", v)} />
-                      <FieldInput label="Date" placeholder="Jan 2024" value={ach.date} onChange={(v) => updateAchievement(ach.id, "date", v)} />
+          <div className="space-y-2">
+            {resume.achievements.map((ach, idx) => {
+              const isEditing = editingIds.has(ach.id);
+              return (
+                <motion.div
+                  key={ach.id}
+                  layout
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -8, height: 0 }}
+                  className={`rounded-xl border transition-colors ${
+                    isEditing
+                      ? "border-cyan-500/25 bg-white dark:bg-[#0C1222]"
+                      : "border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#0A0E1B] hover:border-gray-300 dark:hover:border-white/[0.12]"
+                  }`}
+                >
+                  {!isEditing ? (
+                    <div className="flex items-start gap-3 px-4 py-3">
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-amber-500/10 text-amber-400">
+                        <Trophy className="w-4 h-4" />
+                      </span>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-gray-900 dark:text-white leading-snug">{ach.title || "Untitled achievement"}</p>
+                        {(ach.issuer || ach.date) && (
+                          <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-0.5">
+                            {[ach.issuer, ach.date].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                        {ach.description && <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 leading-relaxed">{ach.description}</p>}
+                      </div>
+                      <div className="flex items-center gap-1 shrink-0">
+                        <button onClick={() => toggleEdit(ach.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-cyan-600 dark:hover:text-cyan-400 rounded-md hover:bg-cyan-50 dark:hover:bg-cyan-500/10" title="Edit"><Pencil className="w-3 h-3" /></button>
+                        <button onClick={() => removeAchievement(ach.id)} className="p-1.5 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10" title="Delete"><Trash2 className="w-3 h-3" /></button>
+                      </div>
                     </div>
-                    <FieldInput label="Description" placeholder="Describe the achievement and its impact..." value={ach.description} onChange={(v) => updateAchievement(ach.id, "description", v)} type="textarea" rows={2} />
-                  </div>
-                  <button onClick={() => removeAchievement(ach.id)} className="p-1.5 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10 shrink-0">
-                    <Trash2 className="w-3 h-3" />
-                  </button>
-                </div>
-              </motion.div>
-            ))}
+                  ) : (
+                    <div className="px-4 py-3 space-y-3">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <FieldInput label="Title" placeholder="Employee of the Month" value={ach.title} onChange={(v) => updateAchievement(ach.id, "title", v)} onBlur={() => touch(`achievements.${idx}.title`)} error={getFieldError("achievements", "title", idx)} />
+                        <FieldInput label="Issuer" placeholder="Company Name" value={ach.issuer} onChange={(v) => updateAchievement(ach.id, "issuer", v)} />
+                        <FieldInput label="Date" placeholder="Jan 2024" value={ach.date} onChange={(v) => updateAchievement(ach.id, "date", v)} />
+                      </div>
+                      <FieldInput label="Description" placeholder="Describe the achievement and its impact..." value={ach.description} onChange={(v) => updateAchievement(ach.id, "description", v)} type="textarea" rows={2} />
+                      <div className="flex items-center justify-end gap-2">
+                        <button onClick={() => toggleEdit(ach.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/15 transition-colors cursor-pointer"><Check className="w-3 h-3" />Done</button>
+                        <button onClick={() => removeAchievement(ach.id)} className="px-2.5 py-1.5 rounded-lg text-[11px] text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"><Trash2 className="w-3 h-3" />Delete</button>
+                      </div>
+                    </div>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </SectionContent>
@@ -75,7 +115,7 @@ export function AchievementsSection() {
 }
 
 /* ====================================================================
- * LANGUAGES
+ * LANGUAGES — chips
  * ==================================================================== */
 const proficiencyLevels = ["Native", "Fluent", "Professional", "Conversational", "Beginner"] as const;
 
@@ -84,7 +124,23 @@ export function LanguagesSection() {
   const addLanguage = useResumeBuilder((s) => s.addLanguage);
   const updateLanguage = useResumeBuilder((s) => s.updateLanguage);
   const removeLanguage = useResumeBuilder((s) => s.removeLanguage);
-  const { touch, getFieldError } = useValidation();
+
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [draft, setDraft] = useState("");
+
+  const startEdit = (id: string, name: string) => {
+    setEditingId(id);
+    setDraft(name);
+  };
+  const commitEdit = (id: string) => {
+    if (draft.trim()) updateLanguage(id, "name", draft.trim());
+    setEditingId(null);
+  };
+  const handleAdd = () => {
+    addLanguage();
+    const newId = useResumeBuilder.getState().resume.languages.at(-1)?.id;
+    if (newId) { setEditingId(newId); setDraft(""); }
+  };
 
   return (
     <SectionCard
@@ -93,44 +149,61 @@ export function LanguagesSection() {
       description="Languages you speak and your proficiency level"
       icon="🌐"
       actions={
-        <AIActionButton label="Add Language" onClick={addLanguage} variant="outline" icon={<Plus className="w-3 h-3" />} />
+        <AIActionButton label="Add Language" onClick={handleAdd} variant="outline" icon={<Plus className="w-3 h-3" />} />
       }
     >
       <SectionContent>
-        {resume.languages.length === 0 ? (            <EmptyState icon={<Globe className="w-8 h-8 text-gray-400 dark:text-slate-600" />} message="No languages added" submessage="Add languages to showcase your multilingual skills" action={() => addLanguage()} actionLabel="Add Language" />
+        {resume.languages.length === 0 ? (
+          <EmptyState icon={<Globe className="w-5 h-5" />} message="No languages added" submessage="Add languages to showcase your multilingual skills" action={handleAdd} actionLabel="Add Language" />
         ) : (
-          <div className="space-y-2">
-            {resume.languages.map((lang, idx) => (
-              <motion.div
+          <div className="flex flex-wrap gap-2">
+            {resume.languages.map((lang) => (
+              <motion.span
                 key={lang.id}
                 layout
-                initial={{ opacity: 0, scale: 0.95 }}
+                initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] p-3 flex items-center gap-3"
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="group/lang inline-flex items-center gap-2 rounded-full border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.04] px-3 py-1.5 text-xs text-gray-700 dark:text-slate-200 hover:border-cyan-400/40 transition-colors"
               >
-                <div className="flex-1 min-w-0">
-                  <input
-                    type="text"
-                    value={lang.name}
-                    onChange={(e) => updateLanguage(lang.id, "name", e.target.value)}
-                    onBlur={() => touch(`languages.${idx}.name`)}
-                    placeholder="Language"
-                    className={"w-full bg-transparent text-sm text-gray-900 dark:text-white font-medium placeholder:text-gray-400 dark:placeholder:text-slate-600 outline-none " + (getFieldError("languages", "name", idx) ? "text-red-400" : "")}
-                  />
-                  {getFieldError("languages", "name", idx) && <p className="text-[11px] text-red-400 mt-1">{getFieldError("languages", "name", idx)}</p>}
-                </div>
-                <select
-                  value={lang.proficiency}
-                  onChange={(e) => updateLanguage(lang.id, "proficiency", e.target.value)}
-                  className="bg-gray-100 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-lg text-[10px] text-gray-700 dark:text-slate-300 px-2 py-1.5 outline-none focus:border-blue-500/50"
-                >
-                  {proficiencyLevels.map((l) => <option key={l} value={l}>{l}</option>)}
-                </select>
-                <button onClick={() => removeLanguage(lang.id)} className="p-1 text-red-400 hover:text-red-300 rounded-md hover:bg-red-500/10">
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </motion.div>
+                {editingId === lang.id ? (
+                  <>
+                    <input
+                      autoFocus
+                      value={draft}
+                      onChange={(e) => setDraft(e.target.value)}
+                      onBlur={() => commitEdit(lang.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") { e.preventDefault(); commitEdit(lang.id); }
+                        if (e.key === "Escape") setEditingId(null);
+                      }}
+                      aria-label="Language name"
+                      className="w-24 bg-transparent outline-none text-xs text-gray-900 dark:text-white"
+                    />
+                    <button onClick={() => commitEdit(lang.id)} className="text-emerald-500" aria-label="Save language"><Check className="w-3 h-3" /></button>
+                  </>
+                ) : (
+                  <>
+                    <button onClick={() => startEdit(lang.id, lang.name)} className="font-medium cursor-pointer text-left" title="Click to rename">{lang.name || "Language"}</button>
+                    <span className="text-[10px] text-gray-400 dark:text-slate-500">—</span>
+                    <select
+                      value={lang.proficiency}
+                      onChange={(e) => updateLanguage(lang.id, "proficiency", e.target.value)}
+                      aria-label={`Proficiency for ${lang.name}`}
+                      className="bg-transparent text-[10px] font-medium text-gray-500 dark:text-slate-400 outline-none cursor-pointer"
+                    >
+                      {proficiencyLevels.map((l) => <option key={l} value={l}>{l}</option>)}
+                    </select>
+                    <button
+                      onClick={() => removeLanguage(lang.id)}
+                      className="opacity-0 group-hover/lang:opacity-100 transition-opacity text-red-400 hover:text-red-300 cursor-pointer"
+                      aria-label={`Remove ${lang.name}`}
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  </>
+                )}
+              </motion.span>
             ))}
           </div>
         )}
@@ -140,7 +213,7 @@ export function LanguagesSection() {
 }
 
 /* ====================================================================
- * PORTFOLIO
+ * PORTFOLIO — link cards
  * ==================================================================== */
 const portfolioTypes = ["github", "website", "dribbble", "figma", "other"] as const;
 
@@ -151,6 +224,22 @@ export function PortfolioSection() {
   const removePortfolio = useResumeBuilder((s) => s.removePortfolio);
   const { touch, getFieldError } = useValidation();
 
+  const [editingIds, setEditingIds] = useState<Set<string>>(new Set());
+  const toggleEdit = (id: string) => {
+    setEditingIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const handleAdd = () => {
+    addPortfolio();
+    const newId = useResumeBuilder.getState().resume.portfolio.at(-1)?.id;
+    if (newId) setEditingIds((prev) => new Set([...prev, newId]));
+  };
+
   return (
     <SectionCard
       id="portfolio"
@@ -158,42 +247,61 @@ export function PortfolioSection() {
       description="Links to your work samples, projects, and profiles"
       icon="🔗"
       actions={
-        <AIActionButton label="Add Item" onClick={addPortfolio} variant="outline" icon={<Plus className="w-3 h-3" />} />
+        <AIActionButton label="Add Item" onClick={handleAdd} variant="outline" icon={<Plus className="w-3 h-3" />} />
       }
     >
       <SectionContent>
-        {resume.portfolio.length === 0 ? (            <EmptyState icon={<Link2 className="w-8 h-8 text-gray-400 dark:text-slate-600" />} message="No portfolio items" submessage="Add links to your best work to impress employers" action={() => addPortfolio()} actionLabel="Add Portfolio Item" />
+        {resume.portfolio.length === 0 ? (
+          <EmptyState icon={<Link2 className="w-5 h-5" />} message="No portfolio items" submessage="Add links to your best work to impress employers" action={handleAdd} actionLabel="Add Portfolio Item" />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {resume.portfolio.map((item, idx) => (
-              <motion.div
-                key={item.id}
-                layout
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                className="bg-gray-50 dark:bg-white/[0.03] rounded-xl border border-gray-200 dark:border-white/[0.06] p-4 space-y-3"
-              >
-                <div className="grid grid-cols-1 gap-3">
-                  <FieldInput label="Title" placeholder="My Portfolio" value={item.title} onChange={(v) => updatePortfolio(item.id, "title", v)} onBlur={() => touch(`portfolio.${idx}.title`)} error={getFieldError("portfolio", "title", idx)} />
-                  <FieldInput label="URL" placeholder="https://..." value={item.url} onChange={(v) => updatePortfolio(item.id, "url", v)} type="url" onBlur={() => touch(`portfolio.${idx}.url`)} error={getFieldError("portfolio", "url", idx)} />
-                  <div>
-                    <label className="text-[10px] font-medium text-slate-500 mb-1 block">Type</label>
-                    <select
-                      value={item.type}
-                      onChange={(e) => updatePortfolio(item.id, "type", e.target.value)}
-                      className="w-full bg-gray-100 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-xl text-xs text-gray-700 dark:text-slate-300 px-3.5 py-2.5 outline-none focus:border-blue-500/50"
-                    >
-                      {portfolioTypes.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
-                    </select>
+            {resume.portfolio.map((item, idx) => {
+              const isEditing = editingIds.has(item.id);
+              if (isEditing) {
+                return (
+                  <motion.div key={item.id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -8 }}
+                    className="rounded-xl border border-cyan-500/25 bg-white dark:bg-[#0C1222] p-4 space-y-3"
+                  >
+                    <FieldInput label="Title" placeholder="My Portfolio" value={item.title} onChange={(v) => updatePortfolio(item.id, "title", v)} onBlur={() => touch(`portfolio.${idx}.title`)} error={getFieldError("portfolio", "title", idx)} />
+                    <FieldInput label="URL" placeholder="https://..." value={item.url} onChange={(v) => updatePortfolio(item.id, "url", v)} type="url" onBlur={() => touch(`portfolio.${idx}.url`)} error={getFieldError("portfolio", "url", idx)} />
+                    <div>
+                      <label className="text-[10px] font-medium text-slate-500 mb-1 block">Type</label>
+                      <select value={item.type} onChange={(e) => updatePortfolio(item.id, "type", e.target.value)} className="w-full bg-gray-100 dark:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] rounded-xl text-xs text-gray-700 dark:text-slate-300 px-3.5 py-2.5 outline-none focus:border-blue-500/50">
+                        {portfolioTypes.map((t) => <option key={t} value={t}>{t.charAt(0).toUpperCase() + t.slice(1)}</option>)}
+                      </select>
+                    </div>
+                    <FieldInput label="Description" placeholder="What this link showcases..." value={item.description} onChange={(v) => updatePortfolio(item.id, "description", v)} type="textarea" rows={2} />
+                    <div className="flex justify-end gap-2">
+                      <button onClick={() => toggleEdit(item.id)} className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-medium text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 hover:bg-cyan-500/15 transition-colors cursor-pointer"><Check className="w-3 h-3" />Done</button>
+                      <button onClick={() => removePortfolio(item.id)} className="px-2.5 py-1.5 rounded-lg text-[11px] text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"><Trash2 className="w-3 h-3" />Remove</button>
+                    </div>
+                  </motion.div>
+                );
+              }
+              return (
+                <motion.div key={item.id} layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
+                  className="group/link rounded-xl border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-[#0A0E1B] hover:border-gray-300 dark:hover:border-white/[0.12] p-4 space-y-2 transition-colors"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">{item.title || "Untitled link"}</p>
+                      {item.url && (
+                        <a href={item.url.startsWith("http") ? item.url : `https://${item.url}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-[11px] text-cyan-600 dark:text-cyan-400 hover:underline truncate max-w-full">
+                          <ExternalLink className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{item.url.replace(/^https?:\/\//, "")}</span>
+                        </a>
+                      )}
+                    </div>
+                    <span className="px-1.5 py-0.5 rounded-md bg-gray-100 dark:bg-white/[0.05] text-[9px] font-medium uppercase tracking-wide text-gray-400 dark:text-slate-500 shrink-0">{item.type}</span>
                   </div>
-                  <FieldInput label="Description" placeholder="What this link showcases..." value={item.description} onChange={(v) => updatePortfolio(item.id, "description", v)} type="textarea" rows={2} />
-                </div>
-                <div className="flex justify-end">
-                  <button onClick={() => removePortfolio(item.id)} className="px-2.5 py-1 rounded-lg text-red-400 text-[10px] hover:bg-red-500/10 transition-colors">Remove</button>
-                </div>
-              </motion.div>
-            ))}
+                  {item.description && <p className="text-xs text-gray-500 dark:text-slate-400 leading-relaxed">{item.description}</p>}
+                  <div className="flex items-center justify-end gap-1 opacity-0 group-hover/link:opacity-100 transition-opacity">
+                    <button onClick={() => toggleEdit(item.id)} className="p-1 text-gray-400 dark:text-slate-500 hover:text-cyan-500 rounded-md" title="Edit"><Pencil className="w-3 h-3" /></button>
+                    <button onClick={() => removePortfolio(item.id)} className="p-1 text-gray-400 dark:text-slate-500 hover:text-red-500 rounded-md" title="Delete"><Trash2 className="w-3 h-3" /></button>
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </SectionContent>
@@ -202,12 +310,11 @@ export function PortfolioSection() {
 }
 
 /* ====================================================================
- * REVIEW SECTION
+ * REVIEW SECTION (unchanged)
  * ==================================================================== */
 export function ReviewSection() {
   const resume = useResumeBuilder((s) => s.resume);
   const analysis = useResumeBuilder((s) => s.analysis);
-  const resumeScore = useResumeBuilder((s) => s.resumeScore);
   const progress = useResumeBuilder((s) => s.progress);
   const sectionComplete = useResumeBuilder((s) => s.sectionComplete);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -220,8 +327,8 @@ export function ReviewSection() {
     try {
       const result = await ai.analyzeResume(resume);
       setAnalysis(result);
-    } catch (err: any) {
-      setAnalyzeError(err.message || "AI request failed. Please try again.");
+    } catch (err: unknown) {
+      setAnalyzeError(err instanceof Error ? err.message : "AI request failed. Please try again.");
     } finally {
       setIsAnalyzing(false);
     }
@@ -248,8 +355,6 @@ export function ReviewSection() {
   if (resume.skills.length < 3) issues.push({ type: "warning", message: "Add at least 3 skills to improve keyword matching" });
   if (!resume.social.linkedin) issues.push({ type: "info", message: "Adding a LinkedIn profile increases credibility" });
   if (!resume.social.github) issues.push({ type: "info", message: "Adding a GitHub profile showcases your work" });
-
-  const missingCertText = resume.certifications.length === 0 ? "No certifications listed" : null;
 
   return (
     <SectionCard
@@ -378,33 +483,5 @@ export function ReviewSection() {
         </div>
       </SectionContent>
     </SectionCard>
-  );
-}
-
-/* ── Shared Empty State ── */
-function EmptyState({
-  icon,
-  message,
-  submessage,
-  action,
-  actionLabel,
-}: {
-  icon: React.ReactNode;
-  message: string;
-  submessage: string;
-  action: () => void;
-  actionLabel: string;
-}) {
-  return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="flex flex-col items-center justify-center py-12 text-center bg-gray-50 dark:bg-white/[0.02] rounded-xl border border-dashed border-gray-200 dark:border-white/[0.06]"
-    >
-      {icon}
-      <p className="text-sm text-gray-600 dark:text-slate-400 mb-1 mt-3">{message}</p>
-      <p className="text-xs text-gray-400 dark:text-slate-500 mb-5">{submessage}</p>
-      <AIActionButton label={actionLabel} onClick={action} variant="primary" size="md" icon={<Plus className="w-3.5 h-3.5" />} />
-    </motion.div>
   );
 }
