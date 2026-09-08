@@ -68,7 +68,7 @@ export interface UseOptimizationReturn {
   matchResult: JdMatchResult | null;
   matchLoading: boolean;
   matchError: string | null;
-  analyzeMatch: (resume: Resume, jobDescription: string) => Promise<void>;
+  analyzeMatch: (resume: Resume, jobDescription: string) => Promise<JdMatchResult | null>;
   resetMatch: () => void;
 
   // Keywords
@@ -295,12 +295,12 @@ export function useOptimization(): UseOptimizationReturn {
 
   // ── Match ─────────────────────────────────────────────────────────────────
 
-  const analyzeMatch = useCallback(async (resume: Resume, jobDescription: string) => {
+  const analyzeMatch = useCallback(async (resume: Resume, jobDescription: string): Promise<JdMatchResult | null> => {
     const fp = fingerprint(resume, jobDescription);
     const cached = readCache<JdMatchResult>(AI_CACHE_KEYS.match, fp);
     if (cached) {
       setMatchState({ result: cached, loading: false, error: null });
-      return;
+      return cached;
     }
 
     matchAbortRef.current?.abort();
@@ -322,10 +322,12 @@ export function useOptimization(): UseOptimizationReturn {
       const data = json.data ?? null;
       if (data) writeCache(AI_CACHE_KEYS.match, fp, data);
       setMatchState({ result: data, loading: false, error: null });
+      return data;
     } catch (err: unknown) {
-      if (err instanceof Error && err.name === "AbortError") return;
+      if (err instanceof Error && err.name === "AbortError") return null;
       const message = err instanceof Error ? err.message : "Something went wrong. Please try again.";
       setMatchState({ result: null, loading: false, error: message });
+      return null;
     }
   }, []);
 

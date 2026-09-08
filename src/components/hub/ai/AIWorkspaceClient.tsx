@@ -412,9 +412,20 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
     opt.analyze(selectedResume, effectiveJD || undefined);
   }, [selectedResume, effectiveJD, opt]);
 
-  const handleMatch = useCallback(() => {
+  const handleMatch = useCallback(async () => {
     if (!selectedResume || !effectiveJD) return;
-    opt.analyzeMatch(selectedResume, effectiveJD);
+    const result = await opt.analyzeMatch(selectedResume, effectiveJD);
+    // Persist the AI match result to the active JobApplication.
+    // This ensures the match survives reload and navigation.
+    if (result) {
+      const s = useResumeBuilder.getState();
+      if (s.activeJobApplicationId) {
+        s.saveQualificationMatchToApplication(
+          result as unknown as Record<string, unknown>,
+          result.matchScore,
+        );
+      }
+    }
   }, [selectedResume, effectiveJD, opt]);
 
   const handleKeywords = useCallback(() => {

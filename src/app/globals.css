@@ -512,7 +512,7 @@ button, label, [role="button"] {
 }
 
 /* Small text — a touch wider for legibility */
-.text-xs, .text-[10px], .text-[11px], small {
+.text-xs, .text-\5b10px\5d, .text-\5b11px\5d, small {
   letter-spacing: 0;
   line-height: 1.5;
 }

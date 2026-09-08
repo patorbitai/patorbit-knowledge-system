@@ -190,13 +190,27 @@ export interface ResumeBuilderState {
   setActiveJobApplication: (app: { applicationId: string; title: string; companyName: string; jobDescription: string; status: string; resumeId: string | null; matchScore: number | null; matchData: unknown; qualificationMatch?: unknown; matchedResumeId?: string | null; matchedAt?: string | null; exportedResumeId?: string | null; exportedAt?: string | null } | null) => void;
   loadActiveJobApplication: () => Promise<void>;
   saveJobDescriptionToApplication: (jobDescription: string, title?: string, companyName?: string) => Promise<void>;
-  saveQualificationMatchToApplication: (match: QualificationMatch, matchScore: number) => Promise<void>;
+  saveQualificationMatchToApplication: (match: QualificationMatch | Record<string, unknown>, matchScore: number) => Promise<void>;
   markResumeExported: () => Promise<void>;
   /** Visual customization per resume, stored separately from resume content. */
   styleConfigs: Record<string, ResumeStyleConfig>;
   setStyleConfig: (resumeId: string, patch: Partial<ResumeStyleConfig>) => void;
   resetStyleConfig: (resumeId: string) => void;
   progress: () => number; resumeScore: () => number | null; sectionComplete: (section: SectionId) => boolean; getSaveStatus: () => SaveStatus;
+}
+
+/* ── Server persistence promise map ── */
+// Tracks the in-flight POST /api/resumes promise for each resume ID.
+// Allows callers (e.g. TailorResumeModal) to await server persistence
+// before sending dependent PATCH requests.
+const _serverPersistencePromises = new Map<string, Promise<boolean>>();
+
+/** Await server-side persistence of a resume. Resolves true on success, false on failure. */
+export async function awaitServerPersistence(resumeId: string): Promise<boolean> {
+  const p = _serverPersistencePromises.get(resumeId);
+  if (p) return p;
+  // If no promise found, the resume may already be persisted or this is a test env.
+  return true;
 }
 
 /* ── Store ── */
@@ -280,9 +294,12 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           // When initialPayload is provided (tailoring/import), the payload is non-empty
           // so the server skips profile seeding. When empty, the server seeds from
           // ProfessionalIdentity.profileData.
-          import("@/lib/resume-write-back").then(({ markCreating, clearCreating }) => {
+          //
+          // FIX: Track the persistence promise so callers (e.g. TailorResumeModal)
+          // can await server persistence before sending dependent PATCH requests.
+          const persistencePromise = import("@/lib/resume-write-back").then(({ markCreating, clearCreating }) => {
             markCreating(id);
-            fetch("/api/resumes", {
+            return fetch("/api/resumes", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({
@@ -317,6 +334,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                       });
                     }
                     get().setSaveStatus("saved");
+                    return true;
                   });
                 }
                 // 409 cross-identity conflict — regenerate ID
@@ -329,18 +347,28 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                       const resumes = st.resumes.map((r) => r.resumeId === id ? updated : r);
                       set({ resume: updated, resumes, activeResumeId: newId, saveStatus: "unsaved" });
                     }
+                    return false;
                   });
                 }
                 // Other errors — leave as unsaved, write-back will retry
+                return false;
               })
               .catch(() => {
                 // Network error — leave as unsaved, write-back will retry
+                return false;
               })
               .finally(() => {
                 clearCreating(id);
               });
           }).catch(() => {
             // Module not available (test env) — safe to skip
+            return false;
+          });
+
+          _serverPersistencePromises.set(id, persistencePromise);
+          // Clean up entry after promise settles (avoid memory leak)
+          persistencePromise.finally(() => {
+            setTimeout(() => _serverPersistencePromises.delete(id), 30_000);
           });
 
           return id;

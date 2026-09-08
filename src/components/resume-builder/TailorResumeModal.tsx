@@ -18,7 +18,7 @@ import {
   PenLine,
   AlertCircle,
 } from "lucide-react";
-import { useResumeBuilder } from "@/store/resume-builder";
+import { useResumeBuilder, awaitServerPersistence } from "@/store/resume-builder";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
@@ -141,6 +141,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
   const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
   const createResume = useResumeBuilder((s) => s.createResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
+  const sourceStyleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
 
   // Build the tailored Resume object for preview — uses the editable draft state
   const tailoredResume = useMemo((): Resume | null => {
@@ -303,6 +304,14 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     } as Partial<Resume>);
     switchResume(newResumeId);
 
+    // Inherit the source resume's visual style config so the tailored resume
+    // renders with the same typography (font, scale, spacing, etc.) as the
+    // original. Without this the new resume would reset to platform defaults,
+    // causing a visual inconsistency for the user.
+    if (sourceStyleConfig) {
+      useResumeBuilder.getState().setStyleConfig(newResumeId, sourceStyleConfig);
+    }
+
     // C55.1: If this is an application-context tailoring, update the resume
     // association on the JobApplication.
     // IMPORTANT: Do NOT overwrite matchScore/matchData/qualificationMatch here.
@@ -310,8 +319,13 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     // Tailoring creates a new resume but does NOT produce a new structured match.
     // The existing match becomes stale (matchedResumeId ≠ new resume) and the
     // workflow correctly shows "Match needs refresh".
+    //
+    // FIX: Wait for the server-side resume creation to complete before PATCHing
+    // the JobApplication. The PATCH validates resume ownership against the DB,
+    // so the resume must exist before the PATCH is sent.
     if (applicationId) {
       try {
+        await awaitServerPersistence(newResumeId);
         await fetch(`/api/applications/${applicationId}`, {
           method: "PATCH",
           headers: { "Content-Type": "application/json" },
@@ -650,6 +664,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                       <PaginatedResumeSheet
                         resume={tailoredResume}
                         template={selectedTemplate}
+                        styleConfig={sourceStyleConfig}
                       />
                     </div>
                   </div>
