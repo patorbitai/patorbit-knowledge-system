@@ -708,14 +708,24 @@ function serializePage(scope: HTMLElement, pageRoot: HTMLElement): string {
   // Without this attribute the rules silently fail — fonts, colors, and
   // spacing customizations vanish in the exported PDF / gallery pages.
   wrapper.setAttribute("data-rs-page-scope", "");
-  // Carry the resolved ResumeStyleConfig CSS custom properties.
+  // Carry the resolved ResumeStyleConfig CSS custom properties,
+  // but EXCLUDE --rs-font-scale to prevent double-zoom: the live preview
+  // already applies visual scaling via transform: scale(), and applying
+  // CSS zoom inside the page container would make content overflow the
+  // fixed A4 page height.
   const vars = scope.getAttribute("style");
-  if (vars) wrapper.setAttribute("style", vars);
+  if (vars) {
+    const cleaned = vars.replace(/--rs-font-scale:[^;]*;?/g, "");
+    wrapper.setAttribute("style", cleaned);
+  }
   // Carry the override rules, re-scoped to this page so they never leak.
+  // Strip the zoom rule — visual scaling is handled by the preview container.
   const styleTag = scope.querySelector("style");
   if (styleTag?.textContent) {
     const s = document.createElement("style");
-    s.textContent = styleTag.textContent.replaceAll("[data-rs-scope]", "[data-rs-page-scope]");
+    s.textContent = styleTag.textContent
+      .replaceAll("[data-rs-scope]", "[data-rs-page-scope]")
+      .replace(/\[data-rs-page-scope\]\s*\{[^}]*zoom:[^}]*\}/g, "");
     wrapper.appendChild(s);
   }
   wrapper.appendChild(pageRoot);
