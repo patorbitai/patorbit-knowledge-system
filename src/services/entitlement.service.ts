@@ -174,13 +174,20 @@ export const entitlementService = {
       select: {
         subscriptionTier: true,
         subscriptionStatus: true,
+        currentPeriodEnd: true,
       },
     });
 
     const tier = this.normalizeTier(user?.subscriptionTier);
     const status =
       (user?.subscriptionStatus as SubscriptionStatus) || "inactive";
-    const isActive = status === "active" || status === "trialing";
+    // A trialing user keeps paid access only until the trial end (the trial
+    // end is stored in currentPeriodEnd by the webhook). Once the trial
+    // expires — including a cancelled trial — access is revoked server-side.
+    const isTrialStillRunning =
+      status === "trialing" &&
+      (!user?.currentPeriodEnd || user.currentPeriodEnd.getTime() > Date.now());
+    const isActive = status === "active" || isTrialStillRunning;
     const effectiveTier: SubscriptionTier =
       isActive && tier !== "Free" ? tier : "Free";
 

@@ -97,6 +97,32 @@ describe("Billing Lifecycle", () => {
     expect(e.features.aiAdvanced).toBe(true);
   });
 
+  it("keeps Professional access while a trial is still running", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "Professional",
+      subscriptionStatus: "trialing",
+      currentPeriodEnd: new Date(Date.now() + 3 * 86400 * 1000),
+    });
+    const e = await entitlementService.getUserEntitlements("u_trial_running");
+
+    expect(e.tier).toBe("Professional");
+    expect(e.isActive).toBe(true);
+  });
+
+  it("drops to Free after a trial expires (trialEndsAt passed)", async () => {
+    findUniqueMock.mockResolvedValue({
+      subscriptionTier: "Professional",
+      subscriptionStatus: "trialing",
+      currentPeriodEnd: new Date(Date.now() - 86400 * 1000),
+    });
+    const e = await entitlementService.getUserEntitlements("u_trial_expired");
+
+    expect(e.tier).toBe("Free");
+    expect(e.isActive).toBe(false);
+    expect(e.features.aiAdvanced).toBe(false);
+    expect(e.features.maxResumes).toBe(2);
+  });
+
   it("Enterprise tier gets organization features", async () => {
     findUniqueMock.mockResolvedValue({
       subscriptionTier: "Enterprise",

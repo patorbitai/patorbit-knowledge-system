@@ -331,13 +331,18 @@ model Subscription {
   razorpaySignature       String?
 
   tier                    String   // "professional", "enterprise"
-  status                  String   // "active", "pending", "cancelled", "expired", "paused"
+  status                  String   // "active", "pending", "trialing", "cancelled", "expired", "paused", "halted"
   interval                String   // "monthly", "yearly"
 
   currentPeriodStart      DateTime?
   currentPeriodEnd        DateTime?
   cancelAtPeriodEnd       Boolean  @default(false)
   cancelledAt             DateTime?
+
+  // ₹5 promotional trial (7 days)
+  trialStartedAt          DateTime?
+  trialEndsAt             DateTime?
+  trialPaymentId          String?
 
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt

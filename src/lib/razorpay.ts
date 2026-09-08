@@ -11,6 +11,49 @@ export const RAZORPAY_PLANS = {
 export type PlanInterval = "monthly" | "yearly";
 export type SubscriptionTier = "free" | "professional" | "enterprise";
 
+// ─── ₹5 Promotional Trial ───────────────────────────────────────
+// The trial uses Razorpay's documented "Subscription with a Trial Period"
+// pattern: a one-time add-on (₹5) is charged when the subscription is
+// authenticated, and the subscription itself starts billing at start_at
+// (7 days later). All amounts are in paise.
+
+export const TRIAL_AMOUNT_PAISE = 500; // ₹5
+
+export const TRIAL_DURATION_DAYS = 7;
+
+/**
+ * Compute the Razorpay `start_at` unix timestamp for a trial subscription
+ * (now + 7 days, server-side).
+ */
+export function getTrialStartAt(now: Date = new Date()): number {
+  return Math.floor(now.getTime() / 1000) + TRIAL_DURATION_DAYS * 24 * 60 * 60;
+}
+
+/**
+ * Compute the server-authoritative trial end date (start + 7 days).
+ */
+export function getTrialEndsAt(startedAt: Date = new Date()): Date {
+  return new Date(
+    startedAt.getTime() + TRIAL_DURATION_DAYS * 24 * 60 * 60 * 1000,
+  );
+}
+
+/**
+ * Razorpay add-on item that charges the ₹5 trial fee as part of the
+ * subscription authentication transaction.
+ */
+export function getTrialAddon() {
+  return [
+    {
+      item: {
+        name: "7-day trial fee",
+        amount: TRIAL_AMOUNT_PAISE,
+        currency: "INR",
+      },
+    },
+  ];
+}
+
 // ─── Server-side Razorpay client ─────────────────────────────
 
 let _razorpay: InstanceType<typeof Razorpay> | null = null;

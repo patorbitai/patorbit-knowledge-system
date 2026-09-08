@@ -33,8 +33,13 @@ type SubscriptionData = {
     currentPeriodEnd: string | null;
     cancelAtPeriodEnd: boolean;
     cancelledAt: string | null;
+    trialStartedAt: string | null;
+    trialEndsAt: string | null;
+    trialPaymentId: string | null;
     createdAt: string;
   } | null;
+  trialEligible?: boolean;
+  trialEndsAt?: string | null;
 };
 
 type UsageData = {
@@ -103,22 +108,53 @@ export default function BillingPage() {
   }, [authStatus]);
 
   const isPro =
-    subscription?.tier === "professional" &&
+    (subscription?.tier || "").toLowerCase() === "professional" &&
     (subscription?.status === "active" || subscription?.status === "trialing");
 
   const sub = subscription?.subscription;
+  const isTrial = sub?.status === "trialing" || !!sub?.trialStartedAt;
+  const trialEndLabel = sub?.trialEndsAt
+    ? new Date(sub.trialEndsAt).toLocaleDateString("en-US", {
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+    : null;
 
   const handleUpgrade = async () => {
     setCheckoutLoading(true);
     try {
+      // Default to the ₹5 trial; the server decides eligibility and falls
+      // back gracefully when the trial was already used.
       const res = await fetch("/api/razorpay/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ interval: "monthly" }),
+        body: JSON.stringify({ interval: "monthly", trial: true }),
       });
 
       if (res.status === 401) {
         window.location.href = "/login?callbackUrl=/account/billing";
+        return;
+      }
+      if (res.status === 403) {
+        const err = await res.json().catch(() => ({}));
+        if (err.code === "TRIAL_ALREADY_USED") {
+          // Trial already used — retry once at the regular price.
+          const retry = await fetch("/api/razorpay/checkout", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ interval: "monthly", trial: false }),
+          });
+          if (!retry.ok) {
+            const retryErr = await retry.json().catch(() => ({}));
+            setCheckoutError(retryErr.error || "Something went wrong. Please try again.");
+            setCheckoutLoading(false);
+            return;
+          }
+          return await openCheckout(await retry.json(), false);
+        }
+        setCheckoutError(err.error || "Something went wrong. Please try again.");
+        setCheckoutLoading(false);
         return;
       }
       if (!res.ok) {
@@ -128,36 +164,44 @@ export default function BillingPage() {
         return;
       }
 
-      const { subscriptionId, razorpayKeyId } = await res.json();
-
-      const options = {
-        key: razorpayKeyId,
-        subscription_id: subscriptionId,
-        name: "Patorbit",
-        description: "Professional Plan (Monthly)",
-        handler: function () {
-          window.location.href = "/account/billing?status=success";
-        },
-        prefill: {},
-        theme: { color: "#0891b2" },
-        modal: { ondismiss: () => setCheckoutLoading(false) },
-      };
-
-      const w = window as unknown as { Razorpay?: new (opts: Record<string, unknown>) => { open: () => void } };
-      if (!w.Razorpay) {
-        const script = document.createElement("script");
-        script.src = "https://checkout.razorpay.com/v1/checkout.js";
-        script.onload = () => {
-          new w.Razorpay!(options).open();
-        };
-        document.body.appendChild(script);
-      } else {
-        new w.Razorpay(options).open();
-      }
+      await openCheckout(await res.json(), true);
     } catch {
       setCheckoutError("Something went wrong. Please check your connection and try again.");
       setCheckoutLoading(false);
     }
+  };
+
+  const openCheckout = async (
+    data: { subscriptionId: string; razorpayKeyId: string },
+    isTrialFlow: boolean,
+  ) => {
+    const { subscriptionId, razorpayKeyId } = data;
+
+    const options = {
+      key: razorpayKeyId,
+      subscription_id: subscriptionId,
+      name: "Patorbit",
+      description: `Professional Plan (Monthly)${isTrialFlow ? " — 7-day trial ₹5" : ""}`,
+      handler: function () {
+        window.location.href = "/account/billing?status=success";
+      },
+      prefill: {},
+      theme: { color: "#0891b2" },
+      modal: { ondismiss: () => setCheckoutLoading(false) },
+    };
+
+    const w = window as unknown as { Razorpay?: new (opts: Record<string, unknown>) => { open: () => void } };
+    if (!w.Razorpay) {
+      const script = document.createElement("script");
+      script.src = "https://checkout.razorpay.com/v1/checkout.js";
+      script.onload = () => {
+        new w.Razorpay!(options).open();
+      };
+      document.body.appendChild(script);
+    } else {
+      new w.Razorpay(options).open();
+    }
+    setCheckoutLoading(false);
   };
 
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -168,11 +212,18 @@ export default function BillingPage() {
     try {
       const res = await fetch("/api/razorpay/subscription", { method: "DELETE" });
       if (res.ok) {
-        setSubscription((prev) =>
-          prev
-            ? { ...prev, cancelAtPeriodEnd: true, subscription: prev.subscription ? { ...prev.subscription, cancelAtPeriodEnd: true } : null }
-            : prev,
-        );
+        // Refetch server state so the UI reflects the authoritative result
+        // (cancelAtPeriodEnd, cancelled status, remaining trial/period).
+        const fresh = await fetch("/api/razorpay/subscription");
+        if (fresh.ok) {
+          setSubscription(await fresh.json());
+        } else {
+          setSubscription((prev) =>
+            prev
+              ? { ...prev, cancelAtPeriodEnd: true, subscription: prev.subscription ? { ...prev.subscription, cancelAtPeriodEnd: true } : null }
+              : prev,
+          );
+        }
       }
     } catch {
       setCheckoutError("Unable to cancel subscription. Please try again.");
@@ -263,39 +314,59 @@ export default function BillingPage() {
                   {isPro ? "Professional" : "Starter"}
                 </h3>
                 {isPro && (
-                  <span className="inline-flex items-center rounded-full bg-emerald-500/15 px-2 py-0.5 text-[11px] font-semibold text-emerald-400">
-                    Active
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 text-[11px] font-semibold ${
+                      isTrial
+                        ? "bg-cyan-500/15 text-cyan-400"
+                        : "bg-emerald-500/15 text-emerald-400"
+                    }`}
+                  >
+                    {isTrial ? "Trial" : "Active"}
                   </span>
                 )}
                 {subscription?.cancelAtPeriodEnd && (
                   <span className="inline-flex items-center rounded-full bg-amber-500/15 px-2 py-0.5 text-[11px] font-semibold text-amber-400">
-                    Cancels at period end
+                    {isTrial ? "Cancels at trial end" : "Cancels at period end"}
                   </span>
                 )}
               </div>
               <p className="text-sm text-gray-500 dark:text-slate-400 mb-3">
                 {isPro
-                  ? sub?.interval === "yearly"
-                    ? "Annual plan — billed every 12 months"
-                    : "Monthly plan — ₹149/month"
+                  ? isTrial
+                    ? "7-day trial — ₹5 today"
+                    : sub?.interval === "yearly"
+                      ? "Annual plan — billed every 12 months"
+                      : "Monthly plan — ₹149/month"
                   : "Free plan with basic features"}
               </p>
 
               {isPro && sub && (
                 <div className="flex flex-wrap gap-4 text-sm">
-                  <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
-                    <Calendar className="w-4 h-4 text-gray-400 dark:text-slate-500" />
-                    <span>
-                      Renews{" "}
-                      {sub.currentPeriodEnd
-                        ? new Date(sub.currentPeriodEnd).toLocaleDateString("en-US", {
-                            month: "long",
-                            day: "numeric",
-                            year: "numeric",
-                          })
-                        : "N/A"}
-                    </span>
-                  </div>
+                  {isTrial && trialEndLabel ? (
+                    <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
+                      <Calendar className="w-4 h-4 text-gray-400 dark:text-slate-500" />
+                      <span>
+                        Trial ends{" "}
+                        <span className="font-semibold">{trialEndLabel}</span>
+                        {" — then ₹"}
+                        {sub.interval === "yearly" ? 119 : 149}/mo unless cancelled
+                      </span>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
+                      <Calendar className="w-4 h-4 text-gray-400 dark:text-slate-500" />
+                      <span>
+                        Renews{" "}
+                        {sub.currentPeriodEnd
+                          ? new Date(sub.currentPeriodEnd).toLocaleDateString("en-US", {
+                              month: "long",
+                              day: "numeric",
+                              year: "numeric",
+                            })
+                          : "N/A"}
+                      </span>
+                    </div>
+                  )}
                   <div className="flex items-center gap-2 text-gray-700 dark:text-slate-300">
                     <CreditCard className="w-4 h-4 text-gray-400 dark:text-slate-500" />
                     <span>Razorpay</span>
@@ -381,11 +452,13 @@ export default function BillingPage() {
               <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
               <div>
                 <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-1">
-                  Cancel Subscription
+                  {isTrial ? "Cancel Trial" : "Cancel Subscription"}
                 </h3>
                 <p className="text-sm text-gray-500 dark:text-slate-400 mb-4">
-                  You&apos;ll keep access until the end of your current billing period.
-                  After that, your account will be downgraded to the free Starter plan.
+                  {isTrial
+                    ? `You'll keep access until your trial ends${trialEndLabel ? ` on ${trialEndLabel}` : ""}. You won't be charged after the trial.`
+                    : "You'll keep access until the end of your current billing period."
+                    + " After that, your account will be downgraded to the free Starter plan."}
                 </p>
                 <button
                   type="button"
@@ -393,7 +466,7 @@ export default function BillingPage() {
                   disabled={cancelling}
                   className="text-sm font-medium text-amber-400 hover:text-amber-300 transition-colors disabled:opacity-50"
                 >
-                  {cancelling ? "Cancelling..." : "Cancel Subscription"}
+                  {cancelling ? "Cancelling..." : isTrial ? "Cancel Trial" : "Cancel Subscription"}
                 </button>
               </div>
             </div>
@@ -454,9 +527,13 @@ export default function BillingPage() {
 
       <ConfirmationDialog
         open={showCancelConfirm}
-        title="Cancel subscription?"
-        message="You will keep access until the end of your billing period. After that, your account will be downgraded to the free Starter plan."
-        confirmLabel="Cancel Subscription"
+        title={isTrial ? "Cancel trial?" : "Cancel subscription?"}
+        message={
+          isTrial
+            ? "Your trial will end as scheduled and you will NOT be charged after it. You keep paid access until the trial ends."
+            : "You will keep access until the end of your billing period. After that, your account will be downgraded to the free Starter plan."
+        }
+        confirmLabel={isTrial ? "Cancel Trial" : "Cancel Subscription"}
         variant="danger"
         onConfirm={handleCancel}
         onCancel={() => setShowCancelConfirm(false)}

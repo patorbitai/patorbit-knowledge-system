@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { verifyWebhookSignature } from "@/lib/razorpay";
+import { verifyWebhookSignature, getTrialEndsAt } from "@/lib/razorpay";
 
 /**
  * POST /api/razorpay/webhook
@@ -97,6 +97,46 @@ export async function POST(req: NextRequest) {
 
     // 5. Handle subscription events
     switch (eventType) {
+      case "subscription.authenticated": {
+        // The ₹5 trial add-on was processed and the card was authorized.
+        // This is the authoritative "trial started" signal from Razorpay.
+        // The subscription remains in the authenticated state until start_at
+        // (7 days later), at which point Razorpay moves it to active and
+        // charges the plan price automatically.
+        if (!subId) break;
+
+        const existing = await prisma.subscription.findUnique({
+          where: { razorpaySubscriptionId: subId },
+        });
+        if (!existing) break;
+
+        const trialStartedAt = new Date();
+        const trialEndsAt = getTrialEndsAt(trialStartedAt);
+
+        await prisma.subscription.update({
+          where: { razorpaySubscriptionId: subId },
+          data: {
+            status: "trialing",
+            trialStartedAt: existing.trialStartedAt ?? trialStartedAt,
+            trialEndsAt: existing.trialEndsAt ?? trialEndsAt,
+            trialPaymentId: paymentEntity?.id || undefined,
+            currentPeriodEnd: existing.trialEndsAt ?? trialEndsAt,
+          },
+        });
+
+        // Grant paid-tier entitlements for the duration of the trial.
+        await prisma.user.update({
+          where: { id: existing.userId },
+          data: {
+            subscriptionTier: "Professional",
+            subscriptionStatus: "trialing",
+            currentPeriodEnd: existing.trialEndsAt ?? trialEndsAt,
+            cancelAtPeriodEnd: false,
+          },
+        });
+        break;
+      }
+
       case "subscription.started":
       case "subscription.activated":
       case "subscription.charged":
@@ -121,7 +161,9 @@ export async function POST(req: NextRequest) {
         if (!subId) break;
 
         // User or admin scheduled cancellation.
-        // The subscription remains active until the current period ends.
+        // The subscription remains active until the current period ends;
+        // a cancelled trial keeps access until its trial end and never
+        // converts to normal billing.
         await prisma.subscription.update({
           where: { razorpaySubscriptionId: subId },
           data: {
@@ -137,7 +179,53 @@ export async function POST(req: NextRequest) {
         if (dbSub3) {
           await prisma.user.update({
             where: { id: dbSub3.userId },
-            data: { cancelAtPeriodEnd: true },
+            data: {
+              cancelAtPeriodEnd: true,
+              // A cancelled trial keeps paid access until trialEndsAt (the
+              // entitlement service enforces the time boundary server-side);
+              // a cancelled paid subscription keeps access until period end.
+              ...(dbSub3.trialEndsAt
+                ? { subscriptionStatus: "trialing" }
+                : {}),
+            },
+          });
+        }
+        break;
+      }
+
+      case "subscription.pending": {
+        // A charge attempt failed; Razorpay will retry automatically.
+        // Do not silently continue granting paid access beyond the retry
+        // window — mark the subscription pending (no entitlement change;
+        // the user keeps what they already paid for until resolution).
+        if (!subId) break;
+        await prisma.subscription.update({
+          where: { razorpaySubscriptionId: subId },
+          data: { status: "pending" },
+        });
+        break;
+      }
+
+      case "subscription.halted": {
+        // Retries exhausted — the subscription can no longer be charged.
+        // Stop granting paid entitlements.
+        if (!subId) break;
+
+        await prisma.subscription.update({
+          where: { razorpaySubscriptionId: subId },
+          data: { status: "halted" },
+        });
+
+        const dbSubH = await prisma.subscription.findUnique({
+          where: { razorpaySubscriptionId: subId },
+        });
+        if (dbSubH) {
+          await prisma.user.update({
+            where: { id: dbSubH.userId },
+            data: {
+              subscriptionTier: "free",
+              subscriptionStatus: "inactive",
+            },
           });
         }
         break;

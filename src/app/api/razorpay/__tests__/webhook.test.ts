@@ -83,6 +83,8 @@ vi.mock("@/lib/razorpay", () => ({
   }),
   getPlanId: () => mocks.razorpayPlanMonthly,
   getRazorpayKeyId: () => mocks.razorpayKeyId,
+  getTrialEndsAt: (startedAt: Date = new Date()) =>
+    new Date(startedAt.getTime() + 7 * 24 * 60 * 60 * 1000),
   verifyWebhookSignature: (body: string, sig: string, secret: string) => {
     const expected = crypto.createHmac("sha256", secret).update(body).digest("hex");
     return expected === sig;
@@ -662,6 +664,168 @@ describe("Subscription Lifecycle", () => {
         subscriptionId: "sub_start1",
       }),
     });
+  });
+
+  // ── ₹5 trial lifecycle ──────────────────────────────────────
+
+  it("subscription.authenticated → trial starts: status trialing, user trialing, trial fields set", async () => {
+    const event = buildSubscriptionEvent("subscription.authenticated", {
+      id: "sub_trial1",
+    });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    // Existing subscription was created at checkout with a planned trial window
+    const plannedEnd = new Date(Date.now() + 7 * 86400 * 1000);
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      userId: "u_trial",
+      tier: "Professional",
+      status: "pending",
+      trialStartedAt: null,
+      trialEndsAt: plannedEnd,
+    });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    // Subscription moves to trialing, trial payment recorded
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { razorpaySubscriptionId: "sub_trial1" },
+        data: expect.objectContaining({
+          status: "trialing",
+          trialPaymentId: "pay_test456",
+          trialStartedAt: expect.any(Date),
+          trialEndsAt: plannedEnd,
+        }),
+      }),
+    );
+
+    // User gets Professional entitlements as trialing
+    expect(mocks.userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "u_trial" },
+        data: expect.objectContaining({
+          subscriptionTier: "Professional",
+          subscriptionStatus: "trialing",
+          cancelAtPeriodEnd: false,
+        }),
+      }),
+    );
+  });
+
+  it("subscription.authenticated → computes trialEndsAt server-side when not stored", async () => {
+    const event = buildSubscriptionEvent("subscription.authenticated", {
+      id: "sub_trial2",
+    });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      userId: "u_trial2",
+      tier: "Professional",
+      status: "pending",
+      trialStartedAt: null,
+      trialEndsAt: null,
+    });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    const updateCall = mocks.subscriptionUpdate.mock.calls[0][0];
+    const data = updateCall.data;
+    expect(data.status).toBe("trialing");
+    expect(data.trialStartedAt).toBeInstanceOf(Date);
+    // trialEndsAt ≈ now + 7 days
+    const expected = Date.now() + 7 * 86400 * 1000;
+    expect(Math.abs(data.trialEndsAt.getTime() - expected)).toBeLessThan(60_000);
+  });
+
+  it("subscription.pending → marks pending, does not grant entitlements", async () => {
+    const event = buildSubscriptionEvent("subscription.pending", { id: "sub_pend1" });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "pending" }),
+      }),
+    );
+    // No user upgrade — payment was not collected
+    expect(mocks.userUpdate).not.toHaveBeenCalled();
+  });
+
+  it("subscription.halted → retries exhausted, user downgraded to Free", async () => {
+    const event = buildSubscriptionEvent("subscription.halted", { id: "sub_halt1" });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue({ userId: "u_halt" });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "halted" }),
+      }),
+    );
+    expect(mocks.userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          subscriptionTier: "free",
+          subscriptionStatus: "inactive",
+        }),
+      }),
+    );
+  });
+
+  it("subscription.cancelled during trial → keeps paid access until trial end, no conversion", async () => {
+    const event = buildSubscriptionEvent("subscription.cancelled", { id: "sub_trial3" });
+    const body = JSON.stringify(event);
+    const req = createWebhookRequest(body);
+
+    mocks.webhookEventFindUnique.mockResolvedValue(null);
+    mocks.subscriptionFindUnique.mockResolvedValue({
+      userId: "u_trial3",
+      trialEndsAt: new Date(Date.now() + 3 * 86400 * 1000),
+    });
+    mocks.subscriptionUpdate.mockResolvedValue({});
+    mocks.userUpdate.mockResolvedValue({});
+    mocks.webhookEventCreate.mockResolvedValue({});
+
+    await POST(req);
+
+    expect(mocks.subscriptionUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: "cancelled" }),
+      }),
+    );
+    // User stays trialing (access continues until trialEndsAt, enforced by
+    // the entitlement service) but is marked as cancelling.
+    expect(mocks.userUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          cancelAtPeriodEnd: true,
+          subscriptionStatus: "trialing",
+        }),
+      }),
+    );
   });
 
   it("skips processing when subscription entity is missing", async () => {
