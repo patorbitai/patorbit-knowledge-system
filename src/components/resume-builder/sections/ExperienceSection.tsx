@@ -12,6 +12,15 @@ import { Trash2, ChevronUp, ChevronDown, Plus, Pencil } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useValidation } from "../hooks/useValidation";
 
+/** True when a description looks like a bulleted list rather than narrative prose. */
+function isBulletedDescription(desc?: string): boolean {
+  if (!desc) return false;
+  const lines = desc.split("\n").map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return false;
+  const marker = /^[-•*▪◦‣]\s*/;
+  return marker.test(lines[0]) || lines.some((l) => marker.test(l));
+}
+
 export function ExperienceSection() {
   const claims = useResumeBuilder((s) => s.resume?.claims ?? []);
   const experience = useResumeBuilder((s) => s.resume?.experience ?? []);
@@ -436,6 +445,9 @@ export function ExperienceSection() {
                               suggestion={(expSuggestion.content as string[]).join("\n• ")}
                               onAccept={() => {
                                 updateExperience(exp.id, "bulletPoints", expSuggestion.content);
+                                if (isBulletedDescription(exp.description)) {
+                                  updateExperience(exp.id, "description", "");
+                                }
                                 setSuggestions((prev) => { const n = new Map(prev); n.delete(exp.id); return n; });
                               }}
                               onRegenerate={() => handleGenerateBullets(exp.id)}
@@ -468,6 +480,9 @@ export function ExperienceSection() {
                               suggestion={(expSuggestion.content as string[]).join("\n• ")}
                               onAccept={() => {
                                 updateExperience(exp.id, "bulletPoints", expSuggestion.content as string[]);
+                                if (isBulletedDescription(exp.description)) {
+                                  updateExperience(exp.id, "description", "");
+                                }
                                 setSuggestions((prev) => { const n = new Map(prev); n.delete(exp.id); return n; });
                               }}
                               onRegenerate={() => handleImproveBullets(exp.id)}
