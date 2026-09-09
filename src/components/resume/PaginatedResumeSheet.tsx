@@ -930,7 +930,9 @@ function reflowPages(
       return el;
     };
 
-    const pageBottom = pageRoot.getBoundingClientRect().top + PAGE_H;
+    // Use the safe content boundary, not the full page height.
+    // Content must not extend into the bottom safe area (footer space).
+    const pageBottom = pageRoot.getBoundingClientRect().top + PAGE_H - ctx.safeBottom;
 
     // Columnar block: slice EACH column at the measured page boundary instead
     // of dumping whole columns — a full-width header row above the columns
