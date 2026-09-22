@@ -25,6 +25,19 @@ import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import type { Resume } from "@/types/resume";
 import type { ResumeTemplate } from "@/app/resume-builder/templates";
 import { track } from "@/lib/analytics";
+import {
+  acceptAllSafeWithCount,
+  applyTailorSuggestions,
+  buildSuggestions,
+  detectUnsupportedAdditions,
+  suggestionEventFor,
+} from "@/lib/tailor-review";
+import type {
+  ApplyResult,
+  SuggestionDecision,
+  SuggestionDecisions,
+  TailorSuggestion,
+} from "@/lib/tailor-review";
 
 interface MatchAnalysis {
   matchScore: number;
@@ -66,7 +79,12 @@ function compareResumes(original: Resume, tailored: Record<string, unknown>) {
   }
 
   const origSkills = original.skills.map((s) => s.name).sort().join(",");
-  const tailoredSkills = (Array.isArray(tailored.skills) ? tailored.skills : []).map((s: any) => s.name).sort().join(",");
+  const tailoredSkills = (
+    Array.isArray(tailored.skills) ? (tailored.skills as Array<{ name?: string }>) : []
+  )
+    .map((s) => s.name ?? "")
+    .sort()
+    .join(",");
   if (origSkills !== tailoredSkills) {
     changes.push({ section: "Skills", type: "reordered", detail: "Skills reordered for JD relevance" });
   }
@@ -82,35 +100,18 @@ function compareResumes(original: Resume, tailored: Record<string, unknown>) {
   return changes;
 }
 
-/**
- * Detect potential unsupported claims by comparing against original profile.
- */
-function detectUnsupportedClaims(original: Resume, tailored: Record<string, unknown>): string[] {
-  const unsupported: string[] = [];
-  const origSkillNames = new Set(original.skills.map((s) => s.name.toLowerCase()));
-  const tailSkills = Array.isArray(tailored.skills) ? tailored.skills : [];
-  for (const skill of tailSkills) {
-    const name = (skill as any).name?.toLowerCase();
-    if (name && !origSkillNames.has(name)) unsupported.push(`Skill: ${(skill as any).name}`);
-  }
-  const origCompanies = new Set(original.experience.map((e) => e.company.toLowerCase()));
-  const tailExp = Array.isArray(tailored.experience) ? tailored.experience : [];
-  for (const exp of tailExp) {
-    const company = (exp as any).company?.toLowerCase();
-    if (company && !origCompanies.has(company)) unsupported.push(`Experience: ${(exp as any).company}`);
-  }
-  const origCerts = new Set(original.certifications.map((c) => c.name.toLowerCase()));
-  const tailCerts = Array.isArray(tailored.certifications) ? tailored.certifications : [];
-  for (const cert of tailCerts) {
-    const name = (cert as any).name?.toLowerCase();
-    if (name && !origCerts.has(name)) unsupported.push(`Certification: ${(cert as any).name}`);
-  }
-  return unsupported;
-}
-
 export function TailorResumeModal({ open, onClose, applicationId, initialJobDescription, initialResumeId, onApproved }: TailorResumeModalProps) {
   const [step, setStep] = useState<Step>("input");
   const [jobDescription, setJobDescription] = useState("");
+
+  // Defensive reset: whenever the modal transitions to closed — regardless
+  // of which path closed it — the draft JD is cleared so the next open can
+  // never show a previous application's job description (§1.3).
+  const [wasOpen, setWasOpen] = useState(open);
+  if (open !== wasOpen) {
+    setWasOpen(open);
+    if (!open) setJobDescription("");
+  }
   const [error, setError] = useState<string | null>(null);
   const [tailorResult, setTailorResult] = useState<TailorResult | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("modern-clean");
@@ -143,11 +144,53 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
   const createResume = useResumeBuilder((s) => s.createResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
   const sourceStyleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
+  const qualificationMatch = useResumeBuilder((s) => s.qualificationMatch);
+  const careerProfile = useResumeBuilder((s) => s.careerProfile);
+  const jobProfile = useResumeBuilder((s) => s.jobProfile);
+  const setLastTailoring = useResumeBuilder((s) => s.setLastTailoring);
+
+  /* ── §11/§15: reviewable suggestions with provenance ─────────────────── */
+  // Decisions are reset wherever a new tailorResult is set (analyze,
+  // regenerate, reset, close) — no effect needed.
+  const [decisions, setDecisions] = useState<SuggestionDecisions>({});
+
+  const suggestions: TailorSuggestion[] = useMemo(() => {
+    if (!tailorResult) return [];
+    return buildSuggestions({
+      original: originalResume,
+      tailored: tailorResult.resume as unknown as Resume,
+      match: qualificationMatch,
+      profile: careerProfile,
+      jobProfile,
+    });
+  }, [tailorResult, originalResume, qualificationMatch, careerProfile, jobProfile]);
+
+  /** Original + only the approved changes. This — not the AI payload — is
+   *  what gets previewed and saved (§12/§13/§17). */
+  const applied: ApplyResult | null = useMemo(() => {
+    if (!tailorResult) return null;
+    return applyTailorSuggestions(
+      originalResume,
+      tailorResult.resume as unknown as Resume,
+      suggestions,
+      decisions,
+    );
+  }, [tailorResult, originalResume, suggestions, decisions]);
+
+  const decide = useCallback(
+    (id: string, status: SuggestionDecision["status"], text?: string) => {
+      setDecisions((prev) => ({ ...prev, [id]: { status, ...(text ? { text } : {}) } }));
+      setIsDirty(true);
+      track(suggestionEventFor(status), { section: id });
+    },
+    [],
+  );
 
   // Build the tailored Resume object for preview — uses the editable draft state
   const tailoredResume = useMemo((): Resume | null => {
-    if (!tailorResult) return null;
-    const t = { ...tailorResult.resume };
+    if (!tailorResult || !applied) return null;
+    // Base = original + approved changes (guarded apply), never the raw payload.
+    const t: Record<string, unknown> = { ...applied.resume };
 
     // Apply draft edits if in editing mode
     if (isEditing) {
@@ -157,9 +200,9 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
       }
       // Apply per-experience bullet edits
       if (Array.isArray(t.experience)) {
-        t.experience = t.experience.map((exp: any, idx: number) => {
+        t.experience = (t.experience as Resume["experience"]).map((exp, idx) => {
           if (draftExpBullets[idx] !== undefined) {
-            return { ...exp, bulletPoints: draftExpBullets[idx].split("\n").filter((l: string) => l.trim()) };
+            return { ...exp, bulletPoints: draftExpBullets[idx].split("\n").filter((l) => l.trim()) };
           }
           return exp;
         });
@@ -171,7 +214,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
       ...(t as Partial<Resume>),
       templateId: selectedTemplateId,
     } as Resume;
-  }, [tailorResult, selectedTemplateId, originalResume, isEditing, draftSummary, draftSkills, draftExpBullets]);
+  }, [tailorResult, applied, selectedTemplateId, originalResume, isEditing, draftSummary, draftSkills, draftExpBullets]);
 
   const selectedTemplate = useMemo((): ResumeTemplate => {
     return TEMPLATES.find((t) => t.id === selectedTemplateId) || TEMPLATES[0];
@@ -184,7 +227,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
 
   const unsupportedClaims = useMemo(() => {
     if (!tailorResult) return [];
-    return detectUnsupportedClaims(originalResume, tailorResult.resume);
+    return detectUnsupportedAdditions(originalResume, tailorResult.resume as unknown as Resume);
   }, [tailorResult, originalResume]);
 
   // Initialize draft fields from tailor result (once per generation)
@@ -194,12 +237,12 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     setDraftSummary((tailorResult.resume.summary as string) || "");
     setDraftSkills(
       Array.isArray(tailorResult.resume.skills)
-        ? (tailorResult.resume.skills as any[]).map((s: any) => s.name).join(", ")
+        ? (tailorResult.resume.skills as Array<{ name?: string }>).map((s) => s.name ?? "").join(", ")
         : ""
     );
     const bullets: Record<number, string> = {};
     if (Array.isArray(tailorResult.resume.experience)) {
-      (tailorResult.resume.experience as any[]).forEach((exp: any, idx: number) => {
+      (tailorResult.resume.experience as Array<{ bulletPoints?: string[] }>).forEach((exp, idx) => {
         if (Array.isArray(exp.bulletPoints)) {
           bullets[idx] = exp.bulletPoints.join("\n");
         }
@@ -254,6 +297,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
       if (!res.ok) throw new Error(data.error || "Failed to analyze job description.");
 
       setTailorResult(data);
+      setDecisions({});
       setSelectedTemplateId(originalResume.templateId || "modern-clean");
       draftInitialized.current = false;
       setIsEditing(false);
@@ -303,6 +347,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to regenerate.");
       setTailorResult(data);
+      setDecisions({});
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Regeneration failed. Please try again.");
     } finally {
@@ -362,7 +407,22 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
       }
     }
 
-    track("tailoring_completed", { application: !!applicationId });
+    // §17: remember what was approved so the export step can state it.
+    setLastTailoring({
+      resumeId: newResumeId,
+      accepted: applied?.accepted ?? 0,
+      edited: applied?.edited ?? 0,
+      rejected: applied?.rejected ?? 0,
+      blocked: applied?.blocked ?? 0,
+    });
+
+    track("tailoring_completed", {
+      application: !!applicationId,
+      accepted: applied?.accepted ?? 0,
+      edited: applied?.edited ?? 0,
+      rejected: applied?.rejected ?? 0,
+      blocked: applied?.blocked ?? 0,
+    });
 
     // C55.1: Notify parent if callback provided
     if (onApproved) {
@@ -378,7 +438,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     }
 
     setTimeout(() => { window.location.href = "/resume-builder"; }, 800);
-  }, [tailorResult, tailoredResume, originalResume, createResume, switchResume, selectedTemplateId, applicationId, onApproved]);
+  }, [tailorResult, tailoredResume, applied, originalResume, createResume, switchResume, selectedTemplateId, applicationId, onApproved, setLastTailoring, sourceStyleConfig]);
 
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
   const [discardAction, setDiscardAction] = useState<"reset" | "close">("reset");
@@ -387,6 +447,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     setStep("input");
     setJobDescription("");
     setTailorResult(null);
+    setDecisions({});
     setError(null);
     setShowComparison(false);
     setIsRegenerating(false);
@@ -405,6 +466,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     setStep("input");
     setJobDescription("");
     setTailorResult(null);
+    setDecisions({});
     setError(null);
     setShowComparison(false);
     setIsRegenerating(false);
@@ -636,6 +698,64 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                     )}
                   </div>
 
+                  {/* §11/§15: per-change review with provenance and decisions */}
+                  {suggestions.length > 0 && (
+                    <div className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] p-4 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h3 className="text-xs font-semibold text-gray-700 dark:text-slate-300">
+                            {suggestions.length} suggested change{suggestions.length === 1 ? "" : "s"}
+                          </h3>
+                          <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+                            {applied?.accepted ?? 0} accepted · {applied?.edited ?? 0} edited · {applied?.rejected ?? 0} rejected · {applied?.pending ?? 0} undecided
+                            {(applied?.blocked ?? 0) > 0 && (
+                              <span className="text-amber-600 dark:text-amber-400"> · {applied?.blocked} unsupported addition{(applied?.blocked ?? 0) === 1 ? "" : "s"} blocked</span>
+                            )}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => {
+                            const { decisions: next, acceptedCount } = acceptAllSafeWithCount(
+                              suggestions,
+                              decisions,
+                            );
+                            setDecisions(next);
+                            setIsDirty(true);
+                            // Batch acceptance is one event carrying how many
+                            // changes it newly accepted (never double-counted).
+                            if (acceptedCount > 0) {
+                              track("suggestion_accepted", {
+                                section: "accept-all-safe",
+                                count: acceptedCount,
+                              });
+                            }
+                          }}
+                          disabled={suggestions.every((s) => !s.safe || decisions[s.id])}
+                          className="rounded-lg border border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-500/20 transition-colors disabled:opacity-50"
+                        >
+                          Accept all safe changes
+                        </button>
+                      </div>
+
+                      {suggestions.map((sug) => (
+                        <SuggestionCard
+                          key={sug.id}
+                          suggestion={sug}
+                          decision={decisions[sug.id]}
+                          onDecide={(status, text) => decide(sug.id, status, text)}
+                        />
+                      ))}
+
+                      {(applied?.blocked ?? 0) > 0 && (
+                        <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-3 py-2">
+                          <p className="text-[11px] text-amber-700 dark:text-amber-300">
+                            {applied?.blocked} unsupported addition{(applied?.blocked ?? 0) === 1 ? "" : "s"} detected — they will NOT be applied or exported, even if you accept the surrounding change.
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Comparison Toggle */}
                   <button
                     onClick={() => setShowComparison(!showComparison)}
@@ -744,6 +864,15 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                   <div className="rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] p-4">
                     <p className="text-xs text-gray-600 dark:text-slate-400">
                       You are about to create a <strong>new resume</strong>. Your original resume will remain <strong>unchanged</strong>.
+                      {applied && applied.accepted + applied.edited > 0 && (
+                        <>
+                          {" "}
+                          <strong>{applied.accepted + applied.edited} approved change{(applied.accepted + applied.edited) === 1 ? "" : "s"}</strong> will be included.
+                        </>
+                      )}
+                      {(applied?.blocked ?? 0) > 0 && (
+                        <span className="text-amber-600 dark:text-amber-400"> {applied?.blocked} unsupported addition{(applied?.blocked ?? 0) === 1 ? "" : "s"} blocked from export.</span>
+                      )}
                       {isDirty && " Your edits above will be included in the saved resume."}
                     </p>
                   </div>
@@ -844,5 +973,207 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
         onCancel={() => setShowDiscardConfirm(false)}
       />
     </AnimatePresence>
+  );
+}
+
+/**
+ * One reviewable AI suggestion (§11): suggested change, why, evidence,
+ * confidence, and Accept / Edit / Reject — plus the never-apply list for
+ * anything unsupported (§12).
+ */
+function SuggestionCard({
+  suggestion,
+  decision,
+  onDecide,
+}: {
+  suggestion: TailorSuggestion;
+  decision?: SuggestionDecision;
+  onDecide: (status: SuggestionDecision["status"], text?: string) => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(suggestion.suggested);
+  const status = decision?.status;
+  const shownText =
+    status === "edited" && decision?.text ? decision.text : suggestion.suggested;
+
+  const border =
+    status === "accepted"
+      ? "border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/[0.06]"
+      : status === "rejected"
+        ? "border-rose-300 dark:border-rose-500/30 bg-rose-50/60 dark:bg-rose-500/[0.06]"
+        : status === "edited"
+          ? "border-cyan-300 dark:border-cyan-500/30 bg-cyan-50/60 dark:bg-cyan-500/[0.06]"
+          : "border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02]";
+
+  const confidenceLabel =
+    suggestion.confidence === "high"
+      ? "Confidence: High"
+      : suggestion.confidence === "medium"
+        ? "Confidence: Medium"
+        : "Confidence: Low";
+
+  return (
+    <div className={`rounded-xl border p-3 space-y-2 ${border}`}>
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <p className="text-xs font-semibold text-gray-900 dark:text-white">
+            {suggestion.sectionLabel}
+          </p>
+          <p className="text-[10px] text-gray-500 dark:text-slate-400">
+            {suggestion.kind === "reorder"
+              ? "Reorder"
+              : suggestion.kind === "omit"
+                ? "Omission"
+                : "Rewrite"}{' · '}{confidenceLabel}
+            {suggestion.safe && (
+              <span className="text-emerald-600 dark:text-emerald-400"> · Safe</span>
+            )}
+          </p>
+        </div>
+        {status && (
+          <span
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+              status === "accepted"
+                ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
+                : status === "rejected"
+                  ? "bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300"
+                  : "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300"
+            }`}
+          >
+            {status}
+          </span>
+        )}
+      </div>
+
+      {/* Original vs Suggested (§9/§11) */}
+      <div className="grid gap-2 sm:grid-cols-2">
+        <div className="rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] p-2">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-0.5">
+            Original
+          </p>
+          <p className="text-[11px] text-gray-600 dark:text-slate-300 whitespace-pre-line">
+            {suggestion.original || "(empty)"}
+          </p>
+        </div>
+        <div className="rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] p-2">
+          <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-0.5">
+            Suggested
+          </p>
+          <p className="text-[11px] text-gray-800 dark:text-slate-200 whitespace-pre-line">
+            {shownText || suggestion.suggested || "(omitted from this version)"}
+          </p>
+        </div>
+      </div>
+
+      {/* Why (§16) */}
+      <div>
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-0.5">
+          Why
+        </p>
+        <p className="text-[11px] text-gray-600 dark:text-slate-300">{suggestion.why}</p>
+      </div>
+
+      {/* Evidence (§6/§11) */}
+      <div>
+        <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-0.5">
+          Evidence
+        </p>
+        {suggestion.evidence.length === 0 ? (
+          <p className="text-[11px] text-gray-500 dark:text-slate-400 italic">
+            We couldn&apos;t find supporting evidence in your profile for this change.
+          </p>
+        ) : (
+          <div className="space-y-1">
+            {suggestion.evidence.map((ev, i) => (
+              <div
+                key={`${ev.label}-${i}`}
+                className="rounded-lg bg-white dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.05] px-2.5 py-1.5"
+              >
+                <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
+                  {ev.label}
+                </span>
+                {ev.quote && (
+                  <p className="text-[10px] text-gray-600 dark:text-slate-300 mt-0.5">{ev.quote}</p>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Never-apply list (§12) */}
+      {suggestion.blocked.length > 0 && (
+        <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2.5 py-1.5">
+          <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+            Will not be applied — not in your profile:
+          </p>
+          <p className="text-[10px] text-amber-600 dark:text-amber-300/80">
+            {suggestion.blocked.join(" · ")}
+          </p>
+        </div>
+      )}
+
+      {/* User decision (§11/§15) */}
+      {!editing ? (
+        <div className="flex flex-wrap gap-2">
+          <button
+            onClick={() => onDecide("accepted")}
+            disabled={status === "accepted"}
+            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors"
+          >
+            <CheckCircle2 className="w-3 h-3" /> Accept
+          </button>
+          <button
+            onClick={() => {
+              setDraft(shownText);
+              setEditing(true);
+            }}
+            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] hover:bg-gray-100 dark:hover:bg-white/[0.08] px-3 py-1.5 text-[11px] font-semibold text-gray-700 dark:text-slate-200 transition-colors"
+          >
+            <PenLine className="w-3 h-3" /> Edit
+          </button>
+          <button
+            onClick={() => onDecide("rejected")}
+            disabled={status === "rejected"}
+            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 disabled:opacity-50 px-3 py-1.5 text-[11px] font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors"
+          >
+            <X className="w-3 h-3" /> Reject
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <textarea
+            value={draft}
+            onChange={(e) => setDraft(e.target.value)}
+            rows={3}
+            className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            placeholder={
+              suggestion.id === "skills"
+                ? "Comma-separated skills"
+                : suggestion.id === "summary"
+                  ? "Your own summary wording"
+                  : "One bullet per line"
+            }
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={() => {
+                onDecide("edited", draft);
+                setEditing(false);
+              }}
+              className="rounded-lg bg-cyan-600 hover:bg-cyan-700 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors"
+            >
+              Save my version
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="rounded-lg border border-gray-200 dark:border-white/[0.1] px-3 py-1.5 text-[11px] font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

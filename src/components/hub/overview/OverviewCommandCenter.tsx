@@ -411,6 +411,15 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
               const timeAgo = formatRelativeTime(updatedAt);
               const isMenuOpen = openMenuId === resumeId;
 
+              // §14: version lineage — origin, target job, export status.
+              const tailored = isTailoredResume(r);
+              const targetApp = recentApplications.find(
+                (a) => a.resumeId === resumeId || a.exportedResumeId === resumeId,
+              );
+              const wasExported = recentApplications.some(
+                (a) => a.exportedResumeId === resumeId,
+              );
+
               return (
                 <div
                   key={resumeId}
@@ -567,6 +576,39 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
                         <span className="flex items-center gap-1 ml-auto">
                           <Clock className="h-3 w-3" />
                           {timeAgo}
+                        </span>
+                      )}
+                    </div>
+
+                    {/* §14: master ↔ tailored relationship + target job + export */}
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span
+                        className="inline-flex items-center rounded-md bg-gray-100 dark:bg-white/[0.05] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400"
+                        title={
+                          tailored
+                            ? "Derived from your master profile — the master resume is never changed by tailoring"
+                            : "Your source-of-truth resume"
+                        }
+                      >
+                        {tailored ? "From master profile" : "Master resume"}
+                      </span>
+                      {targetApp && (
+                        <Link
+                          href={`/jobs/${targetApp.applicationId}`}
+                          className="inline-flex items-center gap-1 rounded-md bg-blue-50 dark:bg-blue-500/10 px-1.5 py-0.5 text-[9px] font-medium text-blue-600 dark:text-blue-300 hover:underline max-w-full"
+                          title="Target job for this version"
+                        >
+                          <Briefcase className="h-2.5 w-2.5 shrink-0" />
+                          <span className="truncate">{targetApp.title} — {targetApp.companyName}</span>
+                        </Link>
+                      )}
+                      {wasExported ? (
+                        <span className="inline-flex items-center gap-1 rounded-md bg-green-50 dark:bg-green-500/10 px-1.5 py-0.5 text-[9px] font-medium text-green-600 dark:text-green-400">
+                          <CheckCircle2 className="h-2.5 w-2.5" /> Exported
+                        </span>
+                      ) : tailored && (
+                        <span className="inline-flex items-center rounded-md bg-gray-50 dark:bg-white/[0.04] px-1.5 py-0.5 text-[9px] font-medium text-gray-400 dark:text-slate-500">
+                          Not exported yet
                         </span>
                       )}
                     </div>

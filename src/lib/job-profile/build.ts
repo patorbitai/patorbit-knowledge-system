@@ -34,6 +34,7 @@ import {
   extractSeniority,
   extractDomain,
   extractImplicitCompetencies,
+  computePreferredFlags,
 } from "./extract";
 
 /* ── Options ─────────────────────────────────────────────────────────────── */
@@ -76,6 +77,8 @@ export function buildJobProfile(
   const capturedAt = options.capturedAt ?? new Date().toISOString();
   const text = rawText ?? "";
   const lines = splitLines(text);
+  // §4: one deterministic pass marks required vs preferred framing.
+  const preferredByLine = computePreferredFlags(lines);
 
   const requirements: JobRequirement[] = [];
   const responsibilities: JobResponsibility[] = [];
@@ -84,10 +87,12 @@ export function buildJobProfile(
   lines.forEach((line, index) => {
     const ref = `jd:line:${index + 1}`;
     const kind = classifyLine(line);
+    const preferred = preferredByLine[index] || undefined;
     if (kind === "requirement") {
       requirements.push({
         text: line,
         source: source(ref, line, "classified as an explicit requirement statement"),
+        ...(preferred ? { preferred: true } : {}),
       });
     } else if (kind === "responsibility") {
       responsibilities.push({
@@ -98,14 +103,20 @@ export function buildJobProfile(
       qualifications.push({
         text: line,
         source: source(ref, line, "classified as a qualification statement"),
+        ...(preferred ? { preferred: true } : {}),
       });
     }
   });
 
-  const skills: JobSkill[] = extractSkills(lines).map(({ name, sourceText }, index) => ({
-    name,
-    source: source(`jd:skill:${index + 1}`, sourceText, "extracted from an explicit skills list or technology token"),
-  }));
+  const skills: JobSkill[] = extractSkills(lines).map(({ name, sourceText }, index) => {
+    const lineIdx = lines.findIndex((l) => l === sourceText);
+    const preferred = (lineIdx >= 0 && preferredByLine[lineIdx]) || undefined;
+    return {
+      name,
+      source: source(`jd:skill:${index + 1}`, sourceText, "extracted from an explicit skills list or technology token"),
+      ...(preferred ? { preferred: true } : {}),
+    };
+  });
 
   const seniority: JobSeniority[] = extractSeniority(lines).map((item, index) => ({
     level: item.level,

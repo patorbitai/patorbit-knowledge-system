@@ -123,6 +123,48 @@ export function classifyLine(
   return "other";
 }
 
+/* ── Required vs preferred (§4) ─────────────────────────────────────── */
+
+/** Inline cues that frame an item as preferred rather than required. */
+const PREFERENCE_CUE_RE =
+  /\b(nice[\s-]to[\s-]have|preferred|preferably|desirable|would be (?:a )?bonus|is (?:a )?plus|\ba plus\b|bonus if|optional but)\b/i;
+
+/** Section headers that put every following item into the preferred bucket. */
+const PREFERENCE_HEADER_RE =
+  /^\s*(nice[\s-]to[\s-]have|preferred|preferred qualifications|preferred skills|bonus|optional|desired qualifications)\b.*[:]?\s*$/i;
+
+/** True when the line itself frames the item as preferred (§4). */
+export function hasPreferenceCue(text: string): boolean {
+  return PREFERENCE_CUE_RE.test(stripBulletMarker(text ?? ""));
+}
+
+/**
+ * Walk the JD lines once and mark which lines fall under a preference cue:
+ * either the line's own wording or a preceding "Nice to have:"-style header
+ * (until the next section header resets the state). Rule-based, never guessed.
+ */
+export function computePreferredFlags(lines: string[]): boolean[] {
+  const flags: boolean[] = [];
+  let sectionPreferred = false;
+  for (const line of lines) {
+    const t = stripBulletMarker(line).trim();
+    const isHeader = t.length > 0 && t.length < 60 && /[:]\s*$/.test(line);
+    if (PREFERENCE_HEADER_RE.test(t)) {
+      sectionPreferred = true;
+      flags.push(true);
+      continue;
+    }
+    if (isHeader) {
+      // A different section header resets preference state.
+      sectionPreferred = false;
+      flags.push(false);
+      continue;
+    }
+    flags.push(sectionPreferred || hasPreferenceCue(t));
+  }
+  return flags;
+}
+
 /* ── Skills ──────────────────────────────────────────────────────────────── */
 
 const SKILL_SECTION_RE = /^\s*(skills|tech stack|technologies?|tools|required skills|key skills)\s*[:;]?\s*$/i;
@@ -146,8 +188,12 @@ const TECH_TERMS = [
 
 const TECH_TOKEN_RE = new RegExp(`\\b(${TECH_TERMS.join("|")})\\b`, "i");
 
-/** Extract individual technology tokens literally present in a line. */
-function extractTechTokens(text: string): string[] {
+/**
+ * Extract individual technology tokens literally present in a line.
+ * Exported for the tailoring fabrication guard (§12): the tailor review uses
+ * this to detect technologies the original resume never mentions.
+ */
+export function extractTechTokens(text: string): string[] {
   const re = new RegExp(`\\b(${TECH_TERMS.join("|")})\\b`, "gi");
   const out: string[] = [];
   const seen = new Set<string>();

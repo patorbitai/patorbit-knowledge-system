@@ -28,6 +28,13 @@ const STEP_LABELS: Record<string, string> = {
   upgrade_viewed: "Upgrade prompt viewed",
   checkout_started: "Checkout started",
   subscription_completed: "Subscription completed",
+  match_viewed: "Match dashboard viewed",
+  evidence_viewed: "Evidence inspected",
+  gap_viewed: "Skill gaps inspected",
+  suggestion_accepted: "AI suggestion accepted",
+  suggestion_rejected: "AI suggestion rejected",
+  suggestion_edited: "AI suggestion edited",
+  resume_export_started: "Export started",
 };
 
 function pct(value: number | null): string {
@@ -91,6 +98,29 @@ export default async function FunnelPage() {
           );
         })}
       </section>
+
+      {/* Workflow engagement (§24) */}
+      {report.workflow.some((w) => w.total > 0) && (
+        <section className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02]">
+          <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.05]">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Matching &amp; tailoring workflow</h2>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+              Feature-level engagement — reported outside the activation funnel.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 divide-x divide-y divide-gray-100 dark:divide-white/[0.05]">
+            {report.workflow.map((w) => (
+              <div key={w.event} className="px-5 py-4">
+                <p className="text-[11px] uppercase tracking-wide text-gray-400 dark:text-slate-500">
+                  {STEP_LABELS[w.event] ?? w.event}
+                </p>
+                <p className="text-xl font-bold text-gray-900 dark:text-white mt-1 tabular-nums">{w.unique}</p>
+                <p className="text-[11px] text-gray-500 dark:text-slate-500">{w.total} events</p>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Conversion events */}
       <section className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02]">

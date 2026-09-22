@@ -35,7 +35,11 @@ export type QualificationClassification =
   | "MISSING";
 
 /** Which Job Profile array produced an item. */
-export type QualificationSourceGroup = "requirement" | "skill" | "qualification";
+export type QualificationSourceGroup =
+  | "requirement"
+  | "skill"
+  | "qualification"
+  | "responsibility";
 
 /* ── Evidence ────────────────────────────────────────────────────────────── */
 

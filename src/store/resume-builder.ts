@@ -70,6 +70,33 @@ function writeJourneyExportedFlag(value: boolean): void {
 }
 
 /**
+ * The tailor flow redirects to /resume-builder after approval (full reload),
+ * so the last-tailoring summary must survive navigation or the export step
+ * can never state "Your resume has N approved changes" (§17).
+ */
+const LAST_TAILORING_KEY = "patorbit:last-tailoring";
+function readLastTailoring(): LastTailoringSummary | null {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) return null;
+  try {
+    const raw = sessionStorage.getItem(LAST_TAILORING_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as LastTailoringSummary;
+    return parsed && typeof parsed.resumeId === "string" ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function writeLastTailoring(value: LastTailoringSummary | null): void {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) return;
+  try {
+    if (value) sessionStorage.setItem(LAST_TAILORING_KEY, JSON.stringify(value));
+    else sessionStorage.removeItem(LAST_TAILORING_KEY);
+  } catch {
+    /* storage unavailable — in-memory state still works */
+  }
+}
+
+/**
  * Check whether a resume is effectively empty (the default placeholder).
  * A resume is "empty" if it has no user-provided content — no name, email,
  * title, summary, experience, education, skills, or projects.
@@ -91,6 +118,15 @@ export function isResumeEffectivelyEmpty(r: Resume): boolean {
 /* ── Store types ── */
 
 export type SaveStatus = "saved" | "saving" | "unsaved" | "offline" | "sync-failed";
+
+/** Outcome of the most recent tailoring (session-persisted, §17). */
+export interface LastTailoringSummary {
+  resumeId: string;
+  accepted: number;
+  edited: number;
+  rejected: number;
+  blocked: number;
+}
 
 export interface ResumeBuilderState {
   resume: Resume;
@@ -193,6 +229,12 @@ export interface ResumeBuilderState {
   /** Workflow: whether the user has successfully exported the current resume (session-level). */
   hasExported: boolean;
   setHasExported: (value: boolean) => void;
+  /**
+   * Outcome of the most recent tailoring on this client (session-level).
+   * Shown before export (§17): "Your resume has N approved changes."
+   */
+  lastTailoring: LastTailoringSummary | null;
+  setLastTailoring: (value: LastTailoringSummary | null) => void;
 
   /** Persistent Job Application context — connects Resume Builder to persisted Job Applications. */
   activeJobApplicationId: string | null;
@@ -551,6 +593,11 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
         styleConfigs: {},
         hasExported: readJourneyExportedFlag(),
+        lastTailoring: readLastTailoring(),
+        setLastTailoring: (value) => {
+          writeLastTailoring(value);
+          set({ lastTailoring: value });
+        },
         activeJobApplicationId: null,
         activeJobApplication: null,
         setStyleConfig: (resumeId, patch) => set((s) => {
@@ -828,10 +875,13 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             activeJobApplication: fullApp,
             // Clear session-level derived state when switching jobs,
             // then restore from the new application's persisted data.
+            // jobDescription is included so one job's JD can never leak
+            // into another application's tailor/match flow (§1.3).
             ...(isNewJob || (!app && previousId) ? {
               jobProfile: null,
               qualificationMatch: persistedMatch,
               jobMatch: null,
+              jobDescription: app?.jobDescription ?? "",
             } : {
               // Same job re-selection — update match if persisted data changed
               ...(persistedMatch ? { qualificationMatch: persistedMatch } : {}),

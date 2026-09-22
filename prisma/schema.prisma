@@ -379,3 +379,26 @@ model WebhookEvent {
 
   @@index([eventId])
 }
+
+// ─── First-party funnel/workflow analytics ───────────────────
+//
+// Replaces the single-instance `.analytics/events.jsonl` file so the
+// pipeline works across multiple app instances (§16/§17/§24).
+//
+//   - `id` is client-generated (one UUID per event) so beacon retries and
+//     double-submits dedupe via the primary key (createMany skipDuplicates).
+//   - PII-free by construction: `props` is sanitized client-side AND
+//     server-side before insert; `sessionId` is a random per-browser id.
+//   - No relation to User — analytics must never be joinable to identity.
+model AnalyticsEvent {
+  id        String   @id
+  event     String
+  ts        DateTime
+  sessionId String
+  props     Json?
+  createdAt DateTime @default(now())
+
+  @@index([event, ts])
+  @@index([sessionId])
+  @@index([ts])
+}

@@ -349,6 +349,12 @@ export function buildQualificationMatch(
   for (const qual of jobProfile.qualifications) {
     classify("qualification", qual.text, qual.source);
   }
+  // §8: responsibilities are matched against the candidate's free-text corpus
+  // so the dashboard can map "Build scalable APIs" → the experience that
+  // supports it (or honestly say no evidence was found).
+  for (const resp of jobProfile.responsibilities) {
+    classify("responsibility", resp.text, resp.source);
+  }
 
   const summary: QualificationMatchSummary = {
     total: items.length,

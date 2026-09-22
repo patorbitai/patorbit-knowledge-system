@@ -15,7 +15,17 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
   const markResumeExported = useResumeBuilder((s) => s.markResumeExported);
   const setHasExported = useResumeBuilder((s) => s.setHasExported);
+  const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
+  const lastTailoring = useResumeBuilder((s) => s.lastTailoring);
   const template = getActiveTemplate(resume);
+
+  // §17: if this resume came out of the tailor flow, say what's inside it.
+  const tailoringNote =
+    lastTailoring &&
+    lastTailoring.resumeId === activeResumeId &&
+    lastTailoring.accepted + lastTailoring.edited > 0
+      ? lastTailoring
+      : null;
 
   // The SAME resolved config the preview renders with. The heading sentinel
   // ("accent"/"ink") is resolved to its real hex so DOCX gets concrete colors.
@@ -31,6 +41,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const [isPrinting, setIsPrinting] = useState(false);
 
   const handleExportPdf = async () => {
+    track("resume_export_started", { format: "pdf" });
     // Ensure the selected webfont is fully loaded before the print target
     // renders, so the PDF never silently falls back to a system font.
     try {
@@ -61,6 +72,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
 
   const handleExportDocx = async () => {
     setDocxError(null);
+    track("resume_export_started", { format: "docx" });
     try {
       // Pass the exact templateId + resolved style config the preview shows.
       await exportToDocx(resume, resume.name || "resume", {
@@ -191,6 +203,16 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
             </div>
 
             <div className="p-4 space-y-2">
+              {tailoringNote && (
+                <div className="rounded-lg bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 px-3 py-2">
+                  <p className="text-[11px] text-emerald-700 dark:text-emerald-300">
+                    Your resume has <strong>{tailoringNote.accepted + tailoringNote.edited} approved change{tailoringNote.accepted + tailoringNote.edited === 1 ? "" : "s"}</strong> from tailoring.
+                    {tailoringNote.blocked > 0 && (
+                      <span className="text-amber-600 dark:text-amber-400"> {tailoringNote.blocked} unsupported addition{tailoringNote.blocked === 1 ? "" : "s"} blocked from export.</span>
+                    )}
+                  </p>
+                </div>
+              )}
               {exportOptions.map((opt, i) => (
                 <button
                   key={opt.label}

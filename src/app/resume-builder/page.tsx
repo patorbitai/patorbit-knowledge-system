@@ -283,6 +283,13 @@ export default function ResumeBuilderPage() {
   const [rightMode, setRightMode] = useState<"preview" | "copilot">("preview");
   const [mobileMode, setMobileMode] = useState<MobileMode>("edit");
   const [tailorOpen, setTailorOpen] = useState(false);
+  // §1.3: the header/copilot opener hands the CURRENT job context to the
+  // tailor modal so the user never re-pastes the same JD.
+  const sessionJobDescription = useResumeBuilder((s) => s.jobDescription);
+  const activeJobApplication = useResumeBuilder((s) => s.activeJobApplication);
+  const activeJobApplicationId = useResumeBuilder((s) => s.activeJobApplicationId);
+  const tailorPrefillJd =
+    sessionJobDescription || activeJobApplication?.jobDescription || undefined;
   const [exportOpen, setExportOpen] = useState(false);
 
   // Listen for custom events from WorkflowStatusBar
@@ -374,7 +381,12 @@ export default function ResumeBuilderPage() {
         <ClaimsReview />
         <ResumeServerSyncMonitor />
         <ResumeMigrationUI />
-        <TailorResumeModal open={tailorOpen} onClose={() => setTailorOpen(false)} />
+        <TailorResumeModal
+          open={tailorOpen}
+          onClose={() => setTailorOpen(false)}
+          applicationId={activeJobApplicationId ?? undefined}
+          initialJobDescription={tailorPrefillJd}
+        />
         <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />
       </div>
     </DndProvider>

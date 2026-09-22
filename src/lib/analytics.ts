@@ -42,6 +42,31 @@ export type FunnelEvent = (typeof FUNNEL_EVENTS)[number];
 export const FUNNEL_SET: ReadonlySet<string> = new Set(FUNNEL_EVENTS);
 
 /**
+ * Workflow events (§24) — product-interaction telemetry around the
+ * Resume → Job → Match → Tailor flow. Tracked through the same pipeline as
+ * funnel events, but reported OUTSIDE the activation funnel (they measure
+ * feature engagement, not signup conversion). `resume_exported` in the
+ * funnel is the "export completed" counterpart of `resume_export_started`.
+ */
+export const WORKFLOW_EVENTS = [
+  "match_viewed",
+  "evidence_viewed",
+  "gap_viewed",
+  "suggestion_accepted",
+  "suggestion_rejected",
+  "suggestion_edited",
+  "resume_export_started",
+] as const;
+
+export type WorkflowEvent = (typeof WORKFLOW_EVENTS)[number];
+
+/** Every event the pipeline accepts (funnel + workflow). */
+export type TrackedEvent = FunnelEvent | WorkflowEvent;
+
+export const WORKFLOW_SET: ReadonlySet<string> = new Set(WORKFLOW_EVENTS);
+export const ALL_EVENTS: ReadonlySet<string> = new Set([...FUNNEL_EVENTS, ...WORKFLOW_EVENTS]);
+
+/**
  * The core journey, used for step-to-step conversion. `upgrade_viewed`,
  * `checkout_started` and `subscription_completed` are conversion events and
  * are reported separately from the activation funnel.
@@ -60,7 +85,12 @@ export const ACTIVATION_FUNNEL: FunnelEvent[] = [
 export type EventProps = Record<string, string | number | boolean | null | undefined>;
 
 export interface AnalyticsRecord {
-  event: FunnelEvent;
+  /**
+   * Client-generated UUID — the database primary key. Preserving it across
+   * retries makes beacon redelivery idempotent (server-side dedupe).
+   */
+  id?: string;
+  event: TrackedEvent;
   /** ISO timestamp. */
   ts: string;
   /** Random per-browser-session id (not a user id — no PII). */
@@ -94,6 +124,14 @@ export function sanitizeProps(props: EventProps | undefined): EventProps | undef
 
 export function isFunnelEvent(value: unknown): value is FunnelEvent {
   return typeof value === "string" && FUNNEL_SET.has(value);
+}
+
+export function isWorkflowEvent(value: unknown): value is WorkflowEvent {
+  return typeof value === "string" && WORKFLOW_SET.has(value);
+}
+
+export function isTrackedEvent(value: unknown): value is TrackedEvent {
+  return typeof value === "string" && ALL_EVENTS.has(value);
 }
 
 /* ── Session identity (client only) ───────────────────────────────────────── */
@@ -162,14 +200,15 @@ function scheduleFlush(): void {
   flush();
 }
 
-/** Queue a funnel event. Never throws; never collects PII. */
-export function track(event: FunnelEvent, props?: EventProps): void {
+/** Queue a tracked event (funnel or workflow). Never throws; never collects PII. */
+export function track(event: TrackedEvent, props?: EventProps): void {
   if (typeof window === "undefined") return;
   // Never emit network beacons from tests — a queued flush would otherwise
   // leak a stray fetch into unrelated suites.
   if (process.env.NODE_ENV === "test" || process.env.VITEST) return;
   try {
     const record: AnalyticsRecord = {
+      id: randomId(),
       event,
       ts: new Date().toISOString(),
       sessionId: getSessionId(),
@@ -183,11 +222,15 @@ export function track(event: FunnelEvent, props?: EventProps): void {
 }
 
 /** Queue an event at most once per browser session (keyed by event + subkey). */
-export function trackOnce(event: FunnelEvent, props?: EventProps): void {
+export function trackOnce(event: TrackedEvent, props?: EventProps): void {
   if (typeof window === "undefined") return;
   if (process.env.NODE_ENV === "test" || process.env.VITEST) return;
   try {
-    const subkey = (props?.step as string) ?? (props?.format as string) ?? "default";
+    const subkey =
+      (props?.step as string) ??
+      (props?.format as string) ??
+      (props?.item as string) ??
+      "default";
     const key = `${event}:${subkey}`;
     let seen: string[] = [];
     try {
@@ -215,7 +258,7 @@ export function trackOnce(event: FunnelEvent, props?: EventProps): void {
  * dev-console behavior until a real provider is connected.
  */
 export function trackEvent(name: string, properties?: Record<string, unknown>) {
-  if (isFunnelEvent(name)) {
+  if (isTrackedEvent(name)) {
     track(name, properties as EventProps | undefined);
     return;
   }
@@ -239,6 +282,8 @@ export interface FunnelReport {
   steps: FunnelStepCount[];
   /** Conversion events with counts, reported outside the activation funnel. */
   conversion: Array<{ event: FunnelEvent; total: number; unique: number }>;
+  /** Workflow (§24) engagement counts — match/evidence/gap/suggestion/export. */
+  workflow: Array<{ event: WorkflowEvent; total: number; unique: number }>;
   totalRecords: number;
 }
 
@@ -283,5 +328,23 @@ export function buildFunnelReport(records: AnalyticsRecord[]): FunnelReport {
     unique: uniques.get(event)?.size ?? 0,
   }));
 
-  return { steps, conversion, totalRecords: counted };
+  const wfTotals = new Map<string, number>();
+  const wfUniques = new Map<string, Set<string>>();
+  for (const record of records) {
+    if (!isWorkflowEvent(record.event)) continue;
+    wfTotals.set(record.event, (wfTotals.get(record.event) ?? 0) + 1);
+    let set = wfUniques.get(record.event);
+    if (!set) {
+      set = new Set();
+      wfUniques.set(record.event, set);
+    }
+    set.add(record.sessionId);
+  }
+  const workflow = WORKFLOW_EVENTS.map((event) => ({
+    event,
+    total: wfTotals.get(event) ?? 0,
+    unique: wfUniques.get(event)?.size ?? 0,
+  }));
+
+  return { steps, conversion, workflow, totalRecords: counted };
 }

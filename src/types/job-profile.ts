@@ -46,6 +46,8 @@ export interface JobDerivation {
 export interface JobRequirement {
   text: string;
   source: JobSource;
+  /** True when the JD frames this as preferred/nice-to-have, not required (§4). */
+  preferred?: boolean;
 }
 
 export interface JobResponsibility {
@@ -57,6 +59,8 @@ export interface JobSkill {
   name: string;
   category?: "technology" | "tool" | "domain" | "general";
   source: JobSource;
+  /** True when the skill sits under a preferred/nice-to-have framing (§4). */
+  preferred?: boolean;
 }
 
 export type JobSeniorityLevel =
@@ -82,6 +86,8 @@ export interface JobDomain {
 export interface JobQualification {
   text: string;
   source: JobSource;
+  /** True when the JD frames this as preferred rather than required (§4). */
+  preferred?: boolean;
 }
 
 export interface JobImplicitCompetency {

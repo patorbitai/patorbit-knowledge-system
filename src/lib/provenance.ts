@@ -99,3 +99,83 @@ export function classifySupport(input: {
   if (input.derived) return getSupportBadge("inferred");
   return getSupportBadge("supported");
 }
+
+/* ── Evidence labels (shared by match dashboard + tailor review, §6) ────── */
+
+import type { CareerProfile } from "@/types/career-profile";
+import type {
+  QualificationEvidenceKind,
+  QualificationEvidenceRef,
+} from "@/types/qualification-match";
+
+const KIND_LABEL: Record<QualificationEvidenceKind, string> = {
+  skill: "Skill",
+  experience: "Experience",
+  education: "Education",
+  certification: "Certification",
+  project: "Project",
+  language: "Language",
+};
+
+const SOURCE_LABEL: Record<string, string> = {
+  "resume-import": "from your resume",
+  "user-input": "you entered this",
+  "ai-extraction": "extracted by Patorbit",
+  "linkedin-import": "from LinkedIn",
+  "github-import": "from GitHub",
+  "credential-check": "from a credential check",
+};
+
+/**
+ * Turn provenance refs into the sentence a user can verify:
+ * "Software Engineer — Acme — 2024 – 2026" instead of "resume:experience:exp_1x7".
+ */
+export function resolveEvidenceLabel(
+  ev: QualificationEvidenceRef,
+  profile: CareerProfile | null,
+): string {
+  if (profile) {
+    switch (ev.itemKind) {
+      case "experience": {
+        const e = profile.experiences.find((x) => x.id === ev.itemId);
+        if (e) {
+          const end = e.current ? "Present" : e.endDate;
+          const dates = [e.startDate, end].filter(Boolean).join(" – ");
+          return [e.position, e.company, dates].filter(Boolean).join(" — ");
+        }
+        break;
+      }
+      case "education": {
+        const e = profile.educations.find((x) => x.id === ev.itemId);
+        if (e) return [e.degree, e.school, e.year].filter(Boolean).join(" — ");
+        break;
+      }
+      case "skill": {
+        const s = profile.skills.find((x) => x.id === ev.itemId);
+        if (s) return s.category ? `${s.name} (${s.category})` : s.name;
+        break;
+      }
+      case "project": {
+        const p = profile.projects.find((x) => x.id === ev.itemId);
+        if (p) return p.name;
+        break;
+      }
+      case "certification": {
+        const c = profile.certifications.find((x) => x.id === ev.itemId);
+        if (c) return c.name;
+        break;
+      }
+      case "language": {
+        const l = profile.languages.find((x) => x.id === ev.itemId);
+        if (l) return l.name;
+        break;
+      }
+    }
+  }
+  return KIND_LABEL[ev.itemKind] ?? "Your profile";
+}
+
+/** Human label for where an evidence item came from ("you entered this"). */
+export function evidenceSourceLabel(sourceType: string | undefined, fallback: string): string {
+  return (sourceType && SOURCE_LABEL[sourceType]) || fallback;
+}
