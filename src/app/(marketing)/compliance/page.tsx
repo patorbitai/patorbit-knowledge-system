@@ -5,7 +5,7 @@ import LegalPageLayout, { LegalSection } from "@/components/shared/LegalPageLayo
 export const metadata: Metadata = {
   title: "Compliance - Patorbit",
   description:
-    "Learn about Patorbit's compliance posture, certifications, data protection standards, and governance practices.",
+    "Patorbit's compliance posture in plain terms: no certifications claimed, data protection practices, and governance commitments.",
 };
 
 export default function CompliancePage() {
@@ -20,15 +20,16 @@ export default function CompliancePage() {
     >
       <LegalSection number="1" title="Data Protection">
         <p>
-          We align our practices with widely recognized data protection frameworks, including the principles
-          of the General Data Protection Regulation (GDPR) and the California Consumer Privacy Act (CCPA).
-          This document is under active development as we formalize our compliance program.
+          We aim to align our practices with widely recognized data protection frameworks, including the
+          principles of the General Data Protection Regulation (GDPR) and the California Consumer Privacy
+          Act (CCPA). We are not currently certified or audited against any framework — this document is
+          under active development as we formalize our compliance program.
         </p>
       </LegalSection>
 
       <LegalSection number="2" title="Security Standards">
         <ul className="list-disc list-inside space-y-2 text-slate-400">
-          <li>Encryption of data in transit (TLS) and at rest.</li>
+          <li>Encryption of data in transit (TLS); data at rest is encrypted by our database and hosting providers.</li>
           <li>Role-based access controls and least-privilege principles.</li>
           <li>Regular security reviews and incident response procedures.</li>
         </ul>
@@ -36,9 +37,9 @@ export default function CompliancePage() {
 
       <LegalSection number="3" title="Certifications & Standards">
         <p>
-          We are working toward recognized certifications, including{" "}
-          <span className="text-slate-300">SOC 2</span>. While the program is under development, we already
-          apply the underlying controls and will publish certification details as they are completed.
+          Patorbit currently holds <span className="text-slate-300">no certifications</span> — no SOC 2,
+          no ISO 27001, and no completed third-party audits. We are not currently working toward SOC 2.
+          If and when a certification is achieved, we will publish the details here.
         </p>
       </LegalSection>
 

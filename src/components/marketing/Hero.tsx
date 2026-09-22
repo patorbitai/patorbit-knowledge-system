@@ -228,9 +228,9 @@ export default function Hero() {
             </h1>
 
             <p className="mt-6 text-[17px] text-slate-400 leading-relaxed max-w-lg">
-              Keep your professional information in one{" "}
-              <strong className="text-slate-300">Professional Identity</strong>. Create multiple resumes and tailor
-              each one to the job — without starting from scratch or inventing experience.
+              Keep one source of truth for your career. Patorbit analyzes each job
+              description, shows where you match, identifies skill gaps, and helps you
+              tailor your resume — <strong className="text-slate-300">without inventing experience</strong>.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
@@ -238,19 +238,19 @@ export default function Hero() {
                 href={session ? "/overview" : "/register"}
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
               >
-                Get Started Free
+                Build My Resume Free
                 <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/free-analysis"
                 className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
               >
-                Analyze a Job Free
+                Try a Job Analysis
               </Link>
             </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2">
-              {["Free Forever", "No Credit Card", "Setup in 2 Minutes"].map((item) => (
+              {["Free plan available", "No credit card required", "You approve every AI change"].map((item) => (
                 <span key={item} className="inline-flex items-center gap-1.5 text-xs text-slate-500">
                   <Check className="w-3.5 h-3.5 text-emerald-400" strokeWidth={2.5} />
                   {item}

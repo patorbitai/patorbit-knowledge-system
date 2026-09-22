@@ -4,11 +4,11 @@ import { PlatformPageClient } from "./PlatformPageClient";
 export const metadata: Metadata = {
   title: "Platform — Patorbit",
   description:
-    "Explore the Patorbit platform: Knowledge Graph, Trust Score, Professional Passport, Evidence Management, and AI-powered career intelligence.",
+    "Under the resume builder: structured professional identity, claims and evidence, trust signals, and the knowledge graph that powers job matching.",
   openGraph: {
     title: "Platform — Patorbit",
     description:
-      "Explore the Patorbit platform: Knowledge Graph, Trust Score, Professional Passport, Evidence Management, and AI-powered career intelligence.",
+      "Under the resume builder: structured professional identity, claims and evidence, trust signals, and the knowledge graph that powers job matching.",
     url: "https://www.patorbit.com/platform",
     siteName: "Patorbit",
     type: "website",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Platform — Patorbit",
     description:
-      "Explore the Patorbit platform: Knowledge Graph, Trust Score, Professional Passport, Evidence Management, and AI-powered career intelligence.",
+      "Under the resume builder: structured professional identity, claims and evidence, trust signals, and the knowledge graph that powers job matching.",
   },
   alternates: {
     canonical: "https://www.patorbit.com/platform",

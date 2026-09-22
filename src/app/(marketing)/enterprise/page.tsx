@@ -4,11 +4,11 @@ import { EnterprisePageClient } from "./EnterprisePageClient";
 export const metadata: Metadata = {
   title: "Enterprise — Patorbit",
   description:
-    "Patorbit Enterprise: organization workspaces, verification workflows, API access, SSO/SCIM, and custom integrations for teams and institutions.",
+    "Patorbit for teams and institutions: organization workspaces, evidence-backed profiles, and custom integrations. Contact us for details — some capabilities are in development.",
   openGraph: {
     title: "Enterprise — Patorbit",
     description:
-      "Patorbit Enterprise: organization workspaces, verification workflows, API access, SSO/SCIM, and custom integrations for teams and institutions.",
+      "Patorbit for teams and institutions: organization workspaces, evidence-backed profiles, and custom integrations. Contact us for details — some capabilities are in development.",
     url: "https://www.patorbit.com/enterprise",
     siteName: "Patorbit",
     type: "website",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Enterprise — Patorbit",
     description:
-      "Patorbit Enterprise: organization workspaces, verification workflows, API access, SSO/SCIM, and custom integrations for teams and institutions.",
+      "Patorbit for teams and institutions: organization workspaces, evidence-backed profiles, and custom integrations. Contact us for details — some capabilities are in development.",
   },
   alternates: {
     canonical: "https://www.patorbit.com/enterprise",

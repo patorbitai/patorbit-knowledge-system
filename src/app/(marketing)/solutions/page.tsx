@@ -4,11 +4,11 @@ import { SolutionsPageClient } from "./SolutionsPageClient";
 export const metadata: Metadata = {
   title: "Solutions — Patorbit",
   description:
-    "Discover how Patorbit helps individuals, recruiters, and organizations build verified professional identities and make trust-backed hiring decisions.",
+    "How individuals use Patorbit to build a resume once and tailor it per job — and how teams can evaluate evidence-backed professional profiles.",
   openGraph: {
     title: "Solutions — Patorbit",
     description:
-      "Discover how Patorbit helps individuals, recruiters, and organizations build verified professional identities and make trust-backed hiring decisions.",
+      "How individuals use Patorbit to build a resume once and tailor it per job — and how teams can evaluate evidence-backed professional profiles.",
     url: "https://www.patorbit.com/solutions",
     siteName: "Patorbit",
     type: "website",
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Solutions — Patorbit",
     description:
-      "Discover how Patorbit helps individuals, recruiters, and organizations build verified professional identities and make trust-backed hiring decisions.",
+      "How individuals use Patorbit to build a resume once and tailor it per job — and how teams can evaluate evidence-backed professional profiles.",
   },
   alternates: {
     canonical: "https://www.patorbit.com/solutions",

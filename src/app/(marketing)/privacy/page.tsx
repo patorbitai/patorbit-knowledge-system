@@ -44,13 +44,18 @@ export default function PrivacyPage() {
             <span className="text-slate-300">Usage data</span> — how you interact with the platform, such
             as pages visited and features used.
           </li>
+          <li>
+            <span className="text-slate-300">AI processing</span> — content you choose to send to AI
+            features is processed by our configured AI provider to generate suggestions. We do not use
+            your content to train models, and we do not sell your data.
+          </li>
         </ul>
       </LegalSection>
 
       <LegalSection number="3" title="How We Use Your Information">
         <ul className="list-disc list-inside space-y-2 text-slate-400">
           <li>To provide, operate, and maintain the platform.</li>
-          <li>To verify professional claims and generate trust scores.</li>
+          <li>To structure your professional claims and generate trust signals based on the evidence you provide.</li>
           <li>To personalize your experience and improve our services.</li>
           <li>To communicate with you about your account and platform updates.</li>
         </ul>
@@ -58,8 +63,9 @@ export default function PrivacyPage() {
 
       <LegalSection number="4" title="How We Protect Your Information">
         <p>
-          We use industry-standard security measures, including encryption in transit (TLS) and at rest, to
-          safeguard your data. Access to your information is restricted to authorized personnel and systems.
+          We use industry-standard security measures, including encryption in transit (TLS), to safeguard
+          your data. Data at rest is encrypted by our database and hosting providers. Access to your
+          information is restricted to authorized personnel and systems.
         </p>
       </LegalSection>
 

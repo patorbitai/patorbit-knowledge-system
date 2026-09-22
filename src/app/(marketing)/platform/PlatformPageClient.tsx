@@ -7,12 +7,12 @@ import { ArrowRight, Check, Shield, Brain, Zap } from "lucide-react";
 const layers = [
   {
     title: "Identity Layer",
-    desc: "Self-sovereign identities with persistent, portable profiles across every platform.",
+    desc: "Portable professional profiles that follow you across every resume and application.",
     icon: Shield,
     color: "cyan",
     gradient: "from-cyan-500/20 to-cyan-500/5",
     iconColor: "text-cyan-400",
-    capabilities: ["Decentralized identity", "Cross-platform sync", "Privacy-first design", "Verifiable credentials"],
+    capabilities: ["Portable profiles", "Per-resume isolation", "User-controlled sharing", "Evidence-backed claims"],
   },
   {
     title: "Claims Layer",
@@ -30,7 +30,7 @@ const layers = [
     color: "indigo",
     gradient: "from-indigo-500/20 to-indigo-500/5",
     iconColor: "text-indigo-400",
-    capabilities: ["Verification protocols", "Document anchoring", "Peer verification", "API integrations"],
+    capabilities: ["Verification statuses", "Document attachments", "Provenance tracking", "Structured evidence"],
   },
   {
     title: "Reasoning Layer",
@@ -48,15 +48,8 @@ const layers = [
     color: "emerald",
     gradient: "from-emerald-500/20 to-emerald-500/5",
     iconColor: "text-emerald-400",
-    capabilities: ["Trust scoring", "Audit trails", "Decision transparency", "Compliance ready"],
+    capabilities: ["Trust scoring", "Verification history", "Decision transparency", "Public sharing"],
   },
-];
-
-const stats = [
-  { label: "Identity Nodes", value: "50K+" },
-  { label: "Claims Processed", value: "120K+" },
-  { label: "Verifications Completed", value: "200K+" },
-  { label: "Platform Uptime", value: "99.9%" },
 ];
 
 export function PlatformPageClient() {
@@ -132,32 +125,18 @@ export function PlatformPageClient() {
         </div>
       </section>
 
-      {/* Stats */}
-      <section className="py-16 border-t border-slate-800/50">
-        <div className="mx-auto max-w-7xl px-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {stats.map((stat) => (
-              <div key={stat.label} className="text-center">
-                <div className="text-2xl lg:text-3xl font-bold text-white">{stat.value}</div>
-                <div className="text-xs text-slate-500 mt-1">{stat.label}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
       {/* CTA */}
       <section className="py-24 text-center border-t border-slate-800/50">
         <div className="mx-auto max-w-3xl px-6">
           <h2 className="text-3xl lg:text-4xl font-bold text-white mb-4">Ready to integrate with the knowledge graph?</h2>
-          <p className="text-[17px] text-slate-400 mb-8 max-w-md mx-auto">Comprehensive docs, SDKs, and API references to get you building quickly.</p>
+          <p className="text-[17px] text-slate-400 mb-8 max-w-md mx-auto">Product documentation and API status in one place.</p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/docs" className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100">
               Read Documentation
               <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
             </Link>
             <Link href="/api-access" className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100">
-              Start API Integration
+              API Status
             </Link>
           </div>
         </div>

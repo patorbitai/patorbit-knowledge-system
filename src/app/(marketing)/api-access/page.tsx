@@ -1,8 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Construction } from "lucide-react";
 import { motion } from "framer-motion";
+
+/* Honest API-access page: no invented /api/v1 endpoints, no "get your API key"
+   for a system that doesn't exist yet. */
+
+const planned = [
+  {
+    path: "API keys & rate-limited public access",
+    desc: "Authenticated machine access with keys, not browser sessions",
+  },
+  {
+    path: "Outgoing webhooks",
+    desc: "Event notifications for claim, trust, and resume events",
+  },
+  {
+    path: "Official SDKs",
+    desc: "Typed client libraries — not available yet",
+  },
+];
 
 export default function ApiAccessPage() {
   return (
@@ -14,48 +32,67 @@ export default function ApiAccessPage() {
               <span className="inline-block rounded-full border border-cyan-500/20 bg-cyan-500/5 px-4 py-1.5 text-sm text-cyan-400 mb-6">Developer Tools</span>
               <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight mb-6">API <span className="text-gradient">Access</span></h1>
               <p className="text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-                Integrate Patorbit's trust infrastructure into any application with RESTful APIs, webhooks, and SDKs.
+                A stable, key-authenticated public API is on the roadmap. It is not available
+                today — here is exactly where things stand.
               </p>
             </motion.div>
 
-            <div className="mt-20 grid gap-8 md:grid-cols-2">
-              {[
-                { method: "GET", endpoint: "/api/v1/claims", desc: "Retrieve claims for a given identity" },
-                { method: "POST", endpoint: "/api/v1/claims", desc: "Create a new claim with evidence" },
-                { method: "GET", endpoint: "/api/v1/trust/score", desc: "Get trust score for a claims graph" },
-                { method: "POST", endpoint: "/api/v1/evidence", desc: "Attach evidence to an existing claim" },
-              ].map((ep, i) => (
-                <motion.div key={ep.endpoint} initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                  className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 hover:border-cyan-500/30 transition-all"
-                >
-                  <div className="flex items-center gap-3 mb-4">
-                    <span className={`text-xs font-mono px-2 py-1 rounded ${ep.method === "GET" ? "bg-emerald-500/10 text-emerald-400" : "bg-blue-500/10 text-blue-400"}`}>
-                      {ep.method}
-                    </span>
-                    <span className="text-sm font-mono text-slate-300">{ep.endpoint}</span>
-                  </div>
-                  <p className="text-slate-400 text-sm">{ep.desc}</p>
-                </motion.div>
-              ))}
+            <div className="mt-12 rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-6">
+              <div className="flex items-start gap-3">
+                <Construction className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
+                <div>
+                  <h2 className="text-base font-semibold text-white mb-1">Status: in development</h2>
+                  <p className="text-sm text-slate-400">
+                    Today Patorbit exposes an internal, session-authenticated API that powers the
+                    web app — documented on the{" "}
+                    <Link href="/api-reference" className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2">
+                      API Reference
+                    </Link>
+                    . Public API keys, webhooks, and SDKs do not exist yet.
+                  </p>
+                </div>
+              </div>
             </div>
 
-            <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
-              className="mt-16 rounded-2xl border border-slate-800 bg-slate-900/60 p-10 text-center">
-              <h2 className="text-2xl font-bold text-white mb-4">Get Your API Key</h2>
-              <p className="text-slate-400 mb-8">Start integrating trust capabilities into your application today.</p>
+            <div className="mt-10">
+              <h2 className="text-lg font-semibold text-white mb-4">Planned capabilities</h2>
+              <div className="space-y-3">
+                {planned.map((ep) => (
+                  <div
+                    key={ep.path}
+                    className="rounded-xl border border-slate-800 bg-slate-900/60 p-5 flex items-center gap-4 opacity-70"
+                  >
+                    <span className="text-xs font-mono px-2 py-1 rounded bg-slate-800 text-slate-500">TBD</span>
+                    <span className="text-sm text-slate-300 font-mono flex-1">{ep.path}</span>
+                    <span className="text-xs text-slate-500 hidden md:block">{ep.desc}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              viewport={{ once: true }}
+              className="mt-14 rounded-2xl border border-slate-800 bg-slate-900/60 p-10 text-center"
+            >
+              <h2 className="text-2xl font-bold text-white mb-4">Need access for a real use case?</h2>
+              <p className="text-slate-400 mb-8">
+                We consider early access requests individually. Tell us what you&apos;d integrate.
+              </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
-                  href="/register"
+                  href="/contact"
                   className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
                 >
-                  Create Free Account
+                  Contact Us
                   <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
                 </Link>
                 <Link
-                  href="/docs"
+                  href="/api-reference"
                   className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
                 >
-                  Read API Docs
+                  See Current API
                 </Link>
               </div>
             </motion.div>

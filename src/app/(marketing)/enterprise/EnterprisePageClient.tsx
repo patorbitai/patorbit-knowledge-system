@@ -32,13 +32,21 @@ export function EnterprisePageClient() {
             </div>
             <div className="flex-1">
               <div className="grid grid-cols-2 gap-4">
-                {["10K+", "99.9%", "< 2s", "200+"].map((stat, i) => (
-                  <div key={stat} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center">
-                    <div className="text-3xl font-bold text-purple-400 mb-2">{stat}</div>
-                    <div className="text-sm text-slate-500">{["Verified identities", "Uptime", "Response time", "Enterprise partners"][i]}</div>
+                {[
+                  { value: "Custom", label: "Pricing" },
+                  { value: "Direct", label: "Support channel" },
+                  { value: "Flexible", label: "Contract terms" },
+                  { value: "In development", label: "SSO & API access" },
+                ].map((item) => (
+                  <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center">
+                    <div className="text-2xl font-bold text-purple-400 mb-2">{item.value}</div>
+                    <div className="text-sm text-slate-500">{item.label}</div>
                   </div>
                 ))}
               </div>
+              <p className="text-xs text-slate-600 text-center mt-4">
+                The Enterprise tier is in development. Contact us to discuss your needs.
+              </p>
             </div>
           </div>
         </div>

@@ -2,118 +2,128 @@
 
 import { motion } from "framer-motion";
 import Link from "next/link";
-import { ArrowRight, Brain, ShieldCheck, Network, Star, UserCheck, Fingerprint, Check } from "lucide-react";
+import { ArrowRight, User, Target, ShieldCheck, Search, Download, Star, Check } from "lucide-react";
 import SectionHeader from "@/components/ui/SectionHeader";
+
+/* Features organized around user outcomes, not technology.
+   Every claim below maps to functionality that exists in the product today. */
 
 const featureDetails = [
   {
-    icon: Brain,
-    title: "AI Resume Intelligence",
+    icon: User,
+    title: "Build once",
     color: "blue",
     gradient: "from-blue-500/20 to-blue-500/5",
     iconColor: "text-blue-400",
-    badge: "98%+ Accuracy",
-    description: "Upload any resume format — PDF, DOCX, or JSON — and our AI extracts every data point with unmatched precision.",
+    badge: "One source of truth",
+    description:
+      "Import your existing resume or start fresh. Your professional information lives in one place and seeds every resume you create.",
     highlights: [
-      "Multi-format parsing with 98%+ field accuracy",
-      "LLM-powered skill, experience, and education extraction",
-      "Confidence scoring per extracted field",
-      "Supports 50+ resume formats and languages",
-      "Real-time parsing with sub-second processing",
+      "Import existing resumes from PDF, DOCX, or JSON",
+      "One professional profile reused across multiple resumes",
+      "Edit every section — experience, skills, education, projects, and more",
+      "Autosave with server persistence — close the tab, come back later",
+      "Separate resumes stay separate: edits never leak between them",
+    ],
+  },
+  {
+    icon: Target,
+    title: "Match better",
+    color: "cyan",
+    gradient: "from-cyan-500/20 to-cyan-500/5",
+    iconColor: "text-cyan-400",
+    badge: "Job matching",
+    description:
+      "Paste any job description and Patorbit compares it against your real experience — before you apply.",
+    highlights: [
+      "Matched, partially matched, and missing skills at a glance",
+      "Qualification match against the specific role",
+      "Keyword alignment so you know what the posting actually asks for",
+      "Analysis stays attached to the job application you created",
+      "A free job-analysis tool — no account required",
     ],
   },
   {
     icon: ShieldCheck,
-    title: "Credential Verification",
+    title: "Tailor safely",
     color: "emerald",
     gradient: "from-emerald-500/20 to-emerald-500/5",
     iconColor: "text-emerald-400",
-    badge: "Real-time",
-    description: "Every claim on your resume is cross-referenced against authoritative sources to confirm its validity.",
+    badge: "You approve everything",
+    description:
+      "AI suggests rewrites, reordering, and summaries — strictly from what you already wrote. Missing skills are reported, never invented.",
     highlights: [
-      "Academic registry cross-referencing (degrees, transcripts)",
-      "Professional network verification (LinkedIn, GitHub, etc.)",
-      "Company and employment record validation",
-      "Certification database checks (AWS, Google, Microsoft, etc.)",
-      "Ongoing monitoring — re-verify credentials automatically",
+      "Suggestions are generated only from your existing content",
+      "Accept, edit, or reject each change individually",
+      "Missing skills are flagged as gaps, not added to your resume",
+      "Your original resume is preserved — tailoring creates a new version",
+      "AI never changes formatting, fonts, or template design",
     ],
   },
   {
-    icon: Network,
-    title: "AI Knowledge Graph",
-    color: "cyan",
-    gradient: "from-cyan-500/20 to-cyan-500/5",
-    iconColor: "text-cyan-400",
-    badge: "Semantic Web",
-    description: "Your verified credentials form a living knowledge graph — revealing connections between skills, experiences, and opportunities.",
+    icon: Search,
+    title: "Understand gaps",
+    color: "amber",
+    gradient: "from-amber-500/20 to-amber-500/5",
+    iconColor: "text-amber-400",
+    badge: "Gap analysis",
+    description:
+      "See exactly where you fall short of a role — so you can decide whether to learn, apply, or move on.",
     highlights: [
-      "Semantic relationship mapping between credentials",
-      "Skill adjacency and gap analysis",
-      "Dynamic graph updates as new credentials are added",
-      "Visual graph explorer for recruiters and hiring managers",
-      "API access for programmatic graph traversal",
+      "Missing skills listed explicitly for every job you analyze",
+      "Partial matches surfaced so related experience gets credit",
+      "ATS-oriented checks flag formatting and content issues",
+      "Prioritize which gaps are worth closing first",
+    ],
+  },
+  {
+    icon: Download,
+    title: "Export professionally",
+    color: "rose",
+    gradient: "from-rose-500/20 to-rose-500/5",
+    iconColor: "text-rose-400",
+    badge: "PDF & DOCX",
+    description:
+      "Generate a clean, ATS-friendly resume that matches what you saw in the preview — no surprises after export.",
+    highlights: [
+      "29 templates across single-column, two-column, and ATS-focused layouts",
+      "True A4 pagination with predictable page breaks",
+      "PDF and DOCX export",
+      "Shareable public link when you want to send a URL instead of a file",
+      "What you see in the live preview is what exports",
     ],
   },
   {
     icon: Star,
-    title: "Trust Score",
-    color: "amber",
-    gradient: "from-amber-500/20 to-amber-500/5",
-    iconColor: "text-amber-400",
-    badge: "0–100 Scale",
-    description: "A single, transparent metric that reflects the depth and verification status of your entire professional identity.",
-    highlights: [
-      "Weighted scoring based on credential type and source reliability",
-      "Evidence count and quality factored into final score",
-      "Real-time updates as new credentials are verified",
-      "Breakdown by category (education, experience, skills, certs)",
-      "Shareable score badge for profiles, portfolios, and applications",
-    ],
-  },
-  {
-    icon: UserCheck,
-    title: "Professional Passport",
+    title: "Build professional trust",
     color: "purple",
     gradient: "from-purple-500/20 to-purple-500/5",
     iconColor: "text-purple-400",
-    badge: "Shareable",
-    description: "Your portable, always-updating professional identity. Share it anywhere with a single link or QR code.",
+    badge: "Evidence-backed",
+    description:
+      "Go beyond the document: back your claims with evidence and share a public profile employers can actually check.",
     highlights: [
-      "Single shareable link with live credential updates",
-      "Built-in QR code for quick sharing at events and interviews",
-      "Privacy controls — choose what to share and with whom",
-      "Embeddable widget for portfolio sites and LinkedIn",
-      "Export as PDF, JSON, or verifiable credential format",
-    ],
-  },
-  {
-    icon: Fingerprint,
-    title: "Blockchain Verification",
-    color: "rose",
-    gradient: "from-rose-500/20 to-rose-500/5",
-    iconColor: "text-rose-400",
-    badge: "Tamper-Proof",
-    description: "Critical credentials can be anchored to blockchain for permanent, tamper-evident verification that you control.",
-    highlights: [
-      "Immutable credential hashing on Ethereum and Polygon",
-      "Self-sovereign identity — you control access, not platforms",
-      "Verifiable credential standard (W3C VC) compliance",
-      "Zero-knowledge proof support for selective disclosure",
-      "Cross-chain verification via Patorbit verification API",
+      "Claims extracted from your resume become structured, reviewable records",
+      "Attach evidence — documents, links, and references — to any claim",
+      "Trust Score (0–100) derived from evidence strength and verification status",
+      "Public Professional Passport page with a share link and QR code",
+      "You control what is public: nothing is shared without you enabling it",
     ],
   },
 ];
 
 const extraFeatures = [
   {
-    icon: Brain,
-    title: "API & Integrations",
-    description: "RESTful APIs and webhooks for seamless integration with your existing HR tech stack, ATS platforms, and workflow automation tools.",
+    icon: Search,
+    title: "Free job analysis",
+    description:
+      "Paste a job description on the marketing site and get a structured breakdown — role, skills, seniority, requirements — with no signup.",
   },
   {
     icon: ShieldCheck,
-    title: "Compliance & Security",
-    description: "GDPR-compliant, SOC 2-ready infrastructure with end-to-end encryption, audit trails, and granular access controls.",
+    title: "Your data, your control",
+    description:
+      "Encryption in transit, full data export, and one-click account deletion from settings. We never sell your information.",
   },
 ];
 
@@ -130,13 +140,14 @@ export function FeaturesPageClient() {
               <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">Features</span>
             </div>
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
-              Everything you need to{" "}
+              Build once. Match better.{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                prove who you are
+                Tailor safely.
               </span>
             </h1>
             <p className="text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
-              From AI-powered extraction to blockchain verification — Patorbit gives you and your organization the tools to build, verify, and share professional identity with confidence.
+              Everything Patorbit does is organized around one goal: get you into the right job
+              with a resume that is honest, targeted, and professionally presented.
             </p>
           </div>
         </div>
@@ -199,8 +210,8 @@ export function FeaturesPageClient() {
         <div className="mx-auto max-w-7xl px-6">
           <SectionHeader
             label="More Capabilities"
-            title="Platform features that scale with you"
-            subtitle="APIs, security, and integrations to fit any workflow."
+            title="Useful extras, not padding"
+            subtitle="Try the job-analysis tool before you sign up — and keep control of your data once you do."
           />
           <div className="grid md:grid-cols-2 gap-4 max-w-4xl mx-auto">
             {extraFeatures.map((f) => (
@@ -228,27 +239,27 @@ export function FeaturesPageClient() {
         <div className="mx-auto max-w-7xl px-6 text-center">
           <div className="mx-auto max-w-2xl">
             <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4">
-              Every feature designed to{" "}
+              See it on{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                build trust
+                your own resume
               </span>
             </h2>
             <p className="text-[17px] text-slate-400 leading-relaxed mb-8">
-              From AI extraction to blockchain verification — see the full capabilities in a live walkthrough.
+              Start with a free job analysis, then import your resume and tailor it in minutes.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
-                href="/platform"
+                href="/free-analysis"
                 className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
               >
-                Explore all Features
+                Try a Job Analysis
                 <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
               <Link
-                href="/resume-builder"
+                href="/register"
                 className="group inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
               >
-                View Live Demo
+                Build My Resume Free
               </Link>
             </div>
           </div>
