@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Target, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { ProfessionalIdentityEditor, type ProfileData } from "./ProfessionalIdentityEditor";
 import { useResumeBuilder } from "@/store/resume-builder";
+import { track } from "@/lib/analytics";
 
 interface OnboardingModalProps {
   open: boolean;
@@ -51,6 +52,8 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
         throw new Error(errData.error || `Failed to save (HTTP ${res.status})`);
       }
 
+      track("profile_created");
+
       // Create first resume using the existing C30 flow
       const name = data.fullName || "My Resume";
       const newResumeId = createResume(name);
@@ -84,6 +87,8 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || `Failed to save (HTTP ${res.status})`);
       }
+
+      track("profile_created", { skipped: true });
 
       // Create a default resume
       const newResumeId = createResume("My Resume");

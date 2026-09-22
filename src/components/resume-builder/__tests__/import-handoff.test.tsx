@@ -221,17 +221,25 @@ describe("client-side import handoff: fetch → review → apply → builder sto
     unmount();
   });
 
-  it("does not make a second network request or unnecessary navigation — apply is a synchronous store write", async () => {
+  it("apply persists via write-back without navigation — exactly one import request", async () => {
     const { unmount } = renderToContainer(<ImportButton />);
     dispatchFilePick();
     await flushImport();
     clickContinue();
     await act(async () => {});
 
-    // Exactly one request (the import POST). No save/update request exists —
-    // the apply step is the Zustand setResume write. No router.push is needed
-    // because the builder is already on /resume-builder.
-    expect(fetch).toHaveBeenCalledTimes(1);
+    // Exactly one request hits the import endpoint (the parse POST). The apply
+    // step is the Zustand setResume write, and — since imports can happen on
+    // /overview where the write-back subscription is not mounted — it now
+    // pushes the merged content to /api/resumes* explicitly so the server
+    // never keeps an empty skeleton. No router.push: the builder stays put.
+    const calls = (fetch as unknown as ReturnType<typeof vi.fn>).mock.calls as unknown[][];
+    const urls = calls.map(([url]) => String(url));
+    const importCalls = urls.filter((u) => u.includes("/api/import"));
+    const resumePushCalls = urls.filter((u) => u.includes("/api/resumes"));
+
+    expect(importCalls).toHaveLength(1);
+    expect(importCalls.length + resumePushCalls.length).toBe(calls.length);
     expect(routerPush).not.toHaveBeenCalled();
     unmount();
   });

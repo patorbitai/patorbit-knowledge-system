@@ -9,6 +9,7 @@ import FeatureGrid from "@/components/marketing/FeatureGrid";
 import WhyPatorbit from "@/components/marketing/WhyPatorbit";
 import ComparisonTable from "@/components/marketing/ComparisonTable";
 import CTA from "@/components/marketing/CTA";
+import TrackEvent from "@/components/shared/TrackEvent";
 
 const TITLE =
   "Patorbit — Build Your Resume Once. Tailor It to Every Job.";
@@ -60,6 +61,9 @@ const jsonLd = {
 
 export default async function HomePage() {
   return (
+    <>
+      {/* Funnel: landing page view (§16) */}
+      <TrackEvent name="landing_view" />
     <main className="bg-[#070B14] text-white">
       <script
         type="application/ld+json"
@@ -76,5 +80,6 @@ export default async function HomePage() {
       <ComparisonTable />
       <CTA />
     </main>
+    </>
   );
 }

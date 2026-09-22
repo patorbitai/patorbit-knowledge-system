@@ -67,8 +67,10 @@ describe("Feature Access", () => {
 
     it("returns AI feature message", () => {
       const msg = getRestrictionMessage({ type: "ai-feature", featureName: "Smart Tailor" });
-      expect(msg.title).toBe("AI Feature Unavailable");
+      // Value-first copy (§15): the title is now the feature itself.
+      expect(msg.title).toBe("Smart Tailor");
       expect(msg.description).toContain("Smart Tailor");
+      expect(msg.description).toContain("Upgrade to Pro");
     });
 
     it("returns evidence message", () => {
@@ -89,8 +91,15 @@ describe("Feature Access", () => {
 
     it("returns general message as fallback", () => {
       const msg = getRestrictionMessage({ type: "general", featureName: "Something" });
-      expect(msg.title).toBe("Premium Feature");
+      expect(msg.title).toBe("Something");
       expect(msg.description).toContain("Something");
+      expect(msg.description).toContain("Upgrade to Pro");
+    });
+
+    it("general fallback without a feature name still offers value", () => {
+      const msg = getRestrictionMessage({ type: "general" });
+      expect(msg.title).toBe("More with Patorbit Pro");
+      expect(msg.description).toContain("unlimited resumes");
     });
   });
 

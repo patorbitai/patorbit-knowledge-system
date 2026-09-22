@@ -7,6 +7,7 @@ import { EvidencePanel } from "./EvidencePanel";
 import { AddEvidenceModal } from "./AddEvidenceModal";
 import { DisputeClaimModal } from "./DisputeClaimModal";
 import { clsx } from "clsx";
+import { confidenceWord } from "@/lib/provenance";
 
 export interface ClaimCardProps {
   claim: Claim;
@@ -65,7 +66,9 @@ export function ClaimCard({ claim }: ClaimCardProps) {
               {claim.claimType}
             </span>
             <span>·</span>
-            <span>Confidence: {Math.round(claim.confidence * 100)}%</span>
+            <span title={`Numeric confidence: ${claim.confidence.toFixed(2)} — the reasoning below explains it.`}>
+              Confidence: {confidenceWord(claim.confidence)}
+            </span>
           </div>
           {claim.reasoning && (
             <p className="text-xs text-slate-500 mt-1">{claim.reasoning}</p>

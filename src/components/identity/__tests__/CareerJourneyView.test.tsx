@@ -118,7 +118,10 @@ describe("CareerJourneyView — evidence-backed career narrative (Phase 6F)", ()
     expect(text).toContain("Strongest Proof");
     expect(text).toContain(ASSERTION_TEXT);
     expect(text).toContain("Senior Developer");
-    expect(text).toContain("85% confidence");
+    // §5: confidence is shown as a word, not a raw score.
+    expect(text).toContain("Confidence: High");
+    expect(text).toContain("High confidence");
+    expect(text).not.toContain("85% confidence");
     expect(text).toContain("Employment");
     expect(text).toContain("verified");
     expect(text).toContain("Experience Letter");

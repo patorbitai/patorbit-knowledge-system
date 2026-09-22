@@ -15,6 +15,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
+import { track } from "@/lib/analytics";
 
 /* ═══════════════ Data ═══════════════ */
 
@@ -529,6 +530,10 @@ export function PricingPageClient() {
     if (!selectedPlan) return;
     setCheckoutError(null);
     setCheckoutLoading(true);
+    track("checkout_started", {
+      plan: selectedPlan.name,
+      interval: isYearly ? "yearly" : "monthly",
+    });
 
     try {
       // The server is the source of truth for trial eligibility. If the

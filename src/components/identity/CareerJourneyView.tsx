@@ -4,6 +4,7 @@ import React, { useMemo } from "react";
 import Link from "next/link";
 import { Briefcase, ArrowRight, Building2, Calendar, CheckCircle2, Sparkles, ShieldCheck, FileCheck2 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
+import { confidenceWord } from "@/lib/provenance";
 import { parseTimelineDate } from "@/utils/timeline-sort";
 import { synthesizeCareerJourney, buildJourneyProvenance } from "@/services/journey-service";
 import type { Experience } from "@/types/resume";
@@ -165,7 +166,7 @@ export function CareerJourneyView() {
                   </p>
                   <div className="mt-3 flex flex-wrap gap-1.5">
                     <span className="px-2 py-0.5 rounded-md border border-emerald-500/25 bg-emerald-500/10 text-emerald-300 text-[10px] font-bold">
-                      {Math.round(journey.strongestProof.confidence * 100)}% confidence
+                      {confidenceWord(journey.strongestProof.confidence)} confidence
                     </span>
                     <span className="px-2 py-0.5 rounded-md border border-[rgba(148,163,184,.15)] bg-[#0f172a]/70 text-[#94a3b8] text-[10px] font-bold">
                       {journey.strongestProof.evidence.length} evidence item{journey.strongestProof.evidence.length === 1 ? "" : "s"}
@@ -187,7 +188,7 @@ export function CareerJourneyView() {
                       <div key={stmt.id} className="rounded-lg border border-[rgba(148,163,184,.08)] bg-[#0b1220]/80 p-3">
                         <p className="text-sm text-[#e2e8f0] font-normal leading-relaxed">{stmt.statement}</p>
                         <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-[#94a3b8]">
-                          <span className="font-mono">{Math.round(stmt.confidence * 100)}% confidence</span>
+                          <span title={`Numeric confidence: ${stmt.confidence.toFixed(2)}`}>Confidence: {confidenceWord(stmt.confidence)}</span>
                           <span>{stmt.claims.length} claim{stmt.claims.length === 1 ? "" : "s"}</span>
                           <span>{stmt.evidence.length} evidence item{stmt.evidence.length === 1 ? "" : "s"}</span>
                         </div>

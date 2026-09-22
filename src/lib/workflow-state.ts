@@ -38,7 +38,7 @@ function hasResumeContent(resume: Resume | null | undefined): boolean {
  * Check if a resume is a tailored version (created by TailorResumeModal).
  * TailorResumeModal names resumes: "${originalName} — Tailored"
  */
-function isTailoredResume(resume: Resume | null | undefined): boolean {
+export function isTailoredResume(resume: Resume | null | undefined): boolean {
   if (!resume) return false;
   const name = resume.resumeName || resume.name || "";
   return name.includes("— Tailored") || name.includes("– Tailored");

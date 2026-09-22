@@ -244,6 +244,18 @@ describe("buildCareerProfile", () => {
     expect(p1.experiences[0].id).not.toBe(p2.experiences[0].id);
   });
 
+  it("handles truly numeric (non-string) item ids from parsed imports", () => {
+    // ResumeSchema's ItemIdSchema is `string | number`; the parser assigns
+    // `id: i + 1`. profileItemId must not crash on numbers.
+    const resume = createResume();
+    resume.experience[0].id = 1 as unknown as string;
+    resume.education[0].id = 2 as unknown as string;
+    resume.skills[0].id = 3 as unknown as string;
+    const p = buildCareerProfile(resume, { capturedAt: CAPTURED_AT });
+    expect(p.experiences[0].id).toBe("cp_exp_1");
+    expect(p.educations[0].id).toBe("cp_edu_2");
+  });
+
   it("does not mutate the input resume", () => {
     const resume = createResume();
     const snapshot = JSON.stringify(resume);

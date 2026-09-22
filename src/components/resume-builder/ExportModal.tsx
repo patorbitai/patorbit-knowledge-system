@@ -7,12 +7,14 @@ import { useResumeBuilder } from "@/store/resume-builder";
 import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { exportToDocx } from "@/utils/export";
+import { track } from "@/lib/analytics";
 import { resolveStyleConfig, resolveHeadingHex } from "@/lib/resume-design-system/style-config";
 
 export function ExportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
   const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
   const markResumeExported = useResumeBuilder((s) => s.markResumeExported);
+  const setHasExported = useResumeBuilder((s) => s.setHasExported);
   const template = getActiveTemplate(resume);
 
   // The SAME resolved config the preview renders with. The heading sentinel
@@ -40,6 +42,10 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
     document.title = resume.name || "resume";
     setIsPrinting(true);
     markResumeExported();
+    // Session-level export flag so the workflow/journey "Export" step completes
+    // even outside a JobApplication context.
+    setHasExported(true);
+    track("resume_exported", { format: "pdf" });
     onClose();
     // Triple-rAF: first two let React unmount the modal, third fires print
     // after the DOM has settled so only #pdf-export-target is visible.
@@ -62,6 +68,8 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
         styleConfig: exportStyle,
       });
       markResumeExported();
+      setHasExported(true);
+      track("resume_exported", { format: "docx" });
       onClose();
     } catch {
       setDocxError("Failed to generate DOCX. Please try again.");

@@ -25,7 +25,9 @@ import {
 } from "lucide-react";
 import { useResumeBuilder, isResumeEffectivelyEmpty } from "@/store/resume-builder";
 import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
-import { deriveWorkflowState, getNextStepRecommendation } from "@/lib/workflow-state";
+import { deriveWorkflowState, isTailoredResume } from "@/lib/workflow-state";
+import { JourneyChecklist } from "@/components/hub/overview/JourneyChecklist";
+import type { JourneyInput } from "@/lib/journey";
 import AICopilotWidget from "@/components/hub/widgets/AICopilotWidget";
 import TrustWidget from "@/components/hub/widgets/TrustWidget";
 import KnowledgeGraphWidget from "@/components/hub/widgets/KnowledgeGraphWidget";
@@ -165,6 +167,13 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
   // Prefer the explicitly selected active job application from the store.
   // Fall back to most-recently-updated application only if nothing is selected.
   const storeActiveJobApplication = useResumeBuilder((s) => s.activeJobApplication);
+
+  // Session-level builder state so the journey checklist reflects work done
+  // in the resume builder even without a persisted JobApplication.
+  const storeJobDescription = useResumeBuilder((s) => s.jobDescription);
+  const storeJobProfile = useResumeBuilder((s) => s.jobProfile);
+  const storeQualificationMatch = useResumeBuilder((s) => s.qualificationMatch);
+  const sessionExported = useResumeBuilder((s) => s.hasExported);
   const [recentApplications, setRecentApplications] = useState<Array<{ applicationId: string; title: string; companyName: string; matchScore: number | null; resumeId: string | null; matchedResumeId: string | null; exportedResumeId: string | null; status: string; updatedAt: string }>>([]);
   useEffect(() => {
     fetch("/api/applications")
@@ -200,9 +209,18 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
     activeResume || null,
     hasJobFromApplication ? { title: recentApplication.title } as any : null,
     hasMatchFromApplication ? { id: "match", summary: { total: 0, proven: 0, related: 0, communicationGap: 0, missing: 0 } } as any : null,
-    exportIsCurrent,
+    exportIsCurrent || sessionExported,
   );
-  const nextStep = hasResumes ? getNextStepRecommendation(workflowState, activeResume?.resumeName) : null;
+
+  // Six-step activation journey (§2) — derived, no extra persistence.
+  const journeyInput: JourneyInput = {
+    profileComplete: onboardingCompleted,
+    experienceAdded: hasResumes,
+    jobAdded: hasJobFromApplication || !!storeJobProfile || storeJobDescription.trim().length > 0,
+    matchReady: hasMatchFromApplication || !!storeQualificationMatch,
+    tailored: workflowState.tailor,
+    exported: exportIsCurrent || sessionExported,
+  };
 
   const sortedResumes = [...resumeList]
     .filter((r) => !isResumeEffectivelyEmpty(r))
@@ -265,33 +283,8 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
           </p>
         </div>
 
-        {/* Next Step Recommendation — state-driven */}
-        {hasResumes && nextStep && (
-          <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Zap className="w-4 h-4 text-cyan-500" />
-              <span className="text-xs font-bold text-gray-900 dark:text-white">Next Step</span>
-            </div>
-            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-              <div className="flex-1">
-                <p className="text-sm text-gray-700 dark:text-slate-300 font-medium">
-                  {nextStep.title}
-                </p>
-                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
-                  {nextStep.description}
-                </p>
-              </div>
-              <Link
-                href={nextStep.actionHref}
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-xs font-semibold text-white transition-all shrink-0"
-              >
-                <Target className="w-3.5 h-3.5" />
-                {nextStep.actionLabel}
-                <ArrowRight className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-          </div>
-        )}
+        {/* Journey checklist — six-step activation progression (§2, §13) */}
+        <JourneyChecklist input={journeyInput} />
       </section>
 
       {/* ── ACTIVE JOB APPLICATION CONTEXT ── */}
@@ -461,6 +454,14 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
                             <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
                               {resumeName}
                             </h3>
+                            {isTailoredResume(r) && (
+                              <span
+                                title="Tailored version — created from your master resume for a specific job"
+                                className="shrink-0 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide bg-cyan-50 dark:bg-cyan-500/10 text-cyan-700 dark:text-cyan-300 border border-cyan-200 dark:border-cyan-500/20"
+                              >
+                                Tailored
+                              </span>
+                            )}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();

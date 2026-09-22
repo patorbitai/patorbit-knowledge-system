@@ -18,7 +18,9 @@
  * is deterministic for the same source item and never collides across sections.
  */
 export function profileItemId(prefix: string, sourceId: string): string {
-  const safe = sourceId.replace(/[^A-Za-z0-9_-]/g, "_");
+  // Item ids are `string | number` at runtime: parsed/imported resumes carry
+  // numeric ids (ResumeSchema ItemIdSchema union), so coerce before sanitizing.
+  const safe = String(sourceId ?? "unknown").replace(/[^A-Za-z0-9_-]/g, "_");
   return `cp_${prefix}_${safe}`;
 }
 

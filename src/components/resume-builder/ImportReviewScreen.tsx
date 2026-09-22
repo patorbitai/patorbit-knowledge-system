@@ -410,34 +410,49 @@ const SECTIONS: { key: SectionKey; label: string }[] = [
 /* ── Import summary banner ── */
 
 function ImportSummary({ resume, meta }: { resume: Resume; meta: ImportMeta }) {
-  const items: { label: string; ok: boolean }[] = [
-    { label: `${resume.experience.length} experience entr${resume.experience.length === 1 ? "y" : "ies"}`, ok: resume.experience.length > 0 },
-    { label: `${resume.skills.length} skill${resume.skills.length === 1 ? "" : "s"}`, ok: resume.skills.length > 0 },
-    { label: `${resume.projects.length} project${resume.projects.length === 1 ? "" : "s"}`, ok: resume.projects.length > 0 },
-    { label: `${resume.certifications.length} certification${resume.certifications.length === 1 ? "" : "s"}`, ok: resume.certifications.length > 0 },
-    { label: "Phone missing", ok: false, hide: !!resume.phone },
-    { label: "Email missing", ok: false, hide: !!resume.email },
-  ].filter((i): i is { label: string; ok: boolean } => !("hide" in i && i.hide));
+  // “What Patorbit understood” (§4): concrete counts give the user
+  // confidence that something useful happened, and make mistakes easy to spot.
+  const stats: { value: number; label: string }[] = [
+    { value: resume.experience.length, label: resume.experience.length === 1 ? "position" : "positions" },
+    { value: resume.skills.length, label: "skills" },
+    { value: resume.education.length, label: resume.education.length === 1 ? "education entry" : "education entries" },
+    { value: resume.projects.length, label: "projects" },
+    { value: resume.certifications.length, label: resume.certifications.length === 1 ? "certification" : "certifications" },
+  ];
+  const claims = (resume as { claims?: unknown[] }).claims;
+  if (Array.isArray(claims) && claims.length > 0) {
+    stats.push({ value: claims.length, label: "supporting items" });
+  }
+
+  const missing: string[] = [];
+  if (!resume.phone) missing.push("phone");
+  if (!resume.email) missing.push("email");
 
   const confidence = overallConfidence(resume);
+  const confidenceLabel = confidence >= 90 ? "Excellent" : confidence >= 70 ? "Good" : "Needs review";
   const confidenceColor = confidence >= 90 ? "text-emerald-400" : confidence >= 70 ? "text-amber-400" : "text-red-400";
 
   return (
     <div className="px-6 py-3 border-b border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] flex flex-wrap items-center gap-x-6 gap-y-2">
       <div className="flex items-center gap-2">
         <CheckCircle2 className="w-4 h-4 text-blue-400" />
-        <span className="text-sm font-semibold text-gray-900 dark:text-white">Import Complete</span>
-        <span className={clsx("text-sm font-bold", confidenceColor)}>{confidence}%</span>
-        <span className="text-[11px] text-gray-400 dark:text-slate-500">confidence</span>
+        <span className="text-sm font-semibold text-gray-900 dark:text-white">What Patorbit understood</span>
+        <span className={clsx("text-sm font-bold", confidenceColor)} title={`Overall extraction confidence: ${confidence}%`}>
+          {confidenceLabel}
+        </span>
       </div>
       <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.06]" />
-      <div className="flex flex-wrap items-center gap-3">
-        {items.map(item => (
-          <span key={item.label} className={clsx("inline-flex items-center gap-1 text-[11px]", item.ok ? "text-slate-400" : "text-amber-400")}>
-            {item.ok
-              ? <CheckCircle2 className="w-3 h-3 text-emerald-500" />
-              : <AlertTriangle className="w-3 h-3 text-amber-400" />}
+      <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+        {stats.map(item => (
+          <span key={item.label} className="inline-flex items-baseline gap-1 text-[11px] text-slate-400">
+            <span className="text-sm font-bold text-white tabular-nums">{item.value}</span>
             {item.label}
+          </span>
+        ))}
+        {missing.map(m => (
+          <span key={m} className="inline-flex items-center gap-1 text-[11px] text-amber-400">
+            <AlertTriangle className="w-3 h-3" />
+            {m} missing — add it below
           </span>
         ))}
       </div>

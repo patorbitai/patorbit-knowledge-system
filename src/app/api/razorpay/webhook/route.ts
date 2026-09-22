@@ -1,6 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { verifyWebhookSignature, getTrialEndsAt } from "@/lib/razorpay";
+import { appendEvents } from "@/lib/analytics-server";
+
+/** In-process guard: one subscription_completed record per Razorpay sub id. */
+const trackedConversions = new Set<string>();
 
 /**
  * POST /api/razorpay/webhook
@@ -148,6 +152,20 @@ export async function POST(req: NextRequest) {
         // when the subscription becomes active, "resumed" after a pause), but
         // they all converge on the same state: active + Professional.
         if (!subId) break;
+
+        // Funnel: record the purchase conversion exactly once per subscription
+        // (these event types fire multiple times over a subscription's life).
+        if (!trackedConversions.has(subId)) {
+          trackedConversions.add(subId);
+          void appendEvents([
+            {
+              event: "subscription_completed",
+              ts: new Date().toISOString(),
+              sessionId: "server",
+              props: { webhook: eventType },
+            },
+          ]);
+        }
 
         await activateSubscription({
           subId,

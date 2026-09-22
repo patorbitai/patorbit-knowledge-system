@@ -1,7 +1,8 @@
 "use client";
 
 import { clsx } from "clsx";
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { track } from "@/lib/analytics";
 import { createPortal } from "react-dom";
 import { Upload } from "lucide-react";
 
@@ -61,6 +62,7 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
   const [currentStageIndex, setCurrentStageIndex] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<PendingImport | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   const handleImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -68,6 +70,9 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
     setImporting(true);
     setCurrentStageIndex(0);
     setError(null);
+    track("resume_upload_started", {
+      format: (file.name.split(".").pop() || "unknown").toLowerCase(),
+    });
 
     // Advance stages at realistic intervals (no fake percentage)
     const stageTimers: ReturnType<typeof setTimeout>[] = [
@@ -96,9 +101,16 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
       setCurrentStageIndex(4); // Import complete
       await new Promise((r) => setTimeout(r, 200));
 
+      const parsed: Resume = data.resume ?? data;
       setPending({
-        resume: data.resume ?? data,
+        resume: parsed,
         meta: data.meta ?? { path: "regex", truncated: false, charCount: 0, rawText: "" },
+      });
+      track("resume_upload_completed", {
+        experience: parsed.experience?.length ?? 0,
+        skills: parsed.skills?.length ?? 0,
+        education: parsed.education?.length ?? 0,
+        path: data.meta?.path ?? "regex",
       });
     } catch (err: unknown) {
       stageTimers.forEach(clearTimeout);
@@ -114,6 +126,14 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
     const merged = mergeImportedResume(currentResume, draft);
     setResume(merged);
     setPending(null);
+    // The write-back subscription only lives in the resume-builder layout, but
+    // import often happens on /overview — push explicitly so the server never
+    // keeps an empty skeleton (server-authoritative AI would then run on nothing).
+    void import("@/lib/resume-write-back")
+      .then(({ forceSaveNow }) => forceSaveNow())
+      .catch(() => {
+        /* offline — the normal write-back path will retry later */
+      });
   };
 
 
@@ -179,6 +199,7 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
             </span>
           )}
           <input
+            ref={inputRef}
             type="file"
             accept=".json,.pdf,.docx"
             onChange={handleImport}
@@ -198,7 +219,21 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
             )}
           >
             <span>{error}</span>
-            <span className="shrink-0 ml-2 underline cursor-pointer hover:text-white" onClick={() => setError(null)}>Dismiss</span>
+            <span className="flex items-center gap-2 shrink-0 ml-2">
+              <button
+                type="button"
+                className="underline cursor-pointer hover:text-white"
+                onClick={() => {
+                  setError(null);
+                  inputRef.current?.click();
+                }}
+              >
+                Try another file
+              </button>
+              <button className="underline cursor-pointer hover:text-white" onClick={() => setError(null)}>
+                Dismiss
+              </button>
+            </span>
           </div>
         )}
       </div>

@@ -24,6 +24,7 @@ import { clsx } from "clsx";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
 import { useOptimization } from "@/lib/ai/useOptimization";
+import { track } from "@/lib/analytics";
 import { ScoreCard, ScoreCardSkeleton } from "@/components/resume-builder/optimization/ScoreCard";
 import { MatchReport } from "@/components/resume-builder/optimization/MatchReport";
 import { KeywordCloud } from "@/components/resume-builder/optimization/KeywordCloud";
@@ -414,6 +415,7 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
 
   const handleMatch = useCallback(async () => {
     if (!selectedResume || !effectiveJD) return;
+    track("job_analysis_started", { source: "ai-workspace" });
     const result = await opt.analyzeMatch(selectedResume, effectiveJD);
     // Persist the AI match result to the active JobApplication.
     // This ensures the match survives reload and navigation.
@@ -425,6 +427,7 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
           result.matchScore,
         );
       }
+      track("job_analysis_completed", { source: "ai-workspace", score: result.matchScore });
     }
   }, [selectedResume, effectiveJD, opt]);
 

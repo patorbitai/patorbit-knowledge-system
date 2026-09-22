@@ -58,10 +58,10 @@ const MESSAGES: Record<RestrictionType, (ctx: RestrictionContext) => Restriction
   }),
 
   "ai-feature": (ctx) => ({
-    title: "AI Feature Unavailable",
+    title: ctx.featureName ? ctx.featureName : "Advanced AI",
     description: ctx.featureName
-      ? `"${ctx.featureName}" requires Patorbit Pro. This advanced AI capability isn't included in your current plan.`
-      : "This AI feature requires Patorbit Pro. Advanced AI capabilities aren't included in your current plan.",
+      ? `Upgrade to Pro to use “${ctx.featureName}” — deeper AI analysis that goes beyond what the Free plan includes.`
+      : "Upgrade to Pro for advanced AI analysis — deeper, job-specific insights beyond the Free plan.",
     actionLabel: "Upgrade to Pro",
     actionHref: "/pricing",
   }),
@@ -126,16 +126,17 @@ const MESSAGES: Record<RestrictionType, (ctx: RestrictionContext) => Restriction
 
   "qualification-match": () => ({
     title: "Full Qualification Match",
-    description: "Full qualification matching requires Patorbit Pro. See detailed comparisons between your profile and job requirements.",
+    description:
+      "Upgrade to Pro for the full requirement-by-requirement comparison — every strong match, partial match and gap, with the evidence behind each one.",
     actionLabel: "Upgrade to Pro",
     actionHref: "/pricing",
   }),
 
   general: (ctx) => ({
-    title: "Premium Feature",
+    title: ctx.featureName ? ctx.featureName : "More with Patorbit Pro",
     description: ctx.featureName
-      ? `"${ctx.featureName}" requires a Patorbit Pro subscription.`
-      : "This feature requires a Patorbit Pro subscription.",
+      ? `Upgrade to Pro to unlock “${ctx.featureName}” — plus unlimited resumes, full job matching and advanced export.`
+      : "Upgrade to Pro for unlimited resumes, full job matching, advanced AI and advanced export.",
     actionLabel: "Upgrade to Pro",
     actionHref: "/pricing",
   }),

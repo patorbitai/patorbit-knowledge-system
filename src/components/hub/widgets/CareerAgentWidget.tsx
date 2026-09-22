@@ -13,6 +13,7 @@ import {
   Lightbulb,
 } from "lucide-react";
 import { clsx } from "clsx";
+import { ImportButton } from "@/components/resume-builder/ImportButton";
 
 type CareerAction = {
   id: string;
@@ -203,13 +204,16 @@ export default function CareerAgentWidget() {
           <p className="text-sm text-gray-500 dark:text-slate-400 mb-4 max-w-md mx-auto">
             The Career Agent works best when you have an active resume. Create or import one to unlock personalized actions.
           </p>
-          <Link
-            href="/resume-builder"
-            className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-sm font-semibold text-white transition-colors"
-          >
-            <Sparkles className="h-4 w-4" />
-            Create Resume
-          </Link>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Link
+              href="/resume-builder"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-700 text-sm font-semibold text-white transition-colors"
+            >
+              <Sparkles className="h-4 w-4" />
+              Create Resume
+            </Link>
+            <ImportButton variant="card" label="Upload an existing resume" />
+          </div>
         </div>
       )}
 

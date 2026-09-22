@@ -24,6 +24,7 @@ import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import type { Resume } from "@/types/resume";
 import type { ResumeTemplate } from "@/app/resume-builder/templates";
+import { track } from "@/lib/analytics";
 
 interface MatchAnalysis {
   matchScore: number;
@@ -226,8 +227,19 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
 
     setError(null);
     setStep("analyzing");
+    track("tailoring_started");
 
     try {
+      // Push the latest local content first — the server loads the
+      // authoritative resume, and an import made outside the builder layout
+      // may never have been written back. Best-effort: never block tailoring.
+      try {
+        const { saveLocalResumeToServer } = await import("@/lib/resume-write-back");
+        await saveLocalResumeToServer(effectiveResumeId);
+      } catch {
+        /* offline or server unreachable — tailor will use whatever it has */
+      }
+
       // C33.2: Send only resumeId — server loads authoritative resume
       const res = await fetch("/api/ai/tailor", {
         method: "POST",
@@ -248,10 +260,14 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
       setIsDirty(false);
       setStep("results");
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Analysis failed. Please try again.");
+      setError(
+        err instanceof Error
+          ? `${err.message} Your resume is unchanged — you can try again safely.`
+          : "We couldn't analyze this job description. Your resume is unchanged — try again or paste a shorter job posting.",
+      );
       setStep("input");
     }
-  }, [jobDescription, activeResumeId, originalResume]);
+  }, [jobDescription, originalResume, effectiveResumeId]);
 
   const handleGenerate = useCallback(() => {
     if (!tailorResult) return;
@@ -269,6 +285,13 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     draftInitialized.current = false;
 
     try {
+      // Same freshness guarantee as handleAnalyze — server loads authoritative data.
+      try {
+        const { saveLocalResumeToServer } = await import("@/lib/resume-write-back");
+        await saveLocalResumeToServer(effectiveResumeId);
+      } catch {
+        /* best-effort */
+      }
       const res = await fetch("/api/ai/tailor", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -338,6 +361,8 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
         // The application association can be retried.
       }
     }
+
+    track("tailoring_completed", { application: !!applicationId });
 
     // C55.1: Notify parent if callback provided
     if (onApproved) {
@@ -496,9 +521,9 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
               {step === "analyzing" && (
                 <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <Loader2 className="w-8 h-8 text-cyan-500 animate-spin" />
-                  <div className="text-center">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">Analyzing job description...</p>
-                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Loading your authoritative resume from server and comparing against JD</p>
+                  <div className="text-center space-y-1">
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">Comparing this job against your resume…</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">Reading requirements, matching your experience, preparing changes — usually under 15 seconds.</p>
                   </div>
                 </div>
               )}

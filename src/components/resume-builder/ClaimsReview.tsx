@@ -13,6 +13,7 @@ import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { AddEvidenceModal } from "@/components/identity/AddEvidenceModal";
 import type { Claim } from "@/types/resume";
+import { confidenceWord } from "@/lib/provenance";
 
 export function ClaimsReview() {
   const suggestedClaims = useResumeBuilder((s) => s.suggestedClaims);
@@ -104,7 +105,7 @@ export function ClaimsReview() {
                           <FileText className="w-2.5 h-2.5" />
                           <span>Source: {claim.sourceActivityId}</span>
                           <span className="text-slate-600">|</span>
-                          <span>Confidence: {Math.round(claim.confidence * 100)}%</span>
+                          <span title={`Numeric confidence: ${claim.confidence.toFixed(2)}`}>Confidence: {confidenceWord(claim.confidence)}</span>
                         </div>
                         <div className="flex items-center gap-0.5">
                           <button

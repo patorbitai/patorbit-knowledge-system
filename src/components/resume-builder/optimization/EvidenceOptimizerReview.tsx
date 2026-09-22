@@ -26,6 +26,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { clsx } from "clsx";
+import { confidenceWord } from "@/lib/provenance";
 import type {
   EvidenceOptimizerResult,
   OptimizerChange,
@@ -63,15 +64,15 @@ const QUAL_COLORS: Record<
 /* ── Confidence indicator ────────────────────────────────────────────────── */
 
 function ConfidenceBadge({ confidence }: { confidence: number }) {
+  const word = confidenceWord(confidence);
   const color =
-    confidence >= 0.8
-      ? "text-emerald-400"
-      : confidence >= 0.5
-        ? "text-amber-400"
-        : "text-red-400";
+    word === "High" ? "text-emerald-400" : word === "Medium" ? "text-amber-400" : "text-red-400";
   return (
-    <span className={clsx("text-[10px] font-semibold tabular-nums", color)}>
-      {Math.round(confidence * 100)}% confident
+    <span
+      title={`Numeric confidence: ${confidence.toFixed(2)}`}
+      className={clsx("text-[10px] font-semibold", color)}
+    >
+      Confidence: {word}
     </span>
   );
 }

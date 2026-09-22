@@ -9,6 +9,9 @@ import { checkAIRateLimit } from "@/lib/rate-limit";
 import { usageService } from "@/services/usage.service";
 import { getAIService } from "@/lib/ai/service";
 import { AIError } from "@/lib/ai/types";
+import { buildCareerProfile } from "@/lib/career-profile";
+import { buildJobProfile } from "@/lib/job-profile";
+import { buildQualificationMatch } from "@/lib/qualification-match";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -159,10 +162,40 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!Array.isArray(result.projects)) result.projects = [];
     if (!Array.isArray(result.certifications)) result.certifications = [];
 
+    // Deterministic match override — SAME engine as the Job Match panel
+    // (buildQualificationMatch). The LLM's self-reported matchAnalysis was
+    // unreliable (e.g. reported 0% while the matcher found 8 supported
+    // requirements), so users saw two contradicting scores in one session.
+    let matchAnalysis = result.matchAnalysis;
+    try {
+      const career = buildCareerProfile(authoritativeResume as never, {
+        claims: (authoritativeResume.claims ?? []) as never,
+        evidence: [],
+      });
+      const job = buildJobProfile(jobDescription);
+      const match = buildQualificationMatch(career, job);
+      const s = match.summary;
+      const supported = s.proven + s.related + s.communicationGap;
+      matchAnalysis = {
+        matchScore: s.total > 0 ? Math.round((supported / s.total) * 100) : 0,
+        matchedSkills: match.items
+          .filter((i) => i.classification === "PROVEN")
+          .map((i) => i.requirement),
+        partialMatches: match.items
+          .filter((i) => i.classification === "RELATED" || i.classification === "COMMUNICATION_GAP")
+          .map((i) => i.requirement),
+        missingSkills: match.items
+          .filter((i) => i.classification === "MISSING")
+          .map((i) => i.requirement),
+      };
+    } catch {
+      // Deterministic build failed — fall back to the AI's matchAnalysis.
+    }
+
     return NextResponse.json({
       success: true,
       resume: result,
-      matchAnalysis: result.matchAnalysis,
+      matchAnalysis,
     });
   } catch (err) {
     if (err instanceof AIError) {

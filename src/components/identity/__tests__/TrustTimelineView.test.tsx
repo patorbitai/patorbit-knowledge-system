@@ -105,11 +105,14 @@ describe("TrustTimelineView — honest trust metrics", () => {
     useResumeBuilder.setState({ resume: r, resumes: [r], activeResumeId: r.resumeId!, evidence: [], trustReport: null });
 
     const { container, unmount } = renderToContainer(<TrustTimelineView />);
-    const text = container.textContent ?? "";
-    expect(text).toContain("—");
+    const raw = container.textContent ?? "";
+    // ISO timestamps (e.g. 2026-09-22T09:14:45.623Z) can incidentally contain
+    // "62" — scrub them so this asserts on the trust values only.
+    const text = raw.replace(/\d{4}-\d{2}-\d{2}T[\d:.]+Z?/g, "");
+    expect(raw).toContain("—");
     expect(text).not.toContain("62");
     expect(text).not.toMatch(/2\s*Verified Events/);
-    expect(text).not.toContain("May 2020");
+    expect(raw).not.toContain("May 2020");
     unmount();
   });
 

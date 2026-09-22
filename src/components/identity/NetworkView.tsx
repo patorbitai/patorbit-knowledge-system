@@ -16,6 +16,7 @@ import {
   ZoomOut,
   RotateCcw,
   ChevronRight,
+  ArrowRight,
   X,
   Map,
   Layers,
@@ -503,7 +504,20 @@ export function NetworkView({
               </Link>
             </div>
             {popularSkills.length === 0 ? (
-              <p className="text-xs text-slate-500 italic">No skills recorded in the graph yet.</p>
+              <div className="rounded-xl border border-dashed border-[rgba(148,163,184,.2)] bg-[#070d18]/60 px-4 py-5 text-center space-y-1">
+                <p className="text-xs font-semibold text-slate-200">Your skills will appear here</p>
+                <p className="text-[11px] text-slate-500 leading-relaxed max-w-sm mx-auto">
+                  The graph maps every skill in your resume so you can see how they connect to jobs and evidence.
+                  Add skills to your resume to populate it.
+                </p>
+                <Link
+                  href="/resume-builder"
+                  className="inline-flex items-center gap-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/25 px-3 py-1.5 text-[11px] font-semibold text-cyan-300 hover:bg-cyan-500/20 transition-colors"
+                >
+                  Add skills to my resume
+                  <ArrowRight className="w-3 h-3" />
+                </Link>
+              </div>
             ) : (
               <div className="flex flex-wrap gap-2">
                 {popularSkills.map((skill, idx) => (

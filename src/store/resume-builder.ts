@@ -46,6 +46,30 @@ export const defaultResume: Resume = {
 };
 
 /**
+ * §2/§21: journey "Export" step completion is session-level, but a page
+ * refresh re-initializes the in-memory store — losing it made step 6 flip
+ * back to pending after every reload. Mirror the flag into sessionStorage.
+ */
+const JOURNEY_EXPORTED_KEY = "patorbit:journey-exported";
+function readJourneyExportedFlag(): boolean {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) return false;
+  try {
+    return sessionStorage.getItem(JOURNEY_EXPORTED_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+function writeJourneyExportedFlag(value: boolean): void {
+  if (process.env.NODE_ENV === "test" || process.env.VITEST) return;
+  try {
+    if (value) sessionStorage.setItem(JOURNEY_EXPORTED_KEY, "1");
+    else sessionStorage.removeItem(JOURNEY_EXPORTED_KEY);
+  } catch {
+    /* storage unavailable — in-memory state still works */
+  }
+}
+
+/**
  * Check whether a resume is effectively empty (the default placeholder).
  * A resume is "empty" if it has no user-provided content — no name, email,
  * title, summary, experience, education, skills, or projects.
@@ -526,7 +550,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
         styleConfigs: {},
-        hasExported: false,
+        hasExported: readJourneyExportedFlag(),
         activeJobApplicationId: null,
         activeJobApplication: null,
         setStyleConfig: (resumeId, patch) => set((s) => {
@@ -603,14 +627,17 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
           return { resumes, resume: updatedResume, saveStatus: "unsaved" };
         }),
-        resetResume: () => set((s) => {
-          const currentId = s.activeResumeId;
-          const currentName = s.resume.resumeName;
-          const currentTemplate = s.resume.templateId;
-          const resetR: Resume = { ...defaultResume, resumeId: currentId, resumeName: currentName, templateId: currentTemplate };
-          const resumes = s.resumes.map((r) => r.resumeId === currentId ? resetR : r);
-          return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null, hasExported: false, activeJobApplicationId: null, activeJobApplication: null };
-        }),
+        resetResume: () => {
+          writeJourneyExportedFlag(false);
+          set((s) => {
+            const currentId = s.activeResumeId;
+            const currentName = s.resume.resumeName;
+            const currentTemplate = s.resume.templateId;
+            const resetR: Resume = { ...defaultResume, resumeId: currentId, resumeName: currentName, templateId: currentTemplate };
+            const resumes = s.resumes.map((r) => r.resumeId === currentId ? resetR : r);
+            return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null, hasExported: false, activeJobApplicationId: null, activeJobApplication: null };
+          });
+        },
         setSaveStatus: (status) => set({ saveStatus: status }),
         setServerVersion: (resumeId, version) => set((s) => ({
           serverVersions: { ...s.serverVersions, [resumeId]: version },
@@ -765,7 +792,10 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         setJobMatch: (match) => set({ jobMatch: match }), setJobDescription: (desc) => set({ jobDescription: desc }),
         setAIAction: (key, state) => set((s) => ({ aiActions: { ...s.aiActions, [key]: { ...(s.aiActions[key] ?? { status: "idle", result: null, error: null }), ...state } } })),
         setCopilotOpen: (open) => set({ isCopilotOpen: open }), setJobMatchOpen: (open) => set({ isJobMatchOpen: open }), setPreviewTab: (tab) => set({ previewTab: tab }),
-        setHasExported: (value) => set({ hasExported: value }),
+        setHasExported: (value) => {
+          writeJourneyExportedFlag(value);
+          set({ hasExported: value });
+        },
 
         setActiveJobApplication: (app) => {
           // Clear stale session-level analysis that belongs exclusively to the previous job.

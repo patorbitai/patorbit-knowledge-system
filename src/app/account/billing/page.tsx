@@ -17,6 +17,7 @@ import {
   Crown,
 } from "lucide-react";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
+import { track } from "@/lib/analytics";
 
 type SubscriptionData = {
   tier: string;
@@ -123,6 +124,7 @@ export default function BillingPage() {
 
   const handleUpgrade = async () => {
     setCheckoutLoading(true);
+    track("checkout_started", { source: "billing" });
     try {
       // Default to the ₹5 trial; the server decides eligibility and falls
       // back gracefully when the trial was already used.

@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 import { entitlementService, type PlanFeatures, type SubscriptionTier, type SubscriptionStatus } from "@/services/entitlement.service";
 import type { RestrictionContext, RestrictionMessage } from "@/lib/feature-access";
 import { getRestrictionMessage, isFeatureAvailable } from "@/lib/feature-access";
+import { track } from "@/lib/analytics";
 
 /* ── Context ──────────────────────────────────────────────────────────────── */
 
@@ -132,6 +133,8 @@ export function FeatureAccessProvider({ children }: { children: React.ReactNode 
 
   const showRestriction = useCallback((ctx: RestrictionContext) => {
     setActiveRestriction(ctx);
+    // Funnel: contextual upgrade prompt shown (§15, §16).
+    track("upgrade_viewed", { type: ctx.type });
   }, []);
 
   const hasFeature = useCallback(

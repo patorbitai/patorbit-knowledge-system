@@ -51,3 +51,6 @@ next-env.d.ts
 
 # Local Freebuff runtime data
 .freebuff/
+
+# Funnel analytics event log (internal)
+.analytics/

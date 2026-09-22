@@ -5,6 +5,7 @@ import { useActionState, useState, useId, useEffect } from "react";
 import { signIn } from "next-auth/react";
 import { registerUser, type RegisterState } from "@/actions/auth/register";
 import { resendVerificationAction } from "@/actions/auth/verify";
+import { track, trackOnce } from "@/lib/analytics";
 
 const initialState: RegisterState = { success: false, message: "" };
 const resendInitialState = { success: false, message: "" };
@@ -132,6 +133,17 @@ export default function RegisterPage() {
   const passwordId = useId();
   const confirmId = useId();
   const termsId = useId();
+
+  // Funnel: the moment a visitor opens the sign-up form (§16).
+  // trackOnce so dev StrictMode double-mounts don't duplicate the event.
+  useEffect(() => {
+    trackOnce("signup_started");
+  }, []);
+
+  // Funnel: account successfully created.
+  useEffect(() => {
+    if (state.success) track("signup_completed");
+  }, [state.success]);
 
   // C55.2: Fetch available providers from NextAuth on mount
   useEffect(() => {

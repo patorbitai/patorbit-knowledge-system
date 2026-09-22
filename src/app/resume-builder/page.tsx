@@ -18,7 +18,7 @@ import AccountMenu from "@/components/hub/AccountMenu";
 import { SaveToIdentityButton } from "@/components/resume-builder/SaveToIdentityButton";
 import { WorkflowStatusBar } from "@/components/resume-builder/WorkflowStatusBar";
 import { JobApplicationSelector } from "@/components/resume-builder/JobApplicationSelector";
-import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine, Target } from "lucide-react";
+import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine, Target, Download } from "lucide-react";
 import { PreviewErrorBoundary } from "@/components/resume-builder/PreviewErrorBoundary";
 import { MobilePreview } from "@/components/resume-builder/MobilePreview";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
@@ -180,12 +180,20 @@ function RightPanel({ mode, onModeChange }: { mode: "preview" | "copilot"; onMod
 }
 
 /* ── Mobile Mode Toggle ── */
-function MobileModeToggle({ mode, onModeChange }: { mode: "edit" | "preview"; onModeChange: (m: "edit" | "preview") => void }) {
+type MobileMode = "edit" | "copilot" | "preview";
+
+function MobileModeToggle({ mode, onModeChange }: { mode: MobileMode; onModeChange: (m: MobileMode) => void }) {
   return (
     <div className="relative z-[60] flex md:hidden items-center border-t border-gray-200 dark:border-white/[0.08] bg-white dark:bg-[#0C1222] shrink-0">
       <button onClick={() => onModeChange("edit")}
         className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-all cursor-pointer ${mode === "edit" ? "text-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-500/[0.08]" : "text-gray-500 dark:text-slate-400"}`}>
         <PenLine className="w-3.5 h-3.5" /> Edit
+      </button>
+      <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.08]" />
+      {/* §20: mobile users need the job-analysis/match flow, not just editing. */}
+      <button onClick={() => onModeChange("copilot")}
+        className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-semibold transition-all cursor-pointer ${mode === "copilot" ? "text-cyan-600 dark:text-cyan-300 bg-cyan-50 dark:bg-cyan-500/[0.08]" : "text-gray-500 dark:text-slate-400"}`}>
+        <Sparkles className="w-3.5 h-3.5" /> Match
       </button>
       <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.08]" />
       <button onClick={() => onModeChange("preview")}
@@ -209,8 +217,13 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
           </Link>
           <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.08] shrink-0" />
           <ResumeSelector />
-          <div className="h-3 w-px bg-gray-300 dark:bg-white/[0.08] shrink-0" />
-          <JobApplicationSelector />
+          {/* §20: below sm this selector overflowed its flex box and sat on top
+              of the Tailor/Export buttons (positioned elements steal pointer
+              events), making them unclickable on phones. */}
+          <div className="hidden sm:block h-3 w-px bg-gray-300 dark:bg-white/[0.08] shrink-0" />
+          <div className="hidden sm:flex items-center">
+            <JobApplicationSelector />
+          </div>
         </div>
 
         {/* Center: workflow status */}
@@ -218,9 +231,13 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
           <WorkflowStatusBar />
         </div>
 
-        {/* Right: save status + actions */}
-        <div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
-          <SaveStatusIndicator />
+        {/* Right: save status + actions.
+            relative z-10 guarantees this group wins hit-testing even if any
+            left-side element overflows at narrow widths (§20). */}
+        <div className="relative z-10 flex items-center gap-1 sm:gap-1.5 shrink-0">
+          <div className="hidden sm:block">
+            <SaveStatusIndicator />
+          </div>
           <button
             onClick={onOpenTailor}
             className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-white bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 transition-all"
@@ -230,7 +247,18 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
             <span className="sm:hidden">Tailor</span>
           </button>
           <SaveToIdentityButton />
-          <ImportButton variant="card" label="Import" />
+          <div className="hidden sm:block">
+            <ImportButton variant="card" label="Import" />
+          </div>
+          {/* §20: export must be reachable on mobile — WorkflowStatusBar is lg-only. */}
+          <button
+            onClick={() => window.dispatchEvent(new CustomEvent("patorbit:open-export"))}
+            aria-label="Export resume"
+            className="flex items-center gap-1 px-2 sm:px-3 py-1.5 rounded-lg text-[11px] font-semibold text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/[0.08] hover:bg-cyan-100 dark:hover:bg-cyan-500/[0.16] transition-all"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Export</span>
+          </button>
           <Link href="/resume-builder/preview"
             className="hidden sm:flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-semibold text-cyan-600 dark:text-cyan-300 border border-cyan-500/30 bg-cyan-50 dark:bg-cyan-500/[0.08] hover:bg-cyan-100 dark:hover:bg-cyan-500/[0.16] transition-all">
             <Eye className="w-3.5 h-3.5" />
@@ -253,7 +281,7 @@ export default function ResumeBuilderPage() {
   const setSuggestedClaims = useResumeBuilder((s) => s.setSuggestedClaims);
 
   const [rightMode, setRightMode] = useState<"preview" | "copilot">("preview");
-  const [mobileMode, setMobileMode] = useState<"edit" | "preview">("edit");
+  const [mobileMode, setMobileMode] = useState<MobileMode>("edit");
   const [tailorOpen, setTailorOpen] = useState(false);
   const [exportOpen, setExportOpen] = useState(false);
 
@@ -309,7 +337,7 @@ export default function ResumeBuilderPage() {
           </div>
 
           {/* Center — editing forms */}
-          <div className={`flex-1 overflow-y-auto min-w-0 ${mobileMode === "preview" ? "hidden md:block" : ""}`}>
+          <div className={`flex-1 overflow-y-auto min-w-0 ${mobileMode !== "edit" ? "hidden md:block" : ""}`}>
             <CenterWorkspace />
           </div>
 
@@ -324,6 +352,15 @@ export default function ResumeBuilderPage() {
 
         {/* Mobile Edit/Preview toggle */}
         <MobileModeToggle mode={mobileMode} onModeChange={setMobileMode} />
+
+        {/* Mobile Copilot overlay — job paste, match breakdown, Why? (§20) */}
+        {mobileMode === "copilot" && (
+          <div className="md:hidden fixed inset-0 z-30 bg-gray-50 dark:bg-[#070d18] pt-12 pb-12 overflow-y-auto">
+            <PreviewErrorBoundary>
+              <RightCopilot />
+            </PreviewErrorBoundary>
+          </div>
+        )}
 
         {/* Mobile Preview overlay — only mounts when Preview is active */}
         {mobileMode === "preview" && (
