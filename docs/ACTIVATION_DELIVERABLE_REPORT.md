@@ -212,10 +212,10 @@ Items that need a backend, product, or business decision — not silently worked
    entry points, but the general rule ("when should client content overwrite the
    server?") is still a product decision — auto-push everywhere risks multi-device
    data loss.
-2. **LLM `matchAnalysis` contract** — the tailor route overrides it, but the model is
-   still asked to produce a score it demonstrably cannot compute reliably (0% vs 62% on
-   the same inputs). Either the prompt/provider contract must change or the field
-   should be dropped server-side entirely.
+2. **LLM `matchAnalysis` contract — resolved in code:** the tailor prompt no longer
+   asks the model for match data, the route strips the field defensively so it cannot
+   leak into stored resumes, and the deterministic matcher is the single source of the
+   score and buckets end to end.
 3. **Funnel storage** — events land in a local JSONL file. Fine for dev and single
    instance; production (multi-instance, retention, sessionization, per-user cohort
    funnels) needs a real store/warehouse decision. No PII policy should carry over

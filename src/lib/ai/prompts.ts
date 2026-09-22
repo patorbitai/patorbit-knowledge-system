@@ -786,14 +786,7 @@ Return STRICT JSON matching this exact shape and nothing else:
   ],
   "certifications": [
     { "name": "", "issuer": "", "date": "" }
-  ],
-  "matchAnalysis": {
-    "matchScore": 0,
-    "matchedSkills": [],
-    "partialMatches": [],
-    "missingSkills": [],
-    "prioritizedSections": []
-  }
+  ]
 }
 
 CRITICAL FACTUALITY RULES:
@@ -802,11 +795,10 @@ CRITICAL FACTUALITY RULES:
 3. You may REORDER skills to prioritize JD-relevant ones.
 4. You may REWRITE the summary to target the role, using only facts from the profile.
 5. You may OMIT irrelevant experience/projects — but do NOT fabricate new ones.
-6. If the profile has no Snowflake experience and the JD requires Snowflake, do NOT add Snowflake to the skills or experience. Instead, include it in matchAnalysis.missingSkills.
+6. If the profile has no Snowflake experience and the JD requires Snowflake, do NOT add Snowflake to the skills or experience — omitting it is honest; inventing it is not.
 7. bulletPoints must be arrays of strings, not single description strings.
 8. Skills must be reordered with JD-relevant skills first.
-9. matchAnalysis must honestly reflect what matches, what partially matches, and what is missing.
-10. Return ONLY the JSON — no markdown, no prose, no code fences.`;
+9. Return ONLY the JSON — no markdown, no prose, no code fences.`;
 
   const user = `Candidate's existing Professional Identity (resume):
 ${context}

@@ -129,6 +129,32 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     // Server-sourced authoritative data — NOT client-supplied.
     const authoritativeResume = serverResume.resume;
 
+    // 6.5 Deterministic match — the ONLY source of match data (§6/§8).
+    // The LLM's self-reported matchAnalysis is no longer requested or used:
+    // it once reported 0% / 8 "missing" for inputs this matcher scored
+    // 62% / 5, so one session showed two contradicting scores. Computed BEFORE
+    // the AI call so a pure-matcher failure fails fast without spending tokens.
+    const career = buildCareerProfile(authoritativeResume as never, {
+      claims: (authoritativeResume.claims ?? []) as never,
+      evidence: [],
+    });
+    const job = buildJobProfile(jobDescription);
+    const match = buildQualificationMatch(career, job);
+    const summary = match.summary;
+    const supported = summary.proven + summary.related + summary.communicationGap;
+    const matchAnalysis = {
+      matchScore: summary.total > 0 ? Math.round((supported / summary.total) * 100) : 0,
+      matchedSkills: match.items
+        .filter((i) => i.classification === "PROVEN")
+        .map((i) => i.requirement),
+      partialMatches: match.items
+        .filter((i) => i.classification === "RELATED" || i.classification === "COMMUNICATION_GAP")
+        .map((i) => i.requirement),
+      missingSkills: match.items
+        .filter((i) => i.classification === "MISSING")
+        .map((i) => i.requirement),
+    };
+
     // 7. Call AI with authoritative source
     const ai = getAIService();
     const result = await withTimeout(
@@ -143,15 +169,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       throw new AIError("AI returned an unexpected response.", "UPSTREAM", { status: 502 });
     }
 
-    // Ensure matchAnalysis exists
-    if (!result.matchAnalysis || typeof result.matchAnalysis !== "object") {
-      result.matchAnalysis = {
-        matchScore: 0,
-        matchedSkills: [],
-        partialMatches: [],
-        missingSkills: [],
-      };
-    }
+    // Strip any LLM-authored match data so it can never leak into the stored
+    // resume payload — deterministic match data is the only match data.
+    delete result.matchAnalysis;
 
     // Ensure essential resume fields exist
     if (typeof result.name !== "string") result.name = "";
@@ -162,39 +182,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (!Array.isArray(result.projects)) result.projects = [];
     if (!Array.isArray(result.certifications)) result.certifications = [];
 
-    // Deterministic match override — SAME engine as the Job Match panel
-    // (buildQualificationMatch). The LLM's self-reported matchAnalysis was
-    // unreliable (e.g. reported 0% while the matcher found 8 supported
-    // requirements), so users saw two contradicting scores in one session.
-    let matchAnalysis = result.matchAnalysis;
-    try {
-      const career = buildCareerProfile(authoritativeResume as never, {
-        claims: (authoritativeResume.claims ?? []) as never,
-        evidence: [],
-      });
-      const job = buildJobProfile(jobDescription);
-      const match = buildQualificationMatch(career, job);
-      const s = match.summary;
-      const supported = s.proven + s.related + s.communicationGap;
-      matchAnalysis = {
-        matchScore: s.total > 0 ? Math.round((supported / s.total) * 100) : 0,
-        matchedSkills: match.items
-          .filter((i) => i.classification === "PROVEN")
-          .map((i) => i.requirement),
-        partialMatches: match.items
-          .filter((i) => i.classification === "RELATED" || i.classification === "COMMUNICATION_GAP")
-          .map((i) => i.requirement),
-        missingSkills: match.items
-          .filter((i) => i.classification === "MISSING")
-          .map((i) => i.requirement),
-      };
-    } catch {
-      // Deterministic build failed — fall back to the AI's matchAnalysis.
-    }
-
     return NextResponse.json({
       success: true,
       resume: result,
+      // Deterministic match — computed above, never the model's own numbers.
       matchAnalysis,
     });
   } catch (err) {

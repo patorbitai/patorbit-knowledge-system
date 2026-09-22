@@ -332,7 +332,8 @@ export class AIService {
 
   /**
    * C33 — Generate a tailored resume from Professional Identity + Job Description.
-   * Returns the full tailored resume payload plus match analysis.
+   * Returns the full tailored resume payload. Match data is NEVER produced here —
+   * the deterministic matcher owns it (see /api/ai/tailor).
    */
   async tailorResume(data: {
     resume: Resume;
