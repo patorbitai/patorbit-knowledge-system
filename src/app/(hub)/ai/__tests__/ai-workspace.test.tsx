@@ -194,11 +194,40 @@ describe("AI Workspace", () => {
     unmount();
   });
 
-  it("fetches job applications on mount", () => {
+  it("displays the active job application from the store", () => {
     seedResumes();
-    renderToContainer(<AIWorkspaceClient userName="Ada" />);
+    // The workspace is store-driven now: it renders the active JobApplication
+    // from Zustand instead of fetching /api/applications on mount.
+    useResumeBuilder.setState({
+      activeJobApplicationId: "app1",
+      activeJobApplication: {
+        applicationId: "app1",
+        title: "Senior Engineer",
+        companyName: "Acme Corp",
+        jobDescription: "Job description",
+        status: "applied",
+        resumeId: "r1",
+        matchScore: 85,
+        matchData: null,
+        qualificationMatch: null,
+        matchedResumeId: null,
+        matchedAt: null,
+        exportedResumeId: null,
+        exportedAt: null,
+      },
+    });
 
-    expect(mockFetch).toHaveBeenCalledWith("/api/applications");
+    const { unmount } = renderToContainer(<AIWorkspaceClient userName="Ada" />);
+    const text = document.body.textContent || "";
+    expect(text).toContain("Senior Engineer");
+    expect(text).toContain("Acme Corp");
+
+    unmount();
+    // Reset so later tests (e.g. "no jobs selected") see a clean store.
+    useResumeBuilder.setState({
+      activeJobApplicationId: null,
+      activeJobApplication: null,
+    });
   });
 
   it("shows job selector area when no jobs selected", () => {

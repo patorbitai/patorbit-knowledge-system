@@ -11,7 +11,9 @@ vi.mock("next-auth", () => ({
 
 import { getServerSession } from "next-auth";
 
-describe("GDPR Data Export API", () => {
+// Real-PostgreSQL integration tests. They fail closed via the prisma.ts guard when
+// no test database is configured, so guard them the same way real-db.integration.test.ts does.
+describe.skipIf(!process.env.TEST_DATABASE_URL)("GDPR Data Export API", () => {
   const testEmail = `gdpr-${Date.now()}@example.com`;
   let userId: string;
 

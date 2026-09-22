@@ -10,6 +10,7 @@ import { TrustTimelineView } from "@/components/identity/TrustTimelineView";
 import { NetworkView } from "@/components/identity/NetworkView";
 import { TrustView } from "@/components/identity/TrustView";
 import { createEmptyResume, createMinimalResume } from "@/services/__tests__/fixtures";
+import type { ServerTrustReportV2 } from "@/lib/trust/v2/types";
 
 // Mock next/navigation usePathname
 const mockPathname = vi.fn(() => "/trust/verification");
@@ -41,7 +42,33 @@ describe("Sidebar and Feature Routes Sprint Tests", () => {
 
   it("2. Trust Score route (TrustView) renders successfully", () => {
     const resume = createMinimalResume("Test User");
-    const html = renderToString(<TrustView resume={resume} evidence={[]} />);
+    // SSR renderToString never runs effects, so TrustView would stay in its
+    // loading state without a trustReport prop. Provide one to exercise the
+    // loaded view (same pattern as TrustBreakdown/TrustShare/Sprint5 tests).
+    const trustReport: ServerTrustReportV2 = {
+      score: 75,
+      level: "Strong",
+      algorithmVersion: "v2",
+      derivedAt: new Date().toISOString(),
+      claimTrusts: [],
+      summary: {
+        totalClaims: 0,
+        verifiedClaims: 0,
+        claimsWithEvidence: 0,
+        claimsWithoutEvidence: 0,
+        totalEvidence: 0,
+        totalVerificationEvents: 0,
+        activeConflicts: 0,
+        evidenceCoveragePercent: 0,
+        verificationRate: 0,
+        insufficientData: true,
+      },
+      supportingFactors: [],
+      reducingFactors: [],
+    };
+    const html = renderToString(
+      <TrustView resume={resume} evidence={[]} trustReport={trustReport} />
+    );
     expect(html).toContain("Professional Trust");
   });
 

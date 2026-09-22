@@ -3,7 +3,9 @@ import { userRepository } from "@/repositories/user.repository";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-describe("Settings & Account Management", () => {
+// Real-PostgreSQL integration tests. They fail closed via the prisma.ts guard when
+// no test database is configured, so guard them the same way real-db.integration.test.ts does.
+describe.skipIf(!process.env.TEST_DATABASE_URL)("Settings & Account Management", () => {
   const email1 = `user1-${Date.now()}@example.com`;
   const email2 = `user2-${Date.now()}@example.com`;
   let userId1: string;

@@ -1,8 +1,13 @@
 "use strict";
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import { renderToString } from "react-dom/server";
 import { FreeJDAnalysis } from "../FreeJDAnalysis";
+
+// FreeJDAnalysis now calls useSession() (marketing page = signed out).
+vi.mock("next-auth/react", () => ({
+  useSession: () => ({ data: null, status: "unauthenticated" }),
+}));
 
 // ── Test fixtures ──────────────────────────────────────────────────────────
 
@@ -48,7 +53,7 @@ describe("FreeJDAnalysis", () => {
 
   it("renders empty state before analysis", () => {
     const html = renderToString(<FreeJDAnalysis />);
-    expect(html).toContain("Paste a job description above");
+    expect(html).toContain("Paste a job description to get started");
   });
 
   it("does not depend on Zustand store", () => {

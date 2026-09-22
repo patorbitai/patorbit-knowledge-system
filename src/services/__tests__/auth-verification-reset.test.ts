@@ -3,7 +3,9 @@ import { authService } from "../auth.service";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
-describe("Auth Verification & Password Reset Service", () => {
+// Real-PostgreSQL integration tests. They fail closed via the prisma.ts guard when
+// no test database is configured, so guard them the same way real-db.integration.test.ts does.
+describe.skipIf(!process.env.TEST_DATABASE_URL)("Auth Verification & Password Reset Service", () => {
   const testEmail = `test-${Date.now()}@example.com`;
   const testName = "Test User";
   const testPassword = "Password123!";
