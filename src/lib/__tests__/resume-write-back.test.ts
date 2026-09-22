@@ -37,6 +37,7 @@ const mockState = {
     careerStage: "working-professional",
   },
   activeResumeId: "resume-1",
+  resumes: [] as Array<{ resumeId: string; resumeName?: string; name?: string; templateId?: string; careerStage?: string }>,
   serverVersions: {} as Record<string, number>,
   writeConflict: null as { resumeId: string; serverVersion: number } | null,
   saveStatus: "unsaved" as string,
@@ -601,5 +602,81 @@ describe("C6.1 — Integration Hardening", () => {
       );
       expect(onlineCall).toBeDefined();
     });
+  });
+});
+
+/**
+ * BUG-2 regression — rapid resume switch.
+ *
+ * debouncedSave() captures the resume id at schedule time. When the timer
+ * fires it must save THAT resume even if the user has already switched to a
+ * different resume — and a background save must not flip the ACTIVE resume's
+ * save-status indicator.
+ */
+describe("BUG-2 — rapid resume switch keeps outgoing saves correct", () => {
+  const resumeA = {
+    resumeId: "resume-1",
+    resumeName: "Resume A",
+    name: "User A",
+    templateId: "modern-clean",
+    careerStage: "working-professional",
+  };
+  const resumeB = {
+    resumeId: "resume-2",
+    resumeName: "Resume B",
+    name: "User B",
+    templateId: "modern-clean",
+    careerStage: "working-professional",
+  };
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.useFakeTimers();
+    mockSetSaveStatus.mockImplementation((status: string) => { mockState.saveStatus = status; });
+    mockState.serverVersions = {};
+    mockState.writeConflict = null;
+    mockState.saveStatus = "unsaved";
+    mockState.hydrated = true;
+    mockState.resumes = [resumeA, resumeB];
+    mockState.activeResumeId = "resume-1";
+    mockState.resume = resumeA;
+    mockFetch.mockResolvedValue({
+      ok: true,
+      status: 200,
+      json: () => Promise.resolve({ version: 1 }),
+    });
+  });
+
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it("pending debounce still saves the OUTGOING resume after a rapid switch", async () => {
+    debouncedSave(); // schedule save for resume-1 (A)
+
+    // User switches to resume-2 (B) before the 1500ms debounce fires
+    mockState.activeResumeId = "resume-2";
+    mockState.resume = resumeB;
+
+    vi.advanceTimersByTime(1500);
+    await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+
+    expect(mockFetch.mock.calls[0][0]).toBe("/api/resumes/resume-1");
+    const body = JSON.parse(mockFetch.mock.calls[0][1].body);
+    expect(body.resumeId).toBe("resume-1");
+    expect(body.resume.resumeName).toBe("Resume A");
+  });
+
+  it("background save of a non-active resume does not flip the save-status indicator", async () => {
+    debouncedSave();
+    mockState.activeResumeId = "resume-2";
+    mockState.resume = resumeB;
+    mockSetSaveStatus.mockClear();
+
+    vi.advanceTimersByTime(1500);
+    await vi.waitFor(() => expect(mockFetch).toHaveBeenCalledTimes(1));
+
+    expect(mockSetSaveStatus).not.toHaveBeenCalledWith("saving");
+    expect(mockSetSaveStatus).not.toHaveBeenCalledWith("saved");
   });
 });

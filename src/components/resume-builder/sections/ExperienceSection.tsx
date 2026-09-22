@@ -18,7 +18,7 @@ import { ResumeFont } from "../cards/ResumeFont";
 type ExpSuggestion =
   | { type: "bullets"; content: string[] }
   | { type: "improve-bullets"; content: string[] }
-  | { type: `rewrite-${string}`; content: { description: string; bulletPoints: string[] } };
+  | { type: `rewrite-${string}`; content: { description: string } };
 
 /** True when a description looks like a bulleted list rather than narrative prose. */
 function isBulletedDescription(desc?: string): boolean {
@@ -90,7 +90,7 @@ export function ExperienceSection() {
         tone === "ats"
           ? await ai.atsOptimization(inputText)
           : await ai.rewrite(inputText, tone);
-      const content = { description: result.content, bulletPoints: [result.content] };
+      const content = { description: result.content };
       setSuggestions((prev) => {
         const next = new Map(prev);
         next.set(id, { type: `rewrite-${tone}`, content });
@@ -446,11 +446,10 @@ export function ExperienceSection() {
                               original={exp.description}
                               suggestion={(expSuggestion.content as { description: string }).description || ""}
                               onAccept={() => {
-                                const content = expSuggestion.content as { description: string; bulletPoints?: string[] };
+                                const content = expSuggestion.content as { description: string };
+                                // Description-only rewrite: bulletPoints are NEVER touched here —
+                                // accepting an AI rewrite must not collapse curated bullets (BUG-1).
                                 updateExperience(exp.id, "description", content.description);
-                                if (content.bulletPoints) {
-                                  updateExperience(exp.id, "bulletPoints", content.bulletPoints);
-                                }
                                 setSuggestions((prev) => { const n = new Map(prev); n.delete(exp.id); return n; });
                               }}
                               onRegenerate={() => handleAIRewrite(exp.id, (expSuggestion.type as string).replace("rewrite-", "") as "ats" | "impact" | "concise" | "expanded" | "professional")}

@@ -10,7 +10,7 @@
  *   On 409: expose conflict state (do NOT overwrite local)
  */
 
-import { useResumeBuilder } from "@/store/resume-builder";
+import { useResumeBuilder, type SaveStatus } from "@/store/resume-builder";
 import type { Resume, CareerStage } from "@/types/resume";
 import { enqueueOfflineSave, removeOfflineEntry, getAllOfflineEntries } from "@/lib/offline-queue";
 
@@ -56,22 +56,46 @@ export function isCreating(resumeId: string): boolean {
 }
 
 /**
- * Save the current local resume to the server.
- * Called internally by the debounced mechanism.
+ * Save a local resume to the server.
+ *
+ * `targetResumeId` says WHICH resume to send. Debounce timers capture the id
+ * at schedule time; by the time the timer fires the user may have switched to
+ * a different resume, so the live active resume must never be assumed to be
+ * the one that needs saving (rapid-switch save-drop fix, BUG-2).
+ * Without a target the currently active resume is saved (explicit saves).
  */
-export async function saveLocalResumeToServer(): Promise<void> {
-  const state = useResumeBuilder.getState();
-  const { resume, activeResumeId, serverVersions } = state;
+export async function saveLocalResumeToServer(targetResumeId?: string): Promise<void> {
+  const snapshot = useResumeBuilder.getState();
+  const { activeResumeId, serverVersions } = snapshot;
 
-  if (!activeResumeId || !resume.resumeId) return;
+  const resume: Resume | undefined = targetResumeId
+    ? (Array.isArray(snapshot.resumes)
+        ? snapshot.resumes.find((r) => r.resumeId === targetResumeId)
+        : undefined) ??
+      (snapshot.resume?.resumeId === targetResumeId ? snapshot.resume : undefined)
+    : snapshot.resume;
+
+  if (!resume || !resume.resumeId) return;
+  if (!targetResumeId && !activeResumeId) return;
 
   // C29: Skip save for resumes that have been deleted locally (prevents resurrection)
-  if (state.pendingDeletes?.includes(resume.resumeId)) return;
+  if (snapshot.pendingDeletes?.includes(resume.resumeId)) return;
 
   // C30: Skip save for resumes that are currently being created via explicit POST
   if (creatingResumeIds.has(resume.resumeId)) return;
 
-  // Set saving status
+  // The save-status indicator always describes the ACTIVE resume. A background
+  // save of a different resume must not flip it to "saving"/"saved" (or mask
+  // the active resume's own unsaved edits).
+  const isActive = () => useResumeBuilder.getState().activeResumeId === resume.resumeId;
+  const state = {
+    ...snapshot,
+    setSaveStatus: (status: SaveStatus) => {
+      if (isActive()) snapshot.setSaveStatus(status);
+    },
+  };
+
+  // Set saving status (gated to the active resume)
   state.setSaveStatus("saving");
 
   const baseVersion = serverVersions[resume.resumeId] ?? 0;
@@ -113,7 +137,8 @@ export async function saveLocalResumeToServer(): Promise<void> {
           localBaseVersion: baseVersion > 0 ? baseVersion : undefined,
           serverVersion,
         },
-        saveStatus: "unsaved",
+        // A background-save conflict must not flip the ACTIVE resume's indicator.
+        ...(isActive() ? { saveStatus: "unsaved" as const } : {}),
       });
       return;
     }
@@ -174,7 +199,7 @@ export async function saveLocalResumeToServer(): Promise<void> {
             if (created.version !== undefined && rid) {
               useResumeBuilder.getState().setServerVersion(rid, created.version);
             }
-            useResumeBuilder.getState().setSaveStatus("saved");
+            state.setSaveStatus("saved");
             return;
           }
           // C16: Cross-identity duplicate — resumeId belongs to another user.
@@ -204,10 +229,10 @@ export async function saveLocalResumeToServer(): Promise<void> {
           const createBody = await createRes.json().catch(() => ({}));
           const createMsg = (createBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
           console.error("[write-back] Create failed:", createMsg);
-          useResumeBuilder.getState().setSaveStatus("sync-failed");
+          state.setSaveStatus("sync-failed");
         } catch (createErr) {
           console.error("[write-back] Create network error:", createErr);
-          useResumeBuilder.getState().setSaveStatus("sync-failed");
+          state.setSaveStatus("sync-failed");
         } finally {
           if (rid) inflightPosts.delete(rid);
         }
@@ -268,7 +293,9 @@ export function debouncedSave(): void {
   // Schedule new save
   const timer = setTimeout(() => {
     pendingSaves.delete(resumeId);
-    saveLocalResumeToServer();
+    // Save the resume that was active when this save was SCHEDULED — the user
+    // may have switched resumes during the debounce window (BUG-2).
+    saveLocalResumeToServer(resumeId);
   }, SAVE_DEBOUNCE_MS);
 
   pendingSaves.set(resumeId, timer);
@@ -307,19 +334,52 @@ export function cancelPendingSave(resumeId: string): void {
 function handleBeforeUnload(): void {
   const state = useResumeBuilder.getState();
   const { resume, activeResumeId, serverVersions } = state;
-  if (!activeResumeId || !resume.resumeId || state.saveStatus !== "unsaved") return;
-  // C29: Skip save for pending deletes
-  if (state.pendingDeletes?.includes(resume.resumeId)) return;
-  // C30: Skip save for resumes being created (POST in flight)
-  if (creatingResumeIds.has(resume.resumeId)) return;
+  if (!activeResumeId || !resume.resumeId) return;
 
-  // Cancel the debounced timer — we're saving NOW
-  const existing = pendingSaves.get(activeResumeId);
-  if (existing) clearTimeout(existing);
-  pendingSaves.delete(activeResumeId);
+  // Resume ids to flush: the active resume when it has unsaved edits, PLUS
+  // every resume whose debounce timer is still pending (rapid-switch case —
+  // the user may have edited resume A, switched to B, and closed the tab
+  // before A's save fired; A must not lose its pending server save).
+  const pendingIds = [...pendingSaves.keys()];
+  const activeDirty = state.saveStatus === "unsaved";
 
-  // Try synchronous fetch with keepalive (works in most browsers on unload)
-  const baseVersion = serverVersions[resume.resumeId] ?? 0;
+  // Cancel all pending debounce timers — we're saving NOW
+  for (const id of pendingIds) {
+    const t = pendingSaves.get(id);
+    if (t) clearTimeout(t);
+    pendingSaves.delete(id);
+  }
+
+  const toFlush: Resume[] = [];
+  const pushIfFlushable = (r: Resume | undefined) => {
+    if (!r?.resumeId) return;
+    // C29: Skip save for pending deletes
+    if (state.pendingDeletes?.includes(r.resumeId)) return;
+    // C30: Skip save for resumes being created (POST in flight)
+    if (creatingResumeIds.has(r.resumeId)) return;
+    if (!toFlush.some((x) => x.resumeId === r.resumeId)) toFlush.push(r);
+  };
+  if (activeDirty) pushIfFlushable(resume);
+  const resumesList = Array.isArray(state.resumes) ? state.resumes : [];
+  for (const id of pendingIds) {
+    pushIfFlushable(
+      resumesList.find((r) => r.resumeId === id) ??
+        (resume.resumeId === id ? resume : undefined),
+    );
+  }
+  if (toFlush.length === 0) return;
+
+  for (const target of toFlush) {
+    const rid = target.resumeId;
+    if (!rid) continue;
+    // Synchronous fetch with keepalive (works in most browsers on unload)
+    flushKeepalive(target, serverVersions[rid] ?? 0);
+  }
+}
+
+/** Send one resume to the server with keepalive + an IndexedDB safety net. */
+function flushKeepalive(resume: Resume, baseVersion: number): void {
+  if (!resume.resumeId) return;
   try {
     const payload = JSON.stringify({
       resumeId: resume.resumeId,
