@@ -125,6 +125,16 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
     const currentResume = useResumeBuilder.getState().resume;
     const merged = mergeImportedResume(currentResume, draft);
     setResume(merged);
+    // §4 — record the import as a version: the first one becomes the
+    // "original" restore point, later imports are content edits.
+    const importSt = useResumeBuilder.getState();
+    const hadVersions =
+      (importSt.versions[importSt.activeResumeId] ?? []).length > 0;
+    importSt.captureVersion(
+      importSt.activeResumeId,
+      hadVersions ? "edit" : "original",
+      hadVersions ? "Imported content" : "Imported resume",
+    );
     setPending(null);
     // The write-back subscription only lives in the resume-builder layout, but
     // import often happens on /overview — push explicitly so the server never

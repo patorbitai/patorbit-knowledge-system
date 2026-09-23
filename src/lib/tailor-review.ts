@@ -97,7 +97,7 @@ function list(items: string[]): string {
 }
 
 /** All tech tokens the original resume can substantiate. */
-function resumeTechTokens(r: Resume): Set<string> {
+export function resumeTechTokens(r: Resume): Set<string> {
   const parts: string[] = [r.summary ?? ""];
   for (const s of r.skills ?? []) parts.push(s.name ?? "");
   for (const e of r.experience ?? []) {
@@ -115,7 +115,7 @@ function resumeTechTokens(r: Resume): Set<string> {
  * Prefix matching softens near-misses ("React" ⊆ "ReactJS") so we never
  * block a legitimate rewrite over a naming variant.
  */
-function techCovered(orig: Set<string>, token: string): boolean {
+export function techCovered(orig: Set<string>, token: string): boolean {
   const t = norm(token);
   if (orig.has(t)) return true;
   for (const o of orig) {

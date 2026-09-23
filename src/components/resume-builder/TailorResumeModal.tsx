@@ -372,6 +372,37 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     } as Partial<Resume>);
     switchResume(newResumeId);
 
+    // §2 lineage + §4 tailored version — recorded right after the job
+    // version becomes active, so it points back at the MASTER it came from
+    // and history shows the approved decision counts.
+    const masterResumeId = originalResume.resumeId ?? activeResumeId;
+    const masterResumeName =
+      originalResume.resumeName || originalResume.name || "master";
+    const activeApp = useResumeBuilder.getState().activeJobApplication;
+    const jobTitle =
+      applicationId && activeApp?.applicationId === applicationId
+        ? activeApp.title
+        : undefined;
+    useResumeBuilder.getState().setLineage(newResumeId, {
+      sourceResumeId: masterResumeId,
+      sourceResumeName: masterResumeName,
+      ...(jobTitle ? { jobTitle } : {}),
+      tailoredAt: Date.now(),
+    });
+    useResumeBuilder.getState().captureVersion(
+      newResumeId,
+      "tailored",
+      jobTitle ? `Tailored for ${jobTitle}` : "Tailored version",
+      {
+        meta: {
+          accepted: applied?.accepted ?? 0,
+          edited: applied?.edited ?? 0,
+          rejected: applied?.rejected ?? 0,
+          blocked: applied?.blocked ?? 0,
+        },
+      },
+    );
+
     // Inherit the source resume's visual style config so the tailored resume
     // renders with the same typography (font, scale, spacing, etc.) as the
     // original. Without this the new resume would reset to platform defaults,
@@ -981,7 +1012,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
  * confidence, and Accept / Edit / Reject — plus the never-apply list for
  * anything unsupported (§12).
  */
-function SuggestionCard({
+export function SuggestionCard({
   suggestion,
   decision,
   onDecide,

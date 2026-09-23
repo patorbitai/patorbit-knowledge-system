@@ -12,6 +12,7 @@ import { useResumePlan } from "@/lib/resume-planner/react";
 import { runQualityCheck, runAtsCheck } from "@/lib/resume-planner";
 import { familyIdOf } from "@/app/resume-builder/templates";
 import { resolveStyleConfig, resolveHeadingHex } from "@/lib/resume-design-system/style-config";
+import { SafetyFindingsList, useResumeSafety } from "./SafetyFindingsList";
 
 export function ExportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const resume = useResumeBuilder((s) => s.resume);
@@ -60,6 +61,10 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const [docxError, setDocxError] = useState<string | null>(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
+  // §5 gate: findings block export until resolved (both resolution paths
+  // render inside the gate below; exportOptions empties out meanwhile).
+  const safety = useResumeSafety();
+
   const handleExportPdf = async () => {
     track("resume_export_started", { format: "pdf" });
     // Ensure the selected webfont is fully loaded before the print target
@@ -77,6 +82,12 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
     // even outside a JobApplication context.
     setHasExported(true);
     track("resume_exported", { format: "pdf" });
+    // §4 — a completed export is a restorable version.
+    useResumeBuilder
+      .getState()
+      .captureVersion(activeResumeId, "export", "Exported PDF", {
+        meta: { format: "pdf" },
+      });
     onClose();
     // Triple-rAF: first two let React unmount the modal, third fires print
     // after the DOM has settled so only #pdf-export-target is visible.
@@ -103,13 +114,26 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
       markResumeExported();
       setHasExported(true);
       track("resume_exported", { format: "docx" });
+      // §4 — a completed export is a restorable version.
+      useResumeBuilder
+        .getState()
+        .captureVersion(activeResumeId, "export", "Exported DOCX", {
+          meta: { format: "docx" },
+        });
       onClose();
     } catch {
       setDocxError("Failed to generate DOCX. Please try again.");
     }
   };
 
-  const exportOptions = [
+  const exportOptions: Array<{
+    label: string;
+    description: string;
+    icon: typeof Printer;
+    action: () => void;
+  }> = safety.findings.length > 0
+    ? []
+    : [
     { label: "Print / Save as PDF", description: "Opens browser print dialog — save as PDF or print directly", icon: Printer, action: handleExportPdf },
     { label: "DOCX", description: "Export as a Microsoft Word document", icon: FileText, action: handleExportDocx },
   ];
@@ -258,6 +282,27 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
                       </li>
                     ))}
                   </ul>
+                </div>
+              )}
+              {safety.findings.length > 0 && (
+                <div
+                  className="rounded-lg border border-amber-500/30 bg-amber-500/[0.06] px-3 py-2.5"
+                  data-testid="export-safety-gate"
+                >
+                  <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300 mb-0.5">
+                    Resolve unsupported changes before exporting
+                  </p>
+                  <p className="text-[10px] text-amber-600/90 dark:text-amber-400/80 mb-2 leading-relaxed">
+                    These items are not in your master profile, so they cannot
+                    be exported as fact. Your saved content is untouched
+                    either way.
+                  </p>
+                  <SafetyFindingsList
+                    findings={safety.findings}
+                    canPromote={safety.canPromote}
+                    onRemove={safety.remove}
+                    onPromote={(f) => safety.promote(f)}
+                  />
                 </div>
               )}
               {exportOptions.map((opt, i) => (

@@ -25,6 +25,22 @@ import { buildQualificationMatch } from "@/lib/qualification-match";
 import { hasSufficientData } from "@/types/resume";
 import { ai } from "@/lib/ai/client";
 import { TEMPLATES } from "@/app/resume-builder/templates";
+import {
+  makeVersion,
+  pushVersion,
+  restoreContent,
+  type CaptureOptions,
+  type ResumeVersion,
+  type ResumeVersionKind,
+} from "@/lib/resume-versions";
+import {
+  removeFinding as removeFindingFrom,
+  promoteFindingToMaster as promoteFindingIntoMaster,
+  promoteResumeContent,
+  resolveSafetyBaseline,
+  type ResumeLineage,
+  type SafetyFinding,
+} from "@/lib/resume-safety";
 import { DEFAULT_STYLE_CONFIG, resolveStyleConfig, type ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
 
 /* ── Defaults ── */
@@ -235,6 +251,29 @@ export interface ResumeBuilderState {
    */
   lastTailoring: LastTailoringSummary | null;
   setLastTailoring: (value: LastTailoringSummary | null) => void;
+
+  /**
+   * Master protection (§2): explicit lineage of a tailored resume back to
+   * the master it derives from. Present ONLY on job-specific resumes.
+   */
+  lineage: Record<string, ResumeLineage>;
+  setLineage: (resumeId: string, entry: ResumeLineage | null) => void;
+  /** Version history per resume — newest first, capped (§4). */
+  versions: Record<string, ResumeVersion[]>;
+  captureVersion: (
+    resumeId: string,
+    kind: ResumeVersionKind,
+    label: string,
+    opts?: CaptureOptions,
+  ) => void;
+  /** Restore `versionId` onto resume `resumeId` (§4). Identity preserved. */
+  restoreVersion: (resumeId: string, versionId: string) => boolean;
+  /** Whole-resume explicit promote: master adopts the tailored CONTENT. */
+  promoteResumeToMaster: (resumeId: string) => boolean;
+  /** §5: strip one unsupported finding from the ACTIVE resume. */
+  removeUnsupportedFinding: (finding: SafetyFinding) => void;
+  /** §5: explicitly promote one finding into the master (never silent). */
+  promoteFindingToMaster: (finding: SafetyFinding) => boolean;
 
   /**
    * "Preview for this job" toggle (§22): when on AND a deterministic
@@ -498,7 +537,11 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             const resumes = s.resumes.filter((r) => r.resumeId !== resumeId);
             const activeResumeId = s.activeResumeId === resumeId ? resumes[0].resumeId : s.activeResumeId;
             const resume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
-            return { resumes, activeResumeId, resume, saveStatus: "unsaved" };
+            const lineage = { ...s.lineage };
+            delete lineage[resumeId];
+            const versions = { ...s.versions };
+            delete versions[resumeId];
+            return { resumes, activeResumeId, resume, saveStatus: "unsaved", lineage, versions };
           });
 
           // 2. Cancel any pending write-back for this resume (prevents resurrection)
@@ -606,11 +649,139 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         qualificationMatch: null,
         isCopilotOpen: true, isJobMatchOpen: false, previewTab: "resume",
         styleConfigs: {},
+        lineage: {},
+        versions: {},
         hasExported: readJourneyExportedFlag(),
         lastTailoring: readLastTailoring(),
         setLastTailoring: (value) => {
           writeLastTailoring(value);
           set({ lastTailoring: value });
+        },
+        setLineage: (resumeId, entry) =>
+          set((s) => {
+            const lineage = { ...s.lineage };
+            if (entry === null) delete lineage[resumeId];
+            else lineage[resumeId] = entry;
+            return { lineage };
+          }),
+        captureVersion: (resumeId, kind, label, opts) =>
+          set((s) => {
+            const target =
+              s.resumes.find((r) => r.resumeId === resumeId) ??
+              (s.activeResumeId === resumeId ? s.resume : null);
+            if (!target) return {};
+            const v = makeVersion(kind, label, target, opts ?? {});
+            return {
+              versions: {
+                ...s.versions,
+                [resumeId]: pushVersion(s.versions[resumeId] ?? [], v),
+              },
+            };
+          }),
+        restoreVersion: (resumeId, versionId) => {
+          const s = get();
+          const list = s.versions[resumeId] ?? [];
+          const target = list.find((v) => v.id === versionId);
+          const current =
+            s.resumes.find((r) => r.resumeId === resumeId) ??
+            (s.activeResumeId === resumeId ? s.resume : null);
+          if (!target || !current) return false;
+          // Undo point: what we are replacing — never coalesced away.
+          const marker = makeVersion("edit", "Before restore", current);
+          const restored = restoreContent(current, target.snapshot);
+          if (!TEMPLATES.some((t) => t.id === restored.templateId)) {
+            restored.templateId = current.templateId;
+          }
+          const isActive = s.activeResumeId === resumeId;
+          set((st) => ({
+            resumes: st.resumes.map((r) => (r.resumeId === resumeId ? restored : r)),
+            ...(isActive ? { resume: restored, saveStatus: "unsaved" as const } : {}),
+            versions: {
+              ...st.versions,
+              [resumeId]: pushVersion(list, marker),
+            },
+          }));
+          if (!isActive) {
+            // Restoring a background resume — the write-back subscription
+            // only tracks the active one; save it explicitly.
+            import("@/lib/resume-write-back").then(({ saveLocalResumeToServer }) => {
+              saveLocalResumeToServer(resumeId);
+            }).catch(() => {});
+          }
+          return true;
+        },
+        promoteResumeToMaster: (resumeId) => {
+          const s = get();
+          const lin = s.lineage[resumeId];
+          const source = s.resumes.find((r) => r.resumeId === resumeId);
+          const master = lin
+            ? s.resumes.find((r) => r.resumeId === lin.sourceResumeId)
+            : undefined;
+          if (!lin || !source || !master) return false;
+          const masterKey = lin.sourceResumeId;
+          const updated = promoteResumeContent(master, source);
+          const marker = makeVersion(
+            "edit",
+            `Promoted from "${source.resumeName || source.name || "job version"}"`,
+            updated,
+          );
+          const isActive = s.activeResumeId === masterKey;
+          set((st) => ({
+            resumes: st.resumes.map((r) => (r.resumeId === masterKey ? updated : r)),
+            ...(isActive ? { resume: updated, saveStatus: "unsaved" as const } : {}),
+            versions: {
+              ...st.versions,
+              [masterKey]: pushVersion(st.versions[masterKey] ?? [], marker),
+            },
+          }));
+          if (!isActive) {
+            import("@/lib/resume-write-back").then(({ saveLocalResumeToServer }) => {
+              saveLocalResumeToServer(masterKey);
+            }).catch(() => {});
+          }
+          return true;
+        },
+        removeUnsupportedFinding: (finding) =>
+          set((s) => {
+            const baseline = resolveSafetyBaseline(
+              s.resumes,
+              s.resume,
+              s.lineage[s.activeResumeId] ?? null,
+            );
+            const updated = removeFindingFrom(s.resume, finding, baseline);
+            return {
+              resumes: s.resumes.map((r) =>
+                r.resumeId === s.activeResumeId ? updated : r,
+              ),
+              resume: updated,
+              saveStatus: "unsaved" as const,
+            };
+          }),
+        promoteFindingToMaster: (finding) => {
+          const s = get();
+          const lin = s.lineage[s.activeResumeId];
+          const master = lin
+            ? s.resumes.find((r) => r.resumeId === lin.sourceResumeId)
+            : undefined;
+          if (!lin || !master) return false;
+          const masterKey = lin.sourceResumeId;
+          const updated = promoteFindingIntoMaster(master, s.resume, finding);
+          const marker = makeVersion("edit", `Added to master: ${finding.value}`, updated);
+          const isActive = s.activeResumeId === masterKey;
+          set((st) => ({
+            resumes: st.resumes.map((r) => (r.resumeId === masterKey ? updated : r)),
+            ...(isActive ? { resume: updated, saveStatus: "unsaved" as const } : {}),
+            versions: {
+              ...st.versions,
+              [masterKey]: pushVersion(st.versions[masterKey] ?? [], marker),
+            },
+          }));
+          if (!isActive) {
+            import("@/lib/resume-write-back").then(({ saveLocalResumeToServer }) => {
+              saveLocalResumeToServer(masterKey);
+            }).catch(() => {});
+          }
+          return true;
         },
         previewJobAware: true,
         setPreviewJobAware: (value) => set({ previewJobAware: value }),
@@ -1402,7 +1573,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     {
       name: "patorbit-resume-v2",
       merge: mergePersistedResumeState,
-      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, activeJobApplicationId: state.activeJobApplicationId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes, shareStates: state.shareStates }),
+      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, activeJobApplicationId: state.activeJobApplicationId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes, shareStates: state.shareStates, lineage: state.lineage, versions: state.versions }),
       onRehydrateStorage: () => (snapshot) => {
         // In Zustand v5 the `snapshot` parameter may be stale — the persist
         // middleware's own internal setState(merged) may not have fired yet.

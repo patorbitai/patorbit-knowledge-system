@@ -1,12 +1,13 @@
 "use client";
 
-import { useEffect, useCallback, useState, Suspense } from "react";
+import { useEffect, useState, Suspense } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { DndProvider } from "react-dnd";
 import { HTML5Backend } from "react-dnd-html5-backend";
 import { useResumeBuilder } from "@/store/resume-builder";
-import { ai } from "@/lib/ai/client";
+import { useResumeAutosave } from "@/hooks/useResumeAutosave";
+import { VersionHistoryPanel } from "@/components/resume-builder/VersionHistoryPanel";
 import { LeftSidebar, CenterWorkspace, ClaimsReview } from "@/components/resume-builder";
 import MobileSectionNav from "@/components/resume-builder/MobileSectionNav";
 import { SaveStatusIndicator } from "@/components/resume-builder/SaveStatusIndicator";
@@ -18,12 +19,11 @@ import AccountMenu from "@/components/hub/AccountMenu";
 import { SaveToIdentityButton } from "@/components/resume-builder/SaveToIdentityButton";
 import { WorkflowStatusBar } from "@/components/resume-builder/WorkflowStatusBar";
 import { JobApplicationSelector } from "@/components/resume-builder/JobApplicationSelector";
-import { Eye, ArrowLeft, ChevronRight, Sparkles, PenLine, Target, Download } from "lucide-react";
+import { Eye, ArrowLeft, ChevronRight, History, Sparkles, PenLine, Target, Download } from "lucide-react";
 import { PreviewErrorBoundary } from "@/components/resume-builder/PreviewErrorBoundary";
 import { MobilePreview } from "@/components/resume-builder/MobilePreview";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
-import { debounce } from "@/lib/debounce";
 
 /* ── Dynamic imports for heavy panels (SSR=false to avoid layout-effect crashes) ── */
 const LiveStylePreview = dynamic(
@@ -50,6 +50,7 @@ function ResumeSelector() {
   const [renameValue, setRenameValue] = useState("");
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null);
 
+  const lineage = useResumeBuilder((s) => s.lineage);
   const activeResume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
 
   const cancelRename = () => { setRenamingId(null); setRenameValue(""); };
@@ -99,6 +100,9 @@ function ResumeSelector() {
                       ) : (
                         <div className="flex items-center gap-1.5">
                           <span className="truncate font-medium">{r.resumeName || "Untitled Resume"}</span>
+                          {lineage[r.resumeId ?? ""] && (
+                            <span title="Job version — tailored from your master profile" className="shrink-0 px-1 py-0.5 rounded bg-cyan-500/15 text-cyan-600 dark:text-cyan-400 text-[9px] font-semibold uppercase tracking-wide">Job</span>
+                          )}
                           {isActive && <span className="text-[10px] px-1 py-0.5 rounded bg-cyan-500/20 text-cyan-300 font-normal">Active</span>}
                         </div>
                       )}
@@ -205,7 +209,7 @@ function MobileModeToggle({ mode, onModeChange }: { mode: MobileMode; onModeChan
 }
 
 /* ── App Header ── */
-function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
+function AppHeader({ onOpenTailor, onOpenHistory }: { onOpenTailor: () => void; onOpenHistory: () => void }) {
   return (
     <header className="sticky top-0 z-40 h-12 bg-white/90 dark:bg-[#070d18]/90 backdrop-blur-xl border-b border-gray-200 dark:border-white/[0.08]">
       <div className="flex items-center justify-between h-full px-3 sm:px-4">
@@ -264,6 +268,15 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
             <Eye className="w-3.5 h-3.5" />
             <span>Preview</span>
           </Link>
+          <button
+            type="button"
+            onClick={onOpenHistory}
+            aria-label="Version history"
+            className="hidden sm:flex items-center gap-1.5 h-9 px-3 rounded-lg text-sm font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-slate-100 hover:bg-gray-100 dark:hover:bg-white/[0.04] border border-gray-200 dark:border-white/[0.06] transition-colors"
+          >
+            <History className="w-4 h-4" />
+            History
+          </button>
           <AccountMenu />
         </div>
       </div>
@@ -273,16 +286,11 @@ function AppHeader({ onOpenTailor }: { onOpenTailor: () => void }) {
 
 /* ── Main Page ── */
 export default function ResumeBuilderPage() {
-  const resume = useResumeBuilder((s) => s.resume);
-  const setAnalysis = useResumeBuilder((s) => s.setAnalysis);
-  const setAnalysisLoading = useResumeBuilder((s) => s.setAnalysisLoading);
-  const saveStatus = useResumeBuilder((s) => s.saveStatus);
-  const setSaveStatus = useResumeBuilder((s) => s.setSaveStatus);
-  const setSuggestedClaims = useResumeBuilder((s) => s.setSuggestedClaims);
 
   const [rightMode, setRightMode] = useState<"preview" | "copilot">("preview");
   const [mobileMode, setMobileMode] = useState<MobileMode>("edit");
   const [tailorOpen, setTailorOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
   // §1.3: the header/copilot opener hands the CURRENT job context to the
   // tailor modal so the user never re-pastes the same JD.
   const sessionJobDescription = useResumeBuilder((s) => s.jobDescription);
@@ -304,38 +312,14 @@ export default function ResumeBuilderPage() {
     };
   }, []);
 
-  const debouncedAnalysis = useCallback(
-    debounce(async (currentResume) => {
-      setAnalysisLoading(true);
-      try { const result = await ai.analyzeResume(currentResume); setAnalysis(result); }
-      catch { setAnalysis(null); } finally { setAnalysisLoading(false); }
-    }, 1500),
-    [setAnalysis, setAnalysisLoading],
-  );
-
-  const debouncedMarkSaved = useCallback(debounce(() => { setSaveStatus("saved"); }, 1200), [setSaveStatus]);
-
-  const debouncedClaimGen = useCallback(
-    debounce(async (currentResume) => {
-      if (!currentResume?.name && !currentResume?.summary && currentResume?.experience?.length === 0) return;
-      try { const result = await ai.generateClaims(currentResume, currentResume.claims); if (result?.claims?.length) setSuggestedClaims(result.claims); } catch { /* silent */ }
-    }, 2500),
-    [setSuggestedClaims],
-  );
-
-  useEffect(() => {
-    if (saveStatus === "unsaved") {
-      setSaveStatus("saving");
-      debouncedAnalysis(resume);
-      debouncedMarkSaved();
-      debouncedClaimGen(resume);
-    }
-  }, [resume, saveStatus, setSaveStatus, debouncedAnalysis, debouncedMarkSaved, debouncedClaimGen]);
+  // Autosave pipeline + §4 "Edited" version capture — extracted to a
+  // hook for testability (see useResumeAutosave).
+  useResumeAutosave();
 
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="h-screen w-full bg-gray-50 dark:bg-[#070d18] text-gray-900 dark:text-white font-sans antialiased flex flex-col overflow-hidden selection:bg-cyan-500/30">
-        <AppHeader onOpenTailor={() => setTailorOpen(true)} />
+        <AppHeader onOpenTailor={() => setTailorOpen(true)} onOpenHistory={() => setHistoryOpen(true)} />
 
         <div className="flex-1 flex overflow-hidden">
           {/* Left sidebar — section navigation (hidden on mobile) */}
@@ -388,6 +372,7 @@ export default function ResumeBuilderPage() {
           initialJobDescription={tailorPrefillJd}
         />
         <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />
+        <VersionHistoryPanel open={historyOpen} onClose={() => setHistoryOpen(false)} />
       </div>
     </DndProvider>
   );
