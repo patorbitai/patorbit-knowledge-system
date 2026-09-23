@@ -71,7 +71,7 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
 
   if (presentation === "inline" || presentation === "list") {
     return (
-      <section style={{ marginBottom: 16 }}>
+      <section style={{ marginBottom: 16, breakInside: "avoid" }}>
         <SectionTitle>Core Competencies</SectionTitle>
         <p style={{ fontSize: 10, color: C.body, lineHeight: 1.6 }}>
           {skills.map((s) => s.name).join(" · ")}
@@ -82,7 +82,7 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
 
   const isPills = presentation === "pills";
   return (
-    <section style={{ marginBottom: 16 }}>
+    <section style={{ marginBottom: 16, breakInside: "avoid" }}>
       <SectionTitle>Core Competencies</SectionTitle>
       <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : "4px 16px" }}>
         {skills.map((s) => (
@@ -160,7 +160,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
       {(() => {
         const nodes: Partial<Record<SectionType, ReactNode>> = {
           summary: resume.summary && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Executive Summary</SectionTitle>
           <div style={{ fontSize: 10, lineHeight: 1.65, color: C.body }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
@@ -168,7 +168,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </section>
       ),
       experience: resume.experience.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Professional Experience</SectionTitle>
           {resume.experience.map((exp) => {
             const dateStr = exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
@@ -212,7 +212,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         <SkillsSection skills={resume.skills} />
       ),
       projects: resume.projects.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Key Projects</SectionTitle>
           {resume.projects.map((p) => {
             const dateStr = [p.startDate, p.endDate].filter(Boolean).join(" – ");
@@ -244,7 +244,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </section>
       ),
       education: resume.education.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Education</SectionTitle>
           {resume.education.map((edu) => (
             <div key={edu.id} style={{ marginBottom: 8 }}>
@@ -263,7 +263,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </section>
       ),
       certs: resume.certifications.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Certifications</SectionTitle>
           {resume.certifications.map((c) => (
             <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
@@ -277,7 +277,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </section>
       ),
       achievements: resume.achievements.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Achievements</SectionTitle>
           {resume.achievements.map((a) => (
             <div key={a.id} style={{ fontSize: 10, color: C.body, marginBottom: 3 }}>
@@ -290,7 +290,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </section>
       ),
       languages: resume.languages.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Languages</SectionTitle>
           <div style={{ fontSize: 10, color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
             {resume.languages.map((l) => (
@@ -303,7 +303,7 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </section>
       ),
       interests: resume.interests.length > 0 && (
-        <section>
+        <section style={{ breakInside: "avoid" }}>
           <SectionTitle>Interests</SectionTitle>
           <p style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
             {resume.interests.map((i) => i.name).join(" · ")}

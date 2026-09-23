@@ -79,11 +79,13 @@ const TITLES = {
   interests: "Interests",
 };
 
-/** Spacing scale */
+/** Spacing scale — §5/§8: section gaps kept tight enough that a near-miss
+ *  tail section (1 cert, 1 interest) can still land on page 1 instead of
+ *  opening a 2-word page 2 (visual QA finding). */
 const SPACING = {
   compact: { sectionGap: 10, entryGap: 8, bulletGap: 1, padding: "28px 24px 16px" },
-  normal: { sectionGap: 16, entryGap: 12, bulletGap: 2, padding: "40px 32px 20px" },
-  spacious: { sectionGap: 20, entryGap: 14, bulletGap: 3, padding: "48px 36px 24px" },
+  normal: { sectionGap: 14, entryGap: 12, bulletGap: 2, padding: "40px 32px 20px" },
+  spacious: { sectionGap: 18, entryGap: 14, bulletGap: 3, padding: "48px 36px 24px" },
 };
 
 // ── Header Components ──────────────────────────────────────────────────────
@@ -450,7 +452,7 @@ export function generateTemplate(config: TemplateConfig) {
       switch (key) {
         case "summary":
           return resume.summary ? (
-            <section key="summary" style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section key="summary" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.summary}</SectionTitle>
               <div style={{ fontSize: 10, lineHeight: 1.65, color: effectiveTheme.body }}>
                 <FormattedDescription text={resume.summary} color={effectiveTheme.body} mutedColor={effectiveTheme.muted} size="xs" />
@@ -459,7 +461,7 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "experience":
           return resume.experience.length > 0 ? (
-            <section key="experience" style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section key="experience" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.experience}</SectionTitle>
               {resume.experience.map((exp) => (
                 <ExperienceEntry key={exp.id} exp={exp} theme={themedSection} />
@@ -468,14 +470,14 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "skills":
           return resume.skills.length > 0 ? (
-            <section key="skills" style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section key="skills" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.skills}</SectionTitle>
               <SkillsComp skills={resume.skills} theme={effectiveTheme} skillPresentation={userSkillPresentation} />
             </section>
           ) : null;
         case "projects":
           return resume.projects.length > 0 ? (
-            <section key="projects" style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section key="projects" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.projects}</SectionTitle>
               {resume.projects.map((p) => (
                 <ProjectEntry key={p.id} proj={p} theme={themedSection} />
@@ -484,7 +486,7 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "education":
           return resume.education.length > 0 ? (
-            <section key="education" style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section key="education" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.education}</SectionTitle>
               {resume.education.map((edu) => (
                 <EducationEntry key={edu.id} edu={edu} theme={themedSection} compact={compressEducation} />
@@ -493,28 +495,28 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "certs":
           return resume.certifications.length > 0 ? (
-            <section key="certs" style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section key="certs" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.certs}</SectionTitle>
               <CertificationsList certs={resume.certifications} theme={themedSection} />
             </section>
           ) : null;
         case "achievements":
           return resume.achievements.length > 0 ? (
-            <section key="achievements" style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section key="achievements" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.achievements}</SectionTitle>
               <AchievementsList achievements={resume.achievements} theme={themedSection} />
             </section>
           ) : null;
         case "languages":
           return resume.languages.length > 0 ? (
-            <section key="languages" style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section key="languages" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.languages}</SectionTitle>
               <LanguagesList languages={resume.languages} theme={themedSection} />
             </section>
           ) : null;
         case "interests":
           return resume.interests.length > 0 ? (
-            <section key="interests">
+            <section key="interests" style={{ breakInside: "avoid" }}>
               <SectionTitle color={secColor}>{TITLES.interests}</SectionTitle>
               <InterestsInline interests={resume.interests} theme={effectiveTheme} />
             </section>
@@ -579,7 +581,7 @@ export function generateTemplate(config: TemplateConfig) {
     if (layoutVariant === "timeline") {
       const accent = effectiveTheme.accent || effectiveTheme.muted;
       const summarySection = resume.summary ? (
-        <section key="summary" style={{ marginBottom: themedSpacing.sectionGap }}>
+        <section key="summary" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
           <SectionTitle color={accent}>{TITLES.summary}</SectionTitle>
           <div style={{ fontSize: 10, lineHeight: 1.65, color: effectiveTheme.body }}>
             <FormattedDescription text={resume.summary} color={effectiveTheme.body} mutedColor={effectiveTheme.muted} size="xs" />
@@ -595,7 +597,7 @@ export function generateTemplate(config: TemplateConfig) {
           {summarySection}
           {/* Timeline experience section */}
           {resume.experience.length > 0 && (
-            <section style={{ marginBottom: themedSpacing.sectionGap }}>
+            <section style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
               <SectionTitle color={accent}>{TITLES.experience}</SectionTitle>
               <div style={{ position: "relative", paddingLeft: 20 }}>
                 {/* Vertical spine */}

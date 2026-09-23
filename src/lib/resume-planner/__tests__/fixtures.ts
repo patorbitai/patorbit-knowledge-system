@@ -349,7 +349,39 @@ export const EXECUTIVE: Resume = makeResume({
   interests: [{ id: "i1", name: "Sailing" }],
 });
 
+/** Sparse: minimal content — one short role, few skills, empty extras. */
+export const SPARSE: Resume = makeResume({
+  name: "Tom Becker",
+  title: "Support Specialist",
+  email: "tom.becker@example.com",
+  phone: "+1 555 0100",
+  address: "Lisbon, Portugal",
+  summary: "Support specialist moving toward software. Customer-facing background with early scripting experience.",
+  careerStage: "recent-graduate",
+  experience: [
+    exp(
+      "x1",
+      "Bright Apps",
+      "Customer Support Specialist",
+      "2023–Present",
+      [
+        "Resolved 40+ tier-1 tickets daily across billing and integrations.",
+        "Wrote internal help articles that cut repeat contacts on top 5 issues.",
+      ],
+      "Zendesk, SQL",
+    ),
+  ],
+  education: [edu("ed1", "University of Lisbon", "BSc", "Communication", "2022")],
+  skills: [
+    skill("SQL", "Databases"),
+    skill("Python", "Languages"),
+    skill("Zendesk", "Tools"),
+    skill("Excel", "Tools"),
+    skill("Spanish", "Languages"),
+  ],
+});
 export const PROFILES = {
+  sparse: SPARSE,
   early: EARLY_CAREER,
   mid: MID_CAREER,
   senior: SENIOR,

@@ -218,7 +218,7 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
 
   if (presentation === "inline" || presentation === "list") {
     return (
-      <section style={{ marginBottom: 16 }}>
+      <section style={{ marginBottom: 16, breakInside: "avoid" }}>
         <SectionTitle accent={accent}>Technical Skills</SectionTitle>
         <p style={{ fontSize: 10, color: C.body, lineHeight: 1.6 }}>
           {skills.map((s) => s.name).join(" · ")}
@@ -230,7 +230,7 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
   // Tags or pills (default)
   const isPills = presentation === "pills";
   return (
-    <section style={{ marginBottom: 16 }}>
+    <section style={{ marginBottom: 16, breakInside: "avoid" }}>
       <SectionTitle accent={accent}>Technical Skills</SectionTitle>
       <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : 4 }}>
         {skills.map((s) => (
@@ -358,7 +358,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
       {(() => {
         const nodes: Partial<Record<SectionType, ReactNode>> = {
           summary: resume.summary && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle accent={EC.accent}>Professional Summary</SectionTitle>
           <div style={{ fontSize: 10, lineHeight: 1.65, color: C.body }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
@@ -366,7 +366,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         </section>
       ),
       experience: resume.experience.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle accent={EC.accent}>Professional Experience</SectionTitle>
           {resume.experience.map((exp) => (
             <ExperienceEntry key={exp.id} exp={exp} bulletChar={bulletCharProp} />
@@ -374,7 +374,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         </section>
       ),
       projects: resume.projects.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle accent={EC.accent}>Projects</SectionTitle>
           {resume.projects.map((p) => (
             <ProjectEntry key={p.id} proj={p} bulletChar={bulletCharProp} />
@@ -385,7 +385,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         <SkillsSection skills={resume.skills} />
       ),
       education: resume.education.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle accent={EC.accent}>Education</SectionTitle>
           {resume.education.map((edu) => (
             <EducationEntry key={edu.id} edu={edu} />
@@ -393,7 +393,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         </section>
       ),
       certs: resume.certifications.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle accent={EC.accent}>Certifications</SectionTitle>
           {resume.certifications.map((c) => (
             <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
@@ -407,7 +407,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         </section>
       ),
       achievements: resume.achievements.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle accent={EC.accent}>Achievements</SectionTitle>
           {resume.achievements.map((a) => (
             <div key={a.id} style={{ fontSize: 10, color: C.body, marginBottom: 3 }}>
@@ -420,7 +420,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         </section>
       ),
       languages: resume.languages.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle accent={EC.accent}>Languages</SectionTitle>
           <div style={{ fontSize: 10, color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
             {resume.languages.map((l) => (
@@ -433,7 +433,7 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         </section>
       ),
       interests: resume.interests.length > 0 && (
-        <section>
+        <section style={{ breakInside: "avoid" }}>
           <SectionTitle accent={EC.accent}>Interests</SectionTitle>
           <p style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
             {resume.interests.map((i) => i.name).join(" · ")}

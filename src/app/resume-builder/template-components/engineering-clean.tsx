@@ -168,7 +168,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
       {(() => {
         const nodes: Partial<Record<SectionType, ReactNode>> = {
           summary: resume.summary && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Summary</SectionTitle>
           <div style={{ fontSize: 10, lineHeight: 1.65, color: C.body }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
@@ -176,7 +176,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
         </section>
       ),
       experience: resume.experience.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Experience</SectionTitle>
           {resume.experience.map((exp) => {
             const dateStr = exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
@@ -219,7 +219,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
         </section>
       ),
       projects: resume.projects.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Projects</SectionTitle>
           {resume.projects.map((p) => {
             const dateStr = [p.startDate, p.endDate].filter(Boolean).join(" – ");
@@ -258,7 +258,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
         </section>
       ),
       skills: skillGroups.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Technical Skills</SectionTitle>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {skillGroups.map(([group, names]) => (
@@ -275,7 +275,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
         </section>
       ),
       education: resume.education.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Education</SectionTitle>
           {resume.education.map((edu) => (
             <div key={edu.id} style={{ marginBottom: 8 }}>
@@ -294,7 +294,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
         </section>
       ),
       certs: resume.certifications.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Certifications</SectionTitle>
           {resume.certifications.map((c) => (
             <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
@@ -308,7 +308,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
         </section>
       ),
       achievements: resume.achievements.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Achievements</SectionTitle>
           {resume.achievements.map((a) => (
             <div key={a.id} style={{ fontSize: 10, color: C.body, marginBottom: 3 }}>
@@ -321,7 +321,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
         </section>
       ),
       languages: resume.languages.length > 0 && (
-        <section style={{ marginBottom: 16 }}>
+        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
           <SectionTitle>Languages</SectionTitle>
           <div style={{ fontSize: 10, color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
             {resume.languages.map((l) => (
@@ -334,7 +334,7 @@ export function EngineeringCleanPreview({ resume, bulletChar: bChar }: { resume:
         </section>
       ),
       interests: resume.interests.length > 0 && (
-        <section>
+        <section style={{ breakInside: "avoid" }}>
           <SectionTitle>Interests</SectionTitle>
           <p style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
             {resume.interests.map((i) => i.name).join(" · ")}

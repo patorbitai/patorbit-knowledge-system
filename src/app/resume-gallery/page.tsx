@@ -35,6 +35,7 @@ const PROFILE_CHOICES: { key: string; label: string; resume: Resume }[] = [
   { key: "C", label: "C · Senior", resume: PROFILES.senior },
   { key: "D", label: "D · Technical", resume: PROFILES.technical },
   { key: "E", label: "E · Executive", resume: PROFILES.executive },
+  { key: "F", label: "F · Sparse", resume: PROFILES.sparse },
 ];
 
 /** One canonical template per family — the family IS the primary choice (§7). */
@@ -57,22 +58,48 @@ function FamilyCard({
   const family = TEMPLATE_FAMILIES.find((f) => f.id === familyId)!;
   const measuredRef = useRef<HTMLDivElement>(null);
   const [pageCount, setPageCount] = useState<number | null>(null);
+  const [lastPageFill, setLastPageFill] = useState<number | undefined>(undefined);
 
   const issues = useMemo(
     () => [
-      ...runQualityCheck({ resume, plan, pageCount: pageCount ?? undefined }),
+      ...runQualityCheck({
+        resume,
+        plan,
+        pageCount: pageCount ?? undefined,
+        // Real geometry from the rendered pages — lets sparse-last-page /
+        // over-page-target fire here the same way they do in the builder.
+        lastPageFill,
+      }),
       ...runAtsCheck({ templateId: template.id, familyId, layout: template.layout }),
     ],
-    [resume, plan, pageCount, familyId, template],
+    [resume, plan, pageCount, lastPageFill, familyId, template],
   );
 
-  // Count the real .rs-page sheets the paginator produced.
+  // Count the real .rs-page sheets the paginator produced + measure the last
+  // page's content fill (rect-based so the preview transform cancels out).
   useEffect(() => {
     const el = measuredRef.current;
     if (!el) return;
     const count = () => {
-      const pages = el.querySelectorAll(".rs-page, [data-rs-page]").length;
-      if (pages > 0) setPageCount(pages);
+      const pages = [...el.querySelectorAll<HTMLElement>(".rs-page, [data-rs-page]")].filter(
+        (p) => p.offsetHeight > 0,
+      );
+      if (pages.length > 0) {
+        setPageCount(pages.length);
+        const last = pages[pages.length - 1];
+        const lr = last.getBoundingClientRect();
+        // LEAF elements only — a stretched full-height wrapper would
+        // otherwise report fill = 1 and hide real sparse pages.
+        let bottom = lr.top;
+        for (const leaf of last.querySelectorAll("p, li, h1, h2, h3, span, a, div")) {
+          if (leaf.children.length > 0) continue;
+          const kr = leaf.getBoundingClientRect();
+          if (kr.height > 0 && kr.height < lr.height) bottom = Math.max(bottom, kr.bottom);
+        }
+        if (lr.height > 0) {
+          setLastPageFill(Math.min(1, Math.max(0, (bottom - lr.top) / lr.height)));
+        }
+      }
     };
     count();
     const ro = new ResizeObserver(count);
