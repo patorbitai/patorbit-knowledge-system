@@ -4,11 +4,15 @@ import { authOptions } from "@/lib/auth";
 import { Packer } from "docx";
 import { buildDocx, type DocxResumeData } from "@/lib/export-docx";
 import { DEFAULT_STYLE_CONFIG, resolveStyleConfig, type ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+import { materializePlan } from "@/lib/resume-planner";
+import type { ResumeContentPlan } from "@/lib/resume-planner";
 
 interface ExportDocxBody {
   resume?: DocxResumeData;
   templateId?: string;
   styleConfig?: Partial<ResumeStyleConfig>;
+  /** The SAME content plan the preview rendered with (preview ↔ export parity). */
+  plan?: ResumeContentPlan;
 }
 
 export async function POST(request: NextRequest) {
@@ -29,7 +33,12 @@ export async function POST(request: NextRequest) {
     // the user sees in Professional Preview.
     const style = resolveStyleConfig(body.styleConfig ?? DEFAULT_STYLE_CONFIG);
 
-    const doc = buildDocx(resume, style);
+    // §2 architecture: render through the SAME deliberate content plan the
+    // preview used — budgets, ordering and exclusions match by construction.
+    const plan = body.plan && Array.isArray(body.plan.sections) ? body.plan : undefined;
+    const data = plan ? materializePlan(resume, plan) : resume;
+
+    const doc = buildDocx(data, style, plan);
     const buffer = await Packer.toBuffer(doc);
 
     return new NextResponse(buffer as unknown as BodyInit, {

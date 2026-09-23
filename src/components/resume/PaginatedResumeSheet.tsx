@@ -1072,9 +1072,11 @@ export interface PaginatedResumeSheetProps {
   resume: Resume;
   template: ResumeTemplate;
   styleConfig?: Partial<ResumeStyleConfig>;
+  /** Active content plan — job-aware when previewing for a target job (§22). */
+  plan?: import("@/lib/resume-planner").ResumeContentPlan;
 }
 
-export function PaginatedResumeSheet({ resume, template, styleConfig }: PaginatedResumeSheetProps) {
+export function PaginatedResumeSheet({ resume, template, styleConfig, plan }: PaginatedResumeSheetProps) {
   const measureRef = useRef<HTMLDivElement>(null);
   const [pagesHtml, setPagesHtml] = useState<string[]>([]);
 
@@ -1140,7 +1142,7 @@ export function PaginatedResumeSheet({ resume, template, styleConfig }: Paginate
           pointerEvents: "none",
         }}
       >
-        <ResumePreview resume={resume} template={template} styleConfig={styleConfig} />
+        <ResumePreview resume={resume} template={template} styleConfig={styleConfig} plan={plan} />
       </div>
 
       {/* Built A4 pages — one sheet per page, stacked vertically. */}

@@ -4,39 +4,48 @@ import { Fragment, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { X, Check, Eye, Shield, Layers, AlertTriangle, Sparkles, Search } from "lucide-react";
-import { TEMPLATES } from "@/app/resume-builder/templates";
+import {
+  TEMPLATES,
+  TEMPLATE_FAMILIES,
+  familyIdOf,
+  type FamilyId,
+} from "@/app/resume-builder/templates";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
 import { MiniaturePreview } from "@/components/resume-builder/MiniaturePreview";
 import { FullTemplatePreview } from "@/components/resume-builder/FullTemplatePreview";
 import { filterTemplates } from "@/lib/template-search";
 
-const SIDEBAR_SECTIONS = [
+/* §6/§21 — the picker is organized by the 7 template FAMILIES with their
+ * purposes, not by color-themed categories. Every registered template has a
+ * family, so there is no "More Templates" catch-all anymore. */
+const FAMILY_EMOJI: Record<FamilyId, string> = {
+  "classic-ats": "📄",
+  "modern-professional": "💼",
+  technical: "💻",
+  executive: "🏛️",
+  compact: "📐",
+  creative: "🎨",
+  academic: "🎓",
+};
+
+const SIDEBAR_SECTIONS: { id: string; label: string; emoji: string }[] = [
   { id: "Recommended", label: "Recommended", emoji: "⭐" },
-  { id: "ATS & Professional", label: "ATS & Professional", emoji: "📄" },
-  { id: "Engineering",  label: "Engineering",  emoji: "💻" },
-  { id: "Business & Consulting", label: "Business & Consulting", emoji: "📊" },
-  { id: "Executive", label: "Executive", emoji: "🏛️" },
-  { id: "Academic",     label: "Academic",     emoji: "🎓" },
-  { id: "Creative",     label: "Creative",     emoji: "🎨" },
-  { id: "More Templates", label: "More Templates", emoji: "📚" },
+  ...TEMPLATE_FAMILIES.map((f) => ({
+    id: f.id,
+    label: f.name,
+    emoji: FAMILY_EMOJI[f.id],
+  })),
 ];
 
 const PREMIUM_IDS = new Set(["patorbit-modern", "executive-pro", "minimal-ats", "engineering-clean"]);
 
-const SECTION_IDS: Record<string, string[]> = {
-  Recommended: ["patorbit-modern", "executive-pro", "minimal-ats", "engineering-clean"],
-  "ATS & Professional": ["minimal-ats", "modern-clean", "corporate-blue", "premium-slate", "swiss-design"],
-  Engineering:  ["engineering-clean", "tech-mono", "compact-pro", "minimal-edge", "gradient-flow", "timeline-pro"],
-  "Business & Consulting": ["consulting-elite", "product-manager", "executive", "corporate-blue", "classic-serif"],
-  Executive: ["executive-pro", "executive", "luxury-gold", "dark-elegance"],
-  Academic:     ["academic-cv", "academic-formal", "scientific", "classic-serif"],
-  Creative:     ["creative-professional", "creative-burst", "creative-portfolio", "sidebar-elegance", "gradient-flow"],
-};
-
-// Templates not explicitly filed under a topical section — the "More
-// Templates" catch-all. Every one of the 29 templates stays reachable.
-const TOPICAL_IDS = new Set(Object.values(SECTION_IDS).flat());
+const RECOMMENDED_IDS = [
+  "patorbit-modern",
+  "executive-pro",
+  "minimal-ats",
+  "engineering-clean",
+];
 
 function AtsBadge({ score }: { score: number }) {
   const { dot, style } =
@@ -117,18 +126,16 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
 
   const filteredTemplates = useMemo(() => {
     const bySection =
-      activeCategory === "More Templates"
-        ? TEMPLATES.filter((t) => !TOPICAL_IDS.has(t.id))
-        : activeCategory in SECTION_IDS
-          ? TEMPLATES.filter((t) => SECTION_IDS[activeCategory].includes(t.id))
-          : TEMPLATES;
-    const ordered = activeCategory in SECTION_IDS
-      ? SECTION_IDS[activeCategory]
-          .map((id) => bySection.find((t) => t.id === id))
-          .filter(Boolean) as typeof TEMPLATES
-      : bySection;
-    return filterTemplates(ordered, { query: searchQuery });
+      activeCategory === "Recommended"
+        ? RECOMMENDED_IDS.map((id) => TEMPLATES.find((t) => t.id === id)).filter(
+            Boolean,
+          ) as typeof TEMPLATES
+        : TEMPLATES.filter((t) => familyIdOf(t.id) === activeCategory);
+    return filterTemplates(bySection, { query: searchQuery });
   }, [activeCategory, searchQuery]);
+
+  // §21: the active family's purpose line sits above the grid.
+  const activeFamily = TEMPLATE_FAMILIES.find((f) => f.id === activeCategory);
 
   return (
     <AnimatePresence>
@@ -204,7 +211,7 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                 <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600 px-3 pt-1 pb-2">Browse</p>
                 {SIDEBAR_SECTIONS.map((section, i) => (
                   <Fragment key={section.id}>
-                    {i === SIDEBAR_SECTIONS.length - 1 && (
+                    {i === 1 && (
                       <div className="my-2 border-t border-white/[0.05]" />
                     )}
                     <button
@@ -225,6 +232,19 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
 
               {/* Grid */}
               <div className="flex-1 overflow-y-auto p-5">
+                {activeFamily && !searchQuery && (
+                  <div className="mb-4 px-1" data-testid="family-purpose">
+                    <h3 className="text-sm font-semibold text-white tracking-tight">
+                      {activeFamily.name}
+                    </h3>
+                    <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                      {activeFamily.purpose}
+                    </p>
+                    <p className="text-[10px] text-slate-500 mt-0.5">
+                      <span className="text-slate-500">Best for:</span> {activeFamily.bestFor}
+                    </p>
+                  </div>
+                )}
                 {filteredTemplates.length === 0 ? (
                   <div className="flex flex-col items-center justify-center h-full gap-3 text-center py-16">
                     <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-white/[0.04] border border-white/[0.06]">
@@ -278,7 +298,8 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                           </div>
                         )}
 
-                        {/* Live miniature preview — clicking it opens the full resume preview */}
+                        {/* Live miniature preview — the user's REAL profile
+                            when they have one (§21), demo data otherwise. */}
                         <button
                           type="button"
                           onClick={() => setPreviewing(t.id)}
@@ -286,7 +307,10 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                           aria-label={`Preview ${t.name} — open full resume preview`}
                           className="p-3 pb-0 block w-full text-left cursor-pointer"
                         >
-                          <MiniaturePreview templateId={t.id} />
+                          <MiniaturePreview
+                            templateId={t.id}
+                            resume={hasResumeData(resume) ? resume : undefined}
+                          />
                         </button>
 
                         {/* Card body */}

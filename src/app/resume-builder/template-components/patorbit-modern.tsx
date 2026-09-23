@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { Fragment, type ReactNode } from "react";
 import { Resume, FormattedDescription, ContactRow, normalizeSocialUrl, socialUrlLabel } from "./shared";
 import {
   fontFamilies,
@@ -10,6 +10,8 @@ import {
   formatDuration,
 } from "@/lib/resume-design-system";
 import { useResumeStyle } from "@/components/resume/StyleScope";
+import { useResumePlanContext } from "@/components/resume/ResumePlanContext";
+import type { SectionType } from "@/lib/resume-planner";
 
 /**
  * Patorbit Modern — Premium single-column resume template.
@@ -138,6 +140,15 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
 
 // ── Main Component ─────────────────────────────────────────────────────────
 export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: Resume; bulletChar?: string }) {
+  // Plan-driven section order (§2/§5): when a content plan exists it decides
+  // both ORDER and INCLUSION, so hierarchy adapts to the target role.
+  // Without a plan (bare preview) this template's native order is preserved.
+  const plan = useResumePlanContext();
+  const DEFAULT_ORDER: SectionType[] = [
+    "summary", "experience", "skills", "projects", "education",
+    "certs", "languages", "achievements", "interests",
+  ];
+
   return (
     <div
       style={{
@@ -211,18 +222,17 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
           wasting ~50px of vertical space. */}
       <div style={{ paddingLeft: 32, paddingRight: 32, marginBottom: 0 }}>
 
-        {/* Summary */}
-        {resume.summary && (
+        {(() => {
+          const nodes: Partial<Record<SectionType, ReactNode>> = {
+            summary: resume.summary && (
           <section style={{ marginBottom: 16 }}>
             <SectionTitle>Professional Profile</SectionTitle>
             <div style={{ fontSize: 10, lineHeight: 1.65, color: C.body }}>
               <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
             </div>
           </section>
-        )}
-
-        {/* Experience */}
-        {resume.experience.length > 0 && (
+        ),
+        experience: resume.experience.length > 0 && (
           <section style={{ marginBottom: 16 }}>
             <SectionTitle>Professional Experience</SectionTitle>
             {resume.experience.map((exp) => {
@@ -301,15 +311,11 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
               );
             })}
           </section>
-        )}
-
-        {/* Skills */}
-        {resume.skills.length > 0 && (
+        ),
+        skills: resume.skills.length > 0 && (
           <SkillsSection skills={resume.skills} />
-        )}
-
-        {/* Projects */}
-        {resume.projects.length > 0 && (
+        ),
+        projects: resume.projects.length > 0 && (
           <section style={{ marginBottom: 16 }}>
             <SectionTitle>Projects</SectionTitle>
             {resume.projects.map((p) => {
@@ -347,10 +353,8 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
               );
             })}
           </section>
-        )}
-
-        {/* Education */}
-        {resume.education.length > 0 && (
+        ),
+        education: resume.education.length > 0 && (
           <section style={{ marginBottom: 16 }}>
             <SectionTitle>Education</SectionTitle>
             {resume.education.map((edu) => (
@@ -368,10 +372,8 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
               </div>
             ))}
           </section>
-        )}
-
-        {/* Certifications */}
-        {resume.certifications.length > 0 && (
+        ),
+        certs: resume.certifications.length > 0 && (
           <section style={{ marginBottom: 16 }}>
             <SectionTitle>Certifications</SectionTitle>
             {resume.certifications.map((c) => (
@@ -384,10 +386,8 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
               </div>
             ))}
           </section>
-        )}
-
-        {/* Languages */}
-        {resume.languages.length > 0 && (
+        ),
+        languages: resume.languages.length > 0 && (
           <section style={{ marginBottom: 16 }}>
             <SectionTitle>Languages</SectionTitle>
             <div style={{ fontSize: 10, color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
@@ -399,10 +399,8 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
               ))}
             </div>
           </section>
-        )}
-
-        {/* Achievements */}
-        {resume.achievements.length > 0 && (
+        ),
+        achievements: resume.achievements.length > 0 && (
           <section style={{ marginBottom: 16 }}>
             <SectionTitle>Achievements</SectionTitle>
             {resume.achievements.map((a) => (
@@ -414,17 +412,21 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
               </div>
             ))}
           </section>
-        )}
-
-        {/* Interests */}
-        {resume.interests.length > 0 && (
+        ),
+        interests: resume.interests.length > 0 && (
           <section>
             <SectionTitle>Interests</SectionTitle>
             <p style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
               {resume.interests.map((i) => i.name).join(" · ")}
             </p>
           </section>
-        )}
+        ),
+        };
+        const order = plan ? plan.sections.map((s) => s.type) : DEFAULT_ORDER;
+        return order.map((type) => (
+          <Fragment key={type}>{nodes[type]}</Fragment>
+        ));
+      })()}
       </div>
     </div>
   );

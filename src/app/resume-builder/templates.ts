@@ -60,6 +60,127 @@ export const COLOR_PALETTES = [
   { id: "lime", name: "Lime Fresh", colors: { primary: "#4d7c0f", secondary: "#65a30d", accent: "#84cc16", bg: "#ffffff", text: "#1f2937", muted: "#4b5563", border: "#d1d5db", cardBg: "#f8fafc", sectionTitle: "#4d7c0f" } },
 ];
 
+/* ────────────────────────────────────────────────────────────────────────
+ * Template FAMILIES (§6) — ~7 genuinely different archetypes with distinct
+ * purposes. Template `id`s are frozen (ADR-0004) and stay untouched; the
+ * family taxonomy is derived metadata used by the gallery, the role
+ * strategies' recommendations and the ATS check.
+ *
+ * If two templates differ only by color/font they belong to the SAME
+ * family — families encode structural purpose, not palettes.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+export type FamilyId =
+  | "classic-ats"
+  | "modern-professional"
+  | "technical"
+  | "executive"
+  | "compact"
+  | "creative"
+  | "academic";
+
+export interface TemplateFamily {
+  id: FamilyId;
+  name: string;
+  /** One-line purpose shown in the picker (§21) — not a color description. */
+  purpose: string;
+  /** Short "best for" line. */
+  bestFor: string;
+}
+
+export const TEMPLATE_FAMILIES: TemplateFamily[] = [
+  {
+    id: "classic-ats",
+    name: "Classic ATS",
+    purpose: "Single-column, plain-text structure that any parser reads in order.",
+    bestFor: "Corporate applications and strict ATS systems",
+  },
+  {
+    id: "modern-professional",
+    name: "Modern Professional",
+    purpose: "Balanced visual hierarchy for business and technology roles.",
+    bestFor: "Most day-to-day applications where readability leads",
+  },
+  {
+    id: "technical",
+    name: "Technical",
+    purpose: "Optimized for technical skills, stack evidence and projects.",
+    bestFor: "Engineers, data and infrastructure professionals",
+  },
+  {
+    id: "executive",
+    name: "Executive",
+    purpose: "Authority-first structure: strong header, competencies up front.",
+    bestFor: "Directors, VPs and C-suite leaders",
+  },
+  {
+    id: "compact",
+    name: "Compact",
+    purpose: "Dense typography that fits more evidence without shrinking type.",
+    bestFor: "Experienced profiles targeting a strict one page",
+  },
+  {
+    id: "creative",
+    name: "Creative",
+    purpose: "More expressive hierarchy while staying machine-readable.",
+    bestFor: "Design, marketing and brand roles",
+  },
+  {
+    id: "academic",
+    name: "Academic",
+    purpose: "Serif, publication-friendly structure with education prominence.",
+    bestFor: "Research, teaching and academic applications",
+  },
+];
+
+/** Every registered template id → its family. Exhaustive by test. */
+export const FAMILY_BY_TEMPLATE: Record<string, FamilyId> = {
+  // Classic ATS
+  "minimal-ats": "classic-ats",
+  "minimal-edge": "classic-ats",
+  "classic-serif": "classic-ats",
+  "swiss-design": "classic-ats",
+  // Modern Professional
+  "modern-clean": "modern-professional",
+  "corporate-blue": "modern-professional",
+  "premium-slate": "modern-professional",
+  "two-column-balanced": "modern-professional",
+  "timeline-pro": "modern-professional",
+  "timeline-layout": "modern-professional",
+  "product-manager": "modern-professional",
+  "sidebar-left": "modern-professional",
+  // Technical
+  "patorbit-modern": "technical",
+  "engineering-clean": "technical",
+  "tech-mono": "technical",
+  // Executive
+  executive: "executive",
+  "executive-pro": "executive",
+  "dark-elegance": "executive",
+  "luxury-gold": "executive",
+  // Compact
+  "compact-pro": "compact",
+  "consulting-elite": "compact",
+  // Creative
+  "creative-professional": "creative",
+  "creative-burst": "creative",
+  "creative-portfolio": "creative",
+  "sidebar-elegance": "creative",
+  "gradient-flow": "creative",
+  "startup-vibe": "creative",
+  "nature-green": "creative",
+  "banner-bold": "creative",
+  // Academic
+  "academic-cv": "academic",
+  "academic-formal": "academic",
+  scientific: "academic",
+};
+
+/** Family for a template id (unknown ids fall back to the safest generic). */
+export function familyIdOf(templateId: string): FamilyId {
+  return FAMILY_BY_TEMPLATE[templateId] ?? "modern-professional";
+}
+
 export const TEMPLATES: ResumeTemplate[] = [
   {
     id: "executive",

@@ -2,12 +2,15 @@
 
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useRef, useCallback, useState, useMemo } from "react";
-import { X, FileText, Download, AlertCircle, Printer } from "lucide-react";
+import { X, FileText, Download, AlertCircle, Printer, CheckCircle2, AlertTriangle, Info } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { exportToDocx } from "@/utils/export";
 import { track } from "@/lib/analytics";
+import { useResumePlan } from "@/lib/resume-planner/react";
+import { runQualityCheck, runAtsCheck } from "@/lib/resume-planner";
+import { familyIdOf } from "@/app/resume-builder/templates";
 import { resolveStyleConfig, resolveHeadingHex } from "@/lib/resume-design-system/style-config";
 
 export function ExportModal({ open, onClose }: { open: boolean; onClose: () => void }) {
@@ -17,7 +20,24 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
   const setHasExported = useResumeBuilder((s) => s.setHasExported);
   const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
   const lastTailoring = useResumeBuilder((s) => s.lastTailoring);
+  const previewMetrics = useResumeBuilder((s) => s.previewMetrics);
   const template = getActiveTemplate(resume);
+  // The SAME plan the preview and print target render with (§2 parity).
+  const plan = useResumePlan();
+
+  // §20: actionable quality pass before export — no overall score, ever.
+  const qualityIssues = useMemo(
+    () => [
+      ...runQualityCheck({
+        resume,
+        plan,
+        pageCount: previewMetrics?.pageCount,
+        lastPageFill: previewMetrics?.lastPageFill,
+      }),
+      ...runAtsCheck({ templateId: template.id, familyId: familyIdOf(template.id), layout: template.layout }),
+    ],
+    [resume, plan, previewMetrics, template],
+  );
 
   // §17: if this resume came out of the tailor flow, say what's inside it.
   const tailoringNote =
@@ -78,6 +98,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
       await exportToDocx(resume, resume.name || "resume", {
         templateId: resume.templateId,
         styleConfig: exportStyle,
+        plan,
       });
       markResumeExported();
       setHasExported(true);
@@ -213,6 +234,32 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
                   </p>
                 </div>
               )}
+              {qualityIssues.length > 0 && (
+                <div className="rounded-lg border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] px-3 py-2" data-testid="resume-quality">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-500 mb-1.5">
+                    Resume quality
+                  </p>
+                  <ul className="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                    {qualityIssues.map((issue) => (
+                      <li key={issue.id} className="flex items-start gap-1.5">
+                        {issue.severity === "positive" ? (
+                          <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0 text-emerald-500" aria-hidden="true" />
+                        ) : issue.severity === "warn" ? (
+                          <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0 text-amber-500" aria-hidden="true" />
+                        ) : (
+                          <Info className="w-3 h-3 mt-0.5 shrink-0 text-gray-400 dark:text-slate-500" aria-hidden="true" />
+                        )}
+                        <span className="text-[11px] text-gray-700 dark:text-slate-300 leading-snug">
+                          {issue.message}
+                          {issue.hint && (
+                            <span className="block text-[10px] text-gray-500 dark:text-slate-500">{issue.hint}</span>
+                          )}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
               {exportOptions.map((opt, i) => (
                 <button
                   key={opt.label}
@@ -263,7 +310,7 @@ export function ExportModal({ open, onClose }: { open: boolean; onClose: () => v
           backgroundColor: "#fff",
         }}
       >
-        <PaginatedResumeSheet resume={resume} template={template} styleConfig={styleConfig} />
+        <PaginatedResumeSheet resume={resume} template={template} styleConfig={styleConfig} plan={plan} />
       </div>
     )}
     </>

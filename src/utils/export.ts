@@ -27,7 +27,12 @@ export const exportToPdf = (_elementId: string, fileName: string) => {
 export const exportToDocx = async (
   resumeData: Resume,
   fileName: string,
-  options?: { templateId?: string; styleConfig?: Record<string, unknown> }
+  options?: {
+    templateId?: string;
+    styleConfig?: Record<string, unknown>;
+    /** The content plan the preview rendered with — keeps DOCX ≡ preview. */
+    plan?: unknown;
+  }
 ) => {
   try {
     const response = await fetch("/api/export-docx", {
@@ -37,6 +42,7 @@ export const exportToDocx = async (
         resume: resumeData,
         templateId: options?.templateId,
         styleConfig: options?.styleConfig,
+        plan: options?.plan,
       }),
     });
 

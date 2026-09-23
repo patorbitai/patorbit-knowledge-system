@@ -21,6 +21,7 @@ import {
   type ParagraphChild,
 } from "docx";
 import type { ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+import type { ResumeContentPlan } from "@/lib/resume-planner";
 
 /* ── Input types ── */
 
@@ -50,6 +51,7 @@ export interface DocxResumeData {
     location?: string;
     duration?: string;
     description?: string;
+    bulletPoints?: string[];
   }[];
   education?: {
     id: number | string;
@@ -61,6 +63,9 @@ export interface DocxResumeData {
   skills?: { id: number | string; name?: string; level?: string; category?: string; years?: string }[];
   projects?: { id: number | string; name?: string; description?: string; tech?: string; link?: string }[];
   certifications?: { id: number | string; name?: string; issuer?: string; date?: string }[];
+  achievements?: { id: number | string; title?: string; description?: string; issuer?: string; date?: string }[];
+  languages?: { id: number | string; name?: string; proficiency?: string }[];
+  interests?: { id: number | string; name?: string }[];
 }
 
 /* ── Config translation (defensive; values were already resolved/clamped
@@ -112,7 +117,7 @@ export const BULLET_GLYPHS: Record<string, string> = {
 
 /* ── Builder ── */
 
-export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig): Document {
+export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?: ResumeContentPlan): Document {
   const font = wordFontName(style.fontFamily);
   const scale = clamp(style.fontScale, 0.9, 1.1, 1);
   const accent = hexColor(style.accentColor, "0ea5e9");
@@ -225,8 +230,13 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig): Docum
     }
   }
 
-  // ── Summary ──
-  if (data.summary) {
+  // ── Section emitters ──
+  // Each guard mirrors the preview's length checks. Order comes from the
+  // content plan when provided so DOCX matches the preview exactly (§2/§7);
+  // without a plan the legacy fixed order below is preserved byte-for-byte.
+
+  const emitSummary = () => {
+    if (!data.summary) return;
     addSection("SUMMARY");
     children.push(
       new Paragraph({
@@ -234,10 +244,10 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig): Docum
         children: [bodyRun(data.summary)],
       }),
     );
-  }
+  };
 
-  // ── Experience ──
-  if (data.experience?.length) {
+  const emitExperience = () => {
+    if (!data.experience?.length) return;
     addSection("EXPERIENCE");
     for (const exp of data.experience) {
       children.push(
@@ -261,10 +271,10 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig): Docum
       if (exp.description) addBullets(exp.description, entrySpacing);
       children.push(new Paragraph({ spacing: { after: entrySpacing } }));
     }
-  }
+  };
 
-  // ── Education ──
-  if (data.education?.length) {
+  const emitEducation = () => {
+    if (!data.education?.length) return;
     addSection("EDUCATION");
     for (const edu of data.education) {
       children.push(
@@ -285,11 +295,48 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig): Docum
         );
       }
     }
-  }
+  };
 
-  // ── Skills ──
-  if (data.skills?.length) {
+  const emitSkills = () => {
+    if (!data.skills?.length) return;
     addSection("SKILLS");
+    if (plan) {
+      // Plan-aware: grouped, budgeted, highlighted-first — mirrors §13.
+      const byName = new Map<string, (typeof data.skills)[number]>();
+      for (const s of data.skills) {
+        const key = (s.name ?? "").toLowerCase();
+        if (key && !byName.has(key)) byName.set(key, s);
+      }
+      const done = new Set<string>();
+      const groups = plan.skillGroups.length
+        ? plan.skillGroups
+        : [{ label: "", skills: data.skills.map((s) => s.name ?? "") }];
+      for (const group of groups) {
+        const names: string[] = [];
+        for (const name of group.skills) {
+          const s = byName.get(name.toLowerCase());
+          if (!s || done.has(name.toLowerCase())) continue;
+          done.add(name.toLowerCase());
+          names.push(
+            `${s.name}${s.level && s.level !== "Intermediate" ? ` (${s.level})` : ""}`,
+          );
+        }
+        if (!names.length) continue;
+        children.push(
+          new Paragraph({
+            spacing: { after: Math.round(entrySpacing / 2), line },
+            children: [
+              ...(group.label
+                ? [new TextRun({ text: `${group.label}: `, bold: true, size: sz(19), font, color: headingHex })]
+                : []),
+              bodyRun(names.join(" · "), 19),
+            ],
+          }),
+        );
+      }
+      return;
+    }
+    // Legacy behaviour (no plan): capped single line.
     const skillText = data.skills
       .slice(0, 8)
       .map((s) => `${s.name || ""}${s.level && s.level !== "Intermediate" ? ` (${s.level})` : ""}`)
@@ -301,10 +348,10 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig): Docum
         children: [bodyRun(skillText)],
       }),
     );
-  }
+  };
 
-  // ── Projects ──
-  if (data.projects?.length) {
+  const emitProjects = () => {
+    if (!data.projects?.length) return;
     addSection("PROJECTS");
     for (const proj of data.projects) {
       children.push(
@@ -319,10 +366,10 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig): Docum
       if (proj.description) addBullets(proj.description, entrySpacing);
       children.push(new Paragraph({ spacing: { after: entrySpacing } }));
     }
-  }
+  };
 
-  // ── Certifications ──
-  if (data.certifications?.length) {
+  const emitCerts = () => {
+    if (!data.certifications?.length) return;
     addSection("CERTIFICATIONS");
     for (const cert of data.certifications) {
       children.push(
@@ -335,7 +382,72 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig): Docum
         }),
       );
     }
-  }
+  };
+
+  const emitAchievements = () => {
+    if (!data.achievements?.length) return;
+    addSection("ACHIEVEMENTS");
+    for (const a of data.achievements) {
+      children.push(
+        new Paragraph({
+          spacing: { after: Math.round(entrySpacing / 2), line },
+          children: [
+            headingRun(a.title || "", 19, headingHex),
+            ...(a.description ? [bodyRun(`  — ${a.description}`, 19, muted)] : []),
+            ...(a.issuer ? [bodyRun(` (${a.issuer})`, 18, muted)] : []),
+          ],
+        }),
+      );
+    }
+  };
+
+  const emitLanguages = () => {
+    if (!data.languages?.length) return;
+    addSection("LANGUAGES");
+    children.push(
+      new Paragraph({
+        spacing: { after: entrySpacing, line },
+        children: [
+          bodyRun(
+            data.languages
+              .map((l) => (l.proficiency ? `${l.name} (${l.proficiency})` : l.name ?? ""))
+              .filter(Boolean)
+              .join("  ·  "),
+          ),
+        ],
+      }),
+    );
+  };
+
+  const emitInterests = () => {
+    if (!data.interests?.length) return;
+    addSection("INTERESTS");
+    children.push(
+      new Paragraph({
+        spacing: { after: entrySpacing, line },
+        children: [bodyRun(data.interests.map((i) => i.name).filter(Boolean).join("  ·  "))],
+      }),
+    );
+  };
+
+  const EMITTERS: Record<string, () => void> = {
+    summary: emitSummary,
+    experience: emitExperience,
+    education: emitEducation,
+    skills: emitSkills,
+    projects: emitProjects,
+    certs: emitCerts,
+    achievements: emitAchievements,
+    languages: emitLanguages,
+    interests: emitInterests,
+  };
+
+  // Plan order wins (already budgeted by materializePlan on the route);
+  // legacy order otherwise — identical to the previous sequential blocks.
+  const docOrder = plan
+    ? plan.sections.map((s) => s.type)
+    : ["summary", "experience", "education", "skills", "projects", "certs"];
+  for (const key of docOrder) EMITTERS[key]?.();
 
   const section: ISectionOptions = {
     properties: {

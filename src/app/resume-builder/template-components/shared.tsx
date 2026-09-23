@@ -212,7 +212,7 @@ export function ExperienceEntry({ exp, theme }: { exp: Resume["experience"][0]; 
 }
 
 /** Render an education entry. */
-export function EducationEntry({ edu, theme }: { edu: Resume["education"][0]; theme: SectionTheme }) {
+export function EducationEntry({ edu, theme, compact = false }: { edu: Resume["education"][0]; theme: SectionTheme; compact?: boolean }) {
   const t = theme;
   return (
     <div style={{ marginBottom: 8, breakInside: "avoid" }}>
@@ -222,10 +222,10 @@ export function EducationEntry({ edu, theme }: { edu: Resume["education"][0]; th
       </div>
       <div style={{ fontSize: 10, color: t.body, marginTop: 1 }}>
         <span style={{ fontWeight: 500 }}>{edu.degree}{edu.field ? ` in ${edu.field}` : ""}</span>
-        {edu.gpa && <span style={{ color: t.muted }}> · GPA {edu.gpa}</span>}
+        {!compact && edu.gpa && <span style={{ color: t.muted }}> · GPA {edu.gpa}</span>}
       </div>
-      {edu.honors && <div style={{ fontSize: 9, color: t.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
-      {edu.location && <div style={{ fontSize: 9, color: t.light || t.muted, marginTop: 1 }}>{edu.location}</div>}
+      {!compact && edu.honors && <div style={{ fontSize: 9, color: t.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
+      {!compact && edu.location && <div style={{ fontSize: 9, color: t.light || t.muted, marginTop: 1 }}>{edu.location}</div>}
     </div>
   );
 }

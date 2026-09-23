@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
+import { useResumePlan } from "@/lib/resume-planner/react";
 import { A4 } from "@/lib/resume-design-system/geometry";
 
 /**
@@ -15,6 +16,8 @@ export function MobilePreview() {
   const resume = useResumeBuilder((s) => s.resume);
   const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
   const template = useMemo(() => getActiveTemplate(resume), [resume]);
+  // Same plan as desktop so mobile preview never diverges (§27).
+  const plan = useResumePlan();
 
   // Scale to fit mobile viewport width
   const viewportWidth = typeof window !== "undefined" ? Math.min(window.innerWidth, 500) : 380;
@@ -43,7 +46,7 @@ export function MobilePreview() {
               transformOrigin: "top left",
             }}
           >
-            <PaginatedResumeSheet resume={resume} template={template} styleConfig={styleConfig} />
+            <PaginatedResumeSheet resume={resume} template={template} styleConfig={styleConfig} plan={plan} />
           </div>
         </div>
       </div>

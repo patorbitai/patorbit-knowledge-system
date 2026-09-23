@@ -15,6 +15,7 @@ import {
 } from "./shared";
 import { fontFamilies, layout } from "@/lib/resume-design-system";
 import { useResumeStyle } from "@/components/resume/StyleScope";
+import { useResumePlanContext } from "@/components/resume/ResumePlanContext";
 import { FONT_OPTIONS, DEFAULT_STYLE_CONFIG } from "@/lib/resume-design-system/style-config";
 
 /** Map font ID to CSS font stack */
@@ -368,9 +369,23 @@ export function generateTemplate(config: TemplateConfig) {
   return function TemplatePreview({ resume, bulletChar: bulletCharOverride }: { resume: Resume; bulletChar?: string }) {
     const { theme, fontFamily, header, bullet, backgroundColor = "#ffffff" } = config;
     const density = config.density || "normal";
-    const spacing = SPACING[density];
+    // §10 — controlled density: the plan may COMPACT heavy content but never
+    // loosens beyond what the template itself chose (min-rank, safe limits).
+    const plan = useResumePlanContext();
+    const RANK = { compact: 0, normal: 1, spacious: 2 } as const;
+    const PLAN_RANK = { compact: 0, balanced: 1, spacious: 2 } as const;
+    const effectiveDensity =
+      plan && PLAN_RANK[plan.density] < RANK[density]
+        ? (plan.density === "balanced" ? "normal" : plan.density)
+        : density;
+    const spacing = SPACING[effectiveDensity];
     const layoutVariant = config.layout || "single";
-    const sectionOrder = config.sectionOrder || ["summary", "experience", "skills", "projects", "education", "certs", "achievements", "languages", "interests"];
+    // §2: when a content plan is active its ORDER wins over the template's
+    // static default — the template styles, the plan decides structure.
+    const sectionOrder = plan
+      ? plan.sections.map((s) => s.type)
+      : config.sectionOrder || ["summary", "experience", "skills", "projects", "education", "certs", "achievements", "languages", "interests"];
+    const compressEducation = plan?.compressedSections.includes("education") ?? false;
     const sectionTitleStyle = config.sectionTitleStyle || "underline";
 
     // Read ALL user style settings from context — these override template defaults
@@ -472,7 +487,7 @@ export function generateTemplate(config: TemplateConfig) {
             <section key="education" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.education}</SectionTitle>
               {resume.education.map((edu) => (
-                <EducationEntry key={edu.id} edu={edu} theme={themedSection} />
+                <EducationEntry key={edu.id} edu={edu} theme={themedSection} compact={compressEducation} />
               ))}
             </section>
           ) : null;

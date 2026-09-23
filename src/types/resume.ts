@@ -47,6 +47,9 @@ export interface Skill {
   level: "Beginner" | "Intermediate" | "Advanced" | "Expert";
   category: string;
   years: string;
+  /** Render-time hint set by resume-planner's view model when the target
+   *  job supports this skill. Never persisted — projection only. */
+  highlighted?: boolean;
 }
 
 export interface Project {

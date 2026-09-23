@@ -236,6 +236,20 @@ export interface ResumeBuilderState {
   lastTailoring: LastTailoringSummary | null;
   setLastTailoring: (value: LastTailoringSummary | null) => void;
 
+  /**
+   * "Preview for this job" toggle (§22): when on AND a deterministic
+   * qualification match exists, the resume content plan emphasizes
+   * job-relevant evidence. Session-level — never persisted into resume data.
+   */
+  previewJobAware: boolean;
+  setPreviewJobAware: (value: boolean) => void;
+  /**
+   * Measured preview geometry (session-level) so the pre-export quality
+   * check (§20) can reason about real page counts instead of guessing.
+   */
+  previewMetrics: { pageCount: number; lastPageFill?: number } | null;
+  setPreviewMetrics: (value: { pageCount: number; lastPageFill?: number } | null) => void;
+
   /** Persistent Job Application context — connects Resume Builder to persisted Job Applications. */
   activeJobApplicationId: string | null;
   activeJobApplication: {
@@ -598,6 +612,10 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           writeLastTailoring(value);
           set({ lastTailoring: value });
         },
+        previewJobAware: true,
+        setPreviewJobAware: (value) => set({ previewJobAware: value }),
+        previewMetrics: null,
+        setPreviewMetrics: (value) => set({ previewMetrics: value }),
         activeJobApplicationId: null,
         activeJobApplication: null,
         setStyleConfig: (resumeId, patch) => set((s) => {

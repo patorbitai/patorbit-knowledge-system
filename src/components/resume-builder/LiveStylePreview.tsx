@@ -5,6 +5,7 @@ import { ChevronLeft, ChevronRight, Minus, Plus, RotateCcw } from "lucide-react"
 import { useResumeBuilder } from "@/store/resume-builder";
 import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
+import { useResumePlan } from "@/lib/resume-planner/react";
 import { A4 } from "@/lib/resume-design-system/geometry";
 
 const PAGE_WIDTH = A4.widthPx;
@@ -40,6 +41,12 @@ export function LiveStylePreview({
   const resume = useResumeBuilder((s) => s.resume);
   const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
   const template = useMemo(() => getActiveTemplate(resume), [resume]);
+  // Job-aware content plan — "preview for this job" (§22).
+  const plan = useResumePlan();
+  const setPreviewMetrics = useResumeBuilder((s) => s.setPreviewMetrics);
+  const hasMatch = useResumeBuilder((s) => !!s.qualificationMatch);
+  const previewJobAware = useResumeBuilder((s) => s.previewJobAware);
+  const setPreviewJobAware = useResumeBuilder((s) => s.setPreviewJobAware);
 
   const [page, setPage] = useState(1);
   const [pages, setPages] = useState(1);
@@ -54,7 +61,18 @@ export function LiveStylePreview({
     if (!el) return;
     const measure = () => {
       const height = el.scrollHeight;
-      if (height > 0) setPages(Math.max(1, Math.ceil(height / PAGE_HEIGHT)));
+      if (height > 0) {
+        const pageCount = Math.max(1, Math.ceil(height / PAGE_HEIGHT));
+        setPages(pageCount);
+        // Publish real geometry for the pre-export quality check (§20).
+        setPreviewMetrics({
+          pageCount,
+          lastPageFill:
+            pageCount > 1
+              ? Math.min(1, (height - (pageCount - 1) * PAGE_HEIGHT) / PAGE_HEIGHT)
+              : Math.min(1, height / PAGE_HEIGHT),
+        });
+      }
     };
     measure();
     let ro: ResizeObserver | undefined;
@@ -63,7 +81,7 @@ export function LiveStylePreview({
       ro.observe(el);
     }
     return () => ro?.disconnect();
-  }, [resume.templateId]);
+  }, [resume.templateId, setPreviewMetrics, plan.pageTarget, plan.jobAware]);
 
   // Auto-fit the A4 sheet to the available stage area. "width" scales to the
   // panel width; "contain" fits the whole current page (width AND height) so
@@ -198,6 +216,38 @@ export function LiveStylePreview({
           </button>
         </div>
 
+        {/* §22 — job-specific preview: show that this render emphasizes the
+            analyzed job's requirements, and let the user compare against the
+            generic master projection. Content/data never change — only
+            emphasis. */}
+        {hasMatch && (
+          <button
+            type="button"
+            role="switch"
+            aria-checked={plan.jobAware}
+            onClick={() => setPreviewJobAware(!previewJobAware)}
+            data-testid="job-preview-toggle"
+            title="Emphasize evidence relevant to the job you analyzed. Presentation only — your data never changes."
+            className={
+              plan.jobAware
+                ? "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold transition-all cursor-pointer bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20"
+                : "inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border text-[10px] font-semibold transition-all cursor-pointer bg-gray-100 dark:bg-white/[0.04] border-gray-200 dark:border-white/[0.08] text-gray-500 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/[0.08]"
+            }
+          >
+            <span
+              aria-hidden="true"
+              className={
+                plan.jobAware
+                  ? "w-1.5 h-1.5 rounded-full bg-emerald-500"
+                  : "w-1.5 h-1.5 rounded-full bg-gray-400 dark:bg-slate-500"
+              }
+            />
+            {plan.jobAware
+              ? `Previewing for ${plan.targetRole || "this job"}`
+              : "Generic preview"}
+          </button>
+        )}
+
         {pages > 1 && (
           <div className="flex items-center justify-center gap-1.5" data-testid="live-page-nav">
             <button
@@ -263,7 +313,7 @@ export function LiveStylePreview({
               {/* Real A4 pages — the same canonical page frame the Gallery and
                   the PDF export use, so all three stay pixel-aligned. */}
               <div ref={measureRef}>
-                <PaginatedResumeSheet resume={resume} template={template} styleConfig={styleConfig} />
+                <PaginatedResumeSheet resume={resume} template={template} styleConfig={styleConfig} plan={plan} />
               </div>
             </div>
           </div>

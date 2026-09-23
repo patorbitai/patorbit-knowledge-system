@@ -4,12 +4,25 @@ import type { Resume } from "@/types/resume";
 import type { ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
 import { bulletStyleToChar, DEFAULT_STYLE_CONFIG } from "@/lib/resume-design-system/style-config";
 import { StyleScope } from "@/components/resume/StyleScope";
+import { ResumePlanContext } from "@/components/resume/ResumePlanContext";
+import { buildContentPlan, materializePlan } from "@/lib/resume-planner";
+import type { ResumeContentPlan } from "@/lib/resume-planner";
 
 export function getActiveTemplate(resume: Resume): ResumeTemplate {
   return TEMPLATES.find(t => t.id === resume.templateId) || TEMPLATES[0];
 }
 
-export function ResumePreview({ resume, template, styleConfig }: { resume: Resume; template: ResumeTemplate; styleConfig?: Partial<ResumeStyleConfig> }) {
+/**
+ * Renders a resume through the planner: the sheet always draws a PLANNED
+ * view model (§2 content plan → materialized budgets/order), so every
+ * surface — builder, gallery, share page, print — presents the same
+ * deliberate content. Pass `plan` to make the projection job-aware
+ * ("preview for this job", §22); without it, a default non-job plan is
+ * derived from the resume alone.
+ */
+export function ResumePreview({ resume, template, styleConfig, plan }: { resume: Resume; template: ResumeTemplate; styleConfig?: Partial<ResumeStyleConfig>; plan?: ResumeContentPlan }) {
+  const effectivePlan = plan ?? buildContentPlan(resume, { jobAware: false });
+  const vm = materializePlan(resume, effectivePlan);
   const empty = !resume.name && !resume.title && !resume.email && !resume.summary;
 
   // Compute bullet character from style config
@@ -30,6 +43,9 @@ export function ResumePreview({ resume, template, styleConfig }: { resume: Resum
       );
     }
 
+    // All templates draw the materialized view model — budgets and
+    // relevance-first ordering apply to bespoke templates too.
+    const resume = vm;
     switch (template.id) {
     case "executive": return <ExecutivePreview resume={resume} bulletChar={bulletChar} />;
     case "executive-pro": return <ExecutiveProPreview resume={resume} bulletChar={bulletChar} />;
@@ -68,8 +84,10 @@ export function ResumePreview({ resume, template, styleConfig }: { resume: Resum
   })();
 
   return (
-    <StyleScope config={styleConfig} templateId={template.id}>
-      {sheet}
-    </StyleScope>
+    <ResumePlanContext.Provider value={effectivePlan}>
+      <StyleScope config={styleConfig} templateId={template.id}>
+        {sheet}
+      </StyleScope>
+    </ResumePlanContext.Provider>
   );
 }

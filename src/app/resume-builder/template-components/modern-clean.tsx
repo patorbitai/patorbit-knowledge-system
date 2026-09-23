@@ -3,6 +3,9 @@ import { Resume, FormattedDescription, ContactRow } from "./shared";
 import { fontFamilies } from "@/lib/resume-design-system";
 import { useResumeStyle } from "@/components/resume/StyleScope";
 import { FONT_OPTIONS, DEFAULT_STYLE_CONFIG, type ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
+import { Fragment, type ReactNode } from "react";
+import { useResumePlanContext } from "@/components/resume/ResumePlanContext";
+import type { SectionType } from "@/lib/resume-planner";
 
 const FONT_MAP: Record<string, string> = Object.fromEntries(FONT_OPTIONS.map(f => [f.id, f.stack]));
 
@@ -69,7 +72,6 @@ function ExperienceEntry({ exp, bulletChar: bChar }: { exp: Resume["experience"]
   const dateStr = exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
   return (
     <div style={{ marginBottom: 12 }}>
-      {/* Company + Date */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
         <span style={{ fontSize: 11, fontWeight: 700, color: C.ink, lineHeight: 1.3 }}>
           {exp.company}
@@ -81,7 +83,6 @@ function ExperienceEntry({ exp, bulletChar: bChar }: { exp: Resume["experience"]
         )}
       </div>
 
-      {/* Position + Location */}
       <div style={{ fontSize: 10, color: C.body, marginTop: 1, lineHeight: 1.4 }}>
         <span style={{ fontWeight: 600 }}>{exp.position}</span>
         {exp.employmentType && (
@@ -92,14 +93,12 @@ function ExperienceEntry({ exp, bulletChar: bChar }: { exp: Resume["experience"]
         )}
       </div>
 
-      {/* Description */}
       {exp.description && (
         <div style={{ marginTop: 4, fontSize: 10, lineHeight: 1.6, color: C.body }}>
           <FormattedDescription text={exp.description} color={C.body} mutedColor={C.muted} size="xs" />
         </div>
       )}
 
-      {/* Bullet Points */}
       {exp.bulletPoints && exp.bulletPoints.length > 0 && (
         <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
           {exp.bulletPoints.map((bp, i) => (
@@ -121,7 +120,6 @@ function ExperienceEntry({ exp, bulletChar: bChar }: { exp: Resume["experience"]
         </ul>
       )}
 
-      {/* Tech Used */}
       {exp.techUsed && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
           {exp.techUsed.split(/[,;]/).map((t) => t.trim()).filter(Boolean).map((t, i) => (
@@ -283,6 +281,15 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
     resume.address,
   ].filter(Boolean) as string[];
 
+  // Plan-driven section order (§2/§5): when a content plan exists it decides
+  // both ORDER and INCLUSION, so hierarchy adapts to the target role.
+  // Without a plan (bare preview) this template's native order is preserved.
+  const plan = useResumePlanContext();
+  const DEFAULT_ORDER: SectionType[] = [
+    "summary", "experience", "projects", "skills", "education",
+    "certs", "achievements", "languages", "interests",
+  ];
+
   return (
     <div
       style={{
@@ -293,7 +300,6 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         backgroundColor: C.white,
       }}
     >
-      {/* ── HEADER ─────────────────────────────────────────────── */}
       <header style={{ marginBottom: 16 }}>
         <h1
           style={{
@@ -349,53 +355,44 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
         )}
       </header>
 
-      {/* ── SUMMARY ────────────────────────────────────────────── */}
-      {resume.summary && (
+      {(() => {
+        const nodes: Partial<Record<SectionType, ReactNode>> = {
+          summary: resume.summary && (
         <section style={{ marginBottom: 16 }}>
           <SectionTitle accent={EC.accent}>Professional Summary</SectionTitle>
           <div style={{ fontSize: 10, lineHeight: 1.65, color: C.body }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
           </div>
         </section>
-      )}
-
-      {/* ── EXPERIENCE ─────────────────────────────────────────── */}
-      {resume.experience.length > 0 && (
+      ),
+      experience: resume.experience.length > 0 && (
         <section style={{ marginBottom: 16 }}>
           <SectionTitle accent={EC.accent}>Professional Experience</SectionTitle>
           {resume.experience.map((exp) => (
             <ExperienceEntry key={exp.id} exp={exp} bulletChar={bulletCharProp} />
           ))}
         </section>
-      )}
-
-      {/* ── PROJECTS ────────────────────────────────────────────── */}
-      {resume.projects.length > 0 && (
+      ),
+      projects: resume.projects.length > 0 && (
         <section style={{ marginBottom: 16 }}>
           <SectionTitle accent={EC.accent}>Projects</SectionTitle>
           {resume.projects.map((p) => (
             <ProjectEntry key={p.id} proj={p} bulletChar={bulletCharProp} />
           ))}
         </section>
-      )}
-
-      {/* ── SKILLS ──────────────────────────────────────────────── */}
-      {resume.skills.length > 0 && (
+      ),
+      skills: resume.skills.length > 0 && (
         <SkillsSection skills={resume.skills} />
-      )}
-
-      {/* ── EDUCATION ──────────────────────────────────────────── */}
-      {resume.education.length > 0 && (
+      ),
+      education: resume.education.length > 0 && (
         <section style={{ marginBottom: 16 }}>
           <SectionTitle accent={EC.accent}>Education</SectionTitle>
           {resume.education.map((edu) => (
             <EducationEntry key={edu.id} edu={edu} />
           ))}
         </section>
-      )}
-
-      {/* ── CERTIFICATIONS ─────────────────────────────────────── */}
-      {resume.certifications.length > 0 && (
+      ),
+      certs: resume.certifications.length > 0 && (
         <section style={{ marginBottom: 16 }}>
           <SectionTitle accent={EC.accent}>Certifications</SectionTitle>
           {resume.certifications.map((c) => (
@@ -408,10 +405,8 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
             </div>
           ))}
         </section>
-      )}
-
-      {/* ── ACHIEVEMENTS ────────────────────────────────────────── */}
-      {resume.achievements.length > 0 && (
+      ),
+      achievements: resume.achievements.length > 0 && (
         <section style={{ marginBottom: 16 }}>
           <SectionTitle accent={EC.accent}>Achievements</SectionTitle>
           {resume.achievements.map((a) => (
@@ -423,10 +418,8 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
             </div>
           ))}
         </section>
-      )}
-
-      {/* ── LANGUAGES ──────────────────────────────────────────── */}
-      {resume.languages.length > 0 && (
+      ),
+      languages: resume.languages.length > 0 && (
         <section style={{ marginBottom: 16 }}>
           <SectionTitle accent={EC.accent}>Languages</SectionTitle>
           <div style={{ fontSize: 10, color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
@@ -438,17 +431,21 @@ export function ModernCleanPreview({ resume, bulletChar: bulletCharProp }: { res
             ))}
           </div>
         </section>
-      )}
-
-      {/* ── INTERESTS ──────────────────────────────────────────── */}
-      {resume.interests.length > 0 && (
+      ),
+      interests: resume.interests.length > 0 && (
         <section>
           <SectionTitle accent={EC.accent}>Interests</SectionTitle>
           <p style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
             {resume.interests.map((i) => i.name).join(" · ")}
           </p>
         </section>
-      )}
+      ),
+        };
+        const order = plan ? plan.sections.map((s) => s.type) : DEFAULT_ORDER;
+        return order.map((type) => (
+          <Fragment key={type}>{nodes[type]}</Fragment>
+        ));
+      })()}
     </div>
   );
 }
