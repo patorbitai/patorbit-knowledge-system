@@ -83,10 +83,10 @@ function SectionHeader({
       >
         {icon}
       </span>
-      <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
+      <span className="text-xs font-semibold uppercase tracking-wider text-ink-secondary">
         {title}
       </span>
-      <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-slate-500">
+      <span className="rounded-full bg-white/[0.06] px-2 py-0.5 text-[10px] font-medium text-ink-muted">
         {count}
       </span>
     </div>
@@ -96,9 +96,9 @@ function SectionHeader({
 function ItemRow({ text, source }: { text: string; source: { sourceRef: string; sourceText: string } }) {
   return (
     <div className="group rounded-xl bg-white/[0.02] border border-white/[0.04] px-3.5 py-3 transition-all duration-150 hover:bg-white/[0.05] hover:border-white/[0.10] hover:shadow-lg hover:shadow-black/10">
-      <p className="text-[13px] text-slate-200 leading-relaxed">{text}</p>
-      <p className="mt-1.5 truncate text-[10px] text-slate-600 group-hover:text-slate-500 transition-colors" title={source.sourceText}>
-        <span className="font-mono text-slate-500">{source.sourceRef}</span>
+      <p className="text-[13px] text-ink leading-relaxed">{text}</p>
+      <p className="mt-1.5 truncate text-[10px] text-slate-600 group-hover:text-ink-muted transition-colors" title={source.sourceText}>
+        <span className="font-mono text-ink-muted">{source.sourceRef}</span>
         <span className="mx-1.5 opacity-50">·</span>
         <span className="italic text-slate-600">&ldquo;{source.sourceText}&rdquo;</span>
       </p>
@@ -130,7 +130,7 @@ function MatchScoreBadge({ level, score }: { level: MatchLevel; score: number })
     good: { label: "Good Match", color: "text-cyan-300", bg: "bg-cyan-500/15 border-cyan-500/30" },
     partial: { label: "Partial Match", color: "text-amber-300", bg: "bg-amber-500/15 border-amber-500/30" },
     limited: { label: "Limited Match", color: "text-orange-300", bg: "bg-orange-500/15 border-orange-500/30" },
-    "insufficient-data": { label: "Insufficient Data", color: "text-slate-400", bg: "bg-slate-500/15 border-slate-500/30" },
+    "insufficient-data": { label: "Insufficient Data", color: "text-ink-secondary", bg: "bg-slate-500/15 border-slate-500/30" },
   };
 
   const c = config[level];
@@ -140,7 +140,7 @@ function MatchScoreBadge({ level, score }: { level: MatchLevel; score: number })
       <span className={`text-3xl font-bold tabular-nums ${c.color}`}>{score}</span>
       <div>
         <p className={`text-sm font-semibold ${c.color}`}>{c.label}</p>
-        <p className="text-[11px] text-slate-500">out of 100</p>
+        <p className="text-[11px] text-ink-muted">out of 100</p>
       </div>
     </div>
   );
@@ -152,10 +152,10 @@ function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-sm overflow-hidden shadow-xl shadow-black/20">
+    <div className="rounded-2xl border border-line bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-sm overflow-hidden shadow-xl shadow-black/20">
       {/* Card Header */}
       <div
-        className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer hover:bg-white/[0.04] transition-colors"
+        className="flex items-center justify-between px-6 py-4 border-b border-subtle bg-white/[0.02] cursor-pointer hover:bg-white/[0.04] transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3">
@@ -163,25 +163,25 @@ function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile
             <TrendingUp className="h-5 w-5 text-cyan-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">How You Match This Job</p>
-            <p className="text-[11px] text-slate-500">Based on your Patorbit professional profile</p>
+            <p className="text-sm font-semibold text-ink">How You Match This Job</p>
+            <p className="text-[11px] text-ink-muted">Based on your Patorbit professional profile</p>
           </div>
         </div>
-        <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-5 w-5 text-ink-muted transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
       </div>
 
       {expanded && (
         <div className="px-6 py-5 space-y-5">
           {/* Job Title */}
           {profile.title && (
-            <div className="pb-4 border-b border-white/[0.06]">
-              <p className="text-xl font-bold text-white tracking-tight">{profile.title}</p>
+            <div className="pb-4 border-b border-subtle">
+              <p className="text-xl font-bold text-ink tracking-tight">{profile.title}</p>
             </div>
           )}
 
           {/* Score */}
           <MatchScoreBadge level={match.level} score={match.score} />
-          <p className="text-[13px] text-slate-400 leading-relaxed">{match.explanation}</p>
+          <p className="text-[13px] text-ink-secondary leading-relaxed">{match.explanation}</p>
 
           {/* Matched Skills */}
           {match.matchedSkills.filter((s) => s.matched).length > 0 && (
@@ -231,7 +231,7 @@ function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile
                   </span>
                 ))}
               </div>
-              <p className="mt-2 text-[11px] text-slate-500">
+              <p className="mt-2 text-[11px] text-ink-muted">
                 These skills appear in the job description but are not currently in your Patorbit profile.
               </p>
             </div>
@@ -245,7 +245,7 @@ function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile
               count={1}
               color="blue"
             />
-            <p className="text-[13px] text-slate-300 leading-relaxed">{match.experienceAssessment}</p>
+            <p className="text-[13px] text-ink-secondary leading-relaxed">{match.experienceAssessment}</p>
           </div>
 
           {/* Relevant Claims */}
@@ -264,13 +264,13 @@ function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile
                     className="rounded-xl bg-white/[0.02] border border-white/[0.04] px-3.5 py-3"
                   >
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-[13px] text-slate-200 leading-relaxed">{claim.assertionText}</p>
+                      <p className="text-[13px] text-ink leading-relaxed">{claim.assertionText}</p>
                       <span className={`shrink-0 inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-medium ${
                         claim.verificationStatus === "verified"
                           ? "bg-emerald-500/10 text-emerald-400"
                           : claim.verificationStatus === "evidence-added"
                           ? "bg-blue-500/10 text-blue-400"
-                          : "bg-slate-500/10 text-slate-500"
+                          : "bg-slate-500/10 text-ink-muted"
                       }`}>
                         {claim.verificationStatus === "verified" && <Shield className="h-2.5 w-2.5" />}
                         {claim.verificationStatus}
@@ -289,12 +289,12 @@ function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile
               <p className="text-[12px] font-semibold text-cyan-300 mb-1">Recommendations</p>
               <ul className="space-y-1">
                 {match.missingSkills.slice(0, 3).map((skill, i) => (
-                  <li key={i} className="text-[11px] text-slate-400 leading-relaxed">
-                    • Consider adding <span className="text-slate-300 font-medium">{skill}</span> to your profile if you have this experience.
+                  <li key={i} className="text-[11px] text-ink-secondary leading-relaxed">
+                    • Consider adding <span className="text-ink-secondary font-medium">{skill}</span> to your profile if you have this experience.
                   </li>
                 ))}
                 {match.matchedSkills.filter((s) => s.matched).length > 0 && (
-                  <li className="text-[11px] text-slate-400 leading-relaxed">
+                  <li className="text-[11px] text-ink-secondary leading-relaxed">
                     • Highlight your {match.matchedSkills.filter((s) => s.matched).slice(0, 2).map((s) => s.skill).join(" and ")} experience when applying.
                   </li>
                 )}
@@ -304,17 +304,17 @@ function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile
 
           {/* Recruiter Email */}
           {match.recruiterEmail && (
-            <div className="rounded-xl bg-white/[0.03] border border-white/[0.06] px-5 py-4">
-              <p className="text-[12px] font-semibold text-white mb-2">Interested in this role?</p>
+            <div className="rounded-xl bg-white/[0.03] border border-subtle px-5 py-4">
+              <p className="text-[12px] font-semibold text-ink mb-2">Interested in this role?</p>
               <div className="flex items-center gap-3 flex-wrap">
                 <a
                   href={`mailto:${match.recruiterEmail}?subject=${encodeURIComponent(`Application – ${profile.title || "Position"}`)}&body=${encodeURIComponent(`Dear Hiring Manager,\n\nI am interested in the ${profile.title || "position"} role and would like to express my interest.\n\nBest regards`)}`}
-                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-[12px] font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+                  className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-5 py-2.5 text-[12px] font-semibold text-ink shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
                 >
                   <Mail className="h-3.5 w-3.5" />
                   Email Recruiter
                 </a>
-                <span className="text-[12px] text-slate-400">
+                <span className="text-[12px] text-ink-secondary">
                   {match.recruiterEmail}
                 </span>
               </div>
@@ -328,14 +328,14 @@ function PersonalizedMatchCard({ match, profile }: { match: MatchResult; profile
           <div className="flex flex-col sm:flex-row gap-3 pt-2">
             <Link
               href="/jobs/new"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] border border-white/[0.10] px-5 py-3 text-[12px] font-medium text-slate-300 transition-all duration-200 hover:bg-white/[0.10] hover:border-white/[0.15] hover:text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-xl bg-white/[0.06] border border-white/[0.10] px-5 py-3 text-[12px] font-medium text-ink-secondary transition-all duration-200 hover:bg-white/[0.10] hover:border-white/[0.15] hover:text-ink"
             >
               <Briefcase className="h-3.5 w-3.5" />
               Prepare My Application
             </Link>
             <Link
               href="/overview"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.06] px-5 py-3 text-[12px] font-medium text-slate-500 transition-all duration-200 hover:bg-white/[0.04] hover:text-slate-300"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-subtle px-5 py-3 text-[12px] font-medium text-ink-muted transition-all duration-200 hover:bg-white/[0.04] hover:text-ink-secondary"
             >
               View Dashboard
               <ExternalLink className="h-3 w-3" />
@@ -353,10 +353,10 @@ function ResultCard({ profile }: { profile: JobProfile }) {
   const [expanded, setExpanded] = useState(true);
 
   return (
-    <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-sm overflow-hidden shadow-xl shadow-black/20">
+    <div className="rounded-2xl border border-line bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-sm overflow-hidden shadow-xl shadow-black/20">
       {/* Card Header */}
       <div
-        className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] bg-white/[0.02] cursor-pointer hover:bg-white/[0.04] transition-colors"
+        className="flex items-center justify-between px-6 py-4 border-b border-subtle bg-white/[0.02] cursor-pointer hover:bg-white/[0.04] transition-colors"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex items-center gap-3">
@@ -364,11 +364,11 @@ function ResultCard({ profile }: { profile: JobProfile }) {
             <CheckCircle2 className="h-5 w-5 text-cyan-400" />
           </div>
           <div>
-            <p className="text-sm font-semibold text-white">Job Profile Extracted</p>
-            <p className="text-[11px] text-slate-500">Based on the information you provided</p>
+            <p className="text-sm font-semibold text-ink">Job Profile Extracted</p>
+            <p className="text-[11px] text-ink-muted">Based on the information you provided</p>
           </div>
         </div>
-        <ChevronDown className={`h-5 w-5 text-slate-500 transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`h-5 w-5 text-ink-muted transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
       </div>
 
       {/* Card Body */}
@@ -376,8 +376,8 @@ function ResultCard({ profile }: { profile: JobProfile }) {
         <div className="px-6 py-5 space-y-1">
           {/* Job Title */}
           {profile.title && (
-            <div className="mb-5 pb-4 border-b border-white/[0.06]">
-              <p className="text-xl font-bold text-white tracking-tight">{profile.title}</p>
+            <div className="mb-5 pb-4 border-b border-subtle">
+              <p className="text-xl font-bold text-ink tracking-tight">{profile.title}</p>
             </div>
           )}
 
@@ -499,7 +499,7 @@ function ResultCard({ profile }: { profile: JobProfile }) {
                     className="rounded-xl bg-amber-500/[0.04] border border-amber-500/10 px-4 py-3 transition-all duration-150 hover:bg-amber-500/[0.08] hover:border-amber-500/20"
                   >
                     <p className="text-[12px] font-semibold text-amber-300">{c.name}</p>
-                    <p className="mt-1 text-[11px] text-slate-500 leading-snug">
+                    <p className="mt-1 text-[11px] text-ink-muted leading-snug">
                       inferred from &ldquo;{c.context}&rdquo;
                     </p>
                   </div>
@@ -528,27 +528,27 @@ function ConversionCTA() {
             <Target className="h-5 w-5 text-cyan-400" />
           </div>
           <div>
-            <p className="text-lg font-bold text-white">
+            <p className="text-lg font-bold text-ink">
               Want to see how you match this job?
             </p>
           </div>
         </div>
 
-        <p className="text-sm text-slate-400 leading-relaxed mb-6 max-w-md">
+        <p className="text-sm text-ink-secondary leading-relaxed mb-6 max-w-md">
           Create your free Patorbit account to compare this job with your professional profile and get personalized recommendations.
         </p>
 
         <div className="flex flex-col sm:flex-row gap-3">
           <Link
             href="/register"
-            className="group inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+            className="group inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/25 transition-all duration-200 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
           >
             Create Free Account
             <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
           </Link>
           <Link
             href="/login"
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-7 py-3.5 text-sm font-medium text-ink-secondary transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-ink"
           >
             Already have an account? Sign in
           </Link>
@@ -557,7 +557,7 @@ function ConversionCTA() {
         {/* Trust badges */}
         <div className="mt-6 flex flex-wrap items-center gap-x-6 gap-y-2">
           {["Free Forever", "No Credit Card", "Setup in 2 Minutes"].map((item) => (
-            <span key={item} className="inline-flex items-center gap-2 text-[11px] text-slate-500">
+            <span key={item} className="inline-flex items-center gap-2 text-[11px] text-ink-muted">
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400/80" />
               {item}
             </span>
@@ -578,10 +578,10 @@ function InsufficientProfileCard() {
           <AlertTriangle className="h-5 w-5 text-amber-400" />
         </div>
         <div>
-          <p className="text-sm font-semibold text-white mb-1">
+          <p className="text-sm font-semibold text-ink mb-1">
             Your profile needs more data for a personalized match
           </p>
-          <p className="text-[13px] text-slate-400 leading-relaxed mb-4">
+          <p className="text-[13px] text-ink-secondary leading-relaxed mb-4">
             Add professional experience, skills, or education to your Patorbit profile to see how you match this job.
           </p>
           <div className="flex flex-col sm:flex-row gap-2">
@@ -594,7 +594,7 @@ function InsufficientProfileCard() {
             </Link>
             <Link
               href="/overview"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.06] px-4 py-2 text-[12px] font-medium text-slate-500 transition-all hover:bg-white/[0.04] hover:text-slate-300"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-subtle px-4 py-2 text-[12px] font-medium text-ink-muted transition-all hover:bg-white/[0.04] hover:text-ink-secondary"
             >
               View Dashboard
             </Link>
@@ -694,10 +694,10 @@ export function FreeJDAnalysis() {
   return (
     <div className="space-y-6">
       {/* Input Card */}
-      <div className="rounded-2xl border border-white/[0.08] bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-sm p-6 space-y-4 shadow-xl shadow-black/20">
+      <div className="rounded-2xl border border-line bg-gradient-to-b from-white/[0.04] to-white/[0.02] backdrop-blur-sm p-6 space-y-4 shadow-xl shadow-black/20">
         {/* Label row */}
         <div className="flex items-center justify-between">
-          <label className="text-sm font-semibold text-slate-200 flex items-center gap-2.5">
+          <label className="text-sm font-semibold text-ink flex items-center gap-2.5">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-cyan-500/10">
               <FileSearch className="h-4 w-4 text-cyan-400" />
             </div>
@@ -705,7 +705,7 @@ export function FreeJDAnalysis() {
           </label>
           <button
             onClick={handlePaste}
-            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium text-slate-500 hover:text-slate-300 hover:bg-white/[0.05] transition-all duration-150"
+            className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-[11px] font-medium text-ink-muted hover:text-ink-secondary hover:bg-white/[0.05] transition-all duration-150"
           >
             <Clipboard className="h-3.5 w-3.5" />
             Paste from clipboard
@@ -723,11 +723,11 @@ export function FreeJDAnalysis() {
             }}
             placeholder={`Paste the full job description here...\n\nExample:\nSenior Azure Data Engineer\n\nResponsibilities:\n- Build ETL pipelines using Azure Data Factory\n...\n\nRequirements:\n- 3+ years of data engineering experience\n- Azure Data Factory, Databricks, PySpark\n...`}
             rows={10}
-            className="w-full resize-none rounded-xl border border-white/[0.08] bg-[#070B14]/60 px-5 py-4 text-sm text-white outline-none transition-all duration-200 placeholder:text-slate-600 focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/15 focus:shadow-[0_0_30px_-5px_rgba(6,182,212,0.12)]"
+            className="w-full resize-none rounded-xl border border-line bg-surface-sunken/60 px-5 py-4 text-sm text-ink outline-none transition-all duration-200 placeholder:text-ink-muted focus:border-brand/50 focus:ring-2 focus:ring-brand-ring focus:shadow-[0_0_30px_-5px_rgba(6,182,212,0.12)]"
           />
           {/* Character count overlay */}
           {input.length > 0 && (
-            <div className="absolute bottom-3 right-3 rounded-lg bg-[#070B14]/90 border border-white/[0.06] px-2.5 py-1 backdrop-blur-sm">
+            <div className="absolute bottom-3 right-3 rounded-lg bg-surface-sunken/90 border border-subtle px-2.5 py-1 backdrop-blur-sm">
               <span className="text-[10px] tabular-nums text-slate-600">
                 {input.length.toLocaleString()} / {MAX_CHARS.toLocaleString()}
               </span>
@@ -750,7 +750,7 @@ export function FreeJDAnalysis() {
             {analyzed && (
               <button
                 onClick={handleReset}
-                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.05] transition-all duration-150"
+                className="inline-flex items-center gap-1.5 rounded-xl px-4 py-2.5 text-[12px] font-medium text-ink-secondary hover:text-ink hover:bg-white/[0.05] transition-all duration-150"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 Try another
@@ -761,8 +761,8 @@ export function FreeJDAnalysis() {
               disabled={!canAnalyze}
               className={`inline-flex items-center gap-2 rounded-xl px-6 py-2.5 text-[12px] font-semibold transition-all duration-200 ${
                 canAnalyze
-                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
-                  : "cursor-not-allowed bg-white/[0.04] text-slate-600 border border-white/[0.06]"
+                  ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-ink shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+                  : "cursor-not-allowed bg-white/[0.04] text-slate-600 border border-subtle"
               }`}
             >
               <FileSearch className="h-3.5 w-3.5" />
@@ -795,7 +795,7 @@ export function FreeJDAnalysis() {
                 <InsufficientProfileCard />
               )
             ) : (
-              <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-6 text-center">
+              <div className="rounded-2xl border border-subtle bg-white/[0.02] p-6 text-center">
                 <div className="animate-pulse space-y-2">
                   <div className="h-4 bg-white/[0.06] rounded w-1/3 mx-auto" />
                   <div className="h-3 bg-white/[0.04] rounded w-1/2 mx-auto" />
@@ -810,9 +810,9 @@ export function FreeJDAnalysis() {
 
       {/* Empty State */}
       {!profile && !error && (
-        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-white/[0.08] bg-white/[0.01] px-8 py-14 text-center">
+        <div className="flex flex-col items-center gap-4 rounded-2xl border border-dashed border-line bg-white/[0.01] px-8 py-14 text-center">
           <div className="relative">
-            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-white/[0.06]">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-white/[0.04] to-white/[0.02] border border-subtle">
               <FileSearch className="h-7 w-7 text-slate-600" />
             </div>
             <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-cyan-500/20 border border-cyan-500/30">
@@ -820,7 +820,7 @@ export function FreeJDAnalysis() {
             </div>
           </div>
           <div className="space-y-2">
-            <p className="text-base font-medium text-slate-300">
+            <p className="text-base font-medium text-ink-secondary">
               Paste a job description to get started
             </p>
             <p className="text-[13px] text-slate-600 max-w-sm leading-relaxed">

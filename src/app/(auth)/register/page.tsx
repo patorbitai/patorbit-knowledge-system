@@ -210,7 +210,7 @@ export default function RegisterPage() {
               <button
                 type="submit"
                 disabled={isResendPending}
-                className="inline-flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] px-4 py-2 text-xs font-medium text-cyan-400 transition-colors duration-150 disabled:opacity-50 cursor-pointer"
+                className="inline-flex items-center justify-center rounded-lg bg-white/[0.08] hover:bg-white/[0.12] px-4 py-2 text-xs font-medium text-brand transition-colors duration-150 disabled:opacity-50 cursor-pointer"
               >
                 {isResendPending ? "Resending..." : "Resend verification email"}
               </button>
@@ -224,7 +224,7 @@ export default function RegisterPage() {
             <div>
               <Link
                 href="/login"
-                className="text-xs text-cyan-400 hover:text-cyan-300 transition-colors duration-150 underline"
+                className="text-xs text-brand hover:text-cyan-300 transition-colors duration-150 underline"
               >
                 Return to Sign in
               </Link>
@@ -326,7 +326,7 @@ export default function RegisterPage() {
                   onClick={() => setShowPassword((v) => !v)}
                   disabled={isPending}
                   aria-label={showPassword ? "Hide password" : "Show password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-400 disabled:cursor-not-allowed"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-brand disabled:cursor-not-allowed"
                 >
                   <EyeIcon open={showPassword} />
                 </button>
@@ -359,7 +359,7 @@ export default function RegisterPage() {
                   onClick={() => setShowConfirm((v) => !v)}
                   disabled={isPending}
                   aria-label={showConfirm ? "Hide confirm password" : "Show confirm password"}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-400 disabled:cursor-not-allowed"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-brand disabled:cursor-not-allowed"
                 >
                   <EyeIcon open={showConfirm} />
                 </button>
@@ -385,11 +385,11 @@ export default function RegisterPage() {
               />
               <label htmlFor={termsId} className="text-xs text-slate-400 leading-relaxed cursor-pointer">
                 I agree to the{" "}
-                <Link href="/terms" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150">
+                <Link href="/terms" className="text-brand hover:text-cyan-300 transition-colors duration-150">
                   Terms of Service
                 </Link>{" "}
                 and{" "}
-                <Link href="/privacy" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150">
+                <Link href="/privacy" className="text-brand hover:text-cyan-300 transition-colors duration-150">
                   Privacy Policy
                 </Link>
               </label>
@@ -443,7 +443,7 @@ export default function RegisterPage() {
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Already have an account?{" "}
-            <Link href="/login" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-300">
+            <Link href="/login" className="text-brand hover:text-cyan-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-300">
               Sign in
             </Link>
           </p>

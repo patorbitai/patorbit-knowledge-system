@@ -63,8 +63,8 @@ export default function DevelopersPage() {
         <div className="mx-auto max-w-7xl px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16">
             <span className="inline-block rounded-full border border-cyan-500/20 bg-cyan-500/5 px-4 py-1.5 text-sm text-cyan-400 mb-6">Developers</span>
-            <h1 className="text-5xl font-bold text-white mb-6">Developer Hub</h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            <h1 className="text-5xl font-bold text-ink mb-6">Developer Hub</h1>
+            <p className="text-ink-secondary text-lg max-w-2xl mx-auto">
               Docs and APIs that exist today — clearly separated from what&apos;s still
               being built. No phantom endpoints.
             </p>
@@ -82,11 +82,11 @@ export default function DevelopersPage() {
                 <motion.div key={item.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
                   <Link
                     href={item.href}
-                    className="block h-full rounded-2xl border border-slate-800 bg-slate-900/60 p-7 hover:border-cyan-500/30 hover:-translate-y-1 transition-all"
+                    className="block h-full rounded-xl border border-subtle bg-surface/60 p-7 hover:border-cyan-500/30 hover:-translate-y-1 transition-all"
                   >
                     <div className="text-3xl mb-4">{item.icon}</div>
-                    <h3 className="text-xl font-semibold text-white mb-2">{item.title}</h3>
-                    <p className="text-slate-400 text-sm">{item.desc}</p>
+                    <h3 className="text-xl font-semibold text-ink mb-2">{item.title}</h3>
+                    <p className="text-ink-secondary text-sm">{item.desc}</p>
                   </Link>
                 </motion.div>
               ))}
@@ -99,18 +99,18 @@ export default function DevelopersPage() {
               <span className="inline-flex items-center rounded-full border border-amber-500/25 bg-amber-500/10 px-3 py-1 text-xs font-semibold text-amber-400 uppercase tracking-wider">
                 In development
               </span>
-              <span className="text-sm text-slate-500">Not usable yet — labeled honestly</span>
+              <span className="text-sm text-ink-muted">Not usable yet — labeled honestly</span>
             </div>
             <div className="grid gap-6 md:grid-cols-3">
               {planned.map((item, i) => (
                 <motion.div key={item.title} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.06 }}>
                   <Link
                     href={item.href}
-                    className="block h-full rounded-2xl border border-slate-800 bg-slate-900/40 p-7 hover:border-amber-500/30 transition-all opacity-90"
+                    className="block h-full rounded-xl border border-subtle bg-surface/40 p-7 hover:border-amber-500/30 transition-all opacity-90"
                   >
                     <div className="text-3xl mb-4">{item.icon}</div>
-                    <h3 className="text-lg font-semibold text-white mb-2">{item.title}</h3>
-                    <p className="text-slate-500 text-sm">{item.desc}</p>
+                    <h3 className="text-lg font-semibold text-ink mb-2">{item.title}</h3>
+                    <p className="text-ink-muted text-sm">{item.desc}</p>
                   </Link>
                 </motion.div>
               ))}
@@ -121,7 +121,7 @@ export default function DevelopersPage() {
           <motion.div initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }}
             className="rounded-xl border border-amber-500/20 bg-amber-500/[0.05] p-5 mb-14 flex items-start gap-3">
             <Construction className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" aria-hidden="true" />
-            <p className="text-sm text-slate-300">
+            <p className="text-sm text-ink-secondary">
               Patorbit does <strong>not</strong> offer Python/JavaScript/Go SDKs, a CLI,
               a sandbox environment, or usage analytics today. When we do, they&apos;ll
               appear here with real installation instructions.
@@ -131,21 +131,21 @@ export default function DevelopersPage() {
           {/* CTA */}
           <div className="text-center">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="text-3xl font-bold text-white mb-4">Building something with Patorbit?</h2>
-              <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
+              <h2 className="text-3xl font-bold text-ink mb-4">Building something with Patorbit?</h2>
+              <p className="text-ink-secondary text-lg mb-8 max-w-md mx-auto">
                 Tell us your use case — early public-API access is granted case by case.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/contact"
-                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
                 >
                   Contact Us
                   <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/docs"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-ink-secondary transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-ink hover:scale-[1.02] active:scale-100"
                 >
                   Read the Docs
                 </Link>

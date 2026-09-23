@@ -223,7 +223,7 @@ function LoginForm() {
             <Link
               href="/forgot-password"
               tabIndex={loading ? -1 : undefined}
-              className="text-xs text-slate-500 hover:text-cyan-400 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-400"
+              className="text-xs text-slate-500 hover:text-brand transition-colors duration-150 focus-visible:outline-none focus-visible:text-brand"
             >
               Forgot password?
             </Link>
@@ -246,7 +246,7 @@ function LoginForm() {
               onClick={() => setShowPassword((v) => !v)}
               disabled={loading}
               aria-label={showPassword ? "Hide password" : "Show password"}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-400 disabled:cursor-not-allowed"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-brand disabled:cursor-not-allowed"
             >
               <EyeIcon open={showPassword} />
             </button>
@@ -259,7 +259,7 @@ function LoginForm() {
             <div className="absolute -top-12 -left-12 h-32 w-32 rounded-full bg-cyan-500/10 blur-3xl pointer-events-none" />
 
             <div className="flex flex-col items-center text-center space-y-4 relative z-10">
-              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-cyan-400 shadow-inner">
+              <div className="relative flex h-12 w-12 items-center justify-center rounded-xl border border-cyan-500/30 bg-cyan-500/10 text-brand shadow-inner">
                 <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
                   <polyline points="22,6 12,13 2,6"/>
@@ -338,7 +338,7 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-slate-500">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-cyan-400 hover:text-cyan-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-300">
+        <Link href="/register" className="text-brand hover:text-cyan-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-300">
           Create your Professional Identity
         </Link>
       </p>

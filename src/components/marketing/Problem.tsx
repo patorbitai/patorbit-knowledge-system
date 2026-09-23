@@ -42,7 +42,7 @@ export default function Problem() {
   return (
     <section
       ref={ref}
-      className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
+      className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="The Problem"
     >
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:48px_48px]" />
@@ -56,18 +56,18 @@ export default function Problem() {
           }}
           className="text-center mb-16"
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               The Problem
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             Resumes are{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               harder than they should be
             </span>
           </h2>
-          <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
+          <p className="mt-4 text-[17px] text-ink-secondary leading-relaxed max-w-xl mx-auto">
             Every job application means rewriting the same information. There should be a better way.
           </p>
         </div>
@@ -82,13 +82,13 @@ export default function Problem() {
                 transform: isInView ? "translateY(0)" : "translateY(20px)",
                 transition: `opacity 0.4s ease-out ${0.1 + i * 0.08}s, transform 0.4s ease-out ${0.1 + i * 0.08}s`,
               }}
-              className="group rounded-xl border border-slate-800/60 bg-slate-900/40 p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-700/60"
+              className="group rounded-xl border border-subtle bg-surface p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-slate-700/60"
             >
               <div className={`mb-4 flex h-10 w-10 items-center justify-center rounded-lg ${item.bg}`}>
                 <item.icon className={`h-5 w-5 ${item.color}`} />
               </div>
-              <h3 className="text-base font-semibold text-white mb-2">{item.title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">{item.description}</p>
+              <h3 className="text-base font-semibold text-ink mb-2">{item.title}</h3>
+              <p className="text-sm text-ink-secondary leading-relaxed">{item.description}</p>
             </div>
           ))}
         </div>

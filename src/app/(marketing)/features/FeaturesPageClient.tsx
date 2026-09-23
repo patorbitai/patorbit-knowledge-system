@@ -129,23 +129,23 @@ const extraFeatures = [
 
 export function FeaturesPageClient() {
   return (
-    <main className="min-h-screen bg-[#070B14] text-white">
+    <main className="min-h-screen bg-surface-sunken text-ink">
       {/* Header */}
-      <section className="relative overflow-hidden border-b border-slate-800/50 pt-32 pb-24 md:pb-28">
+      <section className="relative overflow-hidden border-b border-line/50 pt-32 pb-24 md:pb-28">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:48px_48px]" />
         <div className="absolute top-0 -left-32 w-96 h-96 rounded-full blur-[128px] opacity-30 bg-gradient-radial from-cyan-500/10 to-transparent" />
         <div className="mx-auto max-w-7xl px-6 relative z-10">
           <div className="mx-auto max-w-4xl text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">Features</span>
+            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-line/60 bg-slate-900/60 px-3.5 py-1">
+              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">Features</span>
             </div>
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-white leading-tight mb-6">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-ink leading-tight mb-6">
               Build once. Match better.{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 Tailor safely.
               </span>
             </h1>
-            <p className="text-lg text-slate-400 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-lg text-ink-secondary leading-relaxed max-w-2xl mx-auto">
               Everything Patorbit does is organized around one goal: get you into the right job
               with a resume that is honest, targeted, and professionally presented.
             </p>
@@ -173,15 +173,15 @@ export function FeaturesPageClient() {
                       {feature.badge}
                     </span>
                   </div>
-                  <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4">
+                  <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-ink mb-4">
                     {feature.title}
                   </h2>
-                  <p className="text-[17px] text-slate-400 leading-relaxed mb-6">
+                  <p className="text-[17px] text-ink-secondary leading-relaxed mb-6">
                     {feature.description}
                   </p>
                   <ul className="space-y-3">
                     {feature.highlights.map((h) => (
-                      <li key={h} className="flex items-start gap-3 text-sm text-slate-300">
+                      <li key={h} className="flex items-start gap-3 text-sm text-ink-secondary">
                         <Check className="w-4 h-4 text-emerald-400 mt-0.5 shrink-0" />
                         {h}
                       </li>
@@ -190,13 +190,13 @@ export function FeaturesPageClient() {
                 </div>
 
                 {/* Visual */}
-                <div className={`rounded-xl border border-slate-800/60 bg-gradient-to-br ${feature.gradient} p-8 lg:p-10 flex items-center justify-center ${i % 2 === 1 ? "lg:col-start-1" : ""}`}>
+                <div className={`rounded-xl border border-line/60 bg-gradient-to-br ${feature.gradient} p-8 lg:p-10 flex items-center justify-center ${i % 2 === 1 ? "lg:col-start-1" : ""}`}>
                   <div className="text-center">
-                    <div className={`inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.gradient} border border-white/[0.06] mb-6`}>
+                    <div className={`inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br ${feature.gradient} border border-subtle mb-6`}>
                       <feature.icon className={`h-10 w-10 ${feature.iconColor}`} />
                     </div>
-                    <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
-                    <p className="text-sm text-slate-400 max-w-xs mx-auto">{feature.description}</p>
+                    <h3 className="text-lg font-semibold text-ink mb-2">{feature.title}</h3>
+                    <p className="text-sm text-ink-secondary max-w-xs mx-auto">{feature.description}</p>
                   </div>
                 </div>
               </motion.div>
@@ -206,7 +206,7 @@ export function FeaturesPageClient() {
       </section>
 
       {/* Extra features grid */}
-      <section className="py-24 border-t border-slate-800/50">
+      <section className="py-24 border-t border-line/50">
         <div className="mx-auto max-w-7xl px-6">
           <SectionHeader
             label="More Capabilities"
@@ -221,13 +221,13 @@ export function FeaturesPageClient() {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4 }}
-                className="rounded-xl border border-slate-800/60 bg-slate-900/40 p-6 hover:-translate-y-1 transition-all duration-300"
+                className="rounded-xl border border-line/60 bg-slate-900/40 p-6 hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white/[0.05] mb-4">
                   <f.icon className="w-5 h-5 text-cyan-400" />
                 </div>
-                <h3 className="text-base font-semibold text-white mb-2">{f.title}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{f.description}</p>
+                <h3 className="text-base font-semibold text-ink mb-2">{f.title}</h3>
+                <p className="text-sm text-ink-secondary leading-relaxed">{f.description}</p>
               </motion.div>
             ))}
           </div>
@@ -235,29 +235,29 @@ export function FeaturesPageClient() {
       </section>
 
       {/* CTA */}
-      <section className="py-24 border-t border-slate-800/50">
+      <section className="py-24 border-t border-line/50">
         <div className="mx-auto max-w-7xl px-6 text-center">
           <div className="mx-auto max-w-2xl">
-            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-white mb-4">
+            <h2 className="text-3xl lg:text-4xl font-bold tracking-tight text-ink mb-4">
               See it on{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 your own resume
               </span>
             </h2>
-            <p className="text-[17px] text-slate-400 leading-relaxed mb-8">
+            <p className="text-[17px] text-ink-secondary leading-relaxed mb-8">
               Start with a free job analysis, then import your resume and tailor it in minutes.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/free-analysis"
-                className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
               >
                 Try a Job Analysis
                 <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/register"
-                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+                className="group inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-ink-secondary transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-ink hover:scale-[1.02] active:scale-100"
               >
                 Build My Resume Free
               </Link>

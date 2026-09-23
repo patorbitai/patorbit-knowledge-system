@@ -47,28 +47,28 @@ export default function StatusRow({ data }: Props) {
           <div
             key={key}
             role="listitem"
-            className="flex items-center justify-between gap-3 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] px-4 py-3.5"
+            className="flex items-center justify-between gap-3 rounded-xl border border-subtle bg-white dark:bg-[#080C18] px-4 py-3.5"
           >
             <div className="flex items-center gap-3 min-w-0">
               <span
                 className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg ${
                   status === "active"
-                    ? "bg-cyan-500/10 text-cyan-400"
-                    : "bg-white/[0.04] text-slate-500"
+                    ? "bg-cyan-500/10 text-brand"
+                    : "bg-white/[0.04] text-ink-muted"
                 }`}
               >
                 <Icon className="h-4 w-4" />
               </span>
               <div className="min-w-0">
-                <p className="text-xs font-medium text-slate-400">{label}</p>
-                <p className={`text-sm font-semibold truncate ${status === "active" ? "text-white" : "text-slate-500"}`}>
+                <p className="text-xs font-medium text-ink-secondary">{label}</p>
+                <p className={`text-sm font-semibold truncate ${status === "active" ? "text-ink" : "text-ink-muted"}`}>
                   {value}
                 </p>
               </div>
             </div>
             <Link
               href={href}
-              className="shrink-0 text-xs font-medium text-slate-500 transition-colors hover:text-cyan-400 focus-visible:outline-none focus-visible:text-cyan-400"
+              className="shrink-0 text-xs font-medium text-ink-muted transition-colors hover:text-brand focus-visible:outline-none focus-visible:text-brand"
             >
               {cta} →
             </Link>

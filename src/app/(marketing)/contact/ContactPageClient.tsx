@@ -38,10 +38,10 @@ export function ContactPageClient() {
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
             {/* Header */}
             <div className="text-center mb-16">
-              <h1 className="text-4xl sm:text-5xl font-bold text-white mb-4 tracking-tight">
+              <h1 className="text-4xl sm:text-5xl font-bold text-ink mb-4 tracking-tight">
                 Get in Touch
               </h1>
-              <p className="text-slate-400 text-lg max-w-xl mx-auto leading-relaxed">
+              <p className="text-ink-secondary text-lg max-w-xl mx-auto leading-relaxed">
                 Have questions about Patorbit? We&apos;d love to hear from you.
                 Our team is ready to help you build better resumes.
               </p>
@@ -59,17 +59,17 @@ export function ContactPageClient() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.1 }}
-                  className="group rounded-2xl border border-slate-800 bg-slate-900/60 p-6 hover:border-cyan-500/30 hover:bg-slate-900/80 transition-all cursor-pointer"
+                  className="group rounded-xl border border-subtle bg-surface/60 p-6 hover:border-cyan-500/30 hover:bg-slate-900/80 transition-all cursor-pointer"
                 >
-                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${method.gradient} flex items-center justify-center text-white mb-4 shadow-lg`}>
+                  <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${method.gradient} flex items-center justify-center text-ink mb-4 shadow-lg`}>
                     {method.icon}
                   </div>
-                  <h3 className="text-sm font-semibold text-white mb-1">{method.title}</h3>
+                  <h3 className="text-sm font-semibold text-ink mb-1">{method.title}</h3>
                   <p className="text-cyan-400 text-sm font-medium group-hover:text-cyan-300 transition-colors">
                     {method.value}
                   </p>
-                  <p className="text-[11px] text-slate-500 mt-2">{method.description}</p>
-                  <div className="flex items-center gap-1 mt-3 text-[11px] font-medium text-slate-500 group-hover:text-cyan-400 transition-colors">
+                  <p className="text-[11px] text-ink-muted mt-2">{method.description}</p>
+                  <div className="flex items-center gap-1 mt-3 text-[11px] font-medium text-ink-muted group-hover:text-cyan-400 transition-colors">
                     {method.href.startsWith("http") ? "Open WhatsApp" : "Send a message"}
                     <ArrowRight className="w-3 h-3 transition-transform group-hover:translate-x-0.5" />
                   </div>
@@ -78,53 +78,53 @@ export function ContactPageClient() {
             </div>
 
             {/* Contact form */}
-            <div className="rounded-3xl border border-slate-800 bg-slate-900/60 p-8 sm:p-12">
+            <div className="rounded-3xl border border-line bg-slate-900/60 p-8 sm:p-12">
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-500 flex items-center justify-center">
-                  <Send className="w-5 h-5 text-white" />
+                  <Send className="w-5 h-5 text-ink" />
                 </div>
                 <div>
-                  <h2 className="text-xl font-bold text-white">Send a Message</h2>
-                  <p className="text-xs text-slate-400">We&apos;ll get back to you within 24 hours</p>
+                  <h2 className="text-xl font-bold text-ink">Send a Message</h2>
+                  <p className="text-xs text-ink-secondary">We&apos;ll get back to you within 24 hours</p>
                 </div>
               </div>
 
               <form onSubmit={(e) => e.preventDefault()} className="space-y-5">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                   <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1.5">Name</label>
+                    <label className="block text-xs font-medium text-ink-secondary mb-1.5">Name</label>
                     <input
                       placeholder="Your name"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-white placeholder-slate-500 border-transparent focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors outline-none"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-ink placeholder-slate-500 border-transparent focus:border-brand/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors outline-none"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-slate-400 mb-1.5">Email</label>
+                    <label className="block text-xs font-medium text-ink-secondary mb-1.5">Email</label>
                     <input
                       placeholder="you@example.com"
                       type="email"
-                      className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-white placeholder-slate-500 border-transparent focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors outline-none"
+                      className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-ink placeholder-slate-500 border-transparent focus:border-brand/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors outline-none"
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Subject</label>
+                  <label className="block text-xs font-medium text-ink-secondary mb-1.5">Subject</label>
                   <input
                     placeholder="How can we help?"
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-white placeholder-slate-500 border-transparent focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors outline-none"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-ink placeholder-slate-500 border-transparent focus:border-brand/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-slate-400 mb-1.5">Message</label>
+                  <label className="block text-xs font-medium text-ink-secondary mb-1.5">Message</label>
                   <textarea
                     rows={4}
                     placeholder="Tell us about your question or feedback..."
-                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-white placeholder-slate-500 resize-none border-transparent focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors outline-none"
+                    className="w-full rounded-xl border border-slate-700 bg-slate-800/50 px-4 py-3 text-sm text-ink placeholder-slate-500 resize-none border-transparent focus:border-brand/50 focus:ring-1 focus:ring-cyan-500/20 transition-colors outline-none"
                   />
                 </div>
                 <button
                   type="submit"
-                  className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-8 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-400 hover:shadow-xl hover:shadow-cyan-500/30 active:scale-[0.99] transition-all cursor-pointer"
+                  className="w-full rounded-xl bg-gradient-to-r from-cyan-500 to-blue-500 px-8 py-3.5 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/20 hover:from-cyan-400 hover:to-blue-400 hover:shadow-xl hover:shadow-cyan-500/30 active:scale-[0.99] transition-all cursor-pointer"
                 >
                   Send Message
                 </button>

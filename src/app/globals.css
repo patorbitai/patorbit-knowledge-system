@@ -10,6 +10,14 @@
   --background: #030712;
   --foreground: #f1f5f9;
 
+  /* ── Brand ────────────────────────────────────────────────────────────
+     ONE primary brand color (cyan family). Everything else must earn
+     its color by communicating meaning. */
+  --brand: #22d3ee;
+  --brand-contrast: #062026;
+  --brand-soft: rgba(34, 211, 238, 0.12);
+  --brand-ring: rgba(34, 211, 238, 0.45);
+
   /* Design system — semantic tokens */
   --text-primary: #f8fafc;
   --text-secondary: #94a3b8;
@@ -41,11 +49,26 @@
   --accent-amber: #f59e0b;
   --accent-rose: #f43f5e;
 
-  /* Semantic status colors */
+  /* Semantic status colors — meaning, not decoration.
+     success  = verified / supported / accepted / exported
+     warning  = needs evidence / partial / needs review
+     danger   = invalid / blocked / failed / missing
+     info     = imported / informational / neutral-but-notable */
   --status-success: #10b981;
   --status-warning: #f59e0b;
   --status-danger: #f43f5e;
   --status-info: #3b82f6;
+  --status-success-soft: rgba(16, 185, 129, 0.12);
+  --status-warning-soft: rgba(245, 158, 11, 0.12);
+  --status-danger-soft: rgba(244, 63, 94, 0.12);
+  --status-info-soft: rgba(59, 130, 246, 0.12);
+
+  /* Match score ramp — meaningful, never a rainbow.
+     strong >= 75, partial 40–74, gap < 40 (neutral track everywhere) */
+  --match-strong: #10b981;
+  --match-partial: #f59e0b;
+  --match-gap: #f43f5e;
+  --match-track: rgba(148, 163, 184, 0.2);
 
   /* Radius scale */
   --radius-sm: 6px;
@@ -82,6 +105,12 @@
   --background: #f8fafc;
   --foreground: #0f172a;
 
+  /* Brand — same identity, deeper for contrast on light surfaces */
+  --brand: #0891b2;
+  --brand-contrast: #ffffff;
+  --brand-soft: rgba(8, 145, 178, 0.1);
+  --brand-ring: rgba(8, 145, 178, 0.4);
+
   /* Design system — light semantic tokens */
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -116,6 +145,15 @@
   --status-warning: #d97706;
   --status-danger: #e11d48;
   --status-info: #2563eb;
+  --status-success-soft: rgba(5, 150, 105, 0.1);
+  --status-warning-soft: rgba(217, 119, 6, 0.1);
+  --status-danger-soft: rgba(225, 29, 72, 0.1);
+  --status-info-soft: rgba(37, 99, 235, 0.1);
+
+  --match-strong: #059669;
+  --match-partial: #d97706;
+  --match-gap: #e11d48;
+  --match-track: rgba(100, 116, 139, 0.25);
 
   /* Shadows — soft, premium */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
@@ -475,6 +513,91 @@ html.light [data-rs-scope] .text-slate-400 { color: #94a3b8 !important; }
   --font-jakarta: var(--font-jakarta);
   --font-playfair: var(--font-playfair);
   --font-garamond: var(--font-garamond);
+
+  /* ── Semantic color utilities (token-driven, theme-aware) ─────────────
+     Use bg-surface / text-ink / border-subtle / bg-brand … instead of
+     hardcoded slate/cyan classes. These resolve through the CSS vars above,
+     so dark and light themes stay in sync automatically. */
+  --color-ink: var(--text-primary);
+  --color-ink-secondary: var(--text-secondary);
+  --color-ink-muted: var(--text-muted);
+  --color-ink-accent: var(--text-accent);
+
+  --color-surface: var(--surface-card);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-base);
+  --color-surface-overlay: var(--surface-overlay);
+
+  --color-subtle: var(--border-subtle);
+  --color-line: var(--border-default);
+  --color-strong: var(--border-strong);
+
+  --color-brand: var(--brand);
+  --color-brand-contrast: var(--brand-contrast);
+  --color-brand-soft: var(--brand-soft);
+
+  --color-success: var(--status-success);
+  --color-warning: var(--status-warning);
+  --color-danger: var(--status-danger);
+  --color-info: var(--status-info);
+
+  --color-match-strong: var(--match-strong);
+  --color-match-partial: var(--match-partial);
+  --color-match-gap: var(--match-gap);
+  --color-match-track: var(--match-track);
+
+  /* ── Typography scale ────────────────────────────────────────────────
+     Hierarchy comes from this scale — not from borders and boxes. */
+  --text-display: 3rem;
+  --text-display--line-height: 1.05;
+  --text-display--letter-spacing: -0.03em;
+  --text-display--font-weight: 700;
+
+  --text-page: 1.75rem;
+  --text-page--line-height: 1.15;
+  --text-page--letter-spacing: -0.025em;
+  --text-page--font-weight: 700;
+
+  --text-section: 1.125rem;
+  --text-section--line-height: 1.3;
+  --text-section--letter-spacing: -0.015em;
+  --text-section--font-weight: 600;
+
+  --text-card: 0.9375rem;
+  --text-card--line-height: 1.4;
+  --text-card--letter-spacing: -0.01em;
+  --text-card--font-weight: 600;
+
+  --text-body: 0.875rem;
+  --text-body--line-height: 1.6;
+
+  --text-secondary-size: 0.8125rem;
+  --text-secondary-size--line-height: 1.55;
+
+  --text-label: 0.75rem;
+  --text-label--line-height: 1.4;
+  --text-label--font-weight: 500;
+
+  --text-meta: 0.6875rem;
+  --text-meta--line-height: 1.45;
+
+  /* Numbers, scores, percentages — tabular everywhere */
+  --text-number: 1.5rem;
+  --text-number--line-height: 1.1;
+  --text-number--letter-spacing: -0.02em;
+  --text-number--font-weight: 700;
+
+  --text-score: 2.5rem;
+  --text-score--line-height: 1;
+  --text-score--letter-spacing: -0.03em;
+  --text-score--font-weight: 700;
+
+  /* ── Radius scale exposed to utilities ── */
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 9999px;
 }
 
 body {
@@ -486,6 +609,13 @@ body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
   letter-spacing: -0.011em;
   line-height: 1.5;
+}
+
+/* Tabular figures for every number, score, and percentage in the product.
+   Keeps score counters and metric grids visually aligned. */
+.tnum, [data-tnum] {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 /* Premium typography scale */

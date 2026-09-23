@@ -134,19 +134,19 @@ function StepPanel({ step }: { step: number }) {
     case 0:
       return (
         <div className="space-y-4">
-          <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">
+          <div className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">
             Your resume · Experience
           </div>
           {candidateExperience.map((exp) => (
             <div
               key={exp.role}
-              className="rounded-lg border border-slate-800/60 bg-slate-900/50 p-4"
+              className="rounded-lg border border-subtle bg-slate-900/50 p-4"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
-                <span className="text-sm font-semibold text-white">
+                <span className="text-sm font-semibold text-ink">
                   {exp.role}
                 </span>
-                <span className="text-xs text-slate-500">{exp.period}</span>
+                <span className="text-xs text-ink-muted">{exp.period}</span>
               </div>
               <div className="text-xs text-cyan-400/90 mb-2.5">
                 {exp.company}
@@ -155,7 +155,7 @@ function StepPanel({ step }: { step: number }) {
                 {exp.points.map((p) => (
                   <li
                     key={p}
-                    className="flex items-start gap-2 text-xs text-slate-400 leading-relaxed"
+                    className="flex items-start gap-2 text-xs text-ink-secondary leading-relaxed"
                   >
                     <span className="mt-1.5 h-1 w-1 rounded-full bg-slate-600 shrink-0" />
                     {p}
@@ -170,10 +170,10 @@ function StepPanel({ step }: { step: number }) {
     case 1:
       return (
         <div className="space-y-4">
-          <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">
+          <div className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">
             Pasted job description
           </div>
-          <pre className="whitespace-pre-wrap rounded-lg border border-slate-800/60 bg-slate-900/50 p-4 text-xs text-slate-400 leading-relaxed font-sans overflow-x-auto max-h-[260px]">
+          <pre className="whitespace-pre-wrap rounded-lg border border-subtle bg-slate-900/50 p-4 text-xs text-ink-secondary leading-relaxed font-sans overflow-x-auto max-h-[260px]">
             {jobDescription}
           </pre>
         </div>
@@ -186,7 +186,7 @@ function StepPanel({ step }: { step: number }) {
             className="h-8 w-8 animate-spin text-cyan-400"
             aria-hidden="true"
           />
-          <div className="text-sm text-slate-300">
+          <div className="text-sm text-ink-secondary">
             Comparing the job against your real experience…
           </div>
           <div
@@ -216,7 +216,7 @@ function StepPanel({ step }: { step: number }) {
               <Chip key={s} label={s} variant="matched" />
             ))}
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <p className="text-xs text-ink-muted leading-relaxed">
             Found in your resume — these will be emphasized in the tailored
             version.
           </p>
@@ -234,7 +234,7 @@ function StepPanel({ step }: { step: number }) {
               <Chip key={s} label={s} variant="partial" />
             ))}
           </div>
-          <p className="text-xs text-slate-500 leading-relaxed">
+          <p className="text-xs text-ink-muted leading-relaxed">
             Related experience found — we&apos;ll surface it where it&apos;s
             honest to do so, without claiming full proficiency.
           </p>
@@ -253,7 +253,7 @@ function StepPanel({ step }: { step: number }) {
             ))}
           </div>
           <div className="rounded-lg border border-emerald-500/20 bg-emerald-500/[0.05] p-3.5">
-            <p className="text-xs text-slate-300 leading-relaxed">
+            <p className="text-xs text-ink-secondary leading-relaxed">
               <strong className="text-emerald-300">
                 Not added to your resume.
               </strong>{" "}
@@ -267,19 +267,19 @@ function StepPanel({ step }: { step: number }) {
     case 6:
       return (
         <div className="space-y-4">
-          <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">
+          <div className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">
             Suggested changes — before / after
           </div>
           {suggestions.map((s, i) => (
             <div
               key={i}
-              className="rounded-lg border border-slate-800/60 bg-slate-900/50 p-4 space-y-2.5"
+              className="rounded-lg border border-subtle bg-slate-900/50 p-4 space-y-2.5"
             >
-              <div className="flex items-start gap-2 text-xs text-slate-500 line-through decoration-red-400/50">
+              <div className="flex items-start gap-2 text-xs text-ink-muted line-through decoration-red-400/50">
                 <X className="h-3.5 w-3.5 text-red-400/70 mt-0.5 shrink-0" aria-hidden="true" />
                 {s.before}
               </div>
-              <div className="flex items-start gap-2 text-xs text-slate-200">
+              <div className="flex items-start gap-2 text-xs text-ink">
                 <Check
                   className="h-3.5 w-3.5 text-emerald-400 mt-0.5 shrink-0"
                   aria-hidden="true"
@@ -298,15 +298,15 @@ function StepPanel({ step }: { step: number }) {
     case 7:
       return (
         <div className="space-y-4">
-          <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">
+          <div className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">
             Nothing saves until you say so
           </div>
           {suggestions.map((s, i) => (
             <div
               key={i}
-              className="rounded-lg border border-slate-800/60 bg-slate-900/50 p-4"
+              className="rounded-lg border border-subtle bg-slate-900/50 p-4"
             >
-              <p className="text-xs text-slate-300 leading-relaxed mb-3">
+              <p className="text-xs text-ink-secondary leading-relaxed mb-3">
                 {s.after}
               </p>
               <div className="flex items-center gap-2">
@@ -314,10 +314,10 @@ function StepPanel({ step }: { step: number }) {
                   <Check className="h-3.5 w-3.5" aria-hidden="true" />
                   Accept
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-1.5 text-xs font-medium text-slate-400">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-1.5 text-xs font-medium text-ink-secondary">
                   Edit
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-1.5 text-xs font-medium text-slate-400">
+                <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-800/60 border border-slate-700/60 px-3 py-1.5 text-xs font-medium text-ink-secondary">
                   <X className="h-3.5 w-3.5" aria-hidden="true" />
                   Reject
                 </span>
@@ -330,10 +330,10 @@ function StepPanel({ step }: { step: number }) {
     case 8:
       return (
         <div className="space-y-4">
-          <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium">
+          <div className="text-[11px] uppercase tracking-wider text-ink-muted font-medium">
             Ready to export
           </div>
-          <div className="rounded-lg border border-slate-800/60 bg-white/[0.02] p-5">
+          <div className="rounded-lg border border-subtle bg-white/[0.02] p-5">
             {/* Mini A4 preview */}
             <div className="mx-auto w-full max-w-[220px] aspect-[210/297] rounded border border-slate-700/60 bg-slate-950/80 p-4 space-y-2">
               <div className="h-2.5 w-2/3 rounded bg-cyan-400/40" />
@@ -349,16 +349,16 @@ function StepPanel({ step }: { step: number }) {
               <div className="h-1 w-3/4 rounded bg-slate-700/50" />
             </div>
             <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
-              <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-3.5 py-2 text-xs font-semibold text-white">
+              <span className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 px-3.5 py-2 text-xs font-semibold text-ink">
                 <Download className="h-3.5 w-3.5" aria-hidden="true" />
                 Export PDF
               </span>
-              <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/40 px-3.5 py-2 text-xs font-medium text-slate-300">
+              <span className="inline-flex items-center gap-1.5 rounded-lg border border-slate-700/60 bg-slate-800/40 px-3.5 py-2 text-xs font-medium text-ink-secondary">
                 Export DOCX
               </span>
             </div>
           </div>
-          <p className="text-[11px] text-slate-500 text-center leading-relaxed">
+          <p className="text-[11px] text-ink-muted text-center leading-relaxed">
             Tailored from your original — your source resume stays untouched.
           </p>
         </div>
@@ -396,7 +396,7 @@ export default function ProductDemo() {
   return (
     <section
       ref={ref}
-      className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
+      className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="Product demonstration"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900/20 via-transparent to-slate-900/20" />
@@ -411,18 +411,18 @@ export default function ProductDemo() {
             transition: "opacity 0.4s ease-out, transform 0.4s ease-out",
           }}
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               See it in action
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             A real walkthrough,{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               step by step
             </span>
           </h2>
-          <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-4 text-[17px] text-ink-secondary leading-relaxed max-w-2xl mx-auto">
             One candidate, one job description, nine steps — from paste to
             exported resume. Illustrative example using sample data.
           </p>
@@ -458,8 +458,8 @@ export default function ProductDemo() {
                     isActive
                       ? "border-cyan-500/40 bg-cyan-500/10 text-cyan-200"
                       : isDone
-                      ? "border-slate-800/60 bg-white/[0.02] text-slate-400 hover:border-slate-700/60"
-                      : "border-slate-800/30 bg-transparent text-slate-600 hover:text-slate-400"
+                      ? "border-subtle bg-white/[0.02] text-ink-secondary hover:border-slate-700/60"
+                      : "border-line/30 bg-transparent text-slate-600 hover:text-ink-secondary"
                   }`}
                 >
                   <Icon
@@ -484,14 +484,14 @@ export default function ProductDemo() {
           </nav>
 
           {/* Step content — app-window chrome */}
-          <div className="rounded-xl border border-slate-800/60 bg-slate-900/70 backdrop-blur-xl overflow-hidden shadow-[0_0_60px_-15px_rgba(59,130,246,0.12)] min-h-[380px]">
+          <div className="rounded-xl border border-subtle bg-surface backdrop-blur-xl overflow-hidden shadow-[0_0_60px_-15px_rgba(59,130,246,0.12)] min-h-[380px]">
             {/* Window header */}
-            <div className="px-4 py-3 border-b border-slate-800/80 flex items-center justify-between">
+            <div className="px-4 py-3 border-b border-line flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-bold text-[10px]">
+                <div className="w-6 h-6 rounded-md bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-ink font-bold text-[10px]">
                   P
                 </div>
-                <span className="text-xs font-medium text-slate-300">
+                <span className="text-xs font-medium text-ink-secondary">
                   Patorbit — Job Tailoring
                 </span>
               </div>
@@ -522,7 +522,7 @@ export default function ProductDemo() {
                 <span className="flex h-6 w-6 items-center justify-center rounded-md bg-cyan-500/15 text-[10px] font-bold text-cyan-300 tabular-nums">
                   {activeStep + 1}
                 </span>
-                <h3 className="text-sm font-semibold text-white">
+                <h3 className="text-sm font-semibold text-ink">
                   {steps[activeStep]}
                 </h3>
               </div>

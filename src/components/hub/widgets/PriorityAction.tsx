@@ -50,27 +50,27 @@ export default function PriorityAction({ data }: Props) {
       className="flex items-start justify-between gap-4 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.05] px-4 py-3.5"
     >
       <div className="flex items-center gap-3 min-w-0 flex-1">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 text-cyan-400">
+        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-cyan-500/15 text-brand">
           <svg className="h-3 w-3" viewBox="0 0 12 12" fill="currentColor" aria-hidden="true">
             <path d="M6 1a5 5 0 100 10A5 5 0 006 1zm.5 7.5h-1v-4h1v4zm0-5h-1V2.5h1V3.5z" />
           </svg>
         </span>
-        <p className="text-sm text-slate-300 leading-relaxed">
-          <span className="font-medium text-white">Next step: </span>
+        <p className="text-sm text-ink-secondary leading-relaxed">
+          <span className="font-medium text-ink">Next step: </span>
           {action.message}
         </p>
       </div>
       <div className="flex items-center gap-2 shrink-0">
         <Link
           href={action.href}
-          className="text-xs font-semibold text-cyan-400 hover:text-cyan-300 transition-colors focus-visible:outline-none focus-visible:text-cyan-300"
+          className="text-xs font-semibold text-brand hover:text-brand transition-colors focus-visible:outline-none focus-visible:text-brand"
         >
           {action.cta} →
         </Link>
         <button
           onClick={() => setDismissed(true)}
           aria-label="Dismiss"
-          className="rounded p-0.5 text-slate-500 hover:text-slate-300 transition-colors focus-visible:outline-none focus-visible:text-slate-300"
+          className="rounded p-0.5 text-ink-muted hover:text-ink-secondary transition-colors focus-visible:outline-none focus-visible:text-ink-secondary"
         >
           <X className="h-3.5 w-3.5" />
         </button>

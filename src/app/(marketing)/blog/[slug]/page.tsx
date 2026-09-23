@@ -110,11 +110,11 @@ export default function BlogPostPage() {
     return (
       <main className="min-h-screen bg-slate-950 pt-24">
         <div className="mx-auto max-w-3xl px-6 py-24 text-center">
-          <h1 className="text-4xl font-bold text-white mb-4">Article not found</h1>
-          <p className="text-slate-400 mb-8">This post doesn&apos;t exist (yet).</p>
+          <h1 className="text-4xl font-bold text-ink mb-4">Article not found</h1>
+          <p className="text-ink-secondary mb-8">This post doesn&apos;t exist (yet).</p>
           <Link
             href="/blog"
-            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition-all duration-150 hover:from-amber-400 hover:to-orange-500"
+            className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-7 py-3.5 text-sm font-semibold text-ink shadow-lg shadow-amber-500/20 transition-all duration-150 hover:from-amber-400 hover:to-orange-500"
           >
             Back to Blog
           </Link>
@@ -128,7 +128,7 @@ export default function BlogPostPage() {
       <article className="py-24">
         <div className="mx-auto max-w-3xl px-6">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-            <div className="flex items-center gap-4 text-sm text-slate-500 mb-8">
+            <div className="flex items-center gap-4 text-sm text-ink-muted mb-8">
               <Link href="/blog" className="text-amber-400 hover:underline">
                 &larr; Back to Blog
               </Link>
@@ -137,10 +137,10 @@ export default function BlogPostPage() {
               <span>•</span>
               <span>{post.read}</span>
             </div>
-            <h1 className="text-4xl sm:text-5xl font-bold text-white leading-tight mb-6">
+            <h1 className="text-4xl sm:text-5xl font-bold text-ink leading-tight mb-6">
               {post.title}
             </h1>
-            <p className="text-xl text-slate-400 mb-4">{post.dek}</p>
+            <p className="text-xl text-ink-secondary mb-4">{post.dek}</p>
             <p className="text-sm text-slate-600 mb-12">By the Patorbit team</p>
             <div className="prose prose-lg prose-invert max-w-none">{post.body}</div>
           </motion.div>
@@ -148,21 +148,21 @@ export default function BlogPostPage() {
           {/* CTA */}
           <div className="mt-16 text-center border-t border-white/10 pt-16">
             <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
-              <h2 className="text-3xl font-bold text-white mb-4">Try it yourself</h2>
-              <p className="text-slate-400 text-lg mb-8 max-w-md mx-auto">
+              <h2 className="text-3xl font-bold text-ink mb-4">Try it yourself</h2>
+              <p className="text-ink-secondary text-lg mb-8 max-w-md mx-auto">
                 Build a resume, analyze a real job description, and see the gaps reported honestly.
               </p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
                 <Link
                   href="/resume-builder"
-                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-amber-500/20 transition-all duration-150 hover:from-amber-400 hover:to-orange-500 hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-100"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-amber-500 to-orange-600 px-7 py-3.5 text-sm font-semibold text-ink shadow-lg shadow-amber-500/20 transition-all duration-150 hover:from-amber-400 hover:to-orange-500 hover:shadow-amber-400/30 hover:scale-[1.02] active:scale-100"
                 >
                   Build my resume free
                   <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
                 </Link>
                 <Link
                   href="/free-analysis"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-ink-secondary transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-ink hover:scale-[1.02] active:scale-100"
                 >
                   Try a job analysis
                 </Link>

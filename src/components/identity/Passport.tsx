@@ -63,22 +63,22 @@ function IdentityHeader({ resume }: { resume: Resume }) {
   const hasSummary = resume.summary && resume.summary.trim().length > 0;
 
   return (
-    <div className="border-b border-white/[0.06] pb-6">
+    <div className="border-b border-subtle pb-6">
       <div className="flex items-center gap-4">
         {/* Placeholder for future avatar */}
-        <div className="w-16 h-16 rounded-full bg-white/[0.04] flex items-center justify-center">
-          <User className="w-8 h-8 text-slate-500" />
+        <div className="w-16 h-16 rounded-full bg-brand-soft flex items-center justify-center">
+          <User className="w-8 h-8 text-brand" />
         </div>
         <div>
-          <h1 className="text-xl font-semibold text-white">{resume.name || "Untitled Profile"}</h1>
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-xs text-slate-400">
+          <h1 className="text-page text-ink">{resume.name || "Untitled Profile"}</h1>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-1 text-body text-ink-secondary">
             {hasTitle && (
               <div className="flex items-center gap-1.5">
                 <Briefcase className="w-3.5 h-3.5" />
                 <span>{resume.title}</span>
               </div>
             )}
-            {hasTitle && hasLocation && <span className="text-slate-600">•</span>}
+            {hasTitle && hasLocation && <span className="text-ink-muted">•</span>}
             {hasLocation && (
               <div className="flex items-center gap-1.5">
                 <MapPin className="w-3.5 h-3.5" />
@@ -86,13 +86,13 @@ function IdentityHeader({ resume }: { resume: Resume }) {
               </div>
             )}
           </div>
-          <p className="mt-1.5 text-[11px] text-slate-500">
-            Professional profile generated from the professional information you supported.
+          <p className="mt-1.5 text-meta text-ink-muted">
+            Built from the professional information you provided.
           </p>
         </div>
       </div>
       {hasSummary && (
-        <p className="mt-4 text-sm text-slate-300/80 leading-relaxed max-w-2xl">
+        <p className="mt-4 text-body text-ink-secondary leading-relaxed max-w-2xl">
           {resume.summary}
         </p>
       )}
@@ -130,42 +130,42 @@ function CareerSnapshot({ resume }: { resume: Resume }) {
   const careerFocus = deriveCareerFocus(resume);
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-      <h2 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4">
+    <div className="rounded-xl border border-subtle bg-surface p-5">
+      <h2 className="text-label uppercase tracking-wider text-ink-muted mb-4">
         Career Snapshot
       </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Current Role</div>
+          <div className="text-meta text-ink-muted uppercase tracking-wider">Current Role</div>
           {currentRole ? (
             <>
-              <div className="mt-1 text-sm font-medium text-white">{currentRole.position || "Untitled role"}</div>
-              <div className="text-xs text-slate-400">{currentRole.company || "—"}</div>
+              <div className="mt-1 text-body font-medium text-ink">{currentRole.position || "Untitled role"}</div>
+              <div className="text-secondary-size text-ink-secondary">{currentRole.company || "—"}</div>
             </>
           ) : (
-            <div className="mt-1 text-xs text-slate-500 italic">No role added yet</div>
+            <div className="mt-1 text-secondary-size text-ink-muted italic">No role added yet</div>
           )}
         </div>
         <div>
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Total Experience</div>
-          <div className="mt-1 text-sm font-medium text-white">
+          <div className="text-meta text-ink-muted uppercase tracking-wider">Total Experience</div>
+          <div className="tnum mt-1 text-body font-medium text-ink">
             {totalYears !== null ? `${totalYears} yr${totalYears === 1 ? "" : "s"}` : "—"}
           </div>
         </div>
         {careerFocus && (
           <div>
-            <div className="text-[10px] text-slate-500 uppercase tracking-wider">Career Focus</div>
-            <div className="mt-1 text-sm text-white">{careerFocus}</div>
+            <div className="text-meta text-ink-muted uppercase tracking-wider">Career Focus</div>
+            <div className="mt-1 text-body text-ink">{careerFocus}</div>
           </div>
         )}
         <div>
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Education</div>
+          <div className="text-meta text-ink-muted uppercase tracking-wider">Education</div>
           {resume.education && resume.education.length > 0 ? (
-            <div className="mt-1 text-sm text-white">
+            <div className="mt-1 text-body text-ink">
               {resume.education[0].degree || "Degree"} · {resume.education[0].school || "School"}
             </div>
           ) : (
-            <div className="mt-1 text-xs text-slate-500 italic">No education added</div>
+            <div className="mt-1 text-secondary-size text-ink-muted italic">No education added</div>
           )}
         </div>
       </div>
@@ -214,29 +214,29 @@ function TrustSnapshot({
   }
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-      <h2 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+    <div className="rounded-xl border border-subtle bg-surface p-5">
+      <h2 className="text-label uppercase tracking-wider text-ink-muted mb-1">
         Professional Trust
       </h2>
-      <p className="text-sm text-slate-300 mb-4">{insight}</p>
+      <p className="text-body text-ink-secondary mb-4">{insight}</p>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <div>
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Supported Claims</div>
-          <div className="mt-1 text-2xl font-semibold text-emerald-400">{supportedClaims.length}</div>
+          <div className="text-meta text-ink-muted uppercase tracking-wider">Supported Claims</div>
+          <div className="tnum mt-1 text-number text-success">{supportedClaims.length}</div>
         </div>
         <div>
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Evidence Items</div>
-          <div className="mt-1 text-2xl font-semibold text-white">{evidence.length}</div>
+          <div className="text-meta text-ink-muted uppercase tracking-wider">Evidence Items</div>
+          <div className="tnum mt-1 text-number text-ink">{evidence.length}</div>
         </div>
         <div>
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Evidence Coverage</div>
-          <div className="mt-1 text-2xl font-semibold text-white">
+          <div className="text-meta text-ink-muted uppercase tracking-wider">Evidence Coverage</div>
+          <div className="tnum mt-1 text-number text-ink">
             {claims.length > 0 ? Math.round((supportedClaims.length / claims.length) * 100) : 0}%
           </div>
         </div>
         <div>
-          <div className="text-[10px] text-slate-500 uppercase tracking-wider">Last Updated</div>
-          <div className="mt-1 text-xs text-slate-400">
+          <div className="text-meta text-ink-muted uppercase tracking-wider">Last Updated</div>
+          <div className="mt-1 text-secondary-size text-ink-secondary">
             {lastUpdated > 0 ? formatDate(new Date(lastUpdated).toISOString()) : "—"}
           </div>
         </div>
@@ -264,15 +264,27 @@ function ProfessionalHighlights({ claims, evidence }: { claims: Claim[]; evidenc
   const evidenceFor = (claimId: string) => evidence.filter((e) => e.claimId === claimId);
 
   return (
-    <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-5">
-      <h2 className="text-xs font-semibold text-slate-300 uppercase tracking-wider mb-4">
+    <div className="rounded-xl border border-subtle bg-surface p-5">
+      <h2 className="text-label uppercase tracking-wider text-ink-muted mb-4">
         Professional Highlights
       </h2>
 
       {supported.length === 0 ? (
-        <p className="text-sm text-slate-500 italic">
-          No supported claims yet. Accept claims and attach evidence to see them here.
-        </p>
+        <div className="py-4 text-center">
+          <p className="text-body text-ink font-medium">
+            No supported claims yet
+          </p>
+          <p className="mt-1 text-secondary-size text-ink-secondary max-w-sm mx-auto">
+            Highlights show the parts of your profile that are backed by evidence —
+            accept a claim and attach evidence to see it here.
+          </p>
+          <a
+            href="/trust/evidence"
+            className="mt-3 inline-flex h-8 items-center rounded-md bg-brand px-3.5 text-label font-semibold text-brand-contrast transition-opacity hover:opacity-90"
+          >
+            Add evidence
+          </a>
+        </div>
       ) : (
         <div className="space-y-3">
           {supported.map((claim, idx) => {
@@ -285,23 +297,22 @@ function ProfessionalHighlights({ claims, evidence }: { claims: Claim[]; evidenc
             return (
               <div
                 key={`${claim.id}-${idx}`}
-                className="rounded-xl border border-white/[0.06] bg-white/[0.02] p-4"
+                className="rounded-lg border border-subtle bg-white/[0.02] p-4"
               >
                 <div className="flex items-start justify-between gap-3">
-                  <p className="text-sm text-slate-200 font-medium">{claim.assertionText}</p>
-                  <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-400">
+                  <p className="text-body text-ink font-medium">{claim.assertionText}</p>
+                  <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-[var(--status-success-soft)] px-2 py-0.5 text-meta font-medium text-success">
                     <ShieldCheck className="w-3 h-3" />
                     Supported
                   </span>
                 </div>
                 <div className="mt-2 flex items-center justify-between gap-3">
-                  <p className="text-xs text-slate-500 break-words min-w-0">
+                  <p className="text-meta text-ink-muted break-words min-w-0">
                     {summary || `Supported by ${claimEvidence.length} evidence ${claimEvidence.length === 1 ? "item" : "items"}.`}
                   </p>
                   <a
-                    href="#"
-                    onClick={(e) => e.preventDefault()}
-                    className="shrink-0 inline-flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300"
+                    href="/trust/evidence"
+                    className="shrink-0 inline-flex items-center gap-1 text-meta text-brand hover:underline"
                   >
                     <Eye className="w-3 h-3" />
                     View Evidence

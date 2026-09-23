@@ -34,30 +34,30 @@ export default function TrustWidget() {
       >
         <div className="space-y-3">
           <div className="flex items-center gap-5">
-            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02]">
+            <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-2xl border border-dashed border-gray-200 dark:border-line bg-gray-50 dark:bg-surface">
               <span className="text-xl font-bold text-gray-300 dark:text-slate-600">—</span>
-              <span className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500">
+              <span className="text-[9px] font-semibold uppercase tracking-wider text-ink-muted">
                 {loading ? "Loading…" : "No score"}
               </span>
             </div>
             <div className="space-y-1">
-              <p className="text-[11px] font-medium text-gray-600 dark:text-slate-300">
+              <p className="text-[11px] font-medium text-ink-secondary">
                 Evidence-Backed Profile
               </p>
-              <p className="text-[10px] leading-relaxed text-gray-400 dark:text-slate-500">
+              <p className="text-[10px] leading-relaxed text-ink-muted">
                 Built from verified claims, evidence, and verification history
               </p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-dashed border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] px-4 py-4 text-center">
+          <div className="rounded-xl border border-dashed border-subtle bg-gray-50 dark:bg-surface px-4 py-4 text-center">
             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500/10 to-green-500/10 dark:from-emerald-500/15 dark:to-green-500/15 flex items-center justify-center mx-auto mb-2">
               <ShieldCheck className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
             </div>
-            <p className="text-[11px] font-medium text-gray-600 dark:text-slate-300">
+            <p className="text-[11px] font-medium text-ink-secondary">
               Your Trust Score starts here
             </p>
-            <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5 leading-relaxed">
+            <p className="text-[10px] text-ink-muted mt-0.5 leading-relaxed">
               Add claims, attach evidence, and request verification to increase your trust.
             </p>
             <Link
@@ -89,7 +89,7 @@ export default function TrustWidget() {
         <div className="space-y-1.5 min-w-0 flex-1">
           <p className="text-[11px] font-semibold text-gray-700 dark:text-slate-200">Evidence-Backed Profile</p>
           {summary ? (
-            <div className="flex flex-wrap items-center gap-2 text-[10px] text-gray-500 dark:text-slate-400">
+            <div className="flex flex-wrap items-center gap-2 text-[10px] text-ink-secondary">
               <span className="inline-flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                 {summary.verifiedClaims} Verified
@@ -102,7 +102,7 @@ export default function TrustWidget() {
               )}
             </div>
           ) : (
-            <p className="text-[10px] text-gray-400 dark:text-slate-500">Derived from your claims and evidence</p>
+            <p className="text-[10px] text-ink-muted">Derived from your claims and evidence</p>
           )}
           <p className="text-[9px] text-slate-600 font-mono">v{report?.algorithmVersion}</p>
         </div>

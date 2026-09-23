@@ -7,18 +7,18 @@ import { Target, Sparkles, FileText, ArrowRight, Wand2 } from "lucide-react";
  */
 export default function AICopilotWidget() {
   return (
-    <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] overflow-hidden">
+    <div className="rounded-2xl border border-subtle bg-white dark:bg-[#080C18] overflow-hidden">
       {/* Header */}
       <div className="px-5 pt-5 pb-4">
         <div className="flex items-center gap-3 mb-1">
           <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
-            <Sparkles className="w-4.5 h-4.5 text-white" />
+            <Sparkles className="w-4.5 h-4.5 text-ink" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-gray-900 dark:text-white tracking-tight">
+            <h3 className="text-sm font-bold text-ink tracking-tight">
               AI Resume Tools
             </h3>
-            <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-0.5">
+            <p className="text-[11px] text-ink-secondary mt-0.5">
               Improve your resume with AI assistance
             </p>
           </div>
@@ -38,13 +38,13 @@ export default function AICopilotWidget() {
           <div className="relative p-4">
             <div className="flex items-start gap-3">
               <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 flex items-center justify-center shrink-0 shadow-md shadow-purple-500/20">
-                <Target className="w-4 h-4 text-white" />
+                <Target className="w-4 h-4 text-ink" />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-[13px] font-semibold text-gray-900 dark:text-white">
+                <p className="text-[13px] font-semibold text-ink">
                   Tailor Resume to a Job
                 </p>
-                <p className="text-[11px] text-gray-500 dark:text-slate-400 mt-1 leading-relaxed">
+                <p className="text-[11px] text-ink-secondary mt-1 leading-relaxed">
                   Paste a job description and Patorbit will identify relevant requirements and tailor your resume using your existing experience.
                 </p>
                 <div className="flex items-center gap-1.5 mt-3 text-[11px] font-semibold text-purple-600 dark:text-purple-400 group-hover:text-purple-700 dark:group-hover:text-purple-300 transition-colors">
@@ -59,7 +59,7 @@ export default function AICopilotWidget() {
 
       {/* Secondary actions */}
       <div className="px-5 pb-4 space-y-1">
-        <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">
+        <p className="text-[10px] font-semibold text-ink-muted uppercase tracking-wider mb-2">
           Also available in the builder
         </p>
 
@@ -82,18 +82,18 @@ export default function AICopilotWidget() {
             href="/resume-builder"
             className="flex items-center gap-3 rounded-lg px-3 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-all group"
           >
-            <span className={`w-7 h-7 rounded-lg bg-gradient-to-br ${action.gradient} flex items-center justify-center text-white shrink-0 shadow-sm`}>
+            <span className={`w-7 h-7 rounded-lg bg-gradient-to-br ${action.gradient} flex items-center justify-center text-ink shrink-0 shadow-sm`}>
               {action.icon}
             </span>
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-semibold text-gray-700 dark:text-slate-200 group-hover:text-gray-900 dark:group-hover:text-white transition-colors">
+              <p className="text-[11px] font-semibold text-gray-700 dark:text-slate-200 group-hover:text-gray-900 dark:group-hover:text-ink transition-colors">
                 {action.label}
               </p>
-              <p className="text-[10px] text-gray-400 dark:text-slate-500 truncate leading-relaxed">
+              <p className="text-[10px] text-ink-muted truncate leading-relaxed">
                 {action.desc}
               </p>
             </div>
-            <ArrowRight className="w-3 h-3 text-gray-300 dark:text-slate-600 group-hover:text-gray-400 dark:group-hover:text-slate-400 transition-all group-hover:translate-x-0.5 shrink-0" />
+            <ArrowRight className="w-3 h-3 text-gray-300 dark:text-slate-600 group-hover:text-gray-400 dark:group-hover:text-ink-secondary transition-all group-hover:translate-x-0.5 shrink-0" />
           </Link>
         ))}
       </div>
@@ -101,12 +101,12 @@ export default function AICopilotWidget() {
       {/* Footer CTA */}
       <div className="px-5 py-4 border-t border-gray-100 dark:border-white/[0.04]">
         <div className="flex items-center justify-between gap-3">
-          <p className="text-[10px] text-gray-400 dark:text-slate-500">
+          <p className="text-[10px] text-ink-muted">
             AI uses your existing information. All changes require your approval.
           </p>
           <Link
             href="/ai"
-            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-3.5 py-1.5 text-[11px] font-semibold text-white shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30 hover:brightness-110 active:scale-[0.98] transition-all"
+            className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-500 px-3.5 py-1.5 text-[11px] font-semibold text-ink shadow-md shadow-cyan-500/20 hover:shadow-lg hover:shadow-cyan-500/30 hover:brightness-110 active:scale-[0.98] transition-all"
           >
             Open AI Workspace
             <ArrowRight className="w-3 h-3" />

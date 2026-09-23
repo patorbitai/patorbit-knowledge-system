@@ -28,7 +28,7 @@ export default function CompliancePage() {
       </LegalSection>
 
       <LegalSection number="2" title="Security Standards">
-        <ul className="list-disc list-inside space-y-2 text-slate-400">
+        <ul className="list-disc list-inside space-y-2 text-ink-secondary">
           <li>Encryption of data in transit (TLS); data at rest is encrypted by our database and hosting providers.</li>
           <li>Role-based access controls and least-privilege principles.</li>
           <li>Regular security reviews and incident response procedures.</li>
@@ -37,7 +37,7 @@ export default function CompliancePage() {
 
       <LegalSection number="3" title="Certifications & Standards">
         <p>
-          Patorbit currently holds <span className="text-slate-300">no certifications</span> — no SOC 2,
+          Patorbit currently holds <span className="text-ink-secondary">no certifications</span> — no SOC 2,
           no ISO 27001, and no completed third-party audits. We are not currently working toward SOC 2.
           If and when a certification is achieved, we will publish the details here.
         </p>

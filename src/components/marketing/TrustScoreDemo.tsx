@@ -15,7 +15,7 @@ export default function TrustScoreDemo() {
   return (
     <section
       ref={ref}
-      className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
+      className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="AI Job Tailoring"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900/20 via-transparent to-slate-900/20" />
@@ -29,18 +29,18 @@ export default function TrustScoreDemo() {
           }}
           className="text-center mb-16"
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               AI Job Tailoring
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             See how your resume{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               matches the job
             </span>
           </h2>
-          <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
+          <p className="mt-4 text-[17px] text-ink-secondary leading-relaxed max-w-xl mx-auto">
             Paste a job description and Patorbit analyzes the match — showing what you already have, what partially matches, and what's missing.
           </p>
         </div>
@@ -55,12 +55,12 @@ export default function TrustScoreDemo() {
           className="grid lg:grid-cols-2 gap-8 max-w-5xl mx-auto items-start"
         >
           {/* Score visual */}
-          <div className="rounded-xl border border-slate-800/60 bg-slate-900/40 p-8 text-center">
-            <div className="text-[10px] uppercase tracking-wider text-slate-500 font-medium mb-2">Job Match Score</div>
+          <div className="rounded-xl border border-subtle bg-surface p-8 text-center">
+            <div className="text-[10px] uppercase tracking-wider text-ink-muted font-medium mb-2">Job Match Score</div>
             <div className="text-7xl font-bold tabular-nums bg-gradient-to-r from-emerald-300 to-cyan-400 bg-clip-text text-transparent">
               82
             </div>
-            <div className="text-lg text-slate-500 font-medium mt-1">/100</div>
+            <div className="text-lg text-ink-muted font-medium mt-1">/100</div>
 
             {/* Score bar */}
             <div className="mt-6 h-2 w-full rounded-full bg-slate-800 overflow-hidden">
@@ -74,9 +74,9 @@ export default function TrustScoreDemo() {
                 { label: "Missing Skills", value: "2" },
                 { label: "Experience", value: "Strong" },
               ].map((stat) => (
-                <div key={stat.label} className="rounded-lg border border-slate-800/60 bg-slate-900/40 p-3">
-                  <div className="text-xs text-slate-500">{stat.label}</div>
-                  <div className="text-sm font-semibold text-white mt-0.5">{stat.value}</div>
+                <div key={stat.label} className="rounded-lg border border-subtle bg-surface p-3">
+                  <div className="text-xs text-ink-muted">{stat.label}</div>
+                  <div className="text-sm font-semibold text-ink mt-0.5">{stat.value}</div>
                 </div>
               ))}
             </div>
@@ -139,9 +139,9 @@ export default function TrustScoreDemo() {
             </div>
 
             {/* Trust note */}
-            <div className="rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-white/[0.06] px-3 py-2">
-              <p className="text-[10px] text-gray-500 dark:text-slate-400 leading-relaxed">
-                <strong className="text-gray-700 dark:text-slate-300">Truthful AI:</strong> Patorbit only works with information already in your resume. Missing skills are identified, not invented.
+            <div className="rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-200 dark:border-subtle px-3 py-2">
+              <p className="text-[10px] text-gray-500 dark:text-ink-secondary leading-relaxed">
+                <strong className="text-gray-700 dark:text-ink-secondary">Truthful AI:</strong> Patorbit only works with information already in your resume. Missing skills are identified, not invented.
               </p>
             </div>
           </div>

@@ -828,7 +828,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                           value={draftSummary}
                           onChange={(e) => { setDraftSummary(e.target.value); setIsDirty(true); }}
                           rows={3}
-                          className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                          className="w-full rounded-md border border-line bg-white/[0.04] px-3 py-2 text-meta text-ink resize-none focus:outline-none focus:ring-2 focus:ring-brand-ring"
                         />
                       </div>
                       <div>
@@ -837,7 +837,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                           value={draftSkills}
                           onChange={(e) => { setDraftSkills(e.target.value); setIsDirty(true); }}
                           rows={2}
-                          className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+                          className="w-full rounded-md border border-line bg-white/[0.04] px-3 py-2 text-meta text-ink resize-none focus:outline-none focus:ring-2 focus:ring-brand-ring"
                         />
                       </div>
                       {Object.keys(draftExpBullets).length > 0 && (
@@ -996,14 +996,16 @@ function SuggestionCard({
   const shownText =
     status === "edited" && decision?.text ? decision.text : suggestion.suggested;
 
+  // §15: accepted = subtle positive, rejected = subtle neutral,
+  // edited = shows the user changed wording, undecided = neutral.
   const border =
     status === "accepted"
-      ? "border-emerald-300 dark:border-emerald-500/30 bg-emerald-50/60 dark:bg-emerald-500/[0.06]"
-      : status === "rejected"
-        ? "border-rose-300 dark:border-rose-500/30 bg-rose-50/60 dark:bg-rose-500/[0.06]"
-        : status === "edited"
-          ? "border-cyan-300 dark:border-cyan-500/30 bg-cyan-50/60 dark:bg-cyan-500/[0.06]"
-          : "border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02]";
+      ? "border-success/40 bg-[var(--status-success-soft)]"
+      : status === "edited"
+        ? "border-brand/40 bg-brand-soft"
+        : status === "rejected"
+          ? "border-line bg-white/[0.01] opacity-70"
+          : "border-line bg-surface";
 
   const confidenceLabel =
     suggestion.confidence === "high"
@@ -1013,53 +1015,53 @@ function SuggestionCard({
         : "Confidence: Low";
 
   return (
-    <div className={`rounded-xl border p-3 space-y-2 ${border}`}>
+    <div className={`rounded-lg border p-3 space-y-2 ${border}`}>
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-gray-900 dark:text-white">
+          <p className="text-label font-semibold text-ink">
             {suggestion.sectionLabel}
           </p>
-          <p className="text-[10px] text-gray-500 dark:text-slate-400">
+          <p className="text-meta text-ink-muted">
             {suggestion.kind === "reorder"
               ? "Reorder"
               : suggestion.kind === "omit"
                 ? "Omission"
                 : "Rewrite"}{' · '}{confidenceLabel}
             {suggestion.safe && (
-              <span className="text-emerald-600 dark:text-emerald-400"> · Safe</span>
+              <span className="text-success"> · Safe</span>
             )}
           </p>
         </div>
         {status && (
           <span
-            className={`shrink-0 rounded-full px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide ${
+            className={`shrink-0 rounded-pill px-2 py-0.5 text-meta font-semibold uppercase tracking-wide ${
               status === "accepted"
-                ? "bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300"
-                : status === "rejected"
-                  ? "bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300"
-                  : "bg-cyan-100 dark:bg-cyan-500/20 text-cyan-700 dark:text-cyan-300"
+                ? "bg-[var(--status-success-soft)] text-success"
+                : status === "edited"
+                  ? "bg-brand-soft text-brand"
+                  : "bg-white/[0.06] text-ink-muted"
             }`}
           >
-            {status}
+            {status === "edited" ? "your edit" : status}
           </span>
         )}
       </div>
 
       {/* Original vs Suggested (§9/§11) */}
       <div className="grid gap-2 sm:grid-cols-2">
-        <div className="rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] p-2">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-0.5">
+        <div className="rounded-md bg-white/[0.03] border border-subtle p-2">
+          <p className="text-meta font-semibold uppercase tracking-wider text-ink-muted mb-0.5">
             Original
           </p>
-          <p className="text-[11px] text-gray-600 dark:text-slate-300 whitespace-pre-line">
+          <p className="text-meta text-ink-secondary whitespace-pre-line">
             {suggestion.original || "(empty)"}
           </p>
         </div>
-        <div className="rounded-lg bg-gray-50 dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.05] p-2">
-          <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-0.5">
+        <div className="rounded-md bg-white/[0.03] border border-subtle p-2">
+          <p className="text-meta font-semibold uppercase tracking-wider text-ink-muted mb-0.5">
             Suggested
           </p>
-          <p className="text-[11px] text-gray-800 dark:text-slate-200 whitespace-pre-line">
+          <p className="text-meta text-ink whitespace-pre-line">
             {shownText || suggestion.suggested || "(omitted from this version)"}
           </p>
         </div>
@@ -1067,19 +1069,19 @@ function SuggestionCard({
 
       {/* Why (§16) */}
       <div>
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-0.5">
+        <p className="text-meta font-semibold uppercase tracking-wider text-ink-muted mb-0.5">
           Why
         </p>
-        <p className="text-[11px] text-gray-600 dark:text-slate-300">{suggestion.why}</p>
+        <p className="text-meta text-ink-secondary">{suggestion.why}</p>
       </div>
 
       {/* Evidence (§6/§11) */}
       <div>
-        <p className="text-[9px] font-semibold uppercase tracking-wider text-gray-400 dark:text-slate-500 mb-0.5">
+        <p className="text-meta font-semibold uppercase tracking-wider text-ink-muted mb-0.5">
           Evidence
         </p>
         {suggestion.evidence.length === 0 ? (
-          <p className="text-[11px] text-gray-500 dark:text-slate-400 italic">
+          <p className="text-meta text-ink-muted italic">
             We couldn&apos;t find supporting evidence in your profile for this change.
           </p>
         ) : (
@@ -1087,13 +1089,13 @@ function SuggestionCard({
             {suggestion.evidence.map((ev, i) => (
               <div
                 key={`${ev.label}-${i}`}
-                className="rounded-lg bg-white dark:bg-white/[0.04] border border-gray-100 dark:border-white/[0.05] px-2.5 py-1.5"
+                className="rounded-md bg-white/[0.04] border border-subtle px-2.5 py-1.5"
               >
                 <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-400">
                   {ev.label}
                 </span>
                 {ev.quote && (
-                  <p className="text-[10px] text-gray-600 dark:text-slate-300 mt-0.5">{ev.quote}</p>
+                  <p className="text-meta text-ink-secondary mt-0.5">{ev.quote}</p>
                 )}
               </div>
             ))}
@@ -1103,11 +1105,11 @@ function SuggestionCard({
 
       {/* Never-apply list (§12) */}
       {suggestion.blocked.length > 0 && (
-        <div className="rounded-lg bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/20 px-2.5 py-1.5">
-          <p className="text-[10px] font-semibold text-amber-700 dark:text-amber-400">
+        <div className="rounded-md bg-[var(--status-warning-soft)] border border-warning/30 px-2.5 py-1.5">
+          <p className="text-meta font-semibold text-warning">
             Will not be applied — not in your profile:
           </p>
-          <p className="text-[10px] text-amber-600 dark:text-amber-300/80">
+          <p className="text-meta text-warning/80">
             {suggestion.blocked.join(" · ")}
           </p>
         </div>
@@ -1119,7 +1121,7 @@ function SuggestionCard({
           <button
             onClick={() => onDecide("accepted")}
             disabled={status === "accepted"}
-            className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors"
+            className="inline-flex items-center gap-1 rounded-md bg-[var(--status-success-soft)] disabled:opacity-50 px-3 py-1.5 text-meta font-semibold text-success transition-opacity hover:opacity-80 cursor-pointer"
           >
             <CheckCircle2 className="w-3 h-3" /> Accept
           </button>
@@ -1128,14 +1130,14 @@ function SuggestionCard({
               setDraft(shownText);
               setEditing(true);
             }}
-            className="inline-flex items-center gap-1 rounded-lg border border-gray-200 dark:border-white/[0.1] bg-white dark:bg-white/[0.04] hover:bg-gray-100 dark:hover:bg-white/[0.08] px-3 py-1.5 text-[11px] font-semibold text-gray-700 dark:text-slate-200 transition-colors"
+            className="inline-flex items-center gap-1 rounded-md border border-line bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-meta font-semibold text-ink transition-colors cursor-pointer"
           >
             <PenLine className="w-3 h-3" /> Edit
           </button>
           <button
             onClick={() => onDecide("rejected")}
             disabled={status === "rejected"}
-            className="inline-flex items-center gap-1 rounded-lg border border-rose-200 dark:border-rose-500/30 bg-rose-50 dark:bg-rose-500/10 disabled:opacity-50 px-3 py-1.5 text-[11px] font-semibold text-rose-700 dark:text-rose-300 hover:bg-rose-100 dark:hover:bg-rose-500/20 transition-colors"
+            className="inline-flex items-center gap-1 rounded-md border border-line bg-transparent disabled:opacity-50 px-3 py-1.5 text-meta font-semibold text-ink-muted hover:text-ink transition-colors cursor-pointer"
           >
             <X className="w-3 h-3" /> Reject
           </button>
@@ -1146,7 +1148,7 @@ function SuggestionCard({
             value={draft}
             onChange={(e) => setDraft(e.target.value)}
             rows={3}
-            className="w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-xs text-gray-900 dark:text-white resize-none focus:outline-none focus:ring-2 focus:ring-cyan-500/50"
+            className="w-full rounded-md border border-line bg-white/[0.04] px-3 py-2 text-meta text-ink resize-none focus:outline-none focus:ring-2 focus:ring-brand-ring"
             placeholder={
               suggestion.id === "skills"
                 ? "Comma-separated skills"
@@ -1161,7 +1163,7 @@ function SuggestionCard({
                 onDecide("edited", draft);
                 setEditing(false);
               }}
-              className="rounded-lg bg-cyan-600 hover:bg-cyan-700 px-3 py-1.5 text-[11px] font-semibold text-white transition-colors"
+              className="rounded-md bg-brand px-3 py-1.5 text-meta font-semibold text-brand-contrast transition-opacity hover:opacity-90 cursor-pointer"
             >
               Save my version
             </button>

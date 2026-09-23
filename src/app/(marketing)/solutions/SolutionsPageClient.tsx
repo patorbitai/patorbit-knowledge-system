@@ -133,9 +133,9 @@ export function SolutionsPageClient() {
   const active = audiences.find((a) => a.id === activeTab) || audiences[0];
 
   return (
-    <main className="min-h-screen bg-[#070B14] text-white">
+    <main className="min-h-screen bg-surface-sunken text-ink">
       {/* Hero */}
-      <section className="relative overflow-hidden border-b border-slate-800/50 pt-32 pb-20 md:pb-28">
+      <section className="relative overflow-hidden border-b border-line/50 pt-32 pb-20 md:pb-28">
         {/* Background grid */}
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.004)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.004)_1px,transparent_1px)] bg-[size:56px_56px]" />
         {/* Ambient glows */}
@@ -148,22 +148,22 @@ export function SolutionsPageClient() {
             {/* Left: Copy */}
             <div>
               {/* Category badge */}
-              <div className="mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-800/80 bg-white/[0.03] backdrop-blur-sm px-3.5 py-1.5">
+              <div className="mb-6 inline-flex items-center gap-2 rounded-xl border border-line/80 bg-white/[0.03] backdrop-blur-sm px-3.5 py-1.5">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75 animate-ping" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
                 </span>
-                <span className="text-[11px] text-slate-400 tracking-[0.15em] uppercase font-medium">Professional Identity Platform</span>
+                <span className="text-[11px] text-ink-secondary tracking-[0.15em] uppercase font-medium">Professional Identity Platform</span>
               </div>
 
-              <h1 className="text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[0.95] tracking-tight text-white mb-6">
+              <h1 className="text-5xl md:text-6xl lg:text-[3.75rem] xl:text-[4.25rem] font-bold leading-[0.95] tracking-tight text-ink mb-6">
                 One verified identity.{" "}
                 <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
                   Every career stage.
                 </span>
               </h1>
 
-              <p className="text-[17px] text-slate-400 leading-relaxed max-w-lg mb-3">
+              <p className="text-[17px] text-ink-secondary leading-relaxed max-w-lg mb-3">
                 Your credentials are scattered across resumes, LinkedIn, GitHub, and certificates. Patorbit unifies them into one verified professional identity that grows with you.
               </p>
 
@@ -174,7 +174,7 @@ export function SolutionsPageClient() {
                   { label: "Trust Score", color: "text-cyan-400" },
                   { label: "Professional Passport", color: "text-blue-400" },
                 ].map((item) => (
-                  <span key={item.label} className="inline-flex items-center gap-1.5 text-xs text-slate-500">
+                  <span key={item.label} className="inline-flex items-center gap-1.5 text-xs text-ink-muted">
                     <span className={`w-1.5 h-1.5 rounded-full bg-current ${item.color}`} />
                     <span className={item.color}>{item.label}</span>
                   </span>
@@ -184,14 +184,14 @@ export function SolutionsPageClient() {
               <div className="flex flex-col sm:flex-row gap-3">
                 <a
                   href="/register"
-                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+                  className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
                 >
                   Build Your Identity
                   <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
                 </a>
                 <a
                   href="/contact#sales"
-                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+                  className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-ink-secondary transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-ink hover:scale-[1.02] active:scale-100"
                 >
                   Talk to Sales
                 </a>
@@ -201,20 +201,20 @@ export function SolutionsPageClient() {
             {/* Right: Platform mockup */}
             <div className="relative hidden lg:block">
               {/* Ghost depth layers */}
-              <div className="absolute -bottom-4 -left-4 -right-4 h-full rounded-2xl border border-slate-800/20 bg-slate-900/10 -z-20" />
-              <div className="absolute -bottom-2 -left-2 -right-2 h-full rounded-2xl border border-slate-800/30 bg-slate-900/20 -z-10" />
+              <div className="absolute -bottom-4 -left-4 -right-4 h-full rounded-2xl border border-line/20 bg-slate-900/10 -z-20" />
+              <div className="absolute -bottom-2 -left-2 -right-2 h-full rounded-2xl border border-line/30 bg-slate-900/20 -z-10" />
 
               {/* Main card */}
-              <div className="rounded-2xl border border-slate-800 bg-slate-900/70 backdrop-blur-xl overflow-hidden shadow-[0_0_80px_-20px_rgba(6,182,212,0.12)]">
+              <div className="rounded-xl border border-subtle bg-surface/70 backdrop-blur-xl overflow-hidden shadow-[0_0_80px_-20px_rgba(6,182,212,0.12)]">
                 {/* Card chrome */}
-                <div className="px-5 py-3.5 border-b border-slate-800/80 flex items-center justify-between">
+                <div className="px-5 py-3.5 border-b border-line/80 flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-bold text-[11px] shadow-md shadow-cyan-500/20">
+                    <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-ink font-bold text-[11px] shadow-md shadow-cyan-500/20">
                       P
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-white">Professional Passport</div>
-                      <div className="text-[10px] text-slate-500 flex items-center gap-1.5">
+                      <div className="text-sm font-semibold text-ink">Professional Passport</div>
+                      <div className="text-[10px] text-ink-muted flex items-center gap-1.5">
                         <span className="inline-block w-1.5 h-1.5 rounded-full bg-emerald-400" />
                         Identity verified
                       </div>
@@ -229,17 +229,17 @@ export function SolutionsPageClient() {
                 {/* Passport body */}
                 <div className="p-5 space-y-4">
                   {/* Identity row */}
-                  <div className="flex items-center gap-4 p-4 rounded-xl border border-slate-800/60 bg-white/[0.02]">
-                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-700/60 flex items-center justify-center text-lg font-bold text-slate-300">
+                  <div className="flex items-center gap-4 p-4 rounded-xl border border-line/60 bg-white/[0.02]">
+                    <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-800 border border-slate-700/60 flex items-center justify-center text-lg font-bold text-ink-secondary">
                       AK
                     </div>
                     <div>
-                      <div className="text-sm font-semibold text-white">Alex Kim</div>
-                      <div className="text-xs text-slate-500">Senior Software Engineer · 5 yrs verified</div>
+                      <div className="text-sm font-semibold text-ink">Alex Kim</div>
+                      <div className="text-xs text-ink-muted">Senior Software Engineer · 5 yrs verified</div>
                     </div>
                     <div className="ml-auto text-right">
                       <div className="text-2xl font-bold tabular-nums bg-gradient-to-r from-emerald-300 to-cyan-400 bg-clip-text text-transparent">84</div>
-                      <div className="text-[9px] text-slate-500 uppercase tracking-wider">Trust Score</div>
+                      <div className="text-[9px] text-ink-muted uppercase tracking-wider">Trust Score</div>
                     </div>
                   </div>
 
@@ -252,7 +252,7 @@ export function SolutionsPageClient() {
                     ].map((stat) => (
                       <div key={stat.label} className={`rounded-xl border ${stat.bg} px-3 py-3 text-center`}>
                         <div className={`text-xl font-bold tabular-nums ${stat.accent}`}>{stat.value}</div>
-                        <div className="text-[9px] text-slate-500 mt-0.5 leading-tight">{stat.label}</div>
+                        <div className="text-[9px] text-ink-muted mt-0.5 leading-tight">{stat.label}</div>
                       </div>
                     ))}
                   </div>
@@ -264,7 +264,7 @@ export function SolutionsPageClient() {
                       { claim: "AWS Solutions Architect", source: "Amazon Certification DB", verified: true },
                       { claim: "Led team of 8 engineers", source: "LinkedIn · Manager confirmed", verified: true },
                     ].map((item) => (
-                      <div key={item.claim} className="flex items-start gap-3 rounded-lg border border-slate-800/50 bg-white/[0.015] px-3.5 py-2.5">
+                      <div key={item.claim} className="flex items-start gap-3 rounded-lg border border-line/50 bg-white/[0.015] px-3.5 py-2.5">
                         <Check className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" strokeWidth={2.5} />
                         <div className="flex-1 min-w-0">
                           <div className="text-xs font-medium text-slate-200 truncate">{item.claim}</div>
@@ -279,7 +279,7 @@ export function SolutionsPageClient() {
                     <div className="text-[10px] text-slate-600 uppercase tracking-wider">Part of</div>
                     <div className="flex gap-1.5">
                       {["Resume Builder", "Knowledge Graph", "Career Hub"].map((p) => (
-                        <span key={p} className="rounded-md border border-slate-800/60 bg-slate-900/60 px-2 py-0.5 text-[9px] text-slate-500">{p}</span>
+                        <span key={p} className="rounded-md border border-line/60 bg-slate-900/60 px-2 py-0.5 text-[9px] text-ink-muted">{p}</span>
                       ))}
                     </div>
                   </div>
@@ -292,23 +292,23 @@ export function SolutionsPageClient() {
       </section>
 
       {/* Why Patorbit */}
-      <section className="relative bg-[#070B14] py-24 lg:py-36 overflow-hidden border-b border-slate-800/40">
+      <section className="relative bg-surface-sunken py-24 lg:py-36 overflow-hidden border-b border-line/40">
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-transparent to-slate-900/10 pointer-events-none" />
 
         <div className="relative mx-auto max-w-7xl px-6">
 
           {/* Headline + description */}
           <div className="text-center mb-20">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">The Problem</span>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line/60 bg-slate-900/60 px-3.5 py-1">
+              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">The Problem</span>
             </div>
-            <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-white leading-[1.0] mb-7 max-w-3xl mx-auto">
+            <h2 className="text-4xl md:text-5xl lg:text-[3.5rem] font-bold tracking-tight text-ink leading-[1.0] mb-7 max-w-3xl mx-auto">
               Professional identity is{" "}
               <span className="bg-gradient-to-r from-rose-400 via-orange-400 to-amber-400 bg-clip-text text-transparent">
                 fragmented.
               </span>
             </h2>
-            <p className="text-[17px] text-slate-400 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-[17px] text-ink-secondary leading-relaxed max-w-2xl mx-auto">
               Today&apos;s professionals manage resumes, LinkedIn profiles, portfolios, certificates, GitHub, and work history across multiple platforms. None of them provide a single trusted identity.
             </p>
           </div>
@@ -323,9 +323,9 @@ export function SolutionsPageClient() {
               {/* Source platforms */}
               <div className="space-y-2.5 mb-6">
                 {["Resume", "LinkedIn", "Portfolio", "Certificates", "GitHub"].map((src) => (
-                  <div key={src} className="flex items-center gap-3 rounded-xl border border-slate-800/50 bg-slate-900/30 px-4 py-3">
+                  <div key={src} className="flex items-center gap-3 rounded-xl border border-line/50 bg-slate-900/30 px-4 py-3">
                     <div className="h-1.5 w-1.5 rounded-full bg-slate-600 shrink-0" />
-                    <span className="text-sm font-medium text-slate-400">{src}</span>
+                    <span className="text-sm font-medium text-ink-secondary">{src}</span>
                   </div>
                 ))}
               </div>
@@ -375,8 +375,8 @@ export function SolutionsPageClient() {
               <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-b from-cyan-500/[0.06] to-transparent p-6 shadow-[0_0_40px_-10px_rgba(6,182,212,0.15)] mb-6">
                 <div className="flex items-center justify-between mb-5">
                   <div>
-                    <div className="text-base font-bold text-white">One Professional Identity</div>
-                    <div className="text-xs text-slate-500 mt-0.5">Unified · Portable · Yours</div>
+                    <div className="text-base font-bold text-ink">One Professional Identity</div>
+                    <div className="text-xs text-ink-muted mt-0.5">Unified · Portable · Yours</div>
                   </div>
                   <div className="flex items-center gap-1.5 rounded-full border border-emerald-500/20 bg-emerald-500/8 px-2.5 py-1">
                     <Check className="w-3 h-3 text-emerald-400" />
@@ -389,10 +389,10 @@ export function SolutionsPageClient() {
                     { label: "Verified Claims", value: "24", bar: "bg-cyan-400", pct: "96%" },
                     { label: "Evidence Sources", value: "12", bar: "bg-blue-400", pct: "75%" },
                   ].map((row) => (
-                    <div key={row.label} className="rounded-lg border border-slate-800/60 bg-slate-900/60 px-3 py-2.5">
+                    <div key={row.label} className="rounded-lg border border-line/60 bg-slate-900/60 px-3 py-2.5">
                       <div className="flex justify-between mb-1.5">
-                        <span className="text-[11px] text-slate-500">{row.label}</span>
-                        <span className="text-[11px] font-semibold text-white tabular-nums">{row.value}</span>
+                        <span className="text-[11px] text-ink-muted">{row.label}</span>
+                        <span className="text-[11px] font-semibold text-ink tabular-nums">{row.value}</span>
                       </div>
                       <div className="h-1 w-full rounded-full bg-slate-800 overflow-hidden">
                         <div className={`h-full rounded-full ${row.bar}`} style={{ width: row.pct }} />
@@ -427,7 +427,7 @@ export function SolutionsPageClient() {
       </section>
 
       {/* Patorbit Identity Engine */}
-      <section className="relative bg-[#070B14] py-24 lg:py-36 overflow-hidden border-b border-slate-800/40">
+      <section className="relative bg-surface-sunken py-24 lg:py-36 overflow-hidden border-b border-line/40">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:56px_56px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[160px] opacity-20 bg-gradient-radial from-cyan-500/20 via-blue-500/10 to-transparent pointer-events-none" />
 
@@ -435,16 +435,16 @@ export function SolutionsPageClient() {
 
           {/* Header */}
           <div className="text-center mb-20">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">How It Works</span>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line/60 bg-slate-900/60 px-3.5 py-1">
+              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">How It Works</span>
             </div>
-            <h2 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-white leading-[1.05] mb-6">
+            <h2 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-ink leading-[1.05] mb-6">
               The Patorbit{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 Identity Engine
               </span>
             </h2>
-            <p className="text-[17px] text-slate-400 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-[17px] text-ink-secondary leading-relaxed max-w-2xl mx-auto">
               Every credential you&apos;ve earned flows through a single pipeline — extracted, verified, connected, and scored into one trusted professional identity.
             </p>
           </div>
@@ -460,7 +460,7 @@ export function SolutionsPageClient() {
                 color: "from-slate-400/20 to-slate-400/5",
                 border: "border-slate-600/40",
                 dot: "bg-slate-400",
-                text: "text-slate-300",
+                text: "text-ink-secondary",
                 accent: "#94a3b8",
               },
               {
@@ -533,7 +533,7 @@ export function SolutionsPageClient() {
                     <span className="text-[10px] font-mono text-slate-600 tracking-widest">{node.step}</span>
                   </div>
                   <div className={`text-base font-bold mb-1.5 ${node.text}`}>{node.label}</div>
-                  <p className="text-xs text-slate-500 leading-relaxed">{node.detail}</p>
+                  <p className="text-xs text-ink-muted leading-relaxed">{node.detail}</p>
                 </div>
 
                 {/* Connector — hidden after last item */}
@@ -573,7 +573,7 @@ export function SolutionsPageClient() {
       </section>
 
       {/* Platform Ecosystem */}
-      <section className="relative bg-[#070B14] py-24 lg:py-36 overflow-hidden border-b border-slate-800/40">
+      <section className="relative bg-surface-sunken py-24 lg:py-36 overflow-hidden border-b border-line/40">
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-transparent to-slate-900/10 pointer-events-none" />
         <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[800px] h-[300px] rounded-full blur-[140px] opacity-15 bg-gradient-to-t from-indigo-500/20 via-blue-500/10 to-transparent pointer-events-none" />
 
@@ -581,16 +581,16 @@ export function SolutionsPageClient() {
 
           {/* Header */}
           <div className="text-center mb-6">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">The Platform</span>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line/60 bg-slate-900/60 px-3.5 py-1">
+              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">The Platform</span>
             </div>
-            <h2 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-white leading-[1.05] mb-6">
+            <h2 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-ink leading-[1.05] mb-6">
               One platform.{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 Every tool you need.
               </span>
             </h2>
-            <p className="text-[17px] text-slate-400 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-[17px] text-ink-secondary leading-relaxed max-w-2xl mx-auto">
               Each product is powerful on its own. Together, they form a complete professional identity platform — connected through a single verified data layer.
             </p>
           </div>
@@ -599,8 +599,8 @@ export function SolutionsPageClient() {
           <div className="flex items-center justify-center gap-3 mb-14">
             <div className="h-px flex-1 max-w-[120px] bg-gradient-to-r from-transparent to-slate-700/60" />
             <div className="flex items-center gap-2 rounded-xl border border-slate-700/60 bg-slate-900/60 px-4 py-1.5">
-              <div className="w-5 h-5 rounded-md bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-white font-bold text-[9px]">P</div>
-              <span className="text-xs font-semibold text-slate-300 tracking-wide">Professional Identity Platform</span>
+              <div className="w-5 h-5 rounded-md bg-gradient-to-br from-cyan-400 to-blue-500 flex items-center justify-center text-ink font-bold text-[9px]">P</div>
+              <span className="text-xs font-semibold text-ink-secondary tracking-wide">Professional Identity Platform</span>
             </div>
             <div className="h-px flex-1 max-w-[120px] bg-gradient-to-l from-transparent to-slate-700/60" />
           </div>
@@ -620,9 +620,9 @@ export function SolutionsPageClient() {
                 learnHref: "/career-passport",
                 description: "Your entire verified career in one shareable link. Trust Score, evidence-backed claims, and credentials — packaged as a living document you own forever.",
                 preview: (
-                  <div className="mt-5 rounded-xl border border-slate-800/60 bg-slate-900/60 p-4 space-y-3">
+                  <div className="mt-5 rounded-xl border border-line/60 bg-slate-900/60 p-4 space-y-3">
                     <div className="flex items-center justify-between">
-                      <span className="text-[11px] text-slate-500">Trust Score</span>
+                      <span className="text-[11px] text-ink-muted">Trust Score</span>
                       <span className="text-xs font-bold text-emerald-400">84 / 100</span>
                     </div>
                     <div className="h-1.5 w-full rounded-full bg-slate-800 overflow-hidden">
@@ -650,7 +650,7 @@ export function SolutionsPageClient() {
                 learnHref: "/resume-builder",
                 description: "ATS-optimized resumes built from your verified identity. Your passport data populates the resume automatically — no manual entry, no formatting headaches.",
                 preview: (
-                  <div className="mt-5 rounded-xl border border-slate-800/60 bg-slate-900/60 p-4 space-y-2">
+                  <div className="mt-5 rounded-xl border border-line/60 bg-slate-900/60 p-4 space-y-2">
                     <div className="h-2.5 w-2/3 rounded-full bg-slate-700/70" />
                     <div className="h-1.5 w-full rounded-full bg-slate-800" />
                     <div className="h-1.5 w-5/6 rounded-full bg-slate-800" />
@@ -674,7 +674,7 @@ export function SolutionsPageClient() {
                 learnHref: "/knowledge-graph",
                 description: "A semantic map of your skills, roles, and achievements. Surfaces hidden connections between your experiences and reveals skill gaps before they cost you an offer.",
                 preview: (
-                  <div className="mt-5 rounded-xl border border-slate-800/60 bg-slate-900/60 p-3">
+                  <div className="mt-5 rounded-xl border border-line/60 bg-slate-900/60 p-3">
                     <svg viewBox="0 0 160 80" className="w-full h-16">
                       <line x1="80" y1="40" x2="30" y2="15" stroke="rgba(96,165,250,0.25)" strokeWidth="1.5" />
                       <line x1="80" y1="40" x2="130" y2="15" stroke="rgba(96,165,250,0.25)" strokeWidth="1.5" />
@@ -707,7 +707,7 @@ export function SolutionsPageClient() {
                 learnHref: "/trust-verification",
                 description: "A tamper-proof chronological record of your career milestones. Every entry is timestamped, evidence-backed, and permanently verifiable by anyone you share it with.",
                 preview: (
-                  <div className="mt-5 rounded-xl border border-slate-800/60 bg-slate-900/60 p-4 space-y-2.5">
+                  <div className="mt-5 rounded-xl border border-line/60 bg-slate-900/60 p-4 space-y-2.5">
                     {[
                       { year: "2024", event: "Senior Engineer", verified: true },
                       { year: "2022", event: "AWS Certified", verified: true },
@@ -716,7 +716,7 @@ export function SolutionsPageClient() {
                       <div key={item.year} className="flex items-center gap-3">
                         <span className="text-[10px] font-mono text-slate-600 w-8 shrink-0">{item.year}</span>
                         <div className="w-2 h-2 rounded-full bg-amber-400/80 shrink-0" />
-                        <span className="text-[11px] text-slate-400 flex-1 truncate">{item.event}</span>
+                        <span className="text-[11px] text-ink-secondary flex-1 truncate">{item.event}</span>
                         <Check className="w-3 h-3 text-emerald-400 shrink-0" strokeWidth={2.5} />
                       </div>
                     ))}
@@ -735,9 +735,9 @@ export function SolutionsPageClient() {
                 learnHref: "/platform",
                 description: "An AI assistant that knows your full verified career. Recommends roles, flags credential gaps, and suggests resume improvements — all grounded in your real data.",
                 preview: (
-                  <div className="mt-5 rounded-xl border border-slate-800/60 bg-slate-900/60 p-4 space-y-2.5">
+                  <div className="mt-5 rounded-xl border border-line/60 bg-slate-900/60 p-4 space-y-2.5">
                     <div className="rounded-lg bg-slate-800/70 px-3 py-2.5">
-                      <p className="text-[11px] text-slate-300 leading-relaxed">&ldquo;Add your AWS cert to close a gap in 3 senior roles and boost your Trust Score by ~8 pts.&rdquo;</p>
+                      <p className="text-[11px] text-ink-secondary leading-relaxed">&ldquo;Add your AWS cert to close a gap in 3 senior roles and boost your Trust Score by ~8 pts.&rdquo;</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse shrink-0" />
@@ -758,7 +758,7 @@ export function SolutionsPageClient() {
                 learnHref: "/platform",
                 description: "Your command center. Monitor your Trust Score, track verification progress, manage all credentials, and launch every Patorbit product — all from one authenticated dashboard.",
                 preview: (
-                  <div className="mt-5 rounded-xl border border-slate-800/60 bg-slate-900/60 p-3 grid grid-cols-3 gap-1.5">
+                  <div className="mt-5 rounded-xl border border-line/60 bg-slate-900/60 p-3 grid grid-cols-3 gap-1.5">
                     {[
                       { label: "Passport", icon: CreditCard },
                       { label: "Resume", icon: FileText },
@@ -767,7 +767,7 @@ export function SolutionsPageClient() {
                       { label: "Copilot", icon: Brain },
                       { label: "Trust", icon: ShieldCheck },
                     ].map((w) => (
-                      <div key={w.label} className="rounded-lg border border-slate-800/60 bg-slate-900/50 px-2 py-2 flex flex-col items-center gap-1">
+                      <div key={w.label} className="rounded-lg border border-line/60 bg-slate-900/50 px-2 py-2 flex flex-col items-center gap-1">
                         <w.icon className="w-3 h-3 text-slate-600" />
                         <span className="text-[9px] text-slate-600">{w.label}</span>
                       </div>
@@ -793,8 +793,8 @@ export function SolutionsPageClient() {
                   </div>
 
                   {/* Name + description */}
-                  <h3 className="text-lg font-bold text-white mb-2 leading-snug">{product.name}</h3>
-                  <p className="text-sm text-slate-500 leading-relaxed flex-1">{product.description}</p>
+                  <h3 className="text-lg font-bold text-ink mb-2 leading-snug">{product.name}</h3>
+                  <p className="text-sm text-ink-muted leading-relaxed flex-1">{product.description}</p>
 
                   {/* Inline preview */}
                   {product.preview}
@@ -803,7 +803,7 @@ export function SolutionsPageClient() {
                   <div className="mt-5">
                     <Link
                       href={product.learnHref}
-                      className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-400 transition-colors duration-150 hover:text-white group/link"
+                      className="inline-flex items-center gap-1.5 text-sm font-medium text-ink-secondary transition-colors duration-150 hover:text-ink group/link"
                     >
                       Learn More
                       <ArrowRight className="w-3.5 h-3.5 transition-transform duration-150 group-hover/link:translate-x-0.5" />
@@ -823,23 +823,23 @@ export function SolutionsPageClient() {
       </section>
 
       {/* Audience Benefits */}
-      <section className="relative bg-[#070B14] py-24 lg:py-36 overflow-hidden border-b border-slate-800/40">
+      <section className="relative bg-surface-sunken py-24 lg:py-36 overflow-hidden border-b border-line/40">
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-transparent to-slate-900/10 pointer-events-none" />
 
         <div className="relative mx-auto max-w-7xl px-6">
 
           {/* Header */}
           <div className="text-center mb-14">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">Built For You</span>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line/60 bg-slate-900/60 px-3.5 py-1">
+              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">Built For You</span>
             </div>
-            <h2 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-white leading-[1.05] mb-5">
+            <h2 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-ink leading-[1.05] mb-5">
               Every professional.{" "}
               <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
                 One platform.
               </span>
             </h2>
-            <p className="text-[17px] text-slate-400 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-[17px] text-ink-secondary leading-relaxed max-w-2xl mx-auto">
               Patorbit adapts to where you are in your career — and where you want to go.
             </p>
           </div>
@@ -853,7 +853,7 @@ export function SolutionsPageClient() {
                 className={`inline-flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-medium transition-all duration-200 ${
                   activeTab === a.id
                     ? `${a.borderColor} ${a.gradient} ${a.iconColor} border`
-                    : "text-slate-500 hover:text-slate-300 border border-transparent hover:border-slate-800/60"
+                    : "text-ink-muted hover:text-ink-secondary border border-transparent hover:border-line/60"
                 }`}
               >
                 <a.icon className="w-4 h-4" />
@@ -882,24 +882,24 @@ export function SolutionsPageClient() {
                     <span className={`text-xs font-semibold uppercase tracking-widest ${active.iconColor}`}>{active.label}</span>
                   </div>
 
-                  <h3 className="text-2xl lg:text-3xl font-bold text-white leading-snug mb-4">
+                  <h3 className="text-2xl lg:text-3xl font-bold text-ink leading-snug mb-4">
                     {active.title}
                   </h3>
-                  <p className="text-[15px] text-slate-400 leading-relaxed flex-1">
+                  <p className="text-[15px] text-ink-secondary leading-relaxed flex-1">
                     {active.description}
                   </p>
 
                   <div className="mt-8 flex flex-col sm:flex-row gap-3">
                     <Link
                       href="/register"
-                      className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:scale-[1.02] active:scale-100"
+                      className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-6 py-3 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:scale-[1.02] active:scale-100"
                     >
                       Get Started Free
                       <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
                     </Link>
                     <Link
                       href="/contact#sales"
-                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-6 py-3 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+                      className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-slate-900/40 px-6 py-3 text-sm font-medium text-ink-secondary transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-ink hover:scale-[1.02] active:scale-100"
                     >
                       Talk to Sales
                     </Link>
@@ -911,13 +911,13 @@ export function SolutionsPageClient() {
                   {active.benefits.map((b, i) => (
                     <div
                       key={b}
-                      className="flex items-start gap-3.5 rounded-xl border border-slate-800/60 bg-slate-900/40 px-4 py-3.5 transition-colors duration-150 hover:border-slate-700/60 hover:bg-slate-900/60"
+                      className="flex items-start gap-3.5 rounded-xl border border-line/60 bg-slate-900/40 px-4 py-3.5 transition-colors duration-150 hover:border-slate-700/60 hover:bg-slate-900/60"
                       style={{ transitionDelay: `${i * 30}ms` }}
                     >
                       <div className={`mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md border ${active.borderColor} bg-white/[0.03]`}>
                         <Check className={`w-3 h-3 ${active.iconColor}`} strokeWidth={2.5} />
                       </div>
-                      <span className="text-sm text-slate-300 leading-relaxed">{b}</span>
+                      <span className="text-sm text-ink-secondary leading-relaxed">{b}</span>
                     </div>
                   ))}
                 </div>
@@ -930,7 +930,7 @@ export function SolutionsPageClient() {
       </section>
 
       {/* Capability Matrix */}
-      <section className="relative bg-[#070B14] py-24 lg:py-36 overflow-hidden border-b border-slate-800/40">
+      <section className="relative bg-surface-sunken py-24 lg:py-36 overflow-hidden border-b border-line/40">
         <div className="absolute inset-0 bg-gradient-to-b from-slate-900/10 via-transparent to-slate-900/10 pointer-events-none" />
         <div className="absolute top-1/2 right-0 -translate-y-1/2 w-[400px] h-[500px] rounded-full blur-[140px] opacity-10 bg-cyan-500/20 pointer-events-none" />
 
@@ -938,24 +938,24 @@ export function SolutionsPageClient() {
 
           {/* Header */}
           <div className="text-center mb-16">
-            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">Comparison</span>
+            <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-line/60 bg-slate-900/60 px-3.5 py-1">
+              <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">Comparison</span>
             </div>
-            <h2 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-white leading-[1.05] mb-5">
+            <h2 className="text-4xl md:text-5xl lg:text-[3.25rem] font-bold tracking-tight text-ink leading-[1.05] mb-5">
               How Patorbit compares
             </h2>
-            <p className="text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
+            <p className="text-[17px] text-ink-secondary leading-relaxed max-w-xl mx-auto">
               A factual capability matrix. No marketing language — just what each platform can and cannot do.
             </p>
           </div>
 
           {/* Matrix — scrollable on mobile */}
-          <div className="overflow-x-auto rounded-2xl border border-slate-800/50 bg-slate-900/30">
+          <div className="overflow-x-auto rounded-2xl border border-line/50 bg-slate-900/30">
             <table className="w-full min-w-[560px] border-collapse">
 
               {/* Column headers */}
               <thead>
-                <tr className="border-b border-slate-800/60">
+                <tr className="border-b border-line/60">
                   <th className="w-[38%] px-6 py-5 text-left">
                     <span className="text-[11px] uppercase tracking-[0.15em] text-slate-600 font-medium">Capability</span>
                   </th>
@@ -967,7 +967,7 @@ export function SolutionsPageClient() {
                   ].map((col) => (
                     <th key={col.label} className={`py-5 text-center ${col.highlight ? "bg-cyan-500/[0.04]" : ""}`}>
                       <div className="flex flex-col items-center gap-0.5">
-                        <span className={`text-sm font-semibold ${col.highlight ? "text-cyan-300" : "text-slate-400"}`}>
+                        <span className={`text-sm font-semibold ${col.highlight ? "text-cyan-300" : "text-ink-secondary"}`}>
                           {col.label}
                         </span>
                         <span className={`text-[10px] ${col.highlight ? "text-cyan-500/60" : "text-slate-600"}`}>
@@ -994,10 +994,10 @@ export function SolutionsPageClient() {
                   return (
                     <tr
                       key={row.capability}
-                      className={`border-b border-slate-800/40 last:border-0 transition-colors duration-100 hover:bg-white/[0.015] ${i % 2 === 0 ? "" : "bg-white/[0.008]"}`}
+                      className={`border-b border-line/40 last:border-0 transition-colors duration-100 hover:bg-white/[0.015] ${i % 2 === 0 ? "" : "bg-white/[0.008]"}`}
                     >
                       <td className="px-6 py-4">
-                        <span className="text-sm font-medium text-slate-300">{row.capability}</span>
+                        <span className="text-sm font-medium text-ink-secondary">{row.capability}</span>
                       </td>
                       {vals.map((val, j) => (
                         <td key={j} className={`py-4 text-center ${j === 3 ? "bg-cyan-500/[0.04]" : ""}`}>
@@ -1031,7 +1031,7 @@ export function SolutionsPageClient() {
       </section>
 
       {/* Final CTA */}
-      <section className="relative bg-[#070B14] py-36 lg:py-48 overflow-hidden">
+      <section className="relative bg-surface-sunken py-36 lg:py-48 overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.003)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.003)_1px,transparent_1px)] bg-[size:56px_56px]" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[900px] h-[500px] rounded-full blur-[180px] opacity-20 bg-gradient-to-r from-cyan-500/25 via-blue-500/15 to-indigo-500/20 pointer-events-none" />
         <div className="absolute bottom-0 inset-x-0 h-40 bg-gradient-to-t from-[#070B14] to-transparent pointer-events-none" />
@@ -1039,16 +1039,16 @@ export function SolutionsPageClient() {
         <div className="relative mx-auto max-w-4xl px-6 text-center">
 
           {/* Eyebrow */}
-          <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-4 py-1.5">
+          <div className="mb-10 inline-flex items-center gap-2 rounded-full border border-line/60 bg-slate-900/60 px-4 py-1.5">
             <span className="relative flex h-2 w-2">
               <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75 animate-ping" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-cyan-400" />
             </span>
-            <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">Professional Identity Platform</span>
+            <span className="text-[11px] font-medium uppercase tracking-[0.18em] text-ink-secondary">Professional Identity Platform</span>
           </div>
 
           {/* Headline */}
-          <h2 className="text-5xl sm:text-6xl lg:text-[4.75rem] xl:text-[5.25rem] font-bold tracking-tight leading-[1.0] text-white mb-8">
+          <h2 className="text-5xl sm:text-6xl lg:text-[4.75rem] xl:text-[5.25rem] font-bold tracking-tight leading-[1.0] text-ink mb-8">
             The future of hiring{" "}
             <br className="hidden sm:block" />
             begins with{" "}
@@ -1062,7 +1062,7 @@ export function SolutionsPageClient() {
           </h2>
 
           {/* Sub-copy */}
-          <p className="text-lg sm:text-[18px] text-slate-400 leading-relaxed max-w-2xl mx-auto mb-14">
+          <p className="text-lg sm:text-[18px] text-ink-secondary leading-relaxed max-w-2xl mx-auto mb-14">
             Stop sending static documents into a void. Build one verified identity that proves who you are — and carries your career forward for life.
           </p>
 
@@ -1070,14 +1070,14 @@ export function SolutionsPageClient() {
           <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
             <Link
               href="/register"
-              className="group inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-9 py-4 text-base font-semibold text-white shadow-xl shadow-cyan-500/25 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/35 hover:scale-[1.02] active:scale-100"
+              className="group inline-flex items-center justify-center gap-2.5 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-9 py-4 text-base font-semibold text-ink shadow-xl shadow-cyan-500/25 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/35 hover:scale-[1.02] active:scale-100"
             >
               Get Started
               <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
             </Link>
             <Link
               href="/platform"
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700/60 bg-slate-900/50 px-9 py-4 text-base font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-600 hover:text-white hover:scale-[1.02] active:scale-100"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-700/60 bg-slate-900/50 px-9 py-4 text-base font-medium text-ink-secondary transition-all duration-150 hover:bg-slate-900 hover:border-slate-600 hover:text-ink hover:scale-[1.02] active:scale-100"
             >
               Explore the Platform
             </Link>

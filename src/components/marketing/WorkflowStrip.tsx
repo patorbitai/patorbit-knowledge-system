@@ -39,12 +39,12 @@ export default function WorkflowStrip() {
   return (
     <section
       ref={ref}
-      className="relative bg-[#070B14] py-16 border-y border-slate-800/60 overflow-hidden"
+      className="relative bg-surface-sunken py-16 border-y border-subtle overflow-hidden"
       aria-label="How Patorbit works"
     >
       <div className="relative mx-auto max-w-7xl px-6">
         <h2
-          className="text-center text-sm font-medium uppercase tracking-[0.2em] text-slate-500 mb-10"
+          className="text-center text-sm font-medium uppercase tracking-[0.2em] text-ink-muted mb-10"
           style={{ opacity: isInView ? 1 : 0, transition: "opacity 0.3s ease-out" }}
         >
           Upload → Analyze → Tailor → Approve → Export
@@ -77,8 +77,8 @@ export default function WorkflowStrip() {
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-cyan-500/10 border border-cyan-500/20 shrink-0">
                 <step.icon className="h-5 w-5 text-cyan-400" aria-hidden="true" />
               </div>
-              <span className="text-sm font-semibold text-white">{step.label}</span>
-              <span className="text-xs text-slate-500 leading-relaxed max-w-[180px]">
+              <span className="text-sm font-semibold text-ink">{step.label}</span>
+              <span className="text-xs text-ink-muted leading-relaxed max-w-[180px]">
                 {step.desc}
               </span>
             </li>

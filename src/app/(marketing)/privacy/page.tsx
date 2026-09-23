@@ -31,21 +31,21 @@ export default function PrivacyPage() {
       </LegalSection>
 
       <LegalSection number="2" title="Information We Collect">
-        <ul className="list-disc list-inside space-y-2 text-slate-400">
+        <ul className="list-disc list-inside space-y-2 text-ink-secondary">
           <li>
-            <span className="text-slate-300">Account information</span> — name, email address, and
+            <span className="text-ink-secondary">Account information</span> — name, email address, and
             authentication details when you create an account.
           </li>
           <li>
-            <span className="text-slate-300">Professional data</span> — resumes, credentials, claims,
+            <span className="text-ink-secondary">Professional data</span> — resumes, credentials, claims,
             evidence, and documents you upload to build your professional identity.
           </li>
           <li>
-            <span className="text-slate-300">Usage data</span> — how you interact with the platform, such
+            <span className="text-ink-secondary">Usage data</span> — how you interact with the platform, such
             as pages visited and features used.
           </li>
           <li>
-            <span className="text-slate-300">AI processing</span> — content you choose to send to AI
+            <span className="text-ink-secondary">AI processing</span> — content you choose to send to AI
             features is processed by our configured AI provider to generate suggestions. We do not use
             your content to train models, and we do not sell your data.
           </li>
@@ -53,7 +53,7 @@ export default function PrivacyPage() {
       </LegalSection>
 
       <LegalSection number="3" title="How We Use Your Information">
-        <ul className="list-disc list-inside space-y-2 text-slate-400">
+        <ul className="list-disc list-inside space-y-2 text-ink-secondary">
           <li>To provide, operate, and maintain the platform.</li>
           <li>To structure your professional claims and generate trust signals based on the evidence you provide.</li>
           <li>To personalize your experience and improve our services.</li>

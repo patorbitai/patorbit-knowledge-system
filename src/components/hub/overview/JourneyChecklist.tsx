@@ -62,7 +62,7 @@ export function JourneyChecklist({ input }: { input: JourneyInput }) {
   return (
     <section
       aria-labelledby="journey-heading"
-      className="rounded-2xl border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] overflow-hidden"
+      className="rounded-xl border border-subtle bg-surface overflow-hidden"
     >
       {/* Header + progress */}
       <div className="px-5 pt-5 pb-4 space-y-3">
@@ -75,7 +75,7 @@ export function JourneyChecklist({ input }: { input: JourneyInput }) {
               {journey.completedCount} of {journey.total} steps done — each one takes a couple of minutes.
             </p>
           </div>
-          <span className="text-xs font-bold text-cyan-600 dark:text-cyan-400 tabular-nums" aria-label={`${journey.percent}% complete`}>
+          <span className="text-xs font-bold text-brand tabular-nums" aria-label={`${journey.percent}% complete`}>
             {journey.percent}%
           </span>
         </div>
@@ -87,7 +87,7 @@ export function JourneyChecklist({ input }: { input: JourneyInput }) {
           aria-valuemax={100}
         >
           <div
-            className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 transition-all duration-500"
+            className="h-full rounded-full bg-brand transition-all duration-500"
             style={{ width: `${journey.percent}%` }}
           />
         </div>
@@ -95,9 +95,9 @@ export function JourneyChecklist({ input }: { input: JourneyInput }) {
 
       {/* Next action callout — the one thing to do now */}
       {current && (
-        <div className="mx-5 mb-4 rounded-xl border border-cyan-500/20 bg-gradient-to-r from-cyan-500/5 to-blue-500/5 px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
+        <div className="mx-5 mb-4 rounded-xl border border-brand/20 bg-brand-soft px-4 py-3 flex flex-col sm:flex-row sm:items-center gap-3">
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-bold uppercase tracking-wide text-cyan-600 dark:text-cyan-400">
+            <p className="text-[11px] font-bold uppercase tracking-wide text-brand">
               Next: step {journey.steps.indexOf(current) + 1}
             </p>
             <p className="text-sm font-semibold text-gray-900 dark:text-white mt-0.5">{current.title}</p>
@@ -109,7 +109,7 @@ export function JourneyChecklist({ input }: { input: JourneyInput }) {
           ) : (
             <Link
               href={current.actionHref}
-              className="inline-flex items-center justify-center gap-1.5 shrink-0 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 px-4 py-2 text-xs font-semibold text-white transition-all"
+              className="inline-flex items-center justify-center gap-1.5 shrink-0 rounded-xl bg-brand hover:opacity-90 px-4 py-2 text-xs font-semibold text-white transition-all"
             >
               {current.actionLabel}
               <ArrowRight className="h-3.5 w-3.5" />
@@ -132,7 +132,7 @@ export function JourneyChecklist({ input }: { input: JourneyInput }) {
                   step.complete
                     ? "border-emerald-200 dark:border-emerald-500/20 bg-emerald-50/60 dark:bg-emerald-500/[0.05] hover:border-emerald-300"
                     : isCurrent
-                    ? "border-cyan-300 dark:border-cyan-500/30 bg-cyan-50/60 dark:bg-cyan-500/[0.06] hover:border-cyan-400"
+                    ? "border-brand/40 bg-brand-soft hover:border-brand/60"
                     : "border-gray-100 dark:border-white/[0.05] bg-gray-50/60 dark:bg-white/[0.01] opacity-80 hover:opacity-100",
                 )}
               >
@@ -140,7 +140,7 @@ export function JourneyChecklist({ input }: { input: JourneyInput }) {
                   {step.complete ? (
                     <CheckCircle2 className="h-4 w-4 text-emerald-500" />
                   ) : (
-                    <Circle className={clsx("h-4 w-4", isCurrent ? "text-cyan-500" : "text-gray-300 dark:text-slate-600")} />
+                    <Circle className={clsx("h-4 w-4", isCurrent ? "text-brand" : "text-gray-300 dark:text-slate-600")} />
                   )}
                 </span>
                 <span className="min-w-0">

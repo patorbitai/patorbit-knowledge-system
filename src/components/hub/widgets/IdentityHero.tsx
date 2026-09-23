@@ -34,8 +34,8 @@ function ScoreRing({ score }: { score: number }) {
         </defs>
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center" aria-label={`Identity Score: ${score} out of 100`}>
-        <span className="text-3xl font-bold text-white leading-none">{score}</span>
-        <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-slate-500">/ 100</span>
+        <span className="text-3xl font-bold text-ink leading-none">{score}</span>
+        <span className="mt-0.5 text-[10px] font-semibold uppercase tracking-widest text-ink-muted">/ 100</span>
       </div>
     </div>
   );
@@ -63,7 +63,7 @@ export default function IdentityHero({ name, email, data }: Props) {
   return (
     <section
       aria-label="Professional Identity"
-      className="relative overflow-hidden rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] p-6 sm:p-8"
+      className="relative overflow-hidden rounded-2xl border border-subtle bg-white dark:bg-[#080C18] p-6 sm:p-8"
     >
       {/* Ambient glow */}
       <div className="pointer-events-none absolute -right-16 -top-16 h-64 w-64 rounded-full bg-cyan-500/[0.05] blur-3xl" aria-hidden="true" />
@@ -78,18 +78,18 @@ export default function IdentityHero({ name, email, data }: Props) {
           {/* Identity info */}
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-3 mb-1">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-white">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 text-sm font-bold text-ink">
                 {initials}
               </div>
               <div className="min-w-0">
-                <h1 className="text-xl font-semibold tracking-tight text-white truncate">
+                <h1 className="text-xl font-semibold tracking-tight text-ink truncate">
                   {firstName}&apos;s Professional Identity
                 </h1>
-                <p className="text-xs text-slate-500 truncate">{email}</p>
+                <p className="text-xs text-ink-muted truncate">{email}</p>
               </div>
             </div>
 
-            <p className="mt-3 text-sm text-slate-400 leading-relaxed max-w-md">
+            <p className="mt-3 text-sm text-ink-secondary leading-relaxed max-w-md">
               Your Identity Score reflects how complete, verified, and trusted your professional profile is.
               Build your resume, verify credentials, and grow your passport to raise it.
             </p>
@@ -97,18 +97,18 @@ export default function IdentityHero({ name, email, data }: Props) {
             {/* Micro-stats */}
             <div className="mt-4 flex flex-wrap gap-4">
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-white leading-none">{data.verifiedCredentials}</span>
-                <span className="mt-0.5 text-[11px] text-slate-500">Verified credentials</span>
+                <span className="text-lg font-bold text-ink leading-none">{data.verifiedCredentials}</span>
+                <span className="mt-0.5 text-[11px] text-ink-muted">Verified credentials</span>
               </div>
               <div className="h-8 w-px bg-white/[0.06]" aria-hidden="true" />
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-white leading-none">{data.passportClaims}</span>
-                <span className="mt-0.5 text-[11px] text-slate-500">Passport claims</span>
+                <span className="text-lg font-bold text-ink leading-none">{data.passportClaims}</span>
+                <span className="mt-0.5 text-[11px] text-ink-muted">Passport claims</span>
               </div>
               <div className="h-8 w-px bg-white/[0.06]" aria-hidden="true" />
               <div className="flex flex-col">
-                <span className="text-lg font-bold text-white leading-none">{data.resumeCompleteness}%</span>
-                <span className="mt-0.5 text-[11px] text-slate-500">Resume completeness</span>
+                <span className="text-lg font-bold text-ink leading-none">{data.resumeCompleteness}%</span>
+                <span className="mt-0.5 text-[11px] text-ink-muted">Resume completeness</span>
               </div>
             </div>
 
@@ -116,7 +116,7 @@ export default function IdentityHero({ name, email, data }: Props) {
             <div className="mt-5">
               <Link
                 href={cta.href}
-                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
+                className="inline-flex items-center gap-1.5 rounded-lg bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-2 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:brightness-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
               >
                 {cta.label}
                 <svg className="h-3.5 w-3.5" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">

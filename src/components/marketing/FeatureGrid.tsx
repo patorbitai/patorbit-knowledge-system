@@ -57,26 +57,26 @@ const features = [
 
 export default function FeatureGrid() {
   return (
-    <section className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden" aria-label="Features">
+    <section className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden" aria-label="Features">
       <div className="mx-auto max-w-7xl px-6">
         {/* Header */}
         <div className="text-center mb-16">
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
             </span>
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               Everything You Need
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             Your complete{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               resume toolkit
             </span>
           </h2>
-          <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
+          <p className="mt-4 text-[17px] text-ink-secondary leading-relaxed max-w-xl mx-auto">
             From Professional Identity to tailored exports, everything you need to build the right resume for every opportunity.
           </p>
         </div>
@@ -86,12 +86,12 @@ export default function FeatureGrid() {
           {features.map((feature, i) => (
             <GlowCard key={feature.title} index={i}>
               <div
-                className={`mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br ${feature.gradient} border border-white/[0.06]`}
+                className={`mb-5 flex h-11 w-11 items-center justify-center rounded-lg bg-gradient-to-br ${feature.gradient} border border-subtle`}
               >
                 <feature.icon className={`h-5 w-5 ${feature.iconColor}`} />
               </div>
-              <h3 className="text-base font-semibold text-white mb-2">{feature.title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">{feature.description}</p>
+              <h3 className="text-base font-semibold text-ink mb-2">{feature.title}</h3>
+              <p className="text-sm text-ink-secondary leading-relaxed">{feature.description}</p>
             </GlowCard>
           ))}
         </div>

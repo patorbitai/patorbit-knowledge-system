@@ -17,12 +17,12 @@ export default function QuickActionsWidget() {
           <Link
             key={label}
             href={href}
-            className="group flex flex-col items-center gap-2 rounded-xl border border-white/[0.06] bg-white/[0.02] px-3 py-4 text-center transition-colors hover:border-cyan-400/30 hover:bg-cyan-500/[0.06] focus-visible:outline-none focus-visible:border-cyan-500/50"
+            className="group flex flex-col items-center gap-2 rounded-xl border border-subtle bg-surface px-3 py-4 text-center transition-colors hover:border-cyan-400/30 hover:bg-cyan-500/[0.06] focus-visible:outline-none focus-visible:border-cyan-500/50"
           >
-            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.05] text-slate-400 transition-colors group-hover:text-cyan-300">
+            <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/[0.05] text-ink-secondary transition-colors group-hover:text-brand">
               <Icon className="h-4 w-4" />
             </span>
-            <span className="text-[11px] font-medium text-slate-400 transition-colors group-hover:text-slate-200">
+            <span className="text-[11px] font-medium text-ink-secondary transition-colors group-hover:text-slate-200">
               {label}
             </span>
           </Link>

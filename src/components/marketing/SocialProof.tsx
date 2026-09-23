@@ -18,12 +18,12 @@ export default function SocialProof() {
   return (
     <section
       ref={sectionRef}
-      className="relative bg-[#070B14] border-y border-slate-800/60 py-16 overflow-hidden"
+      className="relative bg-surface-sunken border-y border-subtle py-16 overflow-hidden"
       aria-label="Core capabilities"
     >
       <div className="relative mx-auto max-w-7xl px-6">
         <p
-          className="text-center text-xs font-medium uppercase tracking-[0.2em] text-slate-500 mb-10"
+          className="text-center text-xs font-medium uppercase tracking-[0.2em] text-ink-muted mb-10"
           style={{
             opacity: isInView ? 1 : 0,
             transition: "opacity 0.25s ease-out",
@@ -52,8 +52,8 @@ export default function SocialProof() {
               <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-500/10 border border-cyan-500/20">
                 <cap.icon className="h-5 w-5 text-cyan-400" />
               </div>
-              <span className="text-sm font-medium text-slate-300">{cap.label}</span>
-              <span className="text-xs text-slate-500 leading-relaxed">{cap.desc}</span>
+              <span className="text-sm font-medium text-ink-secondary">{cap.label}</span>
+              <span className="text-xs text-ink-muted leading-relaxed">{cap.desc}</span>
             </div>
           ))}
         </div>

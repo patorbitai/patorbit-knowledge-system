@@ -26,7 +26,7 @@ export const metadata: Metadata = {
 
 export default function FreeAnalysisPage() {
   return (
-    <main className="relative bg-[#070B14] text-white min-h-screen overflow-hidden">
+    <main className="relative bg-surface-sunken text-ink min-h-screen overflow-hidden">
       {/* Background layers — matching Hero design */}
       <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.006)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.006)_1px,transparent_1px)] bg-[size:56px_56px]" />
       <div className="absolute inset-0 bg-gradient-to-b from-[#070B14]/80 via-[#070B14]/95 to-[#070B14]" />
@@ -40,18 +40,18 @@ export default function FreeAnalysisPage() {
         {/* Hero Header */}
         <div className="mb-12 text-center">
           {/* Badge */}
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 backdrop-blur-sm px-4 py-1.5">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line/60 bg-slate-900/60 backdrop-blur-sm px-4 py-1.5">
             <span className="relative flex h-1.5 w-1.5">
               <span className="absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75 animate-ping" />
               <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cyan-400" />
             </span>
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               Free Tool
             </span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-white leading-[1.1]">
+          <h1 className="text-4xl lg:text-5xl font-bold tracking-tight text-ink leading-[1.1]">
             Analyze Any{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Job Description
@@ -59,13 +59,13 @@ export default function FreeAnalysisPage() {
           </h1>
 
           {/* Subtitle */}
-          <p className="mt-5 text-[17px] text-slate-400 leading-relaxed max-w-lg mx-auto">
+          <p className="mt-5 text-[17px] text-ink-secondary leading-relaxed max-w-lg mx-auto">
             Paste a job description and Patorbit will identify the role, skills, requirements,
             seniority, responsibilities, and other structured signals — instantly.
           </p>
 
           {/* Trust line */}
-          <p className="mt-3 text-xs text-slate-500">
+          <p className="mt-3 text-xs text-ink-muted">
             This analysis is extracted from the text you provide. It does not verify the employer or job listing.
           </p>
         </div>
@@ -74,8 +74,8 @@ export default function FreeAnalysisPage() {
         <FreeJDAnalysis />
 
         {/* Footer trust signals */}
-        <div className="mt-16 pt-8 border-t border-white/[0.06]">
-          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-slate-500">
+        <div className="mt-16 pt-8 border-t border-subtle">
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-xs text-ink-muted">
             <span className="inline-flex items-center gap-1.5">
               <span className="h-1 w-1 rounded-full bg-emerald-400" />
               No signup required

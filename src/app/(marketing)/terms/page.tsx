@@ -27,21 +27,21 @@ export default function TermsPage() {
       </LegalSection>
 
       <LegalSection number="2" title="User Accounts">
-        <ul className="list-disc list-inside space-y-2 text-slate-400">
+        <ul className="list-disc list-inside space-y-2 text-ink-secondary">
           <li>
-            <span className="text-slate-300">Account Responsibility</span> — You are responsible for
+            <span className="text-ink-secondary">Account Responsibility</span> — You are responsible for
             maintaining the confidentiality of your account credentials and for all activities that occur
             under your account.
           </li>
           <li>
-            <span className="text-slate-300">Accurate Information</span> — You must provide accurate and
+            <span className="text-ink-secondary">Accurate Information</span> — You must provide accurate and
             complete information when creating your account and updating your profile.
           </li>
         </ul>
       </LegalSection>
 
       <LegalSection number="3" title="Acceptable Use">
-        <ul className="list-disc list-inside space-y-2 text-slate-400">
+        <ul className="list-disc list-inside space-y-2 text-ink-secondary">
           <li>You will not use the platform for illegal activities.</li>
           <li>You will not attempt to circumvent security measures or access unauthorized areas.</li>
           <li>You will not upload malicious content or attempt to harm other users.</li>

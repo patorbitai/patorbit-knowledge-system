@@ -71,10 +71,10 @@ export default function ChangelogPage() {
             <span className="inline-flex items-center gap-2 rounded-full border border-cyan-500/20 bg-cyan-500/5 px-4 py-1.5 text-sm text-cyan-400 mb-6">
               Changelog
             </span>
-            <h1 className="text-5xl font-bold text-white mb-6 leading-tight">
+            <h1 className="text-5xl font-bold text-ink mb-6 leading-tight">
               What&apos;s new at Patorbit
             </h1>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto leading-relaxed">
+            <p className="text-ink-secondary text-lg max-w-2xl mx-auto leading-relaxed">
               Follow the latest features, improvements, and fixes as we build the infrastructure for
               verified professional identity.
             </p>
@@ -84,22 +84,22 @@ export default function ChangelogPage() {
             {changes.map((entry) => (
               <div
                 key={entry.version}
-                className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8"
+                className="rounded-xl border border-subtle bg-surface/60 p-8"
               >
                 <div className="flex flex-wrap items-center gap-3 mb-4">
-                  <h2 className="text-xl font-semibold text-white">{entry.title}</h2>
+                  <h2 className="text-xl font-semibold text-ink">{entry.title}</h2>
                   <span
                     className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium ${typeStyles[entry.type]}`}
                   >
                     {typeLabels[entry.type]}
                   </span>
                 </div>
-                <div className="flex items-center gap-3 text-sm text-slate-500 mb-4">
+                <div className="flex items-center gap-3 text-sm text-ink-muted mb-4">
                   <span className="font-semibold text-cyan-400">{entry.version}</span>
                   <span>·</span>
                   <span>{entry.date}</span>
                 </div>
-                <p className="text-slate-400 leading-relaxed">{entry.description}</p>
+                <p className="text-ink-secondary leading-relaxed">{entry.description}</p>
               </div>
             ))}
           </div>

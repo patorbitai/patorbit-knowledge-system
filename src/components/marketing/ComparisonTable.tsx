@@ -47,7 +47,7 @@ export default function ComparisonTable() {
   return (
     <section
       ref={sectionRef}
-      className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
+      className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="Comparison"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-slate-900/20 via-transparent to-slate-900/20" />
@@ -61,18 +61,18 @@ export default function ComparisonTable() {
           }}
           className="text-center mb-16"
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               Why Patorbit
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             Traditional workflow vs.{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               Patorbit
             </span>
           </h2>
-          <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
+          <p className="mt-4 text-[17px] text-ink-secondary leading-relaxed max-w-xl mx-auto">
             Stop rebuilding your resume from scratch for every application.
           </p>
         </div>
@@ -88,8 +88,8 @@ export default function ComparisonTable() {
         >
           {/* Table header */}
           <div className="grid grid-cols-3 gap-4 mb-2 px-4">
-            <div className="text-xs uppercase tracking-wider text-slate-500 font-medium" />
-            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-slate-500 font-medium">
+            <div className="text-xs uppercase tracking-wider text-ink-muted font-medium" />
+            <div className="flex items-center gap-2 text-xs uppercase tracking-wider text-ink-muted font-medium">
               <FileText className="w-3.5 h-3.5" />
               Traditional
             </div>
@@ -112,12 +112,12 @@ export default function ComparisonTable() {
                 i % 2 === 0 ? "bg-white/[0.02]" : ""
               }`}
             >
-              <div className="text-sm font-medium text-slate-300">{row.label}</div>
-              <div className="flex items-center gap-3 text-sm text-slate-500">
+              <div className="text-sm font-medium text-ink-secondary">{row.label}</div>
+              <div className="flex items-center gap-3 text-sm text-ink-muted">
                 <XCircle className="w-4 h-4 text-red-400/60 shrink-0" />
                 <span>{row.resume}</span>
               </div>
-              <div className="flex items-center gap-3 text-sm text-slate-300">
+              <div className="flex items-center gap-3 text-sm text-ink-secondary">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
                 <span>{row.patorbit}</span>
               </div>
@@ -135,7 +135,7 @@ export default function ComparisonTable() {
         >
           <Link
             href={session ? "/overview" : "/register"}
-            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
           >
             Get Started Free
             <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />

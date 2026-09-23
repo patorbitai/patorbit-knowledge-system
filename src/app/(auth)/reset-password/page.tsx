@@ -48,7 +48,7 @@ function ResetPasswordForm() {
           <h1 className="text-2xl font-semibold tracking-tight text-white">Invalid Reset Link</h1>
           <p className="mt-2 text-sm text-rose-400">This password reset link is missing its verification token.</p>
         </div>
-        <Link href="/forgot-password" className="text-cyan-400 hover:text-cyan-300 text-sm">
+        <Link href="/forgot-password" className="text-brand hover:text-cyan-300 text-sm">
           Request a new password reset link
         </Link>
       </div>

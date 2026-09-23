@@ -44,7 +44,7 @@ export default function HowItWorks() {
   return (
     <section
       ref={sectionRef}
-      className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
+      className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="How It Works"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-slate-900/10 to-transparent" />
@@ -58,18 +58,18 @@ export default function HowItWorks() {
           }}
           className="text-center mb-16"
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               How It Works
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             From professional identity to{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               tailored resume
             </span>
           </h2>
-          <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
+          <p className="mt-4 text-[17px] text-ink-secondary leading-relaxed max-w-xl mx-auto">
             Build once, tailor for every opportunity. No manual rewrites. No invented experience.
           </p>
         </div>
@@ -92,7 +92,7 @@ export default function HowItWorks() {
               >
                 {/* Step number + icon */}
                 <div className="relative flex md:flex-col items-center gap-3 md:items-center md:h-full">
-                  <div className="relative z-10 h-14 w-14 shrink-0 rounded-full bg-[#070B14] md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
+                  <div className="relative z-10 h-14 w-14 shrink-0 rounded-full bg-surface-sunken md:absolute md:left-1/2 md:top-1/2 md:-translate-x-1/2 md:-translate-y-1/2">
                     <div
                       className="absolute inset-0 flex items-center justify-center rounded-full border"
                       style={{
@@ -109,9 +109,9 @@ export default function HowItWorks() {
                 </div>
 
                 {/* Content */}
-                <div className="rounded-xl border border-slate-800/60 bg-slate-900/40 p-5 transition-all duration-300 hover:border-slate-700/60">
-                  <h3 className="text-base font-semibold text-white mb-1">{step.title}</h3>
-                  <p className="text-sm text-slate-400 leading-relaxed">{step.description}</p>
+                <div className="rounded-xl border border-subtle bg-surface p-5 transition-all duration-300 hover:border-slate-700/60">
+                  <h3 className="text-base font-semibold text-ink mb-1">{step.title}</h3>
+                  <p className="text-sm text-ink-secondary leading-relaxed">{step.description}</p>
                 </div>
               </div>
             ))}

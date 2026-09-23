@@ -13,18 +13,18 @@ export function EnterprisePageClient() {
             <div className="flex-1">
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
                 <span className="inline-block rounded-full border border-purple-500/20 bg-purple-500/5 px-4 py-1.5 text-sm text-purple-400 mb-6">Enterprise</span>
-                <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight mb-6">
+                <h1 className="text-5xl md:text-6xl font-bold text-ink leading-tight mb-6">
                   Enterprise <span className="text-gradient">Suite</span>
                 </h1>
-                <p className="text-lg text-slate-400 leading-relaxed mb-8">
+                <p className="text-lg text-ink-secondary leading-relaxed mb-8">
                   Trust infrastructure for organizations. Manage identities, verify claims, and build confidence at scale.
                 </p>
                 <div className="flex flex-wrap gap-3 mb-10">
                   {["SSO Integration", "Bulk Verification", "Compliance Reports", "Dedicated Support", "Custom Workflows"].map((f) => (
-                    <div key={f} className="rounded-full border border-slate-700 bg-slate-800/50 px-4 py-2 text-sm text-slate-300">{f}</div>
+                    <div key={f} className="rounded-full border border-slate-700 bg-slate-800/50 px-4 py-2 text-sm text-ink-secondary">{f}</div>
                   ))}
                 </div>
-                <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-4 text-sm font-semibold text-white shadow-lg shadow-purple-500/20 transition-all hover:from-purple-400 hover:to-pink-400 hover:shadow-purple-500/40 hover:-translate-y-0.5 active:scale-100">
+                <Link href="/contact" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 px-8 py-4 text-sm font-semibold text-ink shadow-lg shadow-purple-500/20 transition-all hover:from-purple-400 hover:to-pink-400 hover:shadow-purple-500/40 hover:-translate-y-0.5 active:scale-100">
                   Contact Sales
                   <ArrowRight className="w-4 h-4" />
                 </Link>
@@ -38,9 +38,9 @@ export function EnterprisePageClient() {
                   { value: "Flexible", label: "Contract terms" },
                   { value: "In development", label: "SSO & API access" },
                 ].map((item) => (
-                  <div key={item.label} className="rounded-2xl border border-slate-800 bg-slate-900/60 p-8 text-center">
+                  <div key={item.label} className="rounded-xl border border-subtle bg-surface/60 p-8 text-center">
                     <div className="text-2xl font-bold text-purple-400 mb-2">{item.value}</div>
-                    <div className="text-sm text-slate-500">{item.label}</div>
+                    <div className="text-sm text-ink-muted">{item.label}</div>
                   </div>
                 ))}
               </div>

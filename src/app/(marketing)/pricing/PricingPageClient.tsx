@@ -146,15 +146,15 @@ function PriceDisplay({
   isYearly: boolean;
 }) {
   if (plan.monthly === null) {
-    return <div className="text-4xl font-bold text-white mb-1">Custom</div>;
+    return <div className="text-4xl font-bold text-ink mb-1">Custom</div>;
   }
   const price = isYearly && plan.yearly !== null ? plan.yearly : plan.monthly;
   return (
     <div className="flex items-baseline justify-center gap-1 mb-1">
-      <span className="text-4xl font-bold text-white tabular-nums">
+      <span className="text-4xl font-bold text-ink tabular-nums">
         ₹{price}
       </span>
-      <span className="text-sm text-slate-400">/month</span>
+      <span className="text-sm text-ink-secondary">/month</span>
     </div>
   );
 }
@@ -174,7 +174,7 @@ function ComparisonCell({ value }: { value: string | boolean }) {
       </span>
     );
   }
-  return <span className="text-sm text-slate-300">{value}</span>;
+  return <span className="text-sm text-ink-secondary">{value}</span>;
 }
 
 /* ═══════════════ Subscription Confirmation Modal ═══════════════ */
@@ -306,7 +306,7 @@ function SubscriptionModal({
         {/* Close button */}
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 rounded-lg p-1.5 text-slate-500 hover:text-white hover:bg-white/[0.06] transition-colors"
+          className="absolute top-4 right-4 z-10 rounded-lg p-1.5 text-ink-muted hover:text-ink hover:bg-white/[0.06] transition-colors"
           aria-label="Close"
         >
           <X className="h-4 w-4" />
@@ -322,7 +322,7 @@ function SubscriptionModal({
           {/* Title */}
           <h2
             id="checkout-modal-title"
-            className="text-lg font-bold text-white tracking-tight"
+            className="text-lg font-bold text-ink tracking-tight"
           >
             {isTrialOffer
               ? `Start your ${TRIAL_DAYS}-day trial`
@@ -330,37 +330,37 @@ function SubscriptionModal({
           </h2>
 
           {/* Plan summary */}
-          <div className="rounded-xl border border-white/[0.08] bg-white/[0.03] p-4 space-y-3">
+          <div className="rounded-xl border border-line bg-white/[0.03] p-4 space-y-3">
             {isTrialOffer ? (
               <>
                 {/* ₹5 today + trial end */}
                 <div className="flex items-center justify-between">
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm font-semibold text-ink">
                     Today
                   </span>
                   <span className="text-lg font-bold text-cyan-300 tabular-nums">
                     ₹{TRIAL_FEE}
-                    <span className="text-sm font-normal text-slate-400">
+                    <span className="text-sm font-normal text-ink-secondary">
                       {" "}one-time
                     </span>
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-400">
+                  <span className="text-sm text-ink-secondary">
                     Your trial ends
                   </span>
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm font-semibold text-ink">
                     {trialEndLabel}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-slate-400">
+                  <span className="text-sm text-ink-secondary">
                     After your trial
                   </span>
-                  <span className="text-sm font-semibold text-white tabular-nums">
+                  <span className="text-sm font-semibold text-ink tabular-nums">
                     ₹{price}
-                    <span className="text-slate-400">/mo</span>
-                    <span className="ml-1 text-xs font-normal text-slate-500">
+                    <span className="text-ink-secondary">/mo</span>
+                    <span className="ml-1 text-xs font-normal text-ink-muted">
                       ({billingLabel})
                     </span>
                   </span>
@@ -376,21 +376,21 @@ function SubscriptionModal({
             ) : (
               <>
                 <div className="flex items-baseline justify-between">
-                  <span className="text-sm font-semibold text-white">
+                  <span className="text-sm font-semibold text-ink">
                     {plan.name}
                   </span>
                   {price !== null ? (
-                    <span className="text-lg font-bold text-white tabular-nums">
+                    <span className="text-lg font-bold text-ink tabular-nums">
                       ₹{price}
-                      <span className="text-sm font-normal text-slate-400">
+                      <span className="text-sm font-normal text-ink-secondary">
                         /mo
                       </span>
                     </span>
                   ) : (
-                    <span className="text-lg font-bold text-white">Custom</span>
+                    <span className="text-lg font-bold text-ink">Custom</span>
                   )}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-slate-500">
+                <div className="flex items-center gap-2 text-xs text-ink-muted">
                   <CreditCard className="h-3.5 w-3.5" />
                   <span>{billingLabel}</span>
                 </div>
@@ -402,7 +402,7 @@ function SubscriptionModal({
               {plan.highlights.map((feat) => (
                 <li key={feat} className="flex items-center gap-2">
                   <Check className="h-3.5 w-3.5 text-cyan-400 shrink-0" />
-                  <span className="text-sm text-slate-300">{feat}</span>
+                  <span className="text-sm text-ink-secondary">{feat}</span>
                 </li>
               ))}
             </ul>
@@ -414,7 +414,7 @@ function SubscriptionModal({
               type="button"
               onClick={onConfirm}
               disabled={loading}
-              className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all duration-150 hover:scale-[1.02] active:scale-100 cursor-pointer ${focusRing} bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed`}
+              className={`inline-flex items-center justify-center gap-2 rounded-xl px-6 py-3.5 text-sm font-semibold transition-all duration-150 hover:scale-[1.02] active:scale-100 cursor-pointer ${focusRing} bg-gradient-to-r from-cyan-500 to-blue-600 text-ink shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 disabled:opacity-50 disabled:cursor-not-allowed`}
             >
               {loading
                 ? "Starting checkout..."
@@ -426,7 +426,7 @@ function SubscriptionModal({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-6 py-3 text-sm font-medium text-slate-300 transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-white"
+              className="inline-flex items-center justify-center gap-2 rounded-xl border border-white/[0.10] bg-white/[0.04] px-6 py-3 text-sm font-medium text-ink-secondary transition-all duration-200 hover:bg-white/[0.08] hover:border-white/[0.15] hover:text-ink"
             >
               Maybe later
             </button>
@@ -668,9 +668,9 @@ export function PricingPageClient() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4 }}
           >
-            <span className="inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 mb-5">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-line bg-slate-900/80 px-3 py-1.5 mb-5">
               <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-              <span className="text-xs text-slate-400 tracking-wide uppercase font-medium">
+              <span className="text-xs text-ink-secondary tracking-wide uppercase font-medium">
                 Pricing
               </span>
             </span>
@@ -680,7 +680,7 @@ export function PricingPageClient() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.05 }}
-            className="text-4xl sm:text-5xl font-bold tracking-tight text-white"
+            className="text-4xl sm:text-5xl font-bold tracking-tight text-ink"
           >
             Invest in Your{" "}
             <span className="text-gradient">Professional Identity</span>
@@ -690,7 +690,7 @@ export function PricingPageClient() {
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.1 }}
-            className="mt-4 text-base text-slate-400 max-w-xl mx-auto leading-relaxed"
+            className="mt-4 text-base text-ink-secondary max-w-xl mx-auto leading-relaxed"
           >
             Build a trusted professional profile, verify your experience, and
             stand out with AI-powered career intelligence.
@@ -712,8 +712,8 @@ export function PricingPageClient() {
               onClick={() => setIsYearly(false)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${focusRing} ${
                 !isYearly
-                  ? "bg-white/10 text-white"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white/10 text-ink"
+                  : "text-ink-secondary hover:text-ink"
               }`}
             >
               Monthly
@@ -723,8 +723,8 @@ export function PricingPageClient() {
               onClick={() => setIsYearly(true)}
               className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${focusRing} flex items-center gap-2 ${
                 isYearly
-                  ? "bg-white/10 text-white"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white/10 text-ink"
+                  : "text-ink-secondary hover:text-ink"
               }`}
             >
               Yearly
@@ -768,29 +768,29 @@ export function PricingPageClient() {
                   className={`relative flex flex-col rounded-2xl border p-6 ${
                     highlighted
                       ? "border-cyan-500/50 bg-slate-900/80 shadow-[0_0_60px_-12px_rgba(34,211,238,0.35)] lg:scale-[1.03] lg:z-10"
-                      : "border-slate-800 bg-slate-900/60 hover:border-slate-700 transition-all duration-300"
+                      : "border-line bg-slate-900/60 hover:border-slate-700 transition-all duration-300"
                   }`}
                 >
                   {/* Badge */}
                   {plan.badges && (
                     <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                      <span className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-1 text-xs font-semibold text-white shadow-lg shadow-cyan-500/30">
+                      <span className="rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 px-4 py-1 text-xs font-semibold text-ink shadow-lg shadow-cyan-500/30">
                         {plan.badges[0]}
                       </span>
                     </div>
                   )}
 
                   {/* Header */}
-                  <h2 className="text-lg font-bold text-white mb-0.5">
+                  <h2 className="text-lg font-bold text-ink mb-0.5">
                     {plan.name}
                   </h2>
-                  <p className="text-xs text-slate-400 mb-4">{plan.tagline}</p>
+                  <p className="text-xs text-ink-secondary mb-4">{plan.tagline}</p>
 
                   {/* Price */}
                   <div className="mb-4">
                     <PriceDisplay plan={plan} isYearly={isYearly} />
                     {plan.monthly !== null && (
-                      <p className="text-xs text-slate-500 text-center">
+                      <p className="text-xs text-ink-muted text-center">
                         {isYearly ? "billed yearly" : "billed monthly"}
                       </p>
                     )}
@@ -800,7 +800,7 @@ export function PricingPageClient() {
                         <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 border border-amber-500/25 px-3 py-1 text-xs font-semibold text-amber-300">
                           {TRIAL_DAYS}-day trial · ₹{TRIAL_FEE} today
                         </span>
-                        <p className="mt-1.5 text-[11px] text-slate-500">
+                        <p className="mt-1.5 text-[11px] text-ink-muted">
                           Then ₹{isYearly && plan.yearly !== null ? plan.yearly : plan.monthly}
                           /mo {isYearly ? "billed yearly" : "billed monthly"} ·
                           auto-renews unless cancelled
@@ -816,7 +816,7 @@ export function PricingPageClient() {
                         <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-cyan-500/15">
                           <Check className="h-2.5 w-2.5 text-cyan-400" />
                         </span>
-                        <span className="text-sm text-slate-300 leading-snug">
+                        <span className="text-sm text-ink-secondary leading-snug">
                           {feat}
                         </span>
                       </li>
@@ -830,10 +830,10 @@ export function PricingPageClient() {
                     disabled={current}
                     className={`inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 text-sm font-semibold transition-all duration-150 hover:scale-[1.02] active:scale-100 cursor-pointer ${focusRing} ${
                       current
-                        ? "bg-slate-800 text-slate-500 cursor-default hover:scale-100"
+                        ? "bg-slate-800 text-ink-muted cursor-default hover:scale-100"
                         : highlighted
-                          ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500"
-                          : "border border-slate-700 text-slate-200 hover:border-cyan-500/40 hover:text-white"
+                          ? "bg-gradient-to-r from-cyan-500 to-blue-600 text-ink shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500"
+                          : "border border-slate-700 text-slate-200 hover:border-cyan-500/40 hover:text-ink"
                     }`}
                   >
                     {getCtaLabel(plan)}
@@ -849,7 +849,7 @@ export function PricingPageClient() {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-slate-400"
+            className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4 text-sm text-ink-secondary"
           >
             <span className="inline-flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-emerald-400" />
@@ -862,7 +862,7 @@ export function PricingPageClient() {
             </span>
             <span className="hidden sm:inline text-slate-700">·</span>
             <span className="inline-flex items-center gap-2">
-              <X className="h-4 w-4 text-slate-500" />
+              <X className="h-4 w-4 text-ink-muted" />
               No hidden fees
             </span>
           </motion.div>
@@ -878,10 +878,10 @@ export function PricingPageClient() {
             viewport={{ once: true }}
             className="text-center mb-10"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold text-ink mb-3">
               Compare Features
             </h2>
-            <p className="text-slate-400 text-base max-w-xl mx-auto">
+            <p className="text-ink-secondary text-base max-w-xl mx-auto">
               Everything you need to see which plan fits your goals.
             </p>
           </motion.div>
@@ -893,7 +893,7 @@ export function PricingPageClient() {
             viewport={{ once: true }}
             className="hidden sm:block"
           >
-            <div className="relative rounded-2xl border border-slate-800 bg-slate-900/40 overflow-hidden">
+            <div className="relative rounded-xl border border-subtle bg-surface/40 overflow-hidden">
               {/* Scroll fades */}
               <div
                 aria-hidden="true"
@@ -920,10 +920,10 @@ export function PricingPageClient() {
                     <col className="w-[20%]" />
                   </colgroup>
                   <thead>
-                    <tr className="border-b border-slate-800">
+                    <tr className="border-b border-line">
                       <th
                         scope="col"
-                        className="sticky left-0 z-20 bg-slate-900/95 backdrop-blur-sm px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-slate-500"
+                        className="sticky left-0 z-20 bg-slate-900/95 backdrop-blur-sm px-5 py-3.5 text-xs font-semibold uppercase tracking-wider text-ink-muted"
                       >
                         Feature
                       </th>
@@ -936,7 +936,7 @@ export function PricingPageClient() {
                             className={`px-4 py-3.5 text-center text-sm font-bold ${
                               isPro
                                 ? "text-cyan-400 border-x border-cyan-500/20 bg-cyan-500/[0.04]"
-                                : "text-white"
+                                : "text-ink"
                             }`}
                           >
                             {plan.name}
@@ -956,7 +956,7 @@ export function PricingPageClient() {
                         key={row.feature}
                         className={i % 2 === 0 ? "bg-slate-950/30" : ""}
                       >
-                        <td className="sticky left-0 z-10 bg-inherit px-5 py-2.5 text-sm text-slate-300 font-medium">
+                        <td className="sticky left-0 z-10 bg-inherit px-5 py-2.5 text-sm text-ink-secondary font-medium">
                           {row.feature}
                         </td>
                         {row.values.map((value, j) => {
@@ -998,19 +998,19 @@ export function PricingPageClient() {
                   className={`rounded-2xl border bg-slate-900/60 overflow-hidden ${
                     isPro
                       ? "border-cyan-500/40 shadow-[0_0_32px_-8px_rgba(34,211,238,0.2)]"
-                      : "border-slate-800"
+                      : "border-line"
                   }`}
                 >
                   <div
                     className={`px-5 py-3 border-b flex items-center justify-between ${
                       isPro
                         ? "border-cyan-500/20 bg-cyan-500/[0.06]"
-                        : "border-slate-800"
+                        : "border-line"
                     }`}
                   >
                     <span
                       className={`text-sm font-bold ${
-                        isPro ? "text-cyan-400" : "text-white"
+                        isPro ? "text-cyan-400" : "text-ink"
                       }`}
                     >
                       {plan.name}
@@ -1032,7 +1032,7 @@ export function PricingPageClient() {
                             i % 2 === 0 ? "bg-slate-950/30" : ""
                           }`}
                         >
-                          <span className="text-slate-400">{row.feature}</span>
+                          <span className="text-ink-secondary">{row.feature}</span>
                           <ComparisonCell value={value} />
                         </li>
                       );
@@ -1054,10 +1054,10 @@ export function PricingPageClient() {
             viewport={{ once: true }}
             className="text-center mb-10"
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold text-ink mb-3">
               Frequently Asked Questions
             </h2>
-            <p className="text-slate-400 text-base">
+            <p className="text-ink-secondary text-base">
               Everything you need to know about Patorbit plans.
             </p>
           </motion.div>
@@ -1072,7 +1072,7 @@ export function PricingPageClient() {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: i * 0.03 }}
-                  className="rounded-xl border border-slate-800 bg-slate-900/50 overflow-hidden"
+                  className="rounded-xl border border-line bg-slate-900/50 overflow-hidden"
                 >
                   <h3>
                     <button
@@ -1083,11 +1083,11 @@ export function PricingPageClient() {
                       id={`faq-button-${i}`}
                       className={`w-full flex items-center justify-between gap-4 px-5 py-4 text-left ${focusRing}`}
                     >
-                      <span className="text-sm font-semibold text-white">
+                      <span className="text-sm font-semibold text-ink">
                         {faq.q}
                       </span>
                       <ChevronDown
-                        className={`h-4 w-4 shrink-0 text-slate-500 transition-transform duration-200 ${
+                        className={`h-4 w-4 shrink-0 text-ink-muted transition-transform duration-200 ${
                           isOpen ? "rotate-180 text-cyan-400" : ""
                         }`}
                       />
@@ -1101,7 +1101,7 @@ export function PricingPageClient() {
                     style={{ gridTemplateRows: isOpen ? "1fr" : "0fr" }}
                   >
                     <div className="overflow-hidden min-h-0">
-                      <p className="px-5 pb-4 text-sm text-slate-400 leading-relaxed">
+                      <p className="px-5 pb-4 text-sm text-ink-secondary leading-relaxed">
                         {faq.a}
                       </p>
                     </div>
@@ -1121,24 +1121,24 @@ export function PricingPageClient() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-3">
+            <h2 className="text-2xl sm:text-3xl font-bold text-ink mb-3">
               Ready to build your{" "}
               <span className="text-gradient">Professional Identity?</span>
             </h2>
-            <p className="text-slate-400 text-base mb-6 max-w-md mx-auto">
+            <p className="text-ink-secondary text-base mb-6 max-w-md mx-auto">
               Start free and verify your first achievements today.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/resume-builder"
-                className={`group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 transition-all hover:scale-[1.02] ${focusRing}`}
+                className={`group inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3 text-base font-semibold text-ink shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 transition-all hover:scale-[1.02] ${focusRing}`}
               >
                 Start Free Today
                 <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/contact"
-                className={`inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3 text-base font-medium text-slate-300 hover:bg-slate-900 hover:border-slate-700 hover:text-white transition-all ${focusRing}`}
+                className={`inline-flex items-center gap-2 rounded-xl border border-line bg-slate-900/40 px-7 py-3 text-base font-medium text-ink-secondary hover:bg-slate-900 hover:border-slate-700 hover:text-ink transition-all ${focusRing}`}
               >
                 Talk to Sales
               </Link>

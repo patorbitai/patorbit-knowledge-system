@@ -35,18 +35,18 @@ export default function ResumeCompletionWidget() {
               className="stroke-cyan-400"
             />
           </svg>
-          <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-white">
+          <span className="absolute inset-0 flex items-center justify-center text-lg font-bold text-ink">
             {PERCENT}%
           </span>
         </div>
-        <p className="text-xs leading-relaxed text-slate-500">
+        <p className="text-xs leading-relaxed text-ink-muted">
           Your resume is a blank canvas. Add your experience, education, and
           skills to build a complete professional profile.
         </p>
       </div>
       <div className="mt-4">
         <EmptyState
-          title="No resume yet"
+          title="No resume yet — start with your experience"
           description="Start from scratch or import an existing resume."
           cta={{ label: "Start building", href: "/resume-builder" }}
         />

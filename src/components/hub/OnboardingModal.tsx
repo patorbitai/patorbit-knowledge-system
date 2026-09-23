@@ -124,7 +124,7 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
             {/* Step: Welcome */}
             {step === "welcome" && (
               <div className="p-8 text-center space-y-6">
-                <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center mx-auto">
+                <div className="w-16 h-16 rounded-2xl bg-brand flex items-center justify-center mx-auto">
                   <Sparkles className="w-8 h-8 text-white" />
                 </div>
                 <div>
@@ -135,21 +135,21 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
                 </div>
                 <div className="flex flex-col gap-2 max-w-xs mx-auto text-left">
                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-slate-300">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-500 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-brand shrink-0" />
                     <span>Create your professional identity</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-slate-300">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-500 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-brand shrink-0" />
                     <span>Choose from 31 professional templates</span>
                   </div>
                   <div className="flex items-center gap-2 text-xs text-gray-600 dark:text-slate-300">
-                    <CheckCircle2 className="w-4 h-4 text-cyan-500 shrink-0" />
+                    <CheckCircle2 className="w-4 h-4 text-brand shrink-0" />
                     <span>Tailor to any job with AI assistance</span>
                   </div>
                 </div>
                 <button
                   onClick={() => setStep("identity")}
-                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 text-sm font-medium text-white transition-all mx-auto"
+                  className="flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-brand hover:opacity-90 text-sm font-medium text-white transition-all mx-auto"
                 >
                   Get Started
                   <ArrowRight className="w-4 h-4" />
@@ -161,7 +161,7 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
             {step === "identity" && (
               <div className="p-6">
                 <div className="flex items-center gap-3 mb-4">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center">
+                  <div className="w-10 h-10 rounded-xl bg-brand flex items-center justify-center">
                     <Target className="w-5 h-5 text-white" />
                   </div>
                   <div>
@@ -181,7 +181,7 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
             {/* Step: Creating */}
             {step === "creating" && (
               <div className="p-8 text-center space-y-4">
-                <Loader2 className="w-8 h-8 text-cyan-500 animate-spin mx-auto" />
+                <Loader2 className="w-8 h-8 text-brand animate-spin mx-auto" />
                 <div>
                   <p className="text-sm font-medium text-gray-900 dark:text-white">Creating your first resume...</p>
                   <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Setting up your workspace</p>

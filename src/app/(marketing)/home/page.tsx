@@ -64,7 +64,7 @@ export default async function HomePage() {
     <>
       {/* Funnel: landing page view (§16) */}
       <TrackEvent name="landing_view" />
-    <main className="bg-[#070B14] text-white">
+    <main className="bg-surface-sunken text-ink">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}

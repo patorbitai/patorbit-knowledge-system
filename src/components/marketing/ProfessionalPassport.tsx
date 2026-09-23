@@ -19,7 +19,7 @@ export default function ProfessionalPassport() {
   return (
     <section
       ref={ref}
-      className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
+      className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="Templates"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-blue-900/5 to-transparent" />
@@ -33,19 +33,19 @@ export default function ProfessionalPassport() {
           }}
           className="text-center mb-16"
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
             <Layout className="w-3 h-3 text-cyan-400" />
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               Templates
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             Choose from{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               professional layouts
             </span>
           </h2>
-          <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-xl mx-auto">
+          <p className="mt-4 text-[17px] text-ink-secondary leading-relaxed max-w-xl mx-auto">
             Multiple layout families designed for different career stages. Your content stays the same — the presentation adapts.
           </p>
         </div>
@@ -65,13 +65,13 @@ export default function ProfessionalPassport() {
               style={{
                 transition: `opacity 0.3s ease-out ${0.1 + i * 0.08}s, transform 0.3s ease-out ${0.1 + i * 0.08}s`,
               }}
-              className="group rounded-xl border border-slate-800/60 bg-slate-900/40 p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-slate-700/60 hover:shadow-2xl"
+              className="group rounded-xl border border-subtle bg-surface p-6 text-center transition-all duration-300 hover:-translate-y-1 hover:border-slate-700/60 hover:shadow-2xl"
             >
               <div className={`mx-auto mb-4 flex h-16 w-12 items-center justify-center rounded-lg bg-gradient-to-br ${template.color} border border-slate-700/40`}>
                 <div className="w-8 h-10 rounded bg-white/10 border border-white/5" />
               </div>
-              <h3 className="text-sm font-semibold text-white mb-1">{template.name}</h3>
-              <p className="text-[11px] text-slate-500">{template.category}</p>
+              <h3 className="text-sm font-semibold text-ink mb-1">{template.name}</h3>
+              <p className="text-[11px] text-ink-muted">{template.category}</p>
             </div>
           ))}
         </div>
@@ -86,7 +86,7 @@ export default function ProfessionalPassport() {
         >
           <Link
             href="/templates"
-            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+            className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3 text-sm font-semibold text-ink shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
           >
             Explore All Templates
             <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />

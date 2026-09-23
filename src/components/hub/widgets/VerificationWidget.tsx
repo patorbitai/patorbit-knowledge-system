@@ -26,7 +26,7 @@ const STATUS_CONFIG = {
   },
   unverified: {
     label: "Unverified",
-    className: "bg-white/[0.04] text-slate-500 border border-white/[0.06]",
+    className: "bg-white/[0.04] text-ink-muted border border-subtle",
     dot: "bg-slate-600",
   },
 };
@@ -40,7 +40,7 @@ export default function VerificationWidget() {
       icon={BadgeCheck}
       action={{ label: "Manage", href: "/trust" }}
     >
-      <p className="mb-3 text-xs text-slate-500">
+      <p className="mb-3 text-xs text-ink-muted">
         {verifiedCount === 0
           ? "Verify your credentials to build trust with employers."
           : `${verifiedCount} of ${STEPS.length} categories verified.`}
@@ -51,11 +51,11 @@ export default function VerificationWidget() {
           return (
             <li
               key={label}
-              className="flex items-center justify-between rounded-lg border border-white/[0.06] bg-white/[0.02] px-3 py-2"
+              className="flex items-center justify-between rounded-lg border border-subtle bg-surface px-3 py-2"
             >
               <div className="flex items-center gap-2">
                 <span className={`h-1.5 w-1.5 rounded-full shrink-0 ${cfg.dot}`} aria-hidden="true" />
-                <span className="text-xs font-medium text-slate-300">{label}</span>
+                <span className="text-xs font-medium text-ink-secondary">{label}</span>
               </div>
               <span className={`rounded-md px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${cfg.className}`}>
                 {cfg.label}

@@ -322,24 +322,24 @@ export function JobApplicationsSection() {
     <section className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center">
-            <Briefcase className="h-4 w-4 text-amber-500 dark:text-amber-400" />
+          <div className="w-8 h-8 rounded-lg bg-brand-soft flex items-center justify-center">
+            <Briefcase className="h-4 w-4 text-brand" />
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Job Applications
+            <h2 className="text-section text-ink">
+              Opportunities
             </h2>
-            <p className="text-xs text-gray-500 dark:text-slate-400">
+            <p className="text-meta text-ink-muted">
               {applications.length} application{applications.length !== 1 ? "s" : ""}
             </p>
           </div>
         </div>
         <Link
           href="/jobs/new"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-amber-500 dark:bg-amber-500/90 text-xs font-semibold text-white hover:brightness-110 active:scale-[0.99] transition-all"
+          className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand px-3.5 text-label font-semibold text-brand-contrast transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
         >
           <Plus className="h-3.5 w-3.5" />
-          Add Job
+          Analyze a job
         </Link>
       </div>
 
@@ -405,10 +405,10 @@ export function JobApplicationsSection() {
               <button
                 key={filter.value}
                 onClick={() => setStatusFilter(filter.value)}
-                className={`px-3 py-1.5 rounded-lg text-[11px] font-medium whitespace-nowrap transition-all ${
+                className={`px-3 py-2 min-h-[32px] rounded-lg text-[11px] font-medium whitespace-nowrap transition-all ${
                   statusFilter === filter.value
-                    ? "bg-amber-500 dark:bg-amber-500/90 text-white"
-                    : "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/[0.1]"
+                    ? "bg-brand text-brand-contrast"
+                    : "bg-surface-sunken text-ink-secondary hover:bg-surface-raised hover:text-ink"
                 }`}
               >
                 {filter.label}
@@ -432,24 +432,24 @@ export function JobApplicationsSection() {
         </div>
       )}
 
-      {/* Empty state */}
+      {/* Empty state — what this does, why it matters, what to do next (§24) */}
       {!loading && applications.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] px-6 py-8 text-center">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-amber-50 dark:bg-amber-500/10 flex items-center justify-center mb-3">
-            <Briefcase className="h-5 w-5 text-amber-500 dark:text-amber-400" />
+        <div className="rounded-xl border border-dashed border-line bg-white/[0.02] px-6 py-10 text-center">
+          <div className="mx-auto w-12 h-12 rounded-xl bg-brand-soft flex items-center justify-center mb-3">
+            <Briefcase className="h-5 w-5 text-brand" />
           </div>
-          <p className="text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
-            No job applications yet
+          <p className="text-card text-ink mb-1">
+            No jobs yet
           </p>
-          <p className="text-xs text-gray-500 dark:text-slate-400 mb-4 max-w-sm mx-auto">
-            Add a job description, tailor the right resume, and keep your application materials together.
+          <p className="text-secondary-size text-ink-secondary mb-4 max-w-sm mx-auto leading-relaxed">
+            Analyze your first job to see how your profile matches the opportunity — then tailor your resume for it.
           </p>
           <Link
             href="/jobs/new"
-            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-amber-500 dark:bg-amber-500/90 text-xs font-semibold text-white hover:brightness-110 transition-all"
+            className="inline-flex h-9 items-center gap-1.5 rounded-md bg-brand px-4 text-label font-semibold text-brand-contrast transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
           >
             <Plus className="h-3.5 w-3.5" />
-            Add Job Application
+            Analyze a job
           </Link>
         </div>
       )}
@@ -464,13 +464,21 @@ export function JobApplicationsSection() {
         </div>
       )}
 
-      {/* Loading */}
+      {/* Loading — skeleton instead of a bare spinner (§25) */}
       {loading && (
-        <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] px-6 py-8 text-center">
-          <div className="animate-pulse space-y-3">
-            <div className="h-4 bg-gray-200 dark:bg-white/[0.06] rounded w-1/3 mx-auto" />
-            <div className="h-3 bg-gray-200 dark:bg-white/[0.06] rounded w-1/2 mx-auto" />
-          </div>
+        <div className="space-y-3" aria-label="Loading applications" role="status">
+          {[1, 2].map((i) => (
+            <div key={i} className="rounded-xl border border-subtle bg-surface p-4">
+              <div className="animate-pulse flex items-center gap-4">
+                <div className="h-10 w-10 rounded-xl bg-white/[0.06]" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3.5 bg-white/[0.06] rounded w-1/3" />
+                  <div className="h-3 bg-white/[0.06] rounded w-1/4" />
+                </div>
+                <div className="h-6 w-16 bg-white/[0.06] rounded-md" />
+              </div>
+            </div>
+          ))}
         </div>
       )}
 
@@ -549,9 +557,19 @@ export function JobApplicationsSection() {
 
                       {/* Match score */}
                       {app.matchScore !== null && (
-                        <span className="inline-flex items-center gap-1 text-[11px] font-medium text-blue-600 dark:text-blue-400">
+                        <span
+                          className="inline-flex items-center gap-1 text-[11px] font-medium"
+                          style={{
+                            color:
+                              app.matchScore >= 75
+                                ? "var(--match-strong)"
+                                : app.matchScore >= 40
+                                ? "var(--match-partial)"
+                                : "var(--match-gap)",
+                          }}
+                        >
                           <Target className="h-3 w-3" />
-                          {app.matchScore}% match
+                          <span className="tnum">{app.matchScore}%</span> match
                         </span>
                       )}
 

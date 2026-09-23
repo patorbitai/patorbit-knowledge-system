@@ -5,11 +5,13 @@ import { usePathname } from "next/navigation";
 import { clsx } from "clsx";
 import {
   LayoutDashboard,
-  FileText,
+  UserRound,
   Briefcase,
-  Palette,
+  FileText,
   Sparkles,
+  Palette,
   Settings,
+  HelpCircle,
 } from "lucide-react";
 
 type NavItem = {
@@ -18,109 +20,160 @@ type NavItem = {
   icon: React.ComponentType<{ className?: string }>;
 };
 
+/* Primary navigation answers "where am I?" in one glance (§7).
+   Secondary tools sit in their own group so the core journey —
+   Overview → Profile → Jobs → Resumes — reads first. */
 const PRIMARY_ITEMS: NavItem[] = [
-  { label: "Dashboard", href: "/overview", icon: LayoutDashboard },
-  { label: "Resumes", href: "/resume-builder", icon: FileText },
+  { label: "Overview", href: "/overview", icon: LayoutDashboard },
+  { label: "Profile", href: "/passport", icon: UserRound },
   { label: "Jobs", href: "/jobs", icon: Briefcase },
+  { label: "Resumes", href: "/resume-builder", icon: FileText },
+];
+
+const WORKSPACE_ITEMS: NavItem[] = [
   { label: "AI Workspace", href: "/ai", icon: Sparkles },
   { label: "Templates", href: "/templates", icon: Palette },
 ];
 
 const SECONDARY_ITEMS: NavItem[] = [
   { label: "Settings", href: "/settings", icon: Settings },
+  { label: "Help", href: "/docs", icon: HelpCircle },
 ];
 
-export default function SidebarNav({ onNavigate }: { onNavigate?: () => void }) {
+function NavItemLink({
+  item,
+  active,
+  onNavigate,
+}: {
+  item: NavItem;
+  active: boolean;
+  onNavigate?: () => void;
+}) {
+  const { label, href, icon: Icon } = item;
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={clsx(
+        "group relative flex items-center gap-2.5 rounded-md px-3 py-2 text-body font-medium transition-colors",
+        "focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-brand",
+        active
+          ? "bg-brand-soft text-ink"
+          : "text-ink-secondary hover:bg-white/[0.05] hover:text-ink"
+      )}
+    >
+      {active && (
+        <span
+          aria-hidden
+          className="absolute left-0 top-1/2 h-4 w-0.5 -translate-y-1/2 rounded-pill bg-brand"
+        />
+      )}
+      <Icon
+        className={clsx(
+          "h-4 w-4 shrink-0 transition-colors",
+          active ? "text-brand" : "text-ink-muted group-hover:text-ink-secondary"
+        )}
+      />
+      <span className="truncate">{label}</span>
+    </Link>
+  );
+}
+
+function NavGroup({
+  label,
+  items,
+  pathname,
+  onNavigate,
+}: {
+  label?: string;
+  items: NavItem[];
+  pathname: string;
+  onNavigate?: () => void;
+}) {
+  return (
+    <div>
+      {label && (
+        <p className="mb-1 px-3 text-meta font-semibold uppercase tracking-wider text-ink-muted">
+          {label}
+        </p>
+      )}
+      <ul className="space-y-0.5">
+        {items.map((item) => {
+          const active =
+            item.href === "/resume-builder"
+              ? pathname === "/resume-builder" ||
+                pathname.startsWith("/resume-builder/")
+              : item.href === "/jobs"
+                ? pathname === "/jobs" || pathname.startsWith("/jobs/")
+                : item.href === "/passport"
+                  ? pathname === "/passport"
+                  : pathname === item.href ||
+                    pathname.startsWith(item.href + "/");
+          return (
+            <li key={item.label}>
+              <NavItemLink
+                item={item}
+                active={active}
+                onNavigate={onNavigate}
+              />
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+export default function SidebarNav({
+  onNavigate,
+}: {
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
-  const isActive = (href: string) => {
-    if (href === "/resume-builder") {
-      return pathname === "/resume-builder" || pathname.startsWith("/resume-builder/");
-    }
-    if (href === "/jobs") {
-      return pathname === "/jobs" || pathname.startsWith("/jobs/");
-    }
-    return pathname === href || pathname.startsWith(href + "/");
-  };
-
   return (
-    <div className="flex h-full flex-col bg-white dark:bg-[#080C18]">
+    <div className="flex h-full flex-col bg-surface">
       {/* Brand */}
       <div className="px-4 pt-5 pb-4">
         <Link
           href="/home"
           onClick={onNavigate}
           aria-label="Go to Patorbit home"
-          className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 transition-colors hover:bg-gray-50 dark:hover:bg-white/[0.04] group"
+          className="flex items-center gap-2.5 rounded-md px-1.5 py-1 transition-colors hover:bg-white/[0.05] group"
         >
-          <div className="h-8 w-8 rounded-lg bg-gradient-to-br from-[#08c9ee] to-[#0ea5e9] flex items-center justify-center text-[13px] font-bold text-white shrink-0">
+          <div className="h-7 w-7 rounded-md bg-brand flex items-center justify-center text-[13px] font-bold text-brand-contrast shrink-0">
             P
           </div>
-          <span className="text-[17px] font-bold tracking-tight text-gray-900 dark:text-white">
+          <span className="text-card font-semibold tracking-tight text-ink">
             Patorbit
           </span>
         </Link>
       </div>
 
       {/* Primary nav */}
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 font-sans">
-        <ul className="space-y-0.5">
-          {PRIMARY_ITEMS.map(({ label, href, icon: Icon }) => {
-            const active = isActive(href);
-            return (
-              <li key={label}>
-                <Link
-                  href={href}
-                  onClick={onNavigate}
-                  className={clsx(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
-                    active
-                      ? "bg-gray-100 dark:bg-white/[0.07] text-gray-900 dark:text-white border-l-[2.5px] border-cyan-500 dark:border-cyan-400 pl-[9px]"
-                      : "text-gray-500 dark:text-[#8e99af] hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-800 dark:hover:text-[#cbd5e1]"
-                  )}
-                >
-                  <Icon className={clsx("h-4 w-4 shrink-0", active && "text-cyan-600 dark:text-cyan-400")} />
-                  {label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+      <nav aria-label="Primary" className="flex-1 space-y-6 overflow-y-auto px-3">
+        <NavGroup
+          items={PRIMARY_ITEMS}
+          pathname={pathname}
+          onNavigate={onNavigate}
+        />
+        <NavGroup
+          label="Workspace"
+          items={WORKSPACE_ITEMS}
+          pathname={pathname}
+          onNavigate={onNavigate}
+        />
       </nav>
 
-      {/* Settings pinned to bottom */}
-      <div className="px-3 pb-1">
-        <div className="mb-2 border-t border-gray-100 dark:border-white/[0.05]" />
-        <ul className="space-y-0.5">
-          {SECONDARY_ITEMS.map(({ label, href, icon: Icon }) => {
-            const active = isActive(href);
-            return (
-              <li key={label}>
-                <Link
-                  href={href}
-                  onClick={onNavigate}
-                  className={clsx(
-                    "flex items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium transition-colors",
-                    active
-                      ? "bg-gray-100 dark:bg-white/[0.07] text-gray-900 dark:text-white border-l-[2.5px] border-cyan-500 dark:border-cyan-400 pl-[9px]"
-                      : "text-gray-500 dark:text-[#8e99af] hover:bg-gray-50 dark:hover:bg-white/[0.04] hover:text-gray-800 dark:hover:text-[#cbd5e1]"
-                  )}
-                >
-                  <Icon className={clsx("h-4 w-4 shrink-0", active && "text-cyan-600 dark:text-cyan-400")} />
-                  {label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </div>
-
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.05]">
-        <div className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-[#64748b]">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 dark:bg-emerald-400 shrink-0" />
-          Auto-saving
-        </div>
+      {/* Secondary nav pinned to bottom */}
+      <div className="px-3 pb-3 pt-2">
+        <div className="mb-2 border-t border-subtle" />
+        <NavGroup
+          items={SECONDARY_ITEMS}
+          pathname={pathname}
+          onNavigate={onNavigate}
+        />
       </div>
     </div>
   );

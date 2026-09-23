@@ -30,17 +30,17 @@ export default function KnowledgeGraphWidget() {
         </div>
 
         <div className="text-center space-y-1 max-w-[200px]">
-          <p className="text-[11px] font-semibold text-gray-600 dark:text-slate-300">
+          <p className="text-[11px] font-semibold text-ink-secondary">
             Your professional network graph
           </p>
-          <p className="text-[10px] text-gray-400 dark:text-slate-500 leading-relaxed">
+          <p className="text-[10px] text-ink-muted leading-relaxed">
             Connects your skills, experience, and relationships into a visual career map
           </p>
         </div>
 
         <Link
           href="/network"
-          className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 px-3.5 py-1.5 text-[11px] font-semibold text-cyan-600 dark:text-cyan-300 hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors"
+          className="mt-1 inline-flex items-center gap-1.5 rounded-lg bg-cyan-50 dark:bg-cyan-500/10 px-3.5 py-1.5 text-[11px] font-semibold text-cyan-600 dark:text-brand hover:bg-cyan-100 dark:hover:bg-cyan-500/20 transition-colors"
         >
           Explore graph
           <ArrowRight className="w-3 h-3" />

@@ -17,11 +17,7 @@ import {
   Sparkles,
   Target,
   Briefcase,
-  Shield,
-  BarChart3,
-  TrendingUp,
   CheckCircle2,
-  Zap,
 } from "lucide-react";
 import { useResumeBuilder, isResumeEffectivelyEmpty } from "@/store/resume-builder";
 import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
@@ -268,23 +264,99 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-8 lg:px-10 space-y-10">
-      {/* ── A. WELCOME HEADER + NEXT STEP ── */}
-      <section className="space-y-3">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-gray-900 dark:text-[#f8fafc]">
-            {getGreeting()}, {firstName}
-          </h1>
-          <p className="text-sm text-gray-500 dark:text-[#94a3b8] max-w-xl leading-relaxed">
-            {!hasResumes
-              ? "Start by creating or importing your first resume."
-              : sortedResumes.length === 1
-              ? `Your resume "${sortedResumes[0].resumeName || "Untitled"}" is ready. Continue improving it or create another.`
-              : `You have ${sortedResumes.length} resumes. Pick one to continue where you left off.`}
-          </p>
+      {/* ── A. WELCOME HEADER — answers "What is my state?" + one primary action (§8) ── */}
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h1 className="text-page text-ink">
+              {getGreeting()}, {firstName}
+            </h1>
+            <p className="mt-1 text-body text-ink-secondary max-w-xl leading-relaxed">
+              {!hasResumes
+                ? "Your professional profile starts with your first resume."
+                : sortedResumes.length === 1
+                ? `Your professional profile is ready — resume "${sortedResumes[0].resumeName || "Untitled"}" is up to date.`
+                : `Your professional profile is ready across ${sortedResumes.length} resume versions. Here's what's happening.`}
+            </p>
+          </div>
+          <Link
+            href="/jobs/new"
+            className="inline-flex h-9 shrink-0 items-center gap-2 rounded-md bg-brand px-4 text-body font-medium text-brand-contrast transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
+          >
+            <Target className="h-4 w-4" />
+            Analyze a job
+          </Link>
         </div>
 
-        {/* Journey checklist — six-step activation progression (§2, §13) */}
-        <JourneyChecklist input={journeyInput} />
+        {/* Professional profile card (§8): completeness + counts + status */}
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <section className="sm:col-span-1 rounded-xl border border-subtle bg-surface p-5" aria-labelledby="profile-card-heading">
+            <div className="flex items-center justify-between gap-2">
+              <h2 id="profile-card-heading" className="text-card text-ink">
+                Professional profile
+              </h2>
+              <span
+                className={`inline-flex items-center gap-1.5 rounded-pill border px-2 py-0.5 text-meta font-medium ${
+                  data.resumeCompleteness >= 80
+                    ? "border-transparent bg-[var(--status-success-soft)] text-success"
+                    : "border-transparent bg-[var(--status-warning-soft)] text-warning"
+                }`}
+              >
+                {data.resumeCompleteness >= 80 ? "Ready" : "In progress"}
+              </span>
+            </div>
+            <div className="mt-3">
+              <div
+                className="h-1.5 w-full overflow-hidden rounded-pill bg-match-track"
+                role="progressbar"
+                aria-valuenow={data.resumeCompleteness}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label="Profile completeness"
+              >
+                <div
+                  className="h-full rounded-pill bg-brand transition-[width] duration-500"
+                  style={{ width: `${data.resumeCompleteness}%` }}
+                />
+              </div>
+              <p className="tnum mt-1.5 text-meta text-ink-secondary">
+                {data.resumeCompleteness}% complete
+              </p>
+            </div>
+            <dl className="mt-4 grid grid-cols-3 gap-2 text-center">
+              <div className="rounded-lg bg-white/[0.03] py-2">
+                <dt className="text-meta text-ink-muted">Experience</dt>
+                <dd className="tnum text-lg font-bold text-ink">
+                  {activeResume?.experience?.length || 0}
+                </dd>
+              </div>
+              <div className="rounded-lg bg-white/[0.03] py-2">
+                <dt className="text-meta text-ink-muted">Skills</dt>
+                <dd className="tnum text-lg font-bold text-ink">
+                  {activeResume?.skills?.length || 0}
+                </dd>
+              </div>
+              <div className="rounded-lg bg-white/[0.03] py-2">
+                <dt className="text-meta text-ink-muted">Evidence</dt>
+                <dd className="tnum text-lg font-bold text-ink">
+                  {data.passportClaims}
+                </dd>
+              </div>
+            </dl>
+            <Link
+              href="/passport"
+              className="mt-4 inline-flex items-center gap-1.5 text-label font-medium text-brand hover:underline focus-visible:outline-2 focus-visible:outline-brand"
+            >
+              View profile
+              <ArrowRight className="h-3 w-3" />
+            </Link>
+          </section>
+
+          {/* Recommended next action (§8): one clear action, not ten CTAs */}
+          <div className="sm:col-span-2">
+            <JourneyChecklist input={journeyInput} />
+          </div>
+        </div>
       </section>
 
       {/* ── ACTIVE JOB APPLICATION CONTEXT ── */}
@@ -630,71 +702,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
         </section>
       )}
 
-      {/* ── D. CAREER WORKSPACE — Journey Section ── */}
-      {hasResumes && (
-        <section className="space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Career workspace
-          </h2>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {[
-              {
-                icon: <FileText className="w-4 h-4" />,
-                label: "Build",
-                desc: "Resume Builder",
-                href: "/resume-builder",
-                color: "from-blue-500 to-cyan-500",
-                bg: "bg-blue-500/10 dark:bg-blue-500/10",
-                text: "text-blue-600 dark:text-blue-400",
-              },
-              {
-                icon: <BarChart3 className="w-4 h-4" />,
-                label: "Understand",
-                desc: "Career Intelligence",
-                href: "/ai",
-                color: "from-purple-500 to-indigo-500",
-                bg: "bg-purple-500/10 dark:bg-purple-500/10",
-                text: "text-purple-600 dark:text-purple-400",
-              },
-              {
-                icon: <Shield className="w-4 h-4" />,
-                label: "Strengthen",
-                desc: "Professional Identity",
-                href: "/overview#identity",
-                color: "from-emerald-500 to-green-500",
-                bg: "bg-emerald-500/10 dark:bg-emerald-500/10",
-                text: "text-emerald-600 dark:text-emerald-400",
-              },
-              {
-                icon: <Briefcase className="w-4 h-4" />,
-                label: "Apply",
-                desc: "Job Applications",
-                href: "/overview#applications",
-                color: "from-amber-500 to-orange-500",
-                bg: "bg-amber-500/10 dark:bg-amber-500/10",
-                text: "text-amber-600 dark:text-amber-400",
-              },
-            ].map((item) => (
-              <Link
-                key={item.label}
-                href={item.href}
-                className="group flex flex-col items-center gap-2.5 p-4 rounded-xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] hover:border-gray-300 dark:hover:border-white/[0.12] hover:shadow-md transition-all text-center"
-              >
-                <div className={`w-9 h-9 rounded-xl ${item.bg} flex items-center justify-center ${item.text}`}>
-                  {item.icon}
-                </div>
-                <div>
-                  <p className="text-xs font-semibold text-gray-700 dark:text-slate-300">{item.label}</p>
-                  <p className="text-[10px] text-gray-400 dark:text-slate-500 mt-0.5">{item.desc}</p>
-                </div>
-                <ArrowRight className="w-3 h-3 text-gray-300 dark:text-slate-600 group-hover:text-gray-500 dark:group-hover:text-slate-400 transition-colors" />
-              </Link>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* ── E. JOB APPLICATIONS ── */}
+      {/* ── D. ACTIVE OPPORTUNITIES — recent jobs, compact, action-led (§8, §11) ── */}
       <div id="applications">
         <JobApplicationsSection />
         <div className="mt-4 text-center">
@@ -708,7 +716,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
         </div>
       </div>
 
-      {/* ── F. PROFESSIONAL IDENTITY WIDGETS ── */}
+      {/* ── E. PROFESSIONAL IDENTITY WIDGETS ── */}
       {hasResumes && (
         <div id="identity">
           <FeatureGate
@@ -731,7 +739,7 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
         </div>
       )}
 
-      {/* ── G. AI TOOLS ── */}
+      {/* ── F. AI TOOLS ── */}
       <section>
         <AICopilotWidget />
       </section>

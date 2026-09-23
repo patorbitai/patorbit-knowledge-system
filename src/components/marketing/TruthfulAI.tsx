@@ -29,7 +29,7 @@ export default function TruthfulAI() {
   return (
     <section
       ref={ref}
-      className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
+      className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="Truthful AI"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-900/[0.06] to-transparent" />
@@ -50,13 +50,13 @@ export default function TruthfulAI() {
               Truthful AI
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             Patorbit doesn&apos;t invent{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               your experience
             </span>
           </h2>
-          <p className="mt-4 text-[17px] text-slate-400 leading-relaxed max-w-2xl mx-auto">
+          <p className="mt-4 text-[17px] text-ink-secondary leading-relaxed max-w-2xl mx-auto">
             Other tools fill gaps with fiction. We show you the gap and leave the decision to you.
           </p>
         </div>
@@ -71,14 +71,14 @@ export default function TruthfulAI() {
           }}
         >
           {/* Scenario */}
-          <div className="rounded-xl border border-slate-800/60 bg-slate-900/40 p-6">
-            <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium mb-3">
+          <div className="rounded-xl border border-subtle bg-surface p-6">
+            <div className="text-[11px] uppercase tracking-wider text-ink-muted font-medium mb-3">
               The job requires
             </div>
             <div className="inline-flex items-center gap-2 rounded-lg border border-slate-700/60 bg-slate-800/60 px-3 py-1.5 mb-5">
-              <span className="text-sm font-semibold text-white">Snowflake</span>
+              <span className="text-sm font-semibold text-ink">Snowflake</span>
             </div>
-            <div className="text-[11px] uppercase tracking-wider text-slate-500 font-medium mb-3">
+            <div className="text-[11px] uppercase tracking-wider text-ink-muted font-medium mb-3">
               Your profile contains
             </div>
             <div className="inline-flex items-center gap-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-1.5">
@@ -96,7 +96,7 @@ export default function TruthfulAI() {
                   What other tools add
                 </span>
               </div>
-              <p className="text-sm text-slate-400 italic leading-relaxed">
+              <p className="text-sm text-ink-secondary italic leading-relaxed">
                 &ldquo;Experienced with Snowflake data warehousing…&rdquo;
               </p>
               <p className="text-[11px] text-red-400/80 mt-2">
@@ -112,10 +112,10 @@ export default function TruthfulAI() {
                   What Patorbit does
                 </span>
               </div>
-              <ul className="space-y-1.5 text-sm text-slate-300">
+              <ul className="space-y-1.5 text-sm text-ink-secondary">
                 <li>Missing skill: Snowflake</li>
-                <li className="text-slate-400">We won&apos;t add it to your resume.</li>
-                <li className="text-slate-400">Consider learning it or gaining relevant experience.</li>
+                <li className="text-ink-secondary">We won&apos;t add it to your resume.</li>
+                <li className="text-ink-secondary">Consider learning it or gaining relevant experience.</li>
               </ul>
             </div>
           </div>
@@ -133,13 +133,13 @@ export default function TruthfulAI() {
           {principles.map((p) => (
             <div
               key={p.title}
-              className="rounded-xl border border-slate-800/60 bg-slate-900/40 p-6 transition-colors duration-300 hover:border-emerald-500/30"
+              className="rounded-xl border border-subtle bg-surface p-6 transition-colors duration-300 hover:border-emerald-500/30"
             >
               <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 border border-emerald-500/20">
                 <p.icon className="h-5 w-5 text-emerald-400" aria-hidden="true" />
               </div>
-              <h3 className="text-base font-semibold text-white mb-2">{p.title}</h3>
-              <p className="text-sm text-slate-400 leading-relaxed">{p.desc}</p>
+              <h3 className="text-base font-semibold text-ink mb-2">{p.title}</h3>
+              <p className="text-sm text-ink-secondary leading-relaxed">{p.desc}</p>
             </div>
           ))}
         </div>

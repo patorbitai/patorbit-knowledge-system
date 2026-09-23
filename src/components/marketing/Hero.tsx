@@ -192,7 +192,7 @@ export default function Hero() {
 
   return (
     <section
-      className="relative min-h-screen bg-[#070B14] flex items-center overflow-hidden"
+      className="relative min-h-screen bg-surface-sunken flex items-center overflow-hidden"
       aria-label="Hero"
     >
       {/* Background layers */}
@@ -205,47 +205,43 @@ export default function Hero() {
         <div className="grid lg:grid-cols-2 gap-16 lg:gap-24 items-center">
           {/* ─── LEFT: Copy ─── */}
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-xl border border-slate-800/80 bg-white/[0.03] backdrop-blur-sm px-3.5 py-1.5">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-line bg-white/[0.03] px-3.5 py-1.5">
               <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
+                <span className="absolute inline-flex h-full w-full rounded-full bg-success opacity-75 animate-ping" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-success" />
               </span>
-              <span className="text-[11px] text-slate-400 tracking-wider uppercase font-medium">
-                Build once. Tailor when you need it.
+              <span className="text-meta text-ink-secondary tracking-wider uppercase font-medium">
+                Your identity. Every opportunity.
               </span>
             </div>
 
-            <h1 className="text-5xl sm:text-6xl lg:text-[4.25rem] xl:text-[5rem] font-bold leading-[0.95] tracking-tight text-white">
-              Build Your Resume{" "}
-              <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                Once.
-              </span>
+            <h1 className="text-5xl sm:text-6xl lg:text-[4.25rem] xl:text-[5rem] font-bold leading-[1.02] tracking-tight text-ink">
+              Your professional identity.
               <br />
-              Tailor It to{" "}
-              <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
-                Every Job.
+              <span className="text-gradient">
+                Tailored for every opportunity.
               </span>
             </h1>
 
-            <p className="mt-6 text-[17px] text-slate-400 leading-relaxed max-w-lg">
-              Keep one source of truth for your career. Patorbit analyzes each job
-              description, shows where you match, identifies skill gaps, and helps you
-              tailor your resume — <strong className="text-slate-300">without inventing experience</strong>.
+            <p className="mt-6 text-[17px] text-ink-secondary leading-relaxed max-w-lg">
+              Patorbit turns your experience, skills, and evidence into a
+              professional profile you can confidently adapt to every job —
+              <strong className="text-ink"> without inventing experience</strong>.
             </p>
 
             <div className="mt-8 flex flex-col sm:flex-row gap-3">
               <Link
                 href={session ? "/overview" : "/register"}
-                className="group inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-150 hover:from-cyan-400 hover:to-blue-500 hover:shadow-cyan-400/30 hover:scale-[1.02] active:scale-100"
+                className="group inline-flex items-center justify-center gap-2 rounded-lg bg-brand px-7 py-3.5 text-sm font-semibold text-brand-contrast transition-opacity hover:opacity-90 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                Build My Resume Free
+                Build my profile
                 <ArrowRight className="w-4 h-4 transition-transform duration-150 group-hover:translate-x-0.5" />
               </Link>
               <Link
                 href="/free-analysis"
-                className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-7 py-3.5 text-sm font-medium text-slate-300 transition-all duration-150 hover:bg-slate-900 hover:border-slate-700 hover:text-white hover:scale-[1.02] active:scale-100"
+                className="inline-flex items-center justify-center gap-2 rounded-lg border border-line bg-surface px-7 py-3.5 text-sm font-medium text-ink-secondary transition-colors hover:border-strong hover:text-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand"
               >
-                Try a Job Analysis
+                See how it works
               </Link>
             </div>
 

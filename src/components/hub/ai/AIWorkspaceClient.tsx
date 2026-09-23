@@ -75,7 +75,7 @@ function EmptyState() {
         <Sparkles className="h-8 w-8" />
       </div>
       <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-        No resumes yet
+        No resumes yet — build your first one
       </h2>
       <p className="text-sm text-gray-500 dark:text-slate-400 max-w-sm mb-6">
         AI tools work best when you have a resume to analyze. Create your first resume to get started.

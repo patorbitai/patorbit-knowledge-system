@@ -50,7 +50,7 @@ export default function WhyPatorbit() {
   return (
     <section
       ref={ref}
-      className="relative bg-[#070B14] py-24 lg:py-32 overflow-hidden"
+      className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="Why Patorbit"
     >
       {/* Subtle grid pattern */}
@@ -66,18 +66,18 @@ export default function WhyPatorbit() {
           }}
           className="text-center mb-16"
         >
-          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-slate-800/60 bg-slate-900/60 px-3.5 py-1">
-            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-slate-400">
+          <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
+            <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               Why Patorbit
             </span>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-white lg:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-ink lg:text-4xl">
             Resume building{" "}
             <span className="bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">
               without the busywork
             </span>
           </h2>
-          <p className="mt-4 text-base text-slate-400 max-w-2xl mx-auto leading-relaxed">
+          <p className="mt-4 text-base text-ink-secondary max-w-2xl mx-auto leading-relaxed">
             Patorbit keeps your professional information organized, creates multiple resumes from it, and helps you tailor each one to the job — without inventing experience.
           </p>
         </div>
@@ -94,20 +94,20 @@ export default function WhyPatorbit() {
                   transform: isInView ? "translateY(0)" : "translateY(24px)",
                   transition: `opacity 0.5s ease-out ${0.12 + i * 0.1}s, transform 0.5s ease-out ${0.12 + i * 0.1}s`,
                 }}
-                className={`group relative rounded-2xl border border-slate-800/60 bg-gradient-to-b ${card.gradient} p-8 transition-all duration-500 hover:-translate-y-1 ${card.border} ${card.glow} hover:shadow-2xl`}
+                className={`group relative rounded-2xl border border-subtle bg-gradient-to-b ${card.gradient} p-8 transition-all duration-500 hover:-translate-y-1 ${card.border} ${card.glow} hover:shadow-2xl`}
               >
                 {/* Icon */}
                 <div className={`mb-6 flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br ${card.gradient} border border-slate-700/40`}>
-                  <Icon className="w-6 h-6 text-white" />
+                  <Icon className="w-6 h-6 text-ink" />
                 </div>
 
                 {/* Title */}
-                <h3 className="text-lg font-semibold text-white mb-3 leading-snug">
+                <h3 className="text-lg font-semibold text-ink mb-3 leading-snug">
                   {card.title}
                 </h3>
 
                 {/* Description */}
-                <p className="text-sm text-slate-400 leading-relaxed">
+                <p className="text-sm text-ink-secondary leading-relaxed">
                   {card.description}
                 </p>
               </div>
@@ -129,7 +129,7 @@ export default function WhyPatorbit() {
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-6xl text-slate-700/30 select-none leading-none">
                 &ldquo;
               </div>
-              <p className="text-xl lg:text-2xl font-medium text-white/90 leading-relaxed">
+              <p className="text-xl lg:text-2xl font-medium text-ink/90 leading-relaxed">
                 Tailor the truth.
               </p>
               <p className="text-xl lg:text-2xl font-medium mt-2 bg-gradient-to-r from-cyan-300 via-blue-400 to-indigo-400 bg-clip-text text-transparent">

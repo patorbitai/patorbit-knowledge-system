@@ -389,14 +389,14 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
             return (
               <React.Fragment key={step.key}>
                 {idx > 0 && (
-                  <div className={`flex-1 h-0.5 rounded ${isCompleted ? "bg-amber-500 dark:bg-amber-400" : "bg-gray-200 dark:bg-white/[0.06]"}`} />
+                  <div className={`flex-1 h-0.5 rounded ${isCompleted ? "bg-brand" : "bg-line"}`} />
                 )}
                 <div className="flex flex-col items-center gap-1">
                   <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[10px] font-semibold transition-all ${
                     isCompleted
-                      ? "bg-amber-500 dark:bg-amber-400 text-white"
+                      ? "bg-brand text-brand-contrast"
                       : "bg-gray-100 dark:bg-white/[0.06] text-gray-400 dark:text-slate-500"
-                  } ${isCurrent ? "ring-2 ring-amber-300 dark:ring-amber-500/50" : ""}`}>
+                  } ${isCurrent ? "ring-2 ring-brand-ring" : ""}`}>
                     {idx + 1}
                   </div>
                   <span className="text-[9px] text-gray-500 dark:text-slate-400 hidden sm:block">{step.label}</span>
@@ -595,32 +595,54 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
             </div>
           </div>
 
-          {/* Match Analysis (if available) */}
+          {/* Match Analysis (if available) — score is a summary, not the experience (§13) */}
           {matchData && (
-            <div className="rounded-2xl border border-gray-200 dark:border-white/[0.06] bg-white dark:bg-white/[0.02] overflow-hidden">
-              <div className="px-5 py-3 border-b border-gray-100 dark:border-white/[0.04] flex items-center gap-2">
-                <Target className="h-4 w-4 text-blue-500" />
-                <h2 className="text-sm font-semibold text-gray-700 dark:text-slate-300">
-                  Match Analysis
+            <div className="rounded-xl border border-subtle bg-surface overflow-hidden">
+              <div className="px-5 py-3 border-b border-subtle flex items-center gap-2">
+                <Target className="h-4 w-4 text-brand" />
+                <h2 className="text-card text-ink">
+                  Match overview
                 </h2>
                 {app.matchScore !== null && (
-                  <span className="ml-auto text-sm font-bold text-blue-600 dark:text-blue-400">
-                    {app.matchScore}%
+                  <span
+                    className="tnum ml-auto text-section font-bold"
+                    style={{
+                      color:
+                        app.matchScore >= 75
+                          ? "var(--match-strong)"
+                          : app.matchScore >= 40
+                          ? "var(--match-partial)"
+                          : "var(--match-gap)",
+                    }}
+                  >
+                    {app.matchScore}% match
                   </span>
                 )}
               </div>
               <div className="px-5 py-4 space-y-4">
-                {/* Matched skills */}
+                {/* Supporting statement under the score (§12) */}
+                {app.matchScore !== null &&
+                  (matchData.matched || matchData.partial || matchData.missing) && (
+                    <p className="text-body text-ink-secondary">
+                      {matchData.matched?.length || 0} of{" "}
+                      {(matchData.matched?.length || 0) +
+                        (matchData.partial?.length || 0) +
+                        (matchData.missing?.length || 0)}{" "}
+                      requirements supported by your profile.
+                    </p>
+                  )}
+
+                {/* Strong matches */}
                 {matchData.matched && matchData.matched.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-medium text-green-600 dark:text-green-400 mb-2">
-                      Matched Skills
+                    <h3 className="text-label font-semibold text-success mb-2">
+                      Strong matches
                     </h3>
                     <div className="flex flex-wrap gap-1.5">
                       {matchData.matched.map((skill) => (
                         <span
                           key={skill}
-                          className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-green-50 dark:bg-green-500/10 text-green-700 dark:text-green-400"
+                          className="inline-flex items-center px-2 py-0.5 rounded-md text-meta font-medium bg-[var(--status-success-soft)] text-success"
                         >
                           {skill}
                         </span>
@@ -632,40 +654,43 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                 {/* Partial matches */}
                 {matchData.partial && matchData.partial.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-medium text-amber-600 dark:text-amber-400 mb-2">
-                      Partial Matches
+                    <h3 className="text-label font-semibold text-warning mb-2">
+                      Partial matches
                     </h3>
                     <div className="flex flex-wrap gap-1.5">
                       {matchData.partial.map((skill) => (
                         <span
                           key={skill}
-                          className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                          className="inline-flex items-center px-2 py-0.5 rounded-md text-meta font-medium bg-[var(--status-warning-soft)] text-warning"
                         >
                           {skill}
                         </span>
                       ))}
                     </div>
+                    <p className="mt-1.5 text-meta text-ink-muted">
+                      Related experience that isn&apos;t an exact match.
+                    </p>
                   </div>
                 )}
 
                 {/* Missing skills */}
                 {matchData.missing && matchData.missing.length > 0 && (
                   <div>
-                    <h3 className="text-xs font-medium text-red-600 dark:text-red-400 mb-2">
-                      Missing from Your Resume
+                    <h3 className="text-label font-semibold text-danger mb-2">
+                      No evidence yet
                     </h3>
                     <div className="flex flex-wrap gap-1.5">
                       {matchData.missing.map((skill) => (
                         <span
                           key={skill}
-                          className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-red-50 dark:bg-red-500/10 text-red-700 dark:text-red-400"
+                          className="inline-flex items-center px-2 py-0.5 rounded-md text-meta font-medium bg-[var(--status-danger-soft)] text-danger"
                         >
                           {skill}
                         </span>
                       ))}
                     </div>
-                    <p className="mt-2 text-[11px] text-gray-500 dark:text-slate-500">
-                      These skills are required by the job but not present in your resume.
+                    <p className="mt-2 text-meta text-ink-muted">
+                      These are requested by the job but not supported by your profile.
                       Patorbit will not add them unless you have them in your Professional Identity.
                     </p>
                   </div>
@@ -676,27 +701,29 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
 
           {/* No match analysis yet */}
           {!matchData && (
-            <div className="rounded-2xl border border-dashed border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.02] px-5 py-6 text-center">
-              <Target className="h-5 w-5 text-gray-300 dark:text-slate-600 mx-auto mb-2" />
-              <p className="text-xs text-gray-500 dark:text-slate-400 mb-3">
-                Not analyzed yet. Tailor a resume or run a match analysis.
+            <div className="rounded-xl border border-dashed border-line bg-white/[0.02] px-5 py-8 text-center">
+              <Target className="h-5 w-5 text-ink-muted mx-auto mb-2" />
+              <p className="text-card text-ink mb-1">See how your profile matches this job</p>
+              <p className="text-secondary-size text-ink-secondary mb-3 max-w-sm mx-auto">
+                Patorbit compares your experience and skills against every requirement —
+                no guessing, only evidence.
               </p>
               {app.resumeId && (
                 <button
                   onClick={handleAnalyzeMatch}
                   disabled={analyzingMatch}
-                  className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-500 dark:bg-blue-500/90 text-xs font-semibold text-white hover:brightness-110 transition-all disabled:opacity-50"
+                  className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-brand text-label font-semibold text-brand-contrast hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
                 >
                   {analyzingMatch ? (
-                    <Loader2 className="h-3 w-3 animate-spin" />
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
                   ) : (
-                    <BarChart3 className="h-3 w-3" />
+                    <BarChart3 className="h-3.5 w-3.5" />
                   )}
-                  Analyze Match
+                  Analyze match
                 </button>
               )}
               {matchError && (
-                <p className="mt-2 text-[11px] text-red-500 dark:text-red-400">{matchError}</p>
+                <p className="mt-2 text-meta text-danger" role="alert">{matchError}</p>
               )}
             </div>
           )}

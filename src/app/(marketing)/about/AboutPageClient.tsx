@@ -86,9 +86,9 @@ export function AboutPageClient() {
 
         <div className="relative z-10 mx-auto max-w-4xl px-6 text-center">
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
-            <span className="inline-flex items-center gap-2 rounded-lg border border-slate-800 bg-slate-900/80 px-3 py-1.5 mb-6">
+            <span className="inline-flex items-center gap-2 rounded-lg border border-line bg-slate-900/80 px-3 py-1.5 mb-6">
               <span className="h-2 w-2 rounded-full bg-emerald-400" />
-              <span className="text-xs text-slate-400 tracking-wide uppercase font-medium">About Patorbit</span>
+              <span className="text-xs text-ink-secondary tracking-wide uppercase font-medium">About Patorbit</span>
             </span>
           </motion.div>
 
@@ -96,7 +96,7 @@ export function AboutPageClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-white"
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold tracking-tight text-ink"
           >
             Build your resume once.
             <br />
@@ -107,7 +107,7 @@ export function AboutPageClient() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="mt-6 text-lg text-slate-400 max-w-2xl mx-auto leading-relaxed"
+            className="mt-6 text-lg text-ink-secondary max-w-2xl mx-auto leading-relaxed"
           >
             Patorbit keeps one accurate source of truth for your career, analyzes each job
             description against it, and helps you tailor your application — without ever
@@ -125,8 +125,8 @@ export function AboutPageClient() {
             viewport={{ once: true }}
             className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-2xl border border-white/10 p-8 sm:p-12"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">The problem we&apos;re solving</h2>
-            <div className="space-y-4 text-slate-300 leading-relaxed">
+            <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-6">The problem we&apos;re solving</h2>
+            <div className="space-y-4 text-ink-secondary leading-relaxed">
               <p className="text-lg">
                 Applying for jobs means rewriting your resume for every single posting.
                 It&apos;s slow, repetitive, and easy to accidentally overstate — or undersell —
@@ -140,7 +140,7 @@ export function AboutPageClient() {
                   "No clear signal separating stated vs. proven claims",
                   "Hard to see which skills a role actually needs",
                 ].map((problem, i) => (
-                  <div key={i} className="flex items-center gap-3 text-slate-400">
+                  <div key={i} className="flex items-center gap-3 text-ink-secondary">
                     <span className="flex h-6 w-6 items-center justify-center rounded-full bg-red-500/10 text-red-400 text-xs font-bold">✕</span>
                     <span className="text-sm">{problem}</span>
                   </div>
@@ -168,8 +168,8 @@ export function AboutPageClient() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">Who Patorbit is for</h2>
-            <p className="text-slate-400 text-lg">Anyone who applies to jobs and wants the process to be faster and more honest.</p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-4">Who Patorbit is for</h2>
+            <p className="text-ink-secondary text-lg">Anyone who applies to jobs and wants the process to be faster and more honest.</p>
           </motion.div>
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
@@ -183,8 +183,8 @@ export function AboutPageClient() {
                 className="bg-gradient-to-br from-slate-900 to-slate-950 rounded-xl border border-white/10 p-6 text-center hover:border-cyan-500/30 transition-all"
               >
                 <span className="text-4xl mb-4 block">{user.icon}</span>
-                <h3 className="text-lg font-semibold text-white mb-2">{user.title}</h3>
-                <p className="text-sm text-slate-400">{user.desc}</p>
+                <h3 className="text-lg font-semibold text-ink mb-2">{user.title}</h3>
+                <p className="text-sm text-ink-secondary">{user.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -200,8 +200,8 @@ export function AboutPageClient() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">How Patorbit is different</h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-4">How Patorbit is different</h2>
+            <p className="text-ink-secondary text-lg max-w-2xl mx-auto">
               Most resume tools optimize for speed. We optimize for speed <em>and</em> accuracy.
             </p>
           </motion.div>
@@ -217,8 +217,8 @@ export function AboutPageClient() {
                 className="bg-slate-900/60 rounded-xl border border-white/10 p-6 hover:border-cyan-500/30 hover:bg-slate-900/80 transition-all"
               >
                 <span className="text-3xl mb-4 block">{p.icon}</span>
-                <h3 className="text-lg font-semibold text-white mb-2">{p.title}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{p.desc}</p>
+                <h3 className="text-lg font-semibold text-ink mb-2">{p.title}</h3>
+                <p className="text-sm text-ink-secondary leading-relaxed">{p.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -234,8 +234,8 @@ export function AboutPageClient() {
             viewport={{ once: true }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">How the technology works</h2>
-            <p className="text-slate-400 text-lg max-w-2xl mx-auto">
+            <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-4">How the technology works</h2>
+            <p className="text-ink-secondary text-lg max-w-2xl mx-auto">
               Plain language first. The technical detail is underneath if you want it —
               you never need it to use the product.
             </p>
@@ -252,10 +252,10 @@ export function AboutPageClient() {
                 className="bg-slate-900/60 rounded-xl border border-white/10 p-6 hover:border-cyan-500/30 hover:bg-slate-900/80 transition-all flex flex-col"
               >
                 <span className="text-3xl mb-4 block">{concept.icon}</span>
-                <h3 className="text-lg font-semibold text-white mb-2">{concept.title}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed mb-3">{concept.plain}</p>
-                <p className="text-xs text-slate-500 leading-relaxed border-t border-slate-800 pt-3 mt-auto">
-                  <span className="text-slate-500 uppercase tracking-wider text-[10px] font-semibold">Technical detail</span><br />
+                <h3 className="text-lg font-semibold text-ink mb-2">{concept.title}</h3>
+                <p className="text-sm text-ink-secondary leading-relaxed mb-3">{concept.plain}</p>
+                <p className="text-xs text-ink-muted leading-relaxed border-t border-line pt-3 mt-auto">
+                  <span className="text-ink-muted uppercase tracking-wider text-[10px] font-semibold">Technical detail</span><br />
                   {concept.tech}
                 </p>
               </motion.div>
@@ -273,23 +273,23 @@ export function AboutPageClient() {
             viewport={{ once: true }}
             className="rounded-2xl border border-white/10 bg-slate-900/60 p-8 sm:p-12"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-6">Why you can trust Patorbit</h2>
-            <ul className="space-y-4 text-slate-300">
+            <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-6">Why you can trust Patorbit</h2>
+            <ul className="space-y-4 text-ink-secondary">
               <li className="flex gap-3">
                 <span className="text-cyan-400 font-bold shrink-0">1.</span>
-                <span><strong className="text-white">You approve every change.</strong> AI-generated edits to your resume are suggestions until you accept them.</span>
+                <span><strong className="text-ink">You approve every change.</strong> AI-generated edits to your resume are suggestions until you accept them.</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-cyan-400 font-bold shrink-0">2.</span>
-                <span><strong className="text-white">Claims are labeled honestly.</strong> We distinguish what you told us from what has supporting evidence — we never call an upload &ldquo;verified employment.&rdquo;</span>
+                <span><strong className="text-ink">Claims are labeled honestly.</strong> We distinguish what you told us from what has supporting evidence — we never call an upload &ldquo;verified employment.&rdquo;</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-cyan-400 font-bold shrink-0">3.</span>
-                <span><strong className="text-white">Your data is portable and deletable.</strong> Export all of it as JSON, or delete your account, from settings.</span>
+                <span><strong className="text-ink">Your data is portable and deletable.</strong> Export all of it as JSON, or delete your account, from settings.</span>
               </li>
               <li className="flex gap-3">
                 <span className="text-cyan-400 font-bold shrink-0">4.</span>
-                <span><strong className="text-white">No inflated security claims.</strong> Our <Link href="/security" className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2">security page</Link> lists exactly what&apos;s implemented today — and what isn&apos;t.</span>
+                <span><strong className="text-ink">No inflated security claims.</strong> Our <Link href="/security" className="text-cyan-400 hover:text-cyan-300 underline underline-offset-2">security page</Link> lists exactly what&apos;s implemented today — and what isn&apos;t.</span>
               </li>
             </ul>
           </motion.div>
@@ -304,16 +304,16 @@ export function AboutPageClient() {
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <h2 className="text-3xl sm:text-4xl font-bold text-ink mb-4">
               See it for yourself
             </h2>
-            <p className="text-slate-400 text-lg mb-8">
+            <p className="text-ink-secondary text-lg mb-8">
               Build a resume in minutes, then analyze it against a real job description.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
               <Link
                 href="/resume-builder"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3.5 text-base font-semibold text-white shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 transition-all"
+                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 px-8 py-3.5 text-base font-semibold text-ink shadow-lg shadow-cyan-500/25 hover:from-cyan-400 hover:to-blue-500 transition-all"
               >
                 Build my resume free
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -322,7 +322,7 @@ export function AboutPageClient() {
               </Link>
               <Link
                 href="/contact"
-                className="inline-flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/40 px-8 py-3.5 text-base font-medium text-slate-300 hover:bg-slate-900 hover:border-slate-700 hover:text-white transition-all"
+                className="inline-flex items-center gap-2 rounded-xl border border-line bg-slate-900/40 px-8 py-3.5 text-base font-medium text-ink-secondary hover:bg-slate-900 hover:border-slate-700 hover:text-ink transition-all"
               >
                 Contact Us
               </Link>
