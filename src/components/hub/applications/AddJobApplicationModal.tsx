@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { X, Briefcase, Building2, FileText, Loader2, FileCheck, Link, MapPin, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { track } from "@/lib/analytics";
 
 /** Minimal resume shape for the selector. */
 type ResumeOption = {
@@ -115,6 +116,7 @@ export function AddJobApplicationModal({ open, onClose, onCreated }: Props) {
       setFollowUpDate("");
       setNotes("");
       setShowMoreDetails(false);
+      track("job_added", { source: "modal" });
       onCreated(application);
       onClose();
     } catch (err) {

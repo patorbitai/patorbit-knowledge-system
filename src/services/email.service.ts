@@ -99,7 +99,7 @@ export class EmailService {
 
   async sendVerificationEmail(email: string, token: string): Promise<string> {
     const baseUrl = process.env.NEXTAUTH_URL || "http://localhost:3000";
-    const verificationUrl = `${baseUrl}/verify-email?token=${token}`;
+    const verificationUrl = `${baseUrl}/verify-email?token=${token}&email=${encodeURIComponent(email)}`;
     const resend = this.getResendClient();
 
     if (!resend) {

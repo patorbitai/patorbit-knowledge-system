@@ -8,7 +8,7 @@ import { resendVerificationAction } from "@/actions/auth/verify";
 import { track, trackOnce } from "@/lib/analytics";
 
 const initialState: RegisterState = { success: false, message: "" };
-const resendInitialState = { success: false, message: "" };
+const resendInitialState = { success: false, message: "", verificationUrl: null as string | null };
 
 // C55.2: Social providers — shared with Login page
 const SOCIAL_PROVIDERS = [
@@ -127,6 +127,11 @@ export default function RegisterPage() {
   const [termsError, setTermsError] = useState(false);
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [availableProviders, setAvailableProviders] = useState<string[]>([]);
+  // The verification wall must survive a refresh: the account exists and the
+  // link is pending for 24h — dropping the wall on reload pushed users back
+  // into the form where re-registering failed with "account already exists".
+  const [restored, setRestored] = useState<{ email: string } | null>(null);
+  const [dismissed, setDismissed] = useState(false);
 
   const nameId = useId();
   const emailId = useId();
@@ -140,10 +145,66 @@ export default function RegisterPage() {
     trackOnce("signup_started");
   }, []);
 
-  // Funnel: account successfully created.
+  // Funnel: account successfully created + verification email handed off.
+  // trackOnce keeps dev StrictMode double-effects from duplicating the event.
   useEffect(() => {
-    if (state.success) track("signup_completed");
-  }, [state.success]);
+    if (!state.success) return;
+    track("signup_completed");
+    trackOnce("verification_sent", { delivery: state.verificationUrl ? "direct-link" : "email" });
+    try {
+      const callback = new URLSearchParams(window.location.search).get("callbackUrl") || undefined;
+      sessionStorage.setItem(
+        "patorbit:pending-verification",
+        JSON.stringify({ email, callback, ts: Date.now() })
+      );
+    } catch {
+      /* storage unavailable — the wall still shows for this render */
+    }
+  }, [state.success, state.verificationUrl, email]);
+
+  // Restore the wall (and the email field) after a refresh while the
+  // pending verification link is still inside its 24-hour window.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem("patorbit:pending-verification");
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { email?: string; ts?: number };
+      if (parsed.email && typeof parsed.ts === "number" && Date.now() - parsed.ts < 24 * 60 * 60 * 1000) {
+        // Restoring browser-storage state after mount is the one sanctioned
+        // use of setState-in-effect (same pattern as OverviewCommandCenter):
+        // it cannot run during SSR/hydration.
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setRestored({ email: parsed.email });
+        setEmail((prev) => prev || parsed.email!);
+      } else if (parsed.email) {
+        sessionStorage.removeItem("patorbit:pending-verification");
+      }
+    } catch {
+      /* storage unavailable */
+    }
+  }, []);
+
+  // Re-submitting an email that already exists means the user is back at the
+  // wrong step — their account is pending verification. Bring the wall back
+  // (with resend + direct link) instead of stranding them on a form that can
+  // never succeed.
+  useEffect(() => {
+    if (state.success || !state.message.toLowerCase().includes("already exists")) return;
+    // Returning the wall to view is a direct response to the action result,
+    // not a render cascade (same storage-restore pattern as above).
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setDismissed(false);
+    setRestored({ email });
+    try {
+      const callback = new URLSearchParams(window.location.search).get("callbackUrl") || undefined;
+      sessionStorage.setItem(
+        "patorbit:pending-verification",
+        JSON.stringify({ email, callback, ts: Date.now() })
+      );
+    } catch {
+      /* storage unavailable */
+    }
+  }, [state.success, state.message, email]);
 
   // C55.2: Fetch available providers from NextAuth on mount
   useEffect(() => {
@@ -160,6 +221,8 @@ export default function RegisterPage() {
   }, []);
 
   const handleSubmit = (e: React.BaseSyntheticEvent) => {
+    // A fresh submit dismisses any restored wall — this attempt supersedes it.
+    setDismissed(false);
     let hasError = false;
     if (confirm !== password) {
       setConfirmError("Passwords do not match.");
@@ -176,6 +239,8 @@ export default function RegisterPage() {
     if (hasError) e.preventDefault();
   };
 
+  const wallVisible = (state.success || !!restored) && !dismissed;
+
   return (
     <div>
       <div className="mb-8">
@@ -187,7 +252,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      {state.success ? (
+      {wallVisible ? (
         <div role="status" className="rounded-lg border border-cyan-500/20 bg-cyan-500/[0.06] px-4 py-5 space-y-4">
           <div className="flex items-center gap-2.5">
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-cyan-500/10 border border-cyan-500/20 shrink-0">
@@ -201,6 +266,24 @@ export default function RegisterPage() {
             <p className="font-medium text-white">Account created successfully.</p>
             <p>We sent a verification link to your email address ({email}).</p>
             <p>The link expires in 24 hours.</p>
+            <p>
+              What happens next: open the link, sign in once, and you&apos;ll land straight in setup — this
+              account and anything you start is kept.
+            </p>
+            {!state.verificationUrl && (
+              <p className="text-xs">Not seeing it? Check your spam or promotions folder.</p>
+            )}
+            {state.verificationUrl && (
+              <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 space-y-1">
+                <p className="text-xs font-medium text-amber-300">
+                  Email delivery isn&apos;t configured in this environment, so nothing was actually sent —
+                  open the link directly to verify:
+                </p>
+                <a href={state.verificationUrl} className="text-xs font-semibold text-amber-200 underline">
+                  Verify my email →
+                </a>
+              </div>
+            )}
           </div>
 
           <div className="pl-9 pt-2 space-y-3">
@@ -219,11 +302,34 @@ export default function RegisterPage() {
                   {resendState.message}
                 </p>
               )}
+              {resendState.verificationUrl && (
+                <p className="text-xs text-amber-300">
+                  Email delivery isn&apos;t configured —{" "}
+                  <a href={resendState.verificationUrl} className="underline font-medium">
+                    open the verification link directly →
+                  </a>
+                </p>
+              )}
             </form>
 
-            <div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setDismissed(true);
+                  setRestored(null);
+                  try {
+                    sessionStorage.removeItem("patorbit:pending-verification");
+                  } catch {
+                    /* storage unavailable */
+                  }
+                }}
+                className="text-xs text-slate-400 hover:text-white transition-colors duration-150 underline"
+              >
+                Use a different email
+              </button>
               <Link
-                href="/login"
+                href="/login?registered=1"
                 className="text-xs text-brand hover:text-cyan-300 transition-colors duration-150 underline"
               >
                 Return to Sign in

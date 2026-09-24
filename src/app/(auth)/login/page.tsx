@@ -59,10 +59,14 @@ function Spinner() {
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackUrl = "/overview";
+  // Preserve the destination the user was heading to (deep links like
+  // /jobs/new previously fell back to /overview and lost the context).
+  const callbackUrl = searchParams.get("callbackUrl") || "/overview";
   const registered = searchParams.get("registered") === "1";
+  const verifiedNow = searchParams.get("verified") === "1";
+  const emailFromUrl = searchParams.get("email") || "";
 
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(emailFromUrl);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
@@ -70,6 +74,7 @@ function LoginForm() {
   const [socialLoading, setSocialLoading] = useState<string | null>(null);
   const [resendLoading, setResendLoading] = useState(false);
   const [resendMessage, setResendMessage] = useState("");
+  const [resendLink, setResendLink] = useState<string | null>(null);
   const [availableProviders, setAvailableProviders] = useState<string[]>([]);
 
   const emailId = useId();
@@ -123,11 +128,13 @@ function LoginForm() {
     if (!email) return;
     setResendLoading(true);
     setResendMessage("");
+    setResendLink(null);
     try {
       const formData = new FormData();
       formData.append("email", email);
       const res = await resendVerificationAction({ success: false, message: "" }, formData);
       setResendMessage(res.message);
+      setResendLink(res.verificationUrl ?? null);
     } catch {
       setResendMessage("Failed to resend verification email.");
     } finally {
@@ -155,7 +162,9 @@ function LoginForm() {
             <path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/>
           </svg>
           <p className="text-sm text-emerald-300">
-            Account created successfully. Please sign in.
+            {verifiedNow
+              ? "Email verified — sign in to continue."
+              : "Account created successfully. Please sign in."}
           </p>
         </div>
       )}
@@ -298,6 +307,14 @@ function LoginForm() {
                 {resendMessage ? (
                   <p className="text-xs text-emerald-400 font-medium pt-1">
                     {resendMessage}
+                    {resendLink && (
+                      <>
+                        {" "}
+                        <a href={resendLink} className="text-amber-300 underline">
+                          Open the verification link directly →
+                        </a>
+                      </>
+                    )}
                   </p>
                 ) : (
                   <p className="text-xs text-slate-500">
@@ -338,7 +355,10 @@ function LoginForm() {
 
       <p className="mt-6 text-center text-sm text-slate-500">
         Don&apos;t have an account?{" "}
-        <Link href="/register" className="text-brand hover:text-cyan-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-300">
+        <Link
+          href={`/register?callbackUrl=${encodeURIComponent(callbackUrl)}`}
+          className="text-brand hover:text-cyan-300 transition-colors duration-150 focus-visible:outline-none focus-visible:text-cyan-300"
+        >
           Create your Professional Identity
         </Link>
       </p>

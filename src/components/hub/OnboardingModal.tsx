@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Sparkles, Target, ArrowRight, CheckCircle2, Loader2 } from "lucide-react";
 import { ProfessionalIdentityEditor, type ProfileData } from "./ProfessionalIdentityEditor";
@@ -18,6 +18,15 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   const [step, setStep] = useState<Step>("welcome");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Funnel: the moment product onboarding actually begins (modal opens),
+  // whether the user continues or skips. Ref-guarded for StrictMode.
+  const startedRef = useRef(false);
+  useEffect(() => {
+    if (open && !startedRef.current) {
+      startedRef.current = true;
+      track("onboarding_started");
+    }
+  }, [open]);
   const createResume = useResumeBuilder((s) => s.createResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
 

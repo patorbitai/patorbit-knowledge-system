@@ -7,6 +7,10 @@ import { identityService } from "@/services/identity.service";
 export type RegisterState = {
   success: boolean;
   message: string;
+  /** Direct verification URL — present only when no email provider is
+   *  configured, so the wall can show a working link instead of claiming
+   *  an email was sent that never leaves the server. */
+  verificationUrl?: string | null;
 };
 
 export async function registerUser(
@@ -41,6 +45,7 @@ export async function registerUser(
     return {
       success: true,
       message: "Account created successfully.",
+      verificationUrl: user.verificationUrl ?? null,
     };
   } catch (error) {
     return {

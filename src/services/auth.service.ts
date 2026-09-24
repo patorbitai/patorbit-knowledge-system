@@ -14,7 +14,9 @@ export class AuthService {
     const existingUser = await userRepository.findByEmail(email);
 
     if (existingUser) {
-      throw new Error("Email already exists");
+      throw new Error(
+        "An account with this email already exists — sign in to finish verifying, or use a different address."
+      );
     }
 
     // Hash password
@@ -39,28 +41,44 @@ export class AuthService {
       },
     });
 
-    await emailService.sendVerificationEmail(email, token);
+    const verificationUrl = await emailService.sendVerificationEmail(email, token);
 
-    return user;
+    return { ...user, verificationUrl };
   }
 
-  async verifyEmail(token: string) {
+  async verifyEmail(
+    token: string,
+    email?: string
+  ): Promise<{ success: true; email?: string; already?: boolean }> {
+    // Idempotent: if this token was already consumed (second tab, refresh,
+    // dev StrictMode double-invoke) but the account IS verified, report
+    // success instead of a misleading "invalid or expired" failure.
+    const accountAlreadyVerified = async (): Promise<string | null> => {
+      if (!email) return null;
+      const u = await userRepository.findByEmail(email);
+      return u?.emailVerified ? email : null;
+    };
+
     const record = await prisma.verificationToken.findUnique({
       where: { token },
     });
 
     if (!record || !record.identifier.startsWith("verify_")) {
+      const already = await accountAlreadyVerified();
+      if (already) return { success: true, email: already, already: true };
       throw new Error("Invalid or expired verification token");
     }
 
     if (record.expires < new Date()) {
       await prisma.verificationToken.delete({ where: { token } }).catch(() => {});
+      const already = await accountAlreadyVerified();
+      if (already) return { success: true, email: already, already: true };
       throw new Error("Verification token has expired");
     }
 
-    const email = record.identifier.replace("verify_", "");
+    const emailFromToken = record.identifier.replace("verify_", "");
 
-    const user = await userRepository.findByEmail(email);
+    const user = await userRepository.findByEmail(emailFromToken);
     if (!user) {
       throw new Error("User not found");
     }
@@ -72,9 +90,9 @@ export class AuthService {
     });
 
     // Delete token (single-use)
-    await prisma.verificationToken.delete({ where: { token } });
+    await prisma.verificationToken.delete({ where: { token } }).catch(() => {});
 
-    return { success: true, email };
+    return { success: true, email: emailFromToken };
   }
 
   async requestEmailVerification(email: string) {
@@ -100,9 +118,9 @@ export class AuthService {
       },
     });
 
-    await emailService.sendVerificationEmail(email, token);
+    const verificationUrl = await emailService.sendVerificationEmail(email, token);
 
-    return { success: true };
+    return { success: true, verificationUrl };
   }
 
   async requestPasswordReset(email: string) {

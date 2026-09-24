@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { track } from "@/lib/analytics";
 import {
   ArrowLeft,
   Briefcase,
@@ -99,6 +100,7 @@ export function AddJobApplicationForm() {
       }
 
       const application = await res.json();
+      track("job_added", { source: "form" });
       router.push(`/jobs/${application.applicationId}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong");
