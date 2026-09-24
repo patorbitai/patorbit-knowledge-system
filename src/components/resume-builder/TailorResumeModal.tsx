@@ -25,6 +25,7 @@ import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import type { Resume } from "@/types/resume";
 import type { ResumeTemplate } from "@/app/resume-builder/templates";
 import { track } from "@/lib/analytics";
+import { uniqueResumeName } from "@/lib/resume-versions";
 import {
   acceptAllSafeWithCount,
   applyTailorSuggestions,
@@ -363,10 +364,28 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     if (!finalResume) return;
     const name = finalResume.name || originalResume.name || "Tailored Resume";
 
+    // eval-A (live finding): repeated tailorings produced two identical
+    // "— Tailored" names in the switcher. Disambiguate with the job title
+    // when known, else a numeric suffix — the "— Tailored" marker stays
+    // intact so name-based heuristics (safety baseline) still match.
+    const desiredName = (() => {
+      const st = useResumeBuilder.getState();
+      const app = st.activeJobApplication;
+      const tag =
+        applicationId && app?.applicationId === applicationId
+          ? app.title
+          : undefined;
+      return uniqueResumeName(
+        st.resumes.map((r) => r.resumeName || r.name || ""),
+        `${name} — Tailored`,
+        tag,
+      );
+    })();
+
     // C37: Pass tailored data as initialPayload so the server does NOT
     // trigger profile seeding (the payload is already non-empty).
     // This avoids the race: server seeds → client overwrites.
-    const newResumeId = createResume(`${name} — Tailored`, {
+    const newResumeId = createResume(desiredName, {
       ...finalResume,
       templateId: selectedTemplateId,
     } as Partial<Resume>);
@@ -1024,8 +1043,10 @@ export function SuggestionCard({
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(suggestion.suggested);
   const status = decision?.status;
-  const shownText =
-    status === "edited" && decision?.text ? decision.text : suggestion.suggested;
+  // User text wins whenever a decision carries it — including
+  // edit-then-accepted — so what you see is what gets applied.
+  const userText = decision?.text && decision.text.trim() ? decision.text : undefined;
+  const shownText = userText ?? suggestion.suggested;
 
   // §15: accepted = subtle positive, rejected = subtle neutral,
   // edited = shows the user changed wording, undecided = neutral.
@@ -1073,7 +1094,11 @@ export function SuggestionCard({
                   : "bg-white/[0.06] text-ink-muted"
             }`}
           >
-            {status === "edited" ? "your edit" : status}
+            {status === "edited"
+              ? "your edit"
+              : status === "accepted" && userText
+                ? "accepted · your edit"
+                : status}
           </span>
         )}
       </div>
@@ -1150,7 +1175,9 @@ export function SuggestionCard({
       {!editing ? (
         <div className="flex flex-wrap gap-2">
           <button
-            onClick={() => onDecide("accepted")}
+            onClick={() =>
+              userText ? onDecide("accepted", userText) : onDecide("accepted")
+            }
             disabled={status === "accepted"}
             className="inline-flex items-center gap-1 rounded-md bg-[var(--status-success-soft)] disabled:opacity-50 px-3 py-1.5 text-meta font-semibold text-success transition-opacity hover:opacity-80 cursor-pointer"
           >

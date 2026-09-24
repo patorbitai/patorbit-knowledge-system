@@ -160,6 +160,8 @@ export interface ResumeBuilderState {
   clearShareState: (resumeId: string) => void;
 
   activeSection: SectionId;  saveStatus: SaveStatus;
+  /** Human-readable reason behind the last sync failure (cleared on recovery). */
+  lastSaveError: string | null;
   /** True after Zustand persist has rehydrated from localStorage. */
   hydrated: boolean;
   /** True while server-first hydration is in progress (prevents write-back loop). */
@@ -240,6 +242,7 @@ export interface ResumeBuilderState {
   setAIAction: (key: string, state: Partial<AIActionState>) => void; setCopilotOpen: (open: boolean) => void;
   setJobMatchOpen: (open: boolean) => void;  setPreviewTab: (tab: "resume" | "passport" | "knowledge-graph" | "trust-timeline") => void;
   setSaveStatus: (status: SaveStatus) => void;
+  setLastSaveError: (msg: string | null) => void;
   setServerVersion: (resumeId: string, version: number) => void;
   triggerWriteBack: () => void;
   /** Workflow: whether the user has successfully exported the current resume (session-level). */
@@ -642,7 +645,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           return newId;
         },
 
-        analysis: null, activeSection: "personal", saveStatus: "unsaved",
+        analysis: null, activeSection: "personal", saveStatus: "unsaved", lastSaveError: null,
         hydrated: false, hydratingFromServer: false,
         serverVersions: {}, pendingDeletes: [], shareStates: {}, writeConflict: null,
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
@@ -687,7 +690,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             (s.activeResumeId === resumeId ? s.resume : null);
           if (!target || !current) return false;
           // Undo point: what we are replacing — never coalesced away.
-          const marker = makeVersion("edit", "Before restore", current);
+          const marker = makeVersion("edit", "Before restore", current, { force: true });
           const restored = restoreContent(current, target.snapshot);
           if (!TEMPLATES.some((t) => t.id === restored.templateId)) {
             restored.templateId = current.templateId;
@@ -874,7 +877,14 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             return { resume: resetR, resumes, analysis: null, jobMatch: null, jobProfile: null, qualificationMatch: null, jobDescription: "", saveStatus: "unsaved", suggestedClaims: [], evidence: [], trustScore: null, trustReport: null, careerProfile: null, hasExported: false, activeJobApplicationId: null, activeJobApplication: null };
           });
         },
-        setSaveStatus: (status) => set({ saveStatus: status }),
+        setSaveStatus: (status) =>
+          set({
+            saveStatus: status,
+            // Entering any active state clears the previous failure reason;
+            // the failure branches re-set it right after via setLastSaveError.
+            ...(status === "sync-failed" ? {} : { lastSaveError: null }),
+          }),
+        setLastSaveError: (msg) => set({ lastSaveError: msg }),
         setServerVersion: (resumeId, version) => set((s) => ({
           serverVersions: { ...s.serverVersions, [resumeId]: version },
         })),

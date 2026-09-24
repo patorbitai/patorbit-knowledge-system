@@ -18,6 +18,7 @@ import {
   makeVersion,
   pushVersion,
   restoreContent,
+  uniqueResumeName,
   type ResumeVersion,
 } from "@/lib/resume-versions";
 import { defaultResume } from "@/store/resume-builder";
@@ -117,6 +118,57 @@ describe("pushVersion", () => {
     );
     expect(after).toHaveLength(3);
     expect(after.some((v) => v.snapshot.summary === "before restore")).toBe(true);
+  });
+
+  it("uniqueResumeName keeps repeat tailorings tellable apart (eval-A fix)", () => {
+    const existing = ["My Resume", "Marcus Green — Tailored"];
+
+    // free name → unchanged
+    expect(uniqueResumeName(existing, "Fresh Name")).toBe("Fresh Name");
+    // collision, no tag → numeric suffix, "— Tailored" marker intact
+    expect(uniqueResumeName(existing, "Marcus Green — Tailored")).toBe(
+      "Marcus Green — Tailored 2",
+    );
+    // collision with job tag → tag wins, still unique
+    expect(
+      uniqueResumeName(existing, "Marcus Green — Tailored", "Senior PM"),
+    ).toBe("Marcus Green — Tailored (Senior PM)");
+    // tag itself already taken → falls back to numeric
+    expect(
+      uniqueResumeName(
+        [...existing, "Marcus Green — Tailored (Senior PM)"],
+        "Marcus Green — Tailored",
+        "Senior PM",
+      ),
+    ).toBe("Marcus Green — Tailored 2");
+    // case-insensitive collision
+    expect(uniqueResumeName(["my resume"], "My Resume")).toBe("My Resume 2");
+  });
+
+  it("a content-identical 'Before restore' marker still appears (live acceptance fix)", () => {
+    const t0 = 2_000_000;
+    const snap = resume({ summary: "identical content" });
+    const list = pushVersion([], editRow(t0, snap));
+
+    // Without force: an edit identical to the newest row is dropped as junk…
+    const plain = pushVersion(
+      list,
+      { ...editRow(t0 + 10, snap, false), label: "Before restore" },
+    );
+    expect(plain).toHaveLength(1);
+
+    // …but the restore dialog promises a visible undo point — force keeps it.
+    const forced = pushVersion(
+      list,
+      {
+        ...editRow(t0 + 10, snap, false),
+        label: "Before restore",
+        force: true,
+      },
+    );
+    expect(forced).toHaveLength(2);
+    expect(forced[0].label).toBe("Before restore");
+    expect(forced[0].force).toBe(true);
   });
 
   it("caps the list newest-first while pinning the original restore point", () => {

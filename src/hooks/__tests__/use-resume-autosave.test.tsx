@@ -127,6 +127,25 @@ describe("useResumeAutosave", () => {
     expect(useResumeBuilder.getState().saveStatus).toBe("saved");
   });
 
+  it("never clobbers a server sync failure with a blind 'saved' (live acceptance fix)", async () => {
+    act(() => {
+      useResumeBuilder.getState().updateField("summary", "Edit during outage");
+    });
+    expect(useResumeBuilder.getState().saveStatus).toBe("saving");
+
+    // write-back reports the failure while the local debounce is pending
+    act(() => {
+      useResumeBuilder.setState({
+        saveStatus: "sync-failed",
+        lastSaveError: "Free plan allows up to 2 resumes.",
+      });
+    });
+    await tick(1200);
+
+    expect(useResumeBuilder.getState().saveStatus).toBe("sync-failed");
+    expect(useResumeBuilder.getState().lastSaveError).toContain("Free plan");
+  });
+
   it("fires the debounced AI analysis with the live resume at 1500ms", async () => {
     act(() => {
       useResumeBuilder.getState().updateField("summary", "Analyze me");

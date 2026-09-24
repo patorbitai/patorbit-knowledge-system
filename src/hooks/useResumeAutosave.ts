@@ -47,7 +47,11 @@ export function useResumeAutosave(): void {
       const st = useResumeBuilder.getState();
       // §4 — record the edit as a restorable version.
       st.captureVersion(st.activeResumeId, "edit", "Edited", { coalesce: true });
-      st.setSaveStatus("saved");
+      // Only flip to "saved" for the LOCAL pipeline — never clobber a
+      // server-side failure (sync-failed/offline) the write-back reported.
+      if (st.saveStatus === "saving" || st.saveStatus === "unsaved") {
+        st.setSaveStatus("saved");
+      }
     }, 1200),
     [],
   );

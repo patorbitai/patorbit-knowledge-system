@@ -230,9 +230,13 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
           const createMsg = (createBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
           console.error("[write-back] Create failed:", createMsg);
           state.setSaveStatus("sync-failed");
+          state.setLastSaveError(createMsg);
         } catch (createErr) {
           console.error("[write-back] Create network error:", createErr);
           state.setSaveStatus("sync-failed");
+          state.setLastSaveError(
+            "Can't reach the server. Changes are saved on this device — we'll keep retrying.",
+          );
         } finally {
           if (rid) inflightPosts.delete(rid);
         }
@@ -248,6 +252,7 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
       const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`;
       console.error("[write-back] Save failed:", msg);
       state.setSaveStatus("sync-failed");
+      state.setLastSaveError(msg);
       return;
     }
 
@@ -499,7 +504,14 @@ export async function flushOfflineQueue(): Promise<void> {
               state.setSaveStatus("saved");
             }
           } else {
+            const qBody = await createRes.json().catch(() => ({}));
+            const qMsg = (qBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
             console.error(`[write-back] Queue flush create failed for ${entry.resumeId}: HTTP ${createRes.status}`);
+            const qState = useResumeBuilder.getState();
+            if (qState.activeResumeId === entry.resumeId) {
+              qState.setSaveStatus("sync-failed");
+              qState.setLastSaveError(qMsg);
+            }
           }
         } catch (createErr) {
           console.error(`[write-back] Queue flush create network error for ${entry.resumeId}:`, createErr);
@@ -535,8 +547,13 @@ export async function flushOfflineQueue(): Promise<void> {
           });
         }
       } else {
-        // Server error — keep entry for retry
+        // Server error — keep entry for retry, but never claim "Saved".
         console.error(`[write-back] Queue flush failed for ${entry.resumeId}: HTTP ${res.status}`);
+        const fState = useResumeBuilder.getState();
+        if (fState.activeResumeId === entry.resumeId) {
+          fState.setSaveStatus("sync-failed");
+          fState.setLastSaveError(`Sync failed (HTTP ${res.status}) — we'll retry automatically.`);
+        }
       }
     } catch {
       // Network still unavailable — keep entry for next retry

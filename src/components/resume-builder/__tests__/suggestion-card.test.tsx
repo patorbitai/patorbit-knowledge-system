@@ -139,4 +139,21 @@ describe("SuggestionCard", () => {
     expect(text).toContain("User's own words");
     unmount();
   });
+
+  it("Accept after an edit keeps the user's wording (live acceptance fix)", () => {
+    const onDecide = vi.fn();
+    const { container, unmount } = renderToContainer(
+      <SuggestionCard
+        suggestion={SUGGESTION}
+        decision={{ status: "edited", text: "My own wording" }}
+        onDecide={onDecide}
+      />,
+    );
+    // The card shows the user's text as the working suggestion…
+    expect(container.textContent).toContain("My own wording");
+    click(findButton("Accept"));
+    // …and Accept carries that wording instead of reverting to the AI's.
+    expect(onDecide).toHaveBeenCalledWith("accepted", "My own wording");
+    unmount();
+  });
 });

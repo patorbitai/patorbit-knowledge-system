@@ -8,13 +8,14 @@
 import { describe, it, expect, beforeEach, vi, afterEach } from "vitest";
 
 // vi.hoisted() ensures these are available when vi.mock() runs (hoisted to top)
-const { mockFetch, mockSendBeacon, addEventListenerSpy, mockSetSaveStatus, mockSetServerVersion, mockSubscribe } = vi.hoisted(() => {
+const { mockFetch, mockSendBeacon, addEventListenerSpy, mockSetSaveStatus, mockSetLastSaveError, mockSetServerVersion, mockSubscribe } = vi.hoisted(() => {
   const ms = { saveStatus: "unsaved" as string };
   return {
     mockFetch: vi.fn(),
     mockSendBeacon: vi.fn(() => true),
     addEventListenerSpy: vi.fn(),
     mockSetSaveStatus: vi.fn((status: string) => { ms.saveStatus = status; }),
+    mockSetLastSaveError: vi.fn(),
     mockSetServerVersion: vi.fn(),
     mockSubscribe: vi.fn(),
     _ms: ms,
@@ -41,8 +42,10 @@ const mockState = {
   serverVersions: {} as Record<string, number>,
   writeConflict: null as { resumeId: string; serverVersion: number } | null,
   saveStatus: "unsaved" as string,
+  lastSaveError: null as string | null,
   hydrated: true,
   setSaveStatus: mockSetSaveStatus,
+  setLastSaveError: mockSetLastSaveError,
   setServerVersion: mockSetServerVersion,
 };
 
@@ -72,7 +75,10 @@ import {
   debouncedSave,
   forceSaveNow,
   cancelPendingSave,
+  flushOfflineQueue,
 } from "@/lib/resume-write-back";
+import { getAllOfflineEntries } from "@/lib/offline-queue";
+import type { OfflineQueueEntry } from "@/lib/offline-queue";
 
 describe("C6 — Resume Write-Back", () => {
   beforeEach(() => {
@@ -255,6 +261,25 @@ describe("C6 — Resume Write-Back", () => {
       await saveLocalResumeToServer();
 
       expect(mockSetSaveStatus).toHaveBeenCalledWith("sync-failed");
+    });
+
+    it("surfaces the server's failure message via setLastSaveError (live acceptance fix)", async () => {
+      mockFetch.mockResolvedValue({
+        ok: false,
+        status: 403,
+        json: () =>
+          Promise.resolve({
+            error: "Free plan allows up to 2 resumes. Upgrade to Professional for unlimited.",
+            code: "RESUME_LIMIT_REACHED",
+          }),
+      });
+
+      await saveLocalResumeToServer();
+
+      expect(mockSetSaveStatus).toHaveBeenCalledWith("sync-failed");
+      expect(mockSetLastSaveError).toHaveBeenCalledWith(
+        "Free plan allows up to 2 resumes. Upgrade to Professional for unlimited.",
+      );
     });
   });
 
@@ -601,6 +626,42 @@ describe("C6.1 — Integration Hardening", () => {
         (call: unknown[]) => call[0] === "online"
       );
       expect(onlineCall).toBeDefined();
+    });
+
+    it("queue-flush create failure sets sync-failed + message — never a silent 'saved'", async () => {
+      const entry = {
+        id: "off-1",
+        timestamp: new Date().toISOString(),
+        resumeId: "resume-1",
+        resume: {
+          resumeName: "Test Resume",
+          templateId: "modern-clean",
+          careerStage: "working-professional",
+        },
+        baseVersion: 1,
+      } as OfflineQueueEntry;
+      vi.mocked(getAllOfflineEntries).mockResolvedValueOnce([entry]);
+      mockFetch
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 404,
+          json: () => Promise.resolve({ error: "Resume not found" }),
+        })
+        .mockResolvedValueOnce({
+          ok: false,
+          status: 403,
+          json: () =>
+            Promise.resolve({
+              error: "Free plan allows up to 2 resumes. Upgrade to Professional for unlimited.",
+            }),
+        });
+
+      await flushOfflineQueue();
+
+      expect(mockSetSaveStatus).toHaveBeenCalledWith("sync-failed");
+      expect(mockSetLastSaveError).toHaveBeenCalledWith(
+        "Free plan allows up to 2 resumes. Upgrade to Professional for unlimited.",
+      );
     });
   });
 });

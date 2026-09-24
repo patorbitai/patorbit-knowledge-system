@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { HardDrive, CloudOff, Loader2, AlertCircle } from "lucide-react";
 import { clsx } from "clsx";
 import { useEffect, useState } from "react";
@@ -52,6 +52,7 @@ const indicators = {
 export function SaveStatusIndicator() {
   const saveStatus = useResumeBuilder((s) => s.saveStatus);
   const setSaveStatus = useResumeBuilder((s) => s.setSaveStatus);
+  const lastSaveError = useResumeBuilder((s) => s.lastSaveError);
   const [isOnline, setIsOnline] = useState(true);
 
   useEffect(() => {
@@ -84,34 +85,39 @@ export function SaveStatusIndicator() {
   const Icon = config.icon;
 
   return (
-    <AnimatePresence mode="wait">
-      <motion.div
-        key={currentStatus}
-        initial={{ opacity: 0, y: currentStatus === "sync-failed" ? 0 : -4 }}
-        animate={{
-          opacity: 1,
-          y: 0,
-          x: currentStatus === "sync-failed" ? [-3, 3, -3, 3, 0] : 0,
-        }}
-        exit={{ opacity: 0, y: 4 }}
-        transition={{
-          duration: currentStatus === "sync-failed" ? 0.3 : 0.15,
-          ease: "easeOut"
-        }}
-        className={clsx(
-          "flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border transition-colors",
-          config.bg,
-          config.border,
-        )}
-      >
-        <Icon className={clsx("w-3 h-3", config.color, saveStatus === "saving" && "animate-spin")} />
-        <div className="flex flex-col">
-          <span className={clsx("text-[10px] font-semibold leading-tight", config.color)}>
-            {config.text}
-          </span>
-          <span className="hidden sm:block text-[8px] text-slate-500 leading-tight">{config.subtext}</span>
-        </div>
-      </motion.div>
-    </AnimatePresence>
+    <motion.div
+      key={currentStatus}
+      initial={{ opacity: 0, y: currentStatus === "sync-failed" ? 0 : -4 }}
+      animate={{
+        opacity: 1,
+        y: 0,
+        x: currentStatus === "sync-failed" ? [-3, 3, -3, 3, 0] : 0,
+      }}
+      transition={{
+        duration: currentStatus === "sync-failed" ? 0.3 : 0.15,
+        ease: "easeOut"
+      }}
+      className={clsx(
+        "flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border transition-colors",
+        config.bg,
+        config.border,
+      )}
+    >
+      <Icon className={clsx("w-3 h-3", config.color, saveStatus === "saving" && "animate-spin")} />
+      <div className="flex flex-col">
+        <span className={clsx("text-[10px] font-semibold leading-tight", config.color)}>
+          {config.text}
+        </span>
+        <span
+          className={clsx(
+            "hidden sm:block text-[8px] leading-tight max-w-[210px] truncate",
+            currentStatus === "sync-failed" ? "text-rose-400" : "text-slate-500",
+          )}
+          title={currentStatus === "sync-failed" && lastSaveError ? lastSaveError : config.subtext}
+        >
+          {currentStatus === "sync-failed" && lastSaveError ? lastSaveError : config.subtext}
+        </span>
+      </div>
+    </motion.div>
   );
 }

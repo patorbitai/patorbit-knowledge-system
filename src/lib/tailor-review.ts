@@ -466,12 +466,17 @@ export function applyTailorSuggestions(
     if (!status) continue; // pending → untouched
     if (status === "rejected") continue; // rejected → untouched
 
-    const isEdited = status === "edited" && (dec.text ?? "").trim().length > 0;
+    // User text wins whenever it is present — whether the decision is
+    // "edited" or "edit-then-accepted". Without this, Accept after an edit
+    // silently reverted to the AI's wording (live acceptance finding).
+    const isEdited = (dec.text ?? "").trim().length > 0;
     const text = isEdited ? (dec.text as string).trim() : sug.suggested;
 
     if (sug.id === "summary") {
-      if (status === "accepted" && sug.blocked.length > 0) {
+      if (status === "accepted" && !isEdited && sug.blocked.length > 0) {
         // AI summary carries unsupported tech — withheld entirely (§12).
+        // Only the AI's wording is withheld: an edited summary is the
+        // user's own text (user-provided provenance) and is applied as-is.
         blocked += sug.blocked.length;
         continue;
       }

@@ -38,11 +38,17 @@ export interface ResumeVersion {
   snapshot: Resume;
   /** Optional decision/export counts (accepted/edited/rejected/blocked/format). */
   meta?: Record<string, number | string>;
+  /**
+   * Explicit undo point (e.g. "Before restore") — never dropped by the
+   * content-identical edit rule, so the row the UI promises always appears.
+   */
+  force?: boolean;
 }
 
 export interface CaptureOptions {
   meta?: Record<string, number | string>;
   coalesce?: boolean;
+  force?: boolean;
 }
 
 /** Typing bursts shorter than this collapse into a single "Edited" row. */
@@ -73,12 +79,36 @@ export function makeVersion(
     at: Date.now(),
     ...(opts.coalesce ? { coalesce: true } : {}),
     snapshot: structuredClone(snapshot),
+    ...(opts.force ? { force: true } : {}),
     ...(opts.meta ? { meta: { ...opts.meta } } : {}),
   };
 }
 
 function sameContent(a: Resume, b: Resume): boolean {
   return JSON.stringify(a) === JSON.stringify(b);
+}
+
+/**
+ * Tailoring can create several resumes with the same base name — the
+ * switcher must keep them tellable apart (live acceptance finding:
+ * two "Marcus Green — Tailored" rows were indistinguishable).
+ * Keeps the "— Tailored" suffix intact so name-based heuristics still match.
+ */
+export function uniqueResumeName(
+  existingNames: string[],
+  desired: string,
+  disambiguator?: string,
+): string {
+  const taken = new Set(existingNames.map((n) => (n || "").trim().toLowerCase()));
+  if (!taken.has(desired.trim().toLowerCase())) return desired;
+  const tag = (disambiguator || "").trim().slice(0, 48);
+  if (tag) {
+    const withTag = `${desired} (${tag})`;
+    if (!taken.has(withTag.toLowerCase())) return withTag;
+  }
+  let n = 2;
+  while (taken.has(`${desired} ${n}`.toLowerCase())) n++;
+  return `${desired} ${n}`;
 }
 
 /**
@@ -105,7 +135,9 @@ export function pushVersion(
   // An "edit" whose content matches the newest version → there is nothing
   // to restore to (autosave firing right after create / import / tailor-
   // approval, or a metadata-only change). Never stack junk rows.
-  if (last && v.kind === "edit" && sameContent(last.snapshot, v.snapshot)) {
+  // Explicit undo points (force) bypass this — the restore dialog promises
+  // a visible "Before restore" row even when content happens to match.
+  if (last && !v.force && v.kind === "edit" && sameContent(last.snapshot, v.snapshot)) {
     return list;
   }
 
@@ -116,6 +148,7 @@ export function pushVersion(
   // keystroke.
   if (
     v.coalesce &&
+    !v.force &&
     last?.coalesce &&
     last.kind === "edit" &&
     v.kind === "edit" &&

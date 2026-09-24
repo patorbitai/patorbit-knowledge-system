@@ -319,6 +319,41 @@ describe("user decisions (§15/§17)", () => {
     expect(applied.edited).toBe(1);
   });
 
+  it("Case 6b — edit-then-accepted exports the USER's wording, not the AI's", () => {
+    const { original, tailored, sugs } = setup();
+    const applied = applyTailorSuggestions(original, tailored, sugs, {
+      "exp:0": { status: "accepted", text: "Reworded by the user, then accepted." },
+    });
+    expect(applied.resume.experience[0].bulletPoints).toEqual([
+      "Reworded by the user, then accepted.",
+    ]);
+    expect(applied.accepted).toBe(1);
+  });
+
+  it("Case 6c — user wording survives the §12 summary block (user-provided provenance)", () => {
+    const original = baseResume();
+    const tailored: Resume = {
+      ...original,
+      summary: "Kubernetes platform engineer scaling large clusters.",
+    };
+    const sugs = buildSuggestions(buildInput(original, tailored));
+    const summarySug = sugs.find((s) => s.id === "summary")!;
+    expect(summarySug.blocked.length).toBeGreaterThan(0); // carries unsupported tech
+
+    // The AI's wording alone is withheld (§12)…
+    const aiOnly = applyTailorSuggestions(original, tailored, sugs, {
+      summary: { status: "accepted" },
+    });
+    expect(aiOnly.resume.summary).toBe(original.summary);
+    expect(aiOnly.blocked).toBeGreaterThan(0);
+
+    // …but the user's own edit-then-accepted wording applies as-is.
+    const userText = applyTailorSuggestions(original, tailored, sugs, {
+      summary: { status: "accepted", text: "My own summary, no unsupported claims." },
+    });
+    expect(userText.resume.summary).toBe("My own summary, no unsupported claims.");
+  });
+
   it("undecided suggestions leave the original untouched", () => {
     const { original, tailored, sugs } = setup();
     const applied = applyTailorSuggestions(original, tailored, sugs, {});
