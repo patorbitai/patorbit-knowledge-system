@@ -18,10 +18,16 @@ export const metadata = {
 
 const STEP_LABELS: Record<string, string> = {
   landing_view: "Landing page viewed",
+  landing_cta_clicked: "Primary CTA clicked",
   signup_started: "Sign-up started",
   signup_completed: "Account created",
+  verification_sent: "Verification email sent",
+  verification_completed: "Email verified",
+  verification_failed: "Verification failed or expired",
+  onboarding_started: "Onboarding started",
   resume_upload_completed: "Resume uploaded & parsed",
   profile_created: "Profile created",
+  job_added: "First job added",
   job_analysis_completed: "Job analyzed",
   tailoring_completed: "Resume tailored",
   resume_exported: "Resume exported",

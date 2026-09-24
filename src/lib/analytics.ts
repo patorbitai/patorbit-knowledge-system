@@ -22,11 +22,16 @@
 /** Canonical funnel events, in journey order where applicable. */
 export const FUNNEL_EVENTS = [
   "landing_view",
+  "landing_cta_clicked",
   "signup_started",
   "signup_completed",
+  "verification_sent",
+  "verification_completed",
+  "onboarding_started",
   "resume_upload_started",
   "resume_upload_completed",
   "profile_created",
+  "job_added",
   "job_analysis_started",
   "job_analysis_completed",
   "tailoring_started",
@@ -56,6 +61,7 @@ export const WORKFLOW_EVENTS = [
   "suggestion_rejected",
   "suggestion_edited",
   "resume_export_started",
+  "verification_failed",
 ] as const;
 
 export type WorkflowEvent = (typeof WORKFLOW_EVENTS)[number];
@@ -73,10 +79,15 @@ export const ALL_EVENTS: ReadonlySet<string> = new Set([...FUNNEL_EVENTS, ...WOR
  */
 export const ACTIVATION_FUNNEL: FunnelEvent[] = [
   "landing_view",
+  "landing_cta_clicked",
   "signup_started",
   "signup_completed",
+  "verification_sent",
+  "verification_completed",
+  "onboarding_started",
   "resume_upload_completed",
   "profile_created",
+  "job_added",
   "job_analysis_completed",
   "tailoring_completed",
   "resume_exported",

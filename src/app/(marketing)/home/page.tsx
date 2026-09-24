@@ -1,11 +1,8 @@
 import type { Metadata } from "next";
 import Hero from "@/components/marketing/Hero";
-import WorkflowStrip from "@/components/marketing/WorkflowStrip";
+import HowItWorks from "@/components/marketing/HowItWorks";
 import ProductDemo from "@/components/marketing/ProductDemo";
 import TruthfulAI from "@/components/marketing/TruthfulAI";
-import Problem from "@/components/marketing/Problem";
-import HowItWorks from "@/components/marketing/HowItWorks";
-import FeatureGrid from "@/components/marketing/FeatureGrid";
 import WhyPatorbit from "@/components/marketing/WhyPatorbit";
 import ComparisonTable from "@/components/marketing/ComparisonTable";
 import CTA from "@/components/marketing/CTA";
@@ -70,14 +67,11 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Hero />
-      <WorkflowStrip />
-      <ProductDemo />
-      <TruthfulAI />
-      <Problem />
       <HowItWorks />
-      <FeatureGrid />
+      <ProductDemo />
       <WhyPatorbit />
       <ComparisonTable />
+      <TruthfulAI />
       <CTA />
     </main>
     </>

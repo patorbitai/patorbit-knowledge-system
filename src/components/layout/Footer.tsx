@@ -9,6 +9,7 @@ const navGroups = [
     links: [
       { href: "/features", label: "Features" },
       { href: "/templates", label: "Templates" },
+      { href: "/free-analysis", label: "Free Analysis" },
       { href: "/pricing", label: "Pricing" },
     ],
   },

@@ -16,6 +16,7 @@ describe("funnel events (§16)", () => {
   it("covers every event named in the brief", () => {
     const required = [
       "landing_view",
+      "landing_cta_clicked",
       "signup_started",
       "signup_completed",
       "resume_upload_started",
@@ -47,6 +48,7 @@ describe("funnel events (§16)", () => {
     expect(ACTIVATION_FUNNEL).not.toContain("checkout_started");
     expect(ACTIVATION_FUNNEL).not.toContain("subscription_completed");
     expect(ACTIVATION_FUNNEL).toContain("landing_view");
+    expect(ACTIVATION_FUNNEL).toContain("landing_cta_clicked");
     expect(ACTIVATION_FUNNEL).toContain("resume_exported");
   });
 });
@@ -82,14 +84,17 @@ describe("buildFunnelReport (§17 drop-off answers)", () => {
       rec("landing_view", "s1"),
       rec("landing_view", "s2"),
       rec("landing_view", "s2"), // duplicate — unique stays 2
+      rec("landing_cta_clicked", "s1"),
       rec("signup_started", "s1"),
       rec("signup_completed", "s1"),
     ]);
 
     expect(report.steps[0]).toMatchObject({ event: "landing_view", total: 3, unique: 2 });
-    expect(report.steps[1]).toMatchObject({ event: "signup_started", total: 1, unique: 1 });
+    expect(report.steps[1]).toMatchObject({ event: "landing_cta_clicked", total: 1, unique: 1 });
     expect(report.steps[1].conversionFromPrevious).toBe(50);
-    expect(report.totalRecords).toBe(5);
+    expect(report.steps[2]).toMatchObject({ event: "signup_started", total: 1, unique: 1 });
+    expect(report.steps[2].conversionFromPrevious).toBe(100);
+    expect(report.totalRecords).toBe(6);
   });
 
   it("computes step-to-step conversion and shows where users drop", () => {

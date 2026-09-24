@@ -1,7 +1,5 @@
 "use client";
 
-import { useRef } from "react";
-import { useInView } from "framer-motion";
 import { User, Copy, Target, ShieldCheck } from "lucide-react";
 
 const cards = [
@@ -15,18 +13,16 @@ const cards = [
     glow: "group-hover:shadow-cyan-500/5",
   },
   {
-    title: "Multiple Resumes, Zero Clutter",
-    description:
-      "Create separate resumes for different roles — Data Engineer, ML Engineer, Tech Lead — without losing your original or managing confusing file versions.",
+    title: "Multiple Resumes, Zero Clutter",      description:
+        "Create separate resumes for different roles — Data Engineer, ML Engineer, Tech Lead — from one source. Tailored copies never change your master profile.",
     icon: Copy,
     gradient: "from-blue-500/20 to-blue-500/10",
     border: "hover:border-blue-500/30",
     glow: "group-hover:shadow-blue-500/5",
   },
   {
-    title: "Job-Specific Tailoring",
-    description:
-      "Paste a job description and Patorbit identifies what matches, what partially matches, and what's missing — then suggests improvements based on your existing experience.",
+    title: "Job-Specific Tailoring",      description:
+        "Paste a job description and Patorbit shows what matches — with the evidence from your own work — what partially matches, and what's missing. Suggestions come only from your existing experience.",
     icon: Target,
     gradient: "from-purple-500/20 to-purple-500/10",
     border: "hover:border-purple-500/30",
@@ -44,12 +40,8 @@ const cards = [
 ];
 
 export default function WhyPatorbit() {
-  const ref = useRef<HTMLElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
-
   return (
     <section
-      ref={ref}
       className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
       aria-label="Why Patorbit"
     >
@@ -58,14 +50,7 @@ export default function WhyPatorbit() {
 
       <div className="relative mx-auto max-w-6xl px-6">
         {/* Header */}
-        <div
-          style={{
-            opacity: isInView ? 1 : 0,
-            transform: isInView ? "translateY(0)" : "translateY(16px)",
-            transition: "opacity 0.5s ease-out, transform 0.5s ease-out",
-          }}
-          className="text-center mb-16"
-        >
+        <div className="text-center mb-16">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-subtle bg-slate-900/60 px-3.5 py-1">
             <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-ink-secondary">
               Why Patorbit
@@ -84,16 +69,11 @@ export default function WhyPatorbit() {
 
         {/* Cards */}
         <div className="grid md:grid-cols-2 gap-6 max-w-5xl mx-auto">
-          {cards.map((card, i) => {
+          {cards.map((card) => {
             const Icon = card.icon;
             return (
               <div
                 key={card.title}
-                style={{
-                  opacity: isInView ? 1 : 0,
-                  transform: isInView ? "translateY(0)" : "translateY(24px)",
-                  transition: `opacity 0.5s ease-out ${0.12 + i * 0.1}s, transform 0.5s ease-out ${0.12 + i * 0.1}s`,
-                }}
                 className={`group relative rounded-2xl border border-subtle bg-gradient-to-b ${card.gradient} p-8 transition-all duration-500 hover:-translate-y-1 ${card.border} ${card.glow} hover:shadow-2xl`}
               >
                 {/* Icon */}
@@ -116,14 +96,7 @@ export default function WhyPatorbit() {
         </div>
 
         {/* Vision Statement */}
-        <div
-          style={{
-            opacity: isInView ? 1 : 0,
-            transform: isInView ? "translateY(0)" : "translateY(16px)",
-            transition: "opacity 0.6s ease-out 0.5s, transform 0.6s ease-out 0.5s",
-          }}
-          className="mt-20 text-center"
-        >
+        <div className="mt-20 text-center">
           <div className="max-w-3xl mx-auto">
             <div className="relative">
               <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-6xl text-slate-700/30 select-none leading-none">

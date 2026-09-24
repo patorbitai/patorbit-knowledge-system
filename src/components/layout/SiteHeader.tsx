@@ -7,15 +7,16 @@ import { useSession, signOut } from "next-auth/react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { useTheme } from "@/components/providers/ThemeProvider";
+import { track } from "@/lib/analytics";
 import { Sun, Moon } from "lucide-react";
 
+/* Primary navigation, deliberately short: what the product is, how it works,
+   a no-signup example, and pricing. Docs/API/security live in the footer. */
 const navLinks = [
-  { href: "/free-analysis", label: "Free Analysis" },
-  { href: "/platform", label: "Platform" },
-  { href: "/features", label: "Features" },
-  { href: "/solutions", label: "Solutions" },
+  { href: "/features", label: "Product" },
+  { href: "/home#how-it-works", label: "How it works" },
+  { href: "/free-analysis", label: "Free analysis" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/about", label: "About" },
 ];
 
 export default function SiteHeader() {
@@ -63,8 +64,8 @@ export default function SiteHeader() {
           </span>
         </Link>
 
-        {/* ── Desktop Navigation ── */}
-        <nav className="hidden md:flex absolute left-1/2 -translate-x-1/2 items-center">
+        {/* ── Desktop Navigation (xl+; below that the menu collapses) ── */}
+        <nav className="hidden xl:flex absolute left-1/2 -translate-x-1/2 items-center">
           <div className="flex items-center gap-0.5 rounded-2xl bg-white/[0.03] border border-white/[0.06] px-1.5 py-1">
             {navLinks.map((link) => {
               const isActive = pathname === link.href || pathname.startsWith(`${link.href}/`);
@@ -73,7 +74,7 @@ export default function SiteHeader() {
                   key={link.href}
                   href={link.href}
                   className={clsx(
-                    "relative rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300",
+                    "relative whitespace-nowrap rounded-xl px-4 py-2 text-sm font-medium transition-all duration-300",
                     isActive
                       ? "text-white"
                       : "text-slate-400 hover:text-slate-200"
@@ -133,10 +134,10 @@ export default function SiteHeader() {
               </Link>
               <Link
                 href="/register"
-                className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-400/40 hover:scale-105 active:scale-[1.02]"
+                onClick={() => track("landing_cta_clicked", { location: "header" })}
+                className="relative inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-3.5 py-2 sm:px-5 sm:py-2.5 text-xs sm:text-sm font-semibold text-white whitespace-nowrap shadow-lg shadow-cyan-500/25 transition-all duration-300 hover:shadow-cyan-400/40 hover:scale-105 active:scale-[1.02]"
               >
-                <span className="absolute inset-0 rounded-xl bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-500 opacity-0 blur-lg transition-opacity duration-300 group-hover:opacity-100" />
-                <span className="relative">Get Started</span>
+                <span className="relative">Build my profile</span>
               </Link>
             </>
           )}
@@ -144,7 +145,7 @@ export default function SiteHeader() {
           {/* Mobile Toggle */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] transition-colors hover:bg-white/[0.06]"
+            className="xl:hidden relative flex h-9 w-9 items-center justify-center rounded-xl border border-white/[0.08] bg-white/[0.03] transition-colors hover:bg-white/[0.06]"
             aria-label="Toggle menu"
           >
             <div className="flex flex-col items-center justify-center gap-[4px]">
@@ -173,7 +174,7 @@ export default function SiteHeader() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-            className="md:hidden overflow-hidden border-t border-white/[0.06] bg-slate-950/95 backdrop-blur-2xl"
+            className="xl:hidden overflow-hidden border-t border-white/[0.06] bg-slate-950/95 backdrop-blur-2xl"
           >
             <div className="px-6 py-5 space-y-1">
               {navLinks.map((link, i) => {
@@ -268,10 +269,13 @@ export default function SiteHeader() {
                     </Link>
                     <Link
                       href="/register"
-                      onClick={() => setIsOpen(false)}
+                      onClick={() => {
+                        setIsOpen(false);
+                        track("landing_cta_clicked", { location: "header" });
+                      }}
                       className="mt-2 flex items-center justify-center rounded-xl bg-gradient-to-r from-cyan-500 via-blue-500 to-purple-600 px-4 py-3 text-base font-semibold text-white shadow-lg shadow-cyan-500/20 transition-all duration-200"
                     >
-                      Get Started
+                      Build my profile
                     </Link>
                   </>
                 )}

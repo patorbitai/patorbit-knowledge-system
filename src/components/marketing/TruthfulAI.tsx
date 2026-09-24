@@ -1,8 +1,16 @@
 "use client";
 
-import { useRef } from "react";
-import { useInView } from "framer-motion";
-import { ShieldCheck, X, Check, EyeOff, UserCheck, FileCheck2 } from "lucide-react";
+import {
+  ShieldCheck,
+  X,
+  Check,
+  EyeOff,
+  UserCheck,
+  FileCheck2,
+  Download,
+  Lock,
+  Copy,
+} from "lucide-react";
 
 const principles = [
   {
@@ -22,28 +30,25 @@ const principles = [
   },
 ];
 
-export default function TruthfulAI() {
-  const ref = useRef<HTMLElement>(null);
-  const isInView = useInView(ref, { once: true, margin: "-80px" });
+const trustItems = [
+  { icon: Copy, label: "Tailoring never edits your master profile" },
+  { icon: UserCheck, label: "You review every change before it saves" },
+  { icon: Download, label: "Export PDF or DOCX" },
+  { icon: Lock, label: "Encrypted in transit and at rest" },
+  { icon: ShieldCheck, label: "Your data is never sold" },
+];
 
+export default function TruthfulAI() {
   return (
     <section
-      ref={ref}
       className="relative bg-surface-sunken py-24 lg:py-32 overflow-hidden"
-      aria-label="Truthful AI"
+      aria-label="Trust"
     >
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-900/[0.06] to-transparent" />
 
       <div className="relative mx-auto max-w-6xl px-6">
         {/* Header */}
-        <div
-          className="text-center mb-14"
-          style={{
-            opacity: isInView ? 1 : 0,
-            transform: isInView ? "translateY(0)" : "translateY(16px)",
-            transition: "opacity 0.4s ease-out, transform 0.4s ease-out",
-          }}
-        >
+        <div className="text-center mb-14">
           <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 px-3.5 py-1">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
             <span className="text-[11px] font-medium uppercase tracking-[0.15em] text-emerald-400">
@@ -62,14 +67,7 @@ export default function TruthfulAI() {
         </div>
 
         {/* The example — side by side */}
-        <div
-          className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-14"
-          style={{
-            opacity: isInView ? 1 : 0,
-            transform: isInView ? "translateY(0)" : "translateY(20px)",
-            transition: "opacity 0.4s ease-out 0.1s, transform 0.4s ease-out 0.1s",
-          }}
-        >
+        <div className="grid md:grid-cols-2 gap-6 max-w-4xl mx-auto mb-14">
           {/* Scenario */}
           <div className="rounded-xl border border-subtle bg-surface p-6">
             <div className="text-[11px] uppercase tracking-wider text-ink-muted font-medium mb-3">
@@ -122,14 +120,7 @@ export default function TruthfulAI() {
         </div>
 
         {/* Principles */}
-        <div
-          className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto"
-          style={{
-            opacity: isInView ? 1 : 0,
-            transform: isInView ? "translateY(0)" : "translateY(20px)",
-            transition: "opacity 0.4s ease-out 0.2s, transform 0.4s ease-out 0.2s",
-          }}
-        >
+        <div className="grid md:grid-cols-3 gap-5 max-w-5xl mx-auto">
           {principles.map((p) => (
             <div
               key={p.title}
@@ -141,6 +132,19 @@ export default function TruthfulAI() {
               <h3 className="text-base font-semibold text-ink mb-2">{p.title}</h3>
               <p className="text-sm text-ink-secondary leading-relaxed">{p.desc}</p>
             </div>
+          ))}
+        </div>
+
+        {/* Concise trust facts — real capabilities only */}
+        <div className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-3 rounded-xl border border-subtle bg-surface px-5 py-4">
+          {trustItems.map((item) => (
+            <span
+              key={item.label}
+              className="inline-flex items-center gap-2 text-xs text-ink-secondary"
+            >
+              <item.icon className="w-3.5 h-3.5 text-emerald-400 shrink-0" aria-hidden="true" />
+              {item.label}
+            </span>
           ))}
         </div>
       </div>
