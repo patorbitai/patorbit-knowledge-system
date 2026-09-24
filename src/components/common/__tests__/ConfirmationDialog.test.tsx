@@ -1,13 +1,19 @@
 import { describe, it, expect, vi } from "vitest";
+import { ConfirmationDialog, useConfirmation } from "../ConfirmationDialog";
 
 // ConfirmationDialog uses React + createPortal + framer-motion.
 // We test the component exports, hook logic, and configuration.
+//
+// The import is STATIC on purpose: importing framer-motion inside the test
+// body counted its cold transform against the 5s per-test timeout and made
+// this test fail intermittently on loaded machines (it never failed in
+// isolation). Collection is not bounded by that timeout, so hoisting it
+// removes the flake without weakening any assertion.
 
 describe("ConfirmationDialog", () => {
-  it("exports ConfirmationDialog and useConfirmation", async () => {
-    const mod = await import("../ConfirmationDialog");
-    expect(typeof mod.ConfirmationDialog).toBe("function");
-    expect(typeof mod.useConfirmation).toBe("function");
+  it("exports ConfirmationDialog and useConfirmation", () => {
+    expect(typeof ConfirmationDialog).toBe("function");
+    expect(typeof useConfirmation).toBe("function");
   });
 
   it("variant options are limited to danger, warning, default", () => {

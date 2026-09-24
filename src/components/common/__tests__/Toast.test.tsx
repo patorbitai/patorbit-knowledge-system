@@ -1,19 +1,23 @@
 import { describe, it, expect, vi, afterEach } from "vitest";
+import { useToast, ToastProvider } from "../Toast";
 
 // Toast system uses React context + portal, so we test the pure logic:
 // addToast creates a toast, removeToast removes it, auto-dismiss works.
+//
+// The import is STATIC on purpose: loading framer-motion inside the test
+// body counted its cold transform against the 5s per-test timeout and made
+// this test fail intermittently on loaded machines (it never failed in
+// isolation). Collection is not bounded by that timeout.
 
 describe("Toast system", () => {
   afterEach(() => {
     vi.restoreAllMocks();
   });
 
-  it("Toast has correct type configuration", async () => {
-    // Verify the toast config structure by importing the module
-    const mod = await import("../Toast");
+  it("Toast has correct type configuration", () => {
     // The module exports useToast and ToastProvider — verify they exist
-    expect(typeof mod.useToast).toBe("function");
-    expect(typeof mod.ToastProvider).toBe("function");
+    expect(typeof useToast).toBe("function");
+    expect(typeof ToastProvider).toBe("function");
   });
 
   it("Toast types are properly typed", () => {

@@ -102,5 +102,8 @@ describe("resume editor — live preview", () => {
     ).toContain(NEW);
 
     unmount();
-  });
+    // 20s (not the 5s default): this renders the full section + preview trees
+    // and intermittently exceeded 5s under full-suite machine load — it never
+    // failed in isolation and all assertions are synchronous.
+  }, 20000);
 });

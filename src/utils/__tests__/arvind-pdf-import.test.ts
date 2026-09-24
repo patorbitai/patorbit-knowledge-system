@@ -12,6 +12,11 @@ import { extractPageText, type PdfTextItem } from "../pdf-extract";
 describe("Arvind PDF end-to-end import", () => {
   const PDF_PATH = join("D:\\Resume", "ARVIND ABHAY NARAYAN CHAUHAN.pdf");
 
+  // These two tests cold-import pdfjs-dist INSIDE the test body, read a real
+  // PDF from disk and parse it — seconds of work that exceeded the default 5s
+  // per-test budget whenever the machine was loaded (intermittent failures in
+  // full-suite runs, always passing in isolation). 30s matches the work.
+
   it("extracts text from the real PDF", async () => {
     const buffer = readFileSync(PDF_PATH);
     const arrayBuffer = buffer.buffer.slice(
@@ -53,7 +58,7 @@ describe("Arvind PDF end-to-end import", () => {
 
     expect(fullText.length).toBeGreaterThan(100);
     expect(doc.numPages).toBeGreaterThanOrEqual(1);
-  });
+  }, 30000);
 
   it("parses the real PDF text into a correct resume", async () => {
     const buffer = readFileSync(PDF_PATH);
@@ -151,5 +156,5 @@ describe("Arvind PDF end-to-end import", () => {
     console.log(`Skills: ${resume.skills.length}`);
 
     console.log(`\n✅ ALL VERIFICATIONS PASSED`);
-  });
+  }, 30000);
 });

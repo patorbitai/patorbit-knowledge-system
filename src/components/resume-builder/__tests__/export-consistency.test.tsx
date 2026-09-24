@@ -250,5 +250,8 @@ describe("Preview ↔ Export consistency", () => {
     mirror.unmount();
 
     unmount();
-  });
+    // 20s (not the 5s default): ExportModal mount + triple-rAF print flush +
+    // second full preview mirror render intermittently exceeded 5s under
+    // full-suite machine load — never failed in isolation.
+  }, 20000);
 });
