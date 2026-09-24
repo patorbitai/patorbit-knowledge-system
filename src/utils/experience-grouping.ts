@@ -66,8 +66,17 @@ interface Builder {
   company: string;
   roles: string[];
   duration: string;
+  location: string;
   detail: string[];
 }
+
+/**
+ * Location shape for an `other` fragment on an experience line:
+ * "San Francisco, CA" / "Pune, India" — City, Region. Prose fragments with a
+ * comma ("Python, Django APIs") never match because the part after the comma
+ * must start capitalised.
+ */
+const LOCATION_SHAPE_RE = /^[A-Z][a-zA-Z'’.\- ]{1,40},\s*[A-Z][a-zA-Z'.\-]{1,20}$/;
 
 /** Corporate suffixes that make a bare line read as a company name, not a role. */
 const COMPANY_SUFFIX_RE =
@@ -112,7 +121,7 @@ function finalize(b: Builder): GroupedExperience {
   return {
     company: b.company,
     position: b.roles.join(", "),
-    location: "",
+    location: b.location,
     employmentType: "",
     industry: "",
     duration: b.duration,
@@ -164,7 +173,7 @@ export function groupExperienceEntries(facts: EvidenceFact[]): ExperienceGroupin
   const beginCompany = (company: string) => {
     if (pending.length > 0) demotePending();
     flush();
-    current = { company, roles: [], duration: "", detail: [] };
+    current = { company, roles: [], duration: "", location: "", detail: [] };
   };
 
   /**
@@ -208,7 +217,7 @@ export function groupExperienceEntries(facts: EvidenceFact[]): ExperienceGroupin
         if (split) {
           if (pending.length > 0) demotePending();
           flush();
-          current = { company: split.company, roles: [split.position], duration: "", detail: [] };
+          current = { company: split.company, roles: [split.position], duration: "", location: "", detail: [] };
         } else {
           beginCompany(fact.value);
         }
@@ -263,7 +272,7 @@ export function groupExperienceEntries(facts: EvidenceFact[]): ExperienceGroupin
             .slice(companyIdx + 1)
             .filter((f) => f.type !== "role");
           flush();
-          current = { company, roles, duration: fact.value, detail: [] };
+          current = { company, roles, duration: fact.value, location: "", detail: [] };
           pending = [];
           unassigned.push(...ambiguous);
         } else if (!current) {
@@ -278,6 +287,12 @@ export function groupExperienceEntries(facts: EvidenceFact[]): ExperienceGroupin
 
       case "achievement":
       case "other": {
+        // Location fragment from a "date | City, ST" line: attach to the open
+        // entry's location field — never as description prose, never company.
+        if (fact.type === "other" && current && !current.location && LOCATION_SHAPE_RE.test(fact.value.trim())) {
+          current.location = fact.value.trim();
+          break;
+        }
         if (pending.length > 0) demotePending(); // not a new company — just roles
         if (current) {
           current.detail.push(fact.value);

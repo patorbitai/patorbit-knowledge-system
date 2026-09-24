@@ -124,6 +124,42 @@ function parseCompanyDate(line: string): CompanyDate | null {
   return { ...(company ? { company } : {}), date };
 }
 
+/** Role vocabulary used to tell which side of a dash header is the title. */
+const ROLE_WORD_RE =
+  /\b(?:Engineer|Developer|Manager|Director|Lead|Architect|Analyst|Designer|Consultant|Specialist|Coordinator|Supervisor|Officer|Executive|VP|CTO|CFO|COO|Head|Principal|Senior|Junior|Staff|Associate|Intern|Freelance|Scientist|Researcher|Professor|Teacher|Nurse|Doctor|Technician|Intern)\b/i;
+
+/** Corporate suffixes that make a bare phrase read as a company name. */
+const COMPANY_WORD_RE =
+  /\b(?:Corporation|Incorporated|Corp\.?|Inc\.?|Ltd\.?|Pvt\.?|LLC|LLP|GmbH|PLC|Co\.?|Company|Group|Technologies|Technology|Systems|Solutions|Services|Consulting|Partners|Associates|Labs|Studios|Holdings|Ventures|Industries|Payments|Works|Media|Digital|Software|Labs)\b/i;
+
+/**
+ * Deterministically split a one-line role/company header such as
+ * "Senior Backend Engineer — Freightline Systems" or
+ * "Freightline Systems — Senior Backend Engineer".
+ * Returns null unless exactly one side carries role vocabulary and the other
+ * side is company-shaped; date ranges and prose never match.
+ */
+function splitRoleCompanyLine(
+  raw: string,
+): { company: string; position: string } | null {
+  const line = raw.trim();
+  if (/\b\d{4}\b/.test(line)) return null; // any year → not a header split
+  const m = line.match(/^(.{3,60}?)\s+[\u2013\u2014-]\s+(.{2,50})$/);
+  if (!m) return null;
+  const left = m[1].trim();
+  const right = m[2].trim();
+  if (!left || !right) return null;
+  const roleLeft = ROLE_WORD_RE.test(left) && !ROLE_WORD_RE.test(right);
+  const roleRight = ROLE_WORD_RE.test(right) && !ROLE_WORD_RE.test(left);
+  if (roleLeft && COMPANY_WORD_RE.test(right) && !/[.!?]$/.test(right)) {
+    return { company: cleanCompany(right) ?? right, position: left };
+  }
+  if (roleRight && COMPANY_WORD_RE.test(left) && !/[.!?]$/.test(left)) {
+    return { company: cleanCompany(left) ?? left, position: right };
+  }
+  return null;
+}
+
 /* ── Line extractors ──────────────────────────────────────────────────────── */
 
 type AddFact = (type: EvidenceFactType, value: string, confidence: number) => void;
@@ -149,6 +185,32 @@ function addLinkFacts(line: string, add: AddFact): void {
 }
 
 function extractExperienceLine(line: DocumentLine, add: AddFact): void {
+  // "2022 – Present | San Francisco, CA" — a date line with a pipe tail. The
+  // tail is location text; it must NEVER become a `company` fact (the old
+  // path fed "| San Francisco, CA" straight into beginCompany and the whole
+  // experience entry got a pipe fragment as its company name).
+  const pipeDate = line.raw.match(
+    new RegExp(`^\\s*(${DATE_RANGE}|${DATE_TOKEN})\\s*\\|\\s*(.+?)\\s*$`, "i"),
+  );
+  if (pipeDate) {
+    add("date", pipeDate[1], 0.9);
+    if (pipeDate[2]) add("other", pipeDate[2], 0.6); // location → entry.location
+    return;
+  }
+
+  // "Senior Backend Engineer — Freightline Systems" — a role/company header
+  // on one line. Split it deterministically: the company fact MUST be emitted
+  // first so grouping opens the entry before the role attaches (a role with no
+  // open entry is demoted to unassigned). Whole-line classification used to
+  // fail looksLikeRole (em-dash outside its char class) and the header fell
+  // through as `other` — never becoming a position.
+  const rc = splitRoleCompanyLine(line.raw);
+  if (rc) {
+    add("company", rc.company, 0.9);
+    add("role", rc.position, 0.9);
+    return;
+  }
+
   const cd = parseCompanyDate(line.raw);
   if (cd) {
     if (cd.company) add("company", cd.company, 0.9);

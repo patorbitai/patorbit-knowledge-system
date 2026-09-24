@@ -33,6 +33,12 @@ import {
 import { clsx } from "clsx";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
+import { useResumeBuilder } from "@/store/resume-builder";
+import { buildCareerProfile } from "@/lib/career-profile";
+import { buildJobProfile } from "@/lib/job-profile";
+import { buildQualificationMatch } from "@/lib/qualification-match";
+import { computeOverallMatch } from "@/lib/match-score";
+import { track } from "@/lib/analytics";
 import {
   getFollowUpState,
   getFollowUpLabel,
@@ -167,6 +173,16 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
   const [submittingEvent, setSubmittingEvent] = useState(false);
   const [analyzingMatch, setAnalyzingMatch] = useState(false);
   const [matchError, setMatchError] = useState<string | null>(null);
+  // Resume to use when this application is not linked yet. Linking is
+  // optional at create time ("you can also do this later") — this page must
+  // be able to complete it, otherwise the match empty-state promises an
+  // analysis it can never start.
+  const [selectedResumeId, setSelectedResumeId] = useState(initialApp.resumeId || "");
+  const resumeOptions = useResumeBuilder((s) => s.resumes);
+  // Derived default (no effect): first resume until the user picks one.
+  const effectiveResumeId = selectedResumeId || resumeOptions[0]?.resumeId || "";
+  const resumeName = (id: string | null) =>
+    id ? resumeOptions.find((r) => r.resumeId === id)?.name || "Linked resume" : null;
   
   // Edit mode for tracking fields
   const [editingFields, setEditingFields] = useState(false);
@@ -311,38 +327,56 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
 
   // Standalone Analyze Match handler
   const handleAnalyzeMatch = useCallback(async () => {
-    if (!app.resumeId || analyzingMatch) return;
+    if (analyzingMatch) return;
+    const chosenResumeId = app.resumeId || effectiveResumeId;
+    if (!chosenResumeId) {
+      setMatchError("Choose a resume to compare against this job.");
+      return;
+    }
     setAnalyzingMatch(true);
     setMatchError(null);
     try {
+      // Link the chosen resume first when this application has none — the
+      // explicit link the create form deferred to "later".
+      if (!app.resumeId) {
+        const linkRes = await fetch(`/api/applications/${app.applicationId}`, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ resumeId: chosenResumeId }),
+        });
+        if (!linkRes.ok) throw new Error("Could not link the selected resume. Try again.");
+        setApp((prev) => ({ ...prev, resumeId: chosenResumeId }));
+      }
       // Fetch resume data from store
-      const resumeRes = await fetch(`/api/resumes/${app.resumeId}`);
+      const resumeRes = await fetch(`/api/resumes/${chosenResumeId}`);
       if (!resumeRes.ok) throw new Error("Could not load resume");
       const resumeData = await resumeRes.json();
       const resume = resumeData.resume;
 
-      // Call match API
-      const matchRes = await fetch("/api/ai/match", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ resume, jobDescription: app.jobDescription }),
-      });
-      const matchResult = await matchRes.json();
-      if (!matchRes.ok) throw new Error(matchResult.error || "Match analysis failed");
+      // Deterministic match — the SAME engine as the builder's Match tab.
+      // The LLM route (/api/ai/match) returned 0% / [] on malformed model
+      // output and could contradict this matcher inside one session.
+      track("job_analysis_started", { source: "application-detail" });
+      const career = buildCareerProfile(resume);
+      const jobProfile = buildJobProfile(app.jobDescription || "");
+      const match = buildQualificationMatch(career, jobProfile);
+      const pick = (cls: "PROVEN" | "RELATED" | "COMMUNICATION_GAP" | "MISSING") =>
+        match.items.filter((i) => i.classification === cls).map((i) => i.requirement);
+      const matched = pick("PROVEN");
+      const partial = [...pick("RELATED"), ...pick("COMMUNICATION_GAP")];
+      const missing = pick("MISSING");
+      const score = computeOverallMatch(match);
 
       // Persist match data to application
       await fetch(`/api/applications/${app.applicationId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          matchScore: matchResult.matchScore,
-          matchData: {
-            matched: matchResult.matchedKeywords || [],
-            partial: matchResult.partialMatches || [],
-            missing: matchResult.missingKeywords || [],
-          },
+          matchScore: score,
+          matchData: { matched, partial, missing },
         }),
       });
+      track("job_analysis_completed", { items: match.summary.total, score, source: "application-detail" });
 
       // Refetch application to get updated data
       const appRes = await fetch(`/api/applications/${app.applicationId}`);
@@ -355,7 +389,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
     } finally {
       setAnalyzingMatch(false);
     }
-  }, [app.applicationId, app.resumeId, app.jobDescription, analyzingMatch]);
+  }, [app.applicationId, app.resumeId, app.jobDescription, effectiveResumeId, analyzingMatch]);
 
   const statusStyle = STATUS_STYLES[app.status] || STATUS_STYLES.saved;
   const statusLabel = STATUS_OPTIONS.find((s) => s.value === app.status)?.label || "Saved";
@@ -708,19 +742,47 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                 Patorbit compares your experience and skills against every requirement —
                 no guessing, only evidence.
               </p>
-              {app.resumeId && (
-                <button
-                  onClick={handleAnalyzeMatch}
-                  disabled={analyzingMatch}
-                  className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-brand text-label font-semibold text-brand-contrast hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
-                >
-                  {analyzingMatch ? (
-                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  ) : (
-                    <BarChart3 className="h-3.5 w-3.5" />
+              {!app.resumeId && resumeOptions.length === 0 ? (
+                <div className="space-y-2">
+                  <p className="text-meta text-ink-secondary">
+                    Add a resume first — Patorbit compares it against every requirement.
+                  </p>
+                  <Link
+                    href="/resume-builder"
+                    className="inline-flex items-center h-9 px-4 rounded-md bg-brand text-label font-semibold text-brand-contrast hover:opacity-90 transition-all"
+                  >
+                    Add your resume
+                  </Link>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center justify-center gap-2">
+                  {!app.resumeId && (
+                    <select
+                      aria-label="Resume to compare"
+                      value={effectiveResumeId}
+                      onChange={(e) => setSelectedResumeId(e.target.value)}
+                      className="h-9 px-2.5 rounded-md border border-subtle bg-surface text-xs text-ink focus:outline-none focus-visible:ring-2 focus-visible:ring-brand/40"
+                    >
+                      {resumeOptions.map((r) => (
+                        <option key={r.resumeId} value={r.resumeId}>
+                          {r.name || "Untitled resume"}
+                        </option>
+                      ))}
+                    </select>
                   )}
-                  Analyze match
-                </button>
+                  <button
+                    onClick={handleAnalyzeMatch}
+                    disabled={analyzingMatch || (!app.resumeId && !effectiveResumeId)}
+                    className="inline-flex items-center gap-1.5 h-9 px-4 rounded-md bg-brand text-label font-semibold text-brand-contrast hover:opacity-90 transition-all disabled:opacity-50 cursor-pointer"
+                  >
+                    {analyzingMatch ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <BarChart3 className="h-3.5 w-3.5" />
+                    )}
+                    Analyze match
+                  </button>
+                </div>
               )}
               {matchError && (
                 <p className="mt-2 text-meta text-danger" role="alert">{matchError}</p>
@@ -929,7 +991,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                       Resume linked
                     </p>
                     <p className="text-[10px] text-green-600/70 dark:text-green-400/60 truncate">
-                      ID: {app.resumeId.slice(0, 16)}...
+                      {resumeName(app.resumeId) || "Linked resume"}
                     </p>
                   </div>
                 </div>
@@ -950,7 +1012,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                   </p>
                 </div>
                 <p className="text-[11px] text-gray-400 dark:text-slate-500">
-                  Tailor a resume for this job to link it automatically.
+                  Analyze or tailor this job to link one automatically.
                 </p>
               </div>
             )}

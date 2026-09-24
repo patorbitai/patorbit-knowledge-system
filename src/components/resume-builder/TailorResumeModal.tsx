@@ -18,7 +18,7 @@ import {
   PenLine,
   AlertCircle,
 } from "lucide-react";
-import { useResumeBuilder, awaitServerPersistence } from "@/store/resume-builder";
+import { useResumeBuilder, awaitServerPersistence, isResumeEffectivelyEmpty } from "@/store/resume-builder";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
@@ -26,6 +26,7 @@ import type { Resume } from "@/types/resume";
 import type { ResumeTemplate } from "@/app/resume-builder/templates";
 import { track } from "@/lib/analytics";
 import { uniqueResumeName } from "@/lib/resume-versions";
+import { fetchServerResumes } from "@/lib/resume-server-sync/client";
 import {
   acceptAllSafeWithCount,
   applyTailorSuggestions,
@@ -142,6 +143,49 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
 
   const originalResume = useResumeBuilder((s) => s.resume);
   const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
+  const resumeList = useResumeBuilder((s) => s.resumes);
+  const switchResumeById = useResumeBuilder((s) => s.switchResume);
+  // Baseline guard: on non-builder pages (job detail) the store's active
+  // resume is the empty default even when `initialResumeId` points at a real
+  // one — suggestions, the unsupported-claims diff and the guarded apply
+  // would all run against an EMPTY baseline and flag every profile item as
+  // unverifiable. Switch to the target resume before anything derives.
+  // A fresh session (cleared storage, first visit) has never run the
+  // builder's server hydration, so the target may not be in the local list
+  // at all — hydrate from the server first, then switch.
+  const baselineHydratingRef = useRef(false);
+  useEffect(() => {
+    if (!open) return;
+    const trySwitchToTarget = (): boolean => {
+      const s = useResumeBuilder.getState();
+      const target = initialResumeId || s.activeResumeId;
+      if (!target) return false;
+      const inList = s.resumes.some((r) => r.resumeId === target);
+      if (!inList) return false;
+      if (s.activeResumeId !== target || isResumeEffectivelyEmpty(s.resume)) {
+        switchResumeById(target);
+      }
+      return true;
+    };
+    if (trySwitchToTarget()) return;
+    // Target not present locally: hydrate the store from the server so the
+    // baseline derives from the authoritative resume, then switch to it.
+    if (!initialResumeId || baselineHydratingRef.current) return;
+    baselineHydratingRef.current = true;
+    void fetchServerResumes()
+      .then((serverResumes) => {
+        if (serverResumes.length === 0) return;
+        useResumeBuilder.getState().hydrateFromServer(serverResumes);
+        trySwitchToTarget();
+      })
+      .catch(() => {
+        // Fail-closed: analyze is server-authoritative; the review step
+        // simply falls back to whatever the local baseline holds.
+      })
+      .finally(() => {
+        baselineHydratingRef.current = false;
+      });
+  }, [open, initialResumeId, resumeList, switchResumeById]);
   const createResume = useResumeBuilder((s) => s.createResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
   const sourceStyleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
@@ -228,8 +272,17 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
 
   const unsupportedClaims = useMemo(() => {
     if (!tailorResult) return [];
+    // An effectively-empty baseline can't verify anything — the diff would
+    // flag every server-provided item (skills, employers, education) as
+    // "could not be verified", which is noise, not a real trust signal.
+    if (isResumeEffectivelyEmpty(originalResume)) return [];
     return detectUnsupportedAdditions(originalResume, tailorResult.resume as unknown as Resume);
   }, [tailorResult, originalResume]);
+
+  // Empty-state guard (activation): generating from an empty resume creates
+  // an empty "tailored" version and spends an AI credit for nothing — the
+  // useful next action is to add experience first.
+  const profileEmpty = isResumeEffectivelyEmpty(originalResume);
 
   // Initialize draft fields from tailor result (once per generation)
   const initDraft = useCallback(() => {
@@ -696,11 +749,26 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                     </div>
                   )}
 
+                  {profileEmpty && (
+                    <div className="rounded-xl border border-amber-200 dark:border-amber-500/20 bg-amber-50 dark:bg-amber-500/10 px-3 py-2">
+                      <p className="text-[11px] font-semibold text-amber-700 dark:text-amber-300">
+                        Your resume has no experience, skills or education yet — there&apos;s nothing to tailor.
+                      </p>
+                      <p className="text-[10px] text-amber-600 dark:text-amber-300/70 mt-0.5">
+                        Add your experience (or import your resume), then analyze this job again — the match above shows exactly what&apos;s missing.
+                      </p>
+                    </div>
+                  )}
+
                   <div className="flex gap-3">
                     <button onClick={handleReset} className="flex-1 rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.02] px-4 py-2.5 text-xs font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.04] transition-colors">
                       Try Another JD
                     </button>
-                    <button onClick={handleGenerate} className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 px-4 py-2.5 text-xs font-medium text-white transition-all">
+                    <button
+                      onClick={handleGenerate}
+                      disabled={profileEmpty}
+                      className="flex-1 flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed px-4 py-2.5 text-xs font-medium text-white transition-all"
+                    >
                       Generate Tailored Resume
                       <ArrowRight className="h-3.5 w-3.5" />
                     </button>

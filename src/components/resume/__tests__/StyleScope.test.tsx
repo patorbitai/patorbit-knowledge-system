@@ -1,6 +1,6 @@
 "use strict";
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import React from "react";
 import { ResumePreview } from "../ResumePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
@@ -12,6 +12,10 @@ function templateOf(id: string) {
   if (!t) throw new Error(`template ${id} not found`);
   return t;
 }
+
+// The four-template render test blows past vitest's 5s default under
+// full-suite worker load — timeouts, not assertions.
+vi.setConfig({ testTimeout: 20000, hookTimeout: 20000 });
 
 describe("StyleScope integration (ResumePreview)", () => {
   beforeEach(() => {

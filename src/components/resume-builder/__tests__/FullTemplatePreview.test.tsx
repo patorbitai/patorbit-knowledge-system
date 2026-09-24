@@ -56,7 +56,9 @@ describe("FullTemplatePreview", () => {
         unmount();
       }
     },
-    20000,
+    // 8 full template renders + pagination math: routinely exceeds 20s in a
+    // loaded full-suite run (assertions are not the bottleneck).
+    60000,
   );
 
   it("shows a single page with no page navigation when the resume fits one page", () => {

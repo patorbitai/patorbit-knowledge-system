@@ -22,6 +22,11 @@ import type { Resume } from "@/types/resume";
 
 installObserverStubs();
 
+// Under a full-suite run these async render+act tests exceed vitest's 5s
+// default purely from worker load — never from assertions. Match the
+// timeouts used for the other heavy render suites.
+vi.setConfig({ testTimeout: 20000, hookTimeout: 20000 });
+
 const { mockRewrite, mockAtsOptimization } = vi.hoisted(() => ({
   mockRewrite: vi.fn(),
   mockAtsOptimization: vi.fn(),

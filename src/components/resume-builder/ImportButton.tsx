@@ -125,6 +125,11 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
     const currentResume = useResumeBuilder.getState().resume;
     const merged = mergeImportedResume(currentResume, draft);
     setResume(merged);
+    // Activation funnel step "profile_created": the import → review → Continue
+    // path IS profile creation for most new users, but it never fired here —
+    // only the manual OnboardingModal path did, so the funnel showed a false
+    // 100% drop after "resume uploaded" for the primary journey.
+    track("profile_created", { source: "import" });
     // §4 — record the import as a version: the first one becomes the
     // "original" restore point, later imports are content edits.
     const importSt = useResumeBuilder.getState();
