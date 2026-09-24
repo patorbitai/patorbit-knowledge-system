@@ -109,7 +109,7 @@ export default function PreviewPage() {
           <button
             onClick={() => setShowExport(true)}
             aria-label="Export resume"
-            className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl text-[10px] font-bold text-white bg-gradient-to-b from-cyan-500 to-blue-600 shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:brightness-110 active:scale-95 transition-all w-full cursor-pointer"
+            className="flex flex-col items-center gap-1.5 px-2 py-3 rounded-lg text-[10px] font-semibold text-white bg-cyan-600 hover:bg-cyan-700 active:bg-cyan-800 transition-colors w-full cursor-pointer"
           >
             <Download className="w-[18px] h-[18px]" />
             <span>Export</span>
