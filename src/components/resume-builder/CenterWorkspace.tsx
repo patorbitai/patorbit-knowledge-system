@@ -88,8 +88,8 @@ export function CenterWorkspace() {
 
   return (
     <div className="flex-1 bg-gray-50 dark:bg-[#070d18] overflow-y-auto">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-6 py-4">
-        <div className="space-y-4">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-6 py-3">
+        <div className="space-y-1">
           <ResumeContextBar />
           {ActiveComponent ? (
             <SectionErrorBoundary sectionId={activeSection}>

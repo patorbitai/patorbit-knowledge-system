@@ -1,51 +1,48 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { HardDrive, CloudOff, Loader2, AlertCircle } from "lucide-react";
-import { clsx } from "clsx";
 import { useEffect, useState } from "react";
+import { clsx } from "clsx";
 import { useResumeBuilder } from "@/store/resume-builder";
 
-const indicators = {
+/**
+ * Truthful save state, visually quiet (redesign §12).
+ *
+ * Not a pill, not a badge — a small dot + word. "Saved" must be readable
+ * at a glance without being one of the loudest elements on screen, while
+ * a failure still shows the server's actual reason (from lastSaveError).
+ *
+ * Rendered synchronously on status change (no AnimatePresence): the
+ * earlier mode="wait" wrapper could leave a stale child in the DOM and
+ * the header kept showing "Saved" after a 403.
+ */
+const indicators: Record<
+  string,
+  { text: string; dot: string; label: string }
+> = {
   saved: {
     text: "Saved",
-    subtext: "All changes saved",
-    color: "text-emerald-400",
-    bg: "bg-emerald-500/10",
-    border: "border-emerald-500/20",
-    icon: HardDrive,
+    dot: "bg-emerald-400",
+    label: "text-gray-400 dark:text-slate-500",
   },
   saving: {
-    text: "Saving...",
-    subtext: "Syncing your changes",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-    icon: Loader2,
+    text: "Saving…",
+    dot: "bg-cyan-500 animate-pulse",
+    label: "text-gray-400 dark:text-slate-500",
   },
   unsaved: {
     text: "Unsaved",
-    subtext: "Changes pending",
-    color: "text-slate-400",
-    bg: "bg-slate-500/10",
-    border: "border-slate-500/20",
-    icon: CloudOff,
+    dot: "bg-gray-400 dark:bg-slate-500",
+    label: "text-gray-400 dark:text-slate-500",
   },
   offline: {
     text: "Offline",
-    subtext: "Changes saved locally",
-    color: "text-amber-400",
-    bg: "bg-amber-500/10",
-    border: "border-amber-500/20",
-    icon: CloudOff,
+    dot: "bg-amber-400",
+    label: "text-amber-600 dark:text-amber-400",
   },
   "sync-failed": {
     text: "Save failed",
-    subtext: "Will retry automatically",
-    color: "text-rose-400",
-    bg: "bg-rose-500/10",
-    border: "border-rose-500/20",
-    icon: AlertCircle,
+    dot: "bg-rose-500",
+    label: "text-rose-600 dark:text-rose-400",
   },
 };
 
@@ -81,43 +78,35 @@ export function SaveStatusIndicator() {
   }, [saveStatus, setSaveStatus]);
 
   const currentStatus = isOnline ? saveStatus : "offline";
-  const config = indicators[currentStatus];
-  const Icon = config.icon;
+  const config = indicators[currentStatus] ?? indicators.unsaved;
+  const failureDetail =
+    currentStatus === "sync-failed" && lastSaveError ? lastSaveError : null;
 
   return (
-    <motion.div
-      key={currentStatus}
-      initial={{ opacity: 0, y: currentStatus === "sync-failed" ? 0 : -4 }}
-      animate={{
-        opacity: 1,
-        y: 0,
-        x: currentStatus === "sync-failed" ? [-3, 3, -3, 3, 0] : 0,
-      }}
-      transition={{
-        duration: currentStatus === "sync-failed" ? 0.3 : 0.15,
-        ease: "easeOut"
-      }}
-      className={clsx(
-        "flex items-center gap-1.5 sm:gap-2 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-lg border transition-colors",
-        config.bg,
-        config.border,
-      )}
+    <div
+      role="status"
+      aria-live="polite"
+      data-save-status={currentStatus}
+      className="flex items-center gap-1.5 px-1 py-0.5"
+      title={failureDetail ?? config.text}
     >
-      <Icon className={clsx("w-3 h-3", config.color, saveStatus === "saving" && "animate-spin")} />
-      <div className="flex flex-col">
-        <span className={clsx("text-[10px] font-semibold leading-tight", config.color)}>
-          {config.text}
+      <span
+        className={clsx("h-1.5 w-1.5 rounded-full shrink-0", config.dot)}
+        aria-hidden="true"
+      />
+      <span
+        className={clsx(
+          "text-[11px] font-medium leading-tight whitespace-nowrap",
+          config.label,
+        )}
+      >
+        {config.text}
+      </span>
+      {failureDetail && (
+        <span className="hidden lg:block max-w-[220px] truncate text-[10px] text-rose-500/80 dark:text-rose-400/80">
+          {failureDetail}
         </span>
-        <span
-          className={clsx(
-            "hidden sm:block text-[8px] leading-tight max-w-[210px] truncate",
-            currentStatus === "sync-failed" ? "text-rose-400" : "text-slate-500",
-          )}
-          title={currentStatus === "sync-failed" && lastSaveError ? lastSaveError : config.subtext}
-        >
-          {currentStatus === "sync-failed" && lastSaveError ? lastSaveError : config.subtext}
-        </span>
-      </div>
-    </motion.div>
+      )}
+    </div>
   );
 }

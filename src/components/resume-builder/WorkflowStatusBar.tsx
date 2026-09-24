@@ -3,7 +3,6 @@
 import { useResumeBuilder } from "@/store/resume-builder";
 import { deriveWorkflowState, getCurrentStep, type WorkflowStepId } from "@/lib/workflow-state";
 import { clsx } from "clsx";
-import { CheckCircle2, Circle, ArrowRight } from "lucide-react";
 import { useCallback } from "react";
 
 type StepId = WorkflowStepId;
@@ -110,49 +109,48 @@ function useStepAction() {
 export function WorkflowStatusBar() {
   const { state, currentStep, handleStepClick } = useStepAction();
 
-  // Count completed steps
   const completedCount = STEPS.filter((step) => state[step.id]).length;
+  const currentLabel =
+    currentStep === "complete"
+      ? "Complete"
+      : STEPS.find((s) => s.id === currentStep)?.shortLabel ?? "";
 
+  // Subtle context indicator (§2): five dots + a hairline, plus a tiny
+  // "3/5 · Match" caption. Clickable steps stay, chrome does not.
   return (
-    <div className="flex items-center gap-1 px-2 py-1" role="navigation" aria-label="Workflow progress">
-      {STEPS.map((step, i) => {
-        const isComplete = state[step.id];
-        const isCurrent = currentStep !== "complete" && step.id === currentStep;
-        const isClickable = true; // Always clickable for navigation
+    <div className="flex items-center gap-2 px-1 py-1" role="navigation" aria-label="Workflow progress">
+      <div className="flex items-center">
+        {STEPS.map((step, i) => {
+          const isComplete = state[step.id];
+          const isCurrent = currentStep !== "complete" && step.id === currentStep;
 
-        return (
-          <div key={step.id} className="flex items-center gap-1">
-            {/* Step indicator */}
-            <button
-              onClick={() => handleStepClick(step.id)}
-              disabled={!isClickable}
-              title={isComplete ? step.label : step.hint}
-              className={clsx(
-                "flex items-center gap-1 px-1.5 py-0.5 rounded-md text-[10px] font-medium transition-all cursor-pointer",
-                isComplete && "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-500/10",
-                isCurrent && "text-cyan-600 dark:text-cyan-400 bg-cyan-50 dark:bg-cyan-500/10 hover:bg-cyan-100 dark:hover:bg-cyan-500/20",
-                !isComplete && !isCurrent && "text-gray-400 dark:text-slate-500 hover:bg-gray-50 dark:hover:bg-white/[0.04]",
+          return (
+            <div key={step.id} className="flex items-center">
+              <button
+                onClick={() => handleStepClick(step.id)}
+                title={isComplete ? step.label : step.hint}
+                aria-label={step.label}
+                className="p-1 cursor-pointer rounded-full focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/40"
+              >
+                <span
+                  className={clsx(
+                    "block h-1.5 w-1.5 rounded-full transition-colors",
+                    isComplete && "bg-cyan-500",
+                    isComplete && isCurrent && "bg-cyan-500",
+                    !isComplete && isCurrent && "bg-cyan-500/35 ring-1 ring-cyan-500/70 ring-offset-[1.5px] ring-offset-white dark:ring-offset-[#070d18]",
+                    !isComplete && !isCurrent && "bg-gray-300 dark:bg-slate-600",
+                  )}
+                />
+              </button>
+              {i < STEPS.length - 1 && (
+                <span className="w-3 h-px bg-gray-200 dark:bg-white/[0.1] shrink-0" aria-hidden="true" />
               )}
-            >
-              {isComplete ? (
-                <CheckCircle2 className="w-3 h-3" />
-              ) : (
-                <Circle className="w-3 h-3" />
-              )}
-              <span className="hidden sm:inline">{step.shortLabel}</span>
-            </button>
-
-            {/* Arrow between steps */}
-            {i < STEPS.length - 1 && (
-              <ArrowRight className="w-2.5 h-2.5 text-gray-300 dark:text-slate-600 shrink-0" />
-            )}
-          </div>
-        );
-      })}
-
-      {/* Summary text */}
-      <span className="ml-2 text-[10px] text-gray-400 dark:text-slate-500 hidden md:inline">
-        {completedCount}/{STEPS.length}
+            </div>
+          );
+        })}
+      </div>
+      <span className="text-[10px] font-medium text-gray-400 dark:text-slate-500 tabular-nums whitespace-nowrap">
+        {completedCount}/{STEPS.length} · {currentLabel}
       </span>
     </div>
   );

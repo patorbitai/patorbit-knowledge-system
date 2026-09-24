@@ -559,7 +559,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
                 className={clsx(
                   "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] transition-all text-left",
                   isActive
-                    ? "bg-gradient-to-r from-blue-500/15 to-cyan-500/10 text-white border border-blue-500/20 shadow-sm shadow-blue-500/5"
+                    ? "bg-cyan-600 hover:bg-cyan-700 text-white border border-transparent"
                     : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04] border border-transparent",
                 )}
               >

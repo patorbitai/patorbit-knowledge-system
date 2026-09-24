@@ -40,7 +40,7 @@ export default function MobileSectionNav() {
 
   return (
     <nav
-      className="md:hidden flex overflow-x-auto gap-1 border-t border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#080C18] px-2 py-2 scrollbar-none"
+      className="xl:hidden flex overflow-x-auto gap-1 border-t border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#070d18] px-2 py-1.5 scrollbar-none"
       aria-label="Resume sections"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
     >
@@ -54,10 +54,10 @@ export default function MobileSectionNav() {
             onClick={() => setActiveSection(id)}
             aria-current={isActive ? "step" : undefined}
             className={clsx(
-              "relative flex shrink-0 items-center gap-1.5 rounded-lg px-3 py-2 text-xs font-medium transition-colors",
+              "relative flex shrink-0 items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors",
               isActive
-                ? "bg-cyan-50 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-300"
-                : "text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:text-gray-700 dark:hover:text-slate-200"
+                ? "text-cyan-700 dark:text-cyan-400"
+                : "text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.05] hover:text-gray-700 dark:hover:text-slate-200"
             )}
           >
             <Icon className="h-3.5 w-3.5" />

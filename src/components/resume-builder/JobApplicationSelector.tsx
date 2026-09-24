@@ -32,12 +32,12 @@ type JobApplication = {
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  saved: "bg-gray-100 dark:bg-white/[0.06] text-gray-600 dark:text-slate-400",
-  ready_to_apply: "bg-blue-50 dark:bg-blue-500/10 text-blue-600 dark:text-blue-400",
-  applied: "bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400",
-  interview: "bg-purple-50 dark:bg-purple-500/10 text-purple-600 dark:text-purple-400",
-  offer: "bg-green-50 dark:bg-green-500/10 text-green-600 dark:text-green-400",
-  rejected: "bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400",
+  saved: "text-gray-400 dark:text-slate-500",
+  ready_to_apply: "text-cyan-700 dark:text-cyan-400",
+  applied: "text-amber-600 dark:text-amber-400",
+  interview: "text-cyan-700 dark:text-cyan-400",
+  offer: "text-emerald-600 dark:text-emerald-400",
+  rejected: "text-red-500",
 };
 
 export function JobApplicationSelector() {
@@ -136,11 +136,10 @@ export function JobApplicationSelector() {
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         className={clsx(
-          "flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-all cursor-pointer",
-          "border border-gray-200 dark:border-white/[0.08]",
+          "flex items-center gap-1.5 px-1.5 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer",
           activeJobApplication
-            ? "bg-amber-50 dark:bg-amber-500/10 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-500/20"
-            : "bg-gray-100 dark:bg-white/[0.04] text-gray-600 dark:text-slate-400 hover:bg-gray-200 dark:hover:bg-white/[0.08]",
+            ? "text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.06]"
+            : "text-gray-400 dark:text-slate-500 hover:bg-gray-100 dark:hover:bg-white/[0.06]",
         )}
       >
         <Briefcase className="w-3 h-3 shrink-0" />
@@ -177,7 +176,7 @@ export function JobApplicationSelector() {
             )}
           >
             <div className="w-5 h-5 rounded flex items-center justify-center shrink-0">
-              {!activeJobApplicationId && <Check className="w-3 h-3 text-amber-500" />}
+              {!activeJobApplicationId && <Check className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />}
             </div>
             <div className="flex-1 min-w-0">
               <span className="text-xs font-medium text-gray-500 dark:text-slate-400 italic">
@@ -207,17 +206,17 @@ export function JobApplicationSelector() {
                   onClick={() => handleSelect(app)}
                   className={clsx(
                     "flex items-start gap-2.5 w-full px-3 py-2.5 text-left hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors group",
-                    isActive && "bg-amber-50 dark:bg-amber-500/10",
+                    isActive && "bg-gray-50 dark:bg-white/[0.04]",
                   )}
                 >
                   <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5">
-                    {isActive && <Check className="w-3 h-3 text-amber-500" />}
+                    {isActive && <Check className="w-3 h-3 text-cyan-600 dark:text-cyan-400" />}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className={clsx(
                         "text-xs font-medium truncate",
-                        isActive ? "text-amber-700 dark:text-amber-300" : "text-gray-900 dark:text-white",
+                        isActive ? "text-gray-900 dark:text-white" : "text-gray-700 dark:text-slate-300",
                       )}>
                         {app.title}
                       </span>
@@ -235,7 +234,7 @@ export function JobApplicationSelector() {
                           // Score is stale if matchedResumeId differs from the application's resumeId
                           app.matchedResumeId && app.matchedResumeId !== app.resumeId
                             ? "text-gray-400 dark:text-slate-500"
-                            : "text-blue-500 dark:text-blue-400",
+                            : "text-cyan-700 dark:text-cyan-400",
                         )}>
                           <Target className="w-2.5 h-2.5" />
                           {app.matchScore}%
@@ -261,7 +260,7 @@ export function JobApplicationSelector() {
           <div className="border-t border-gray-200 dark:border-white/[0.06] mt-1">
             <a
               href="/jobs/new"
-              className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium text-amber-600 dark:text-amber-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
+              className="flex items-center gap-2 w-full px-3 py-2 text-xs font-medium text-cyan-700 dark:text-cyan-400 hover:bg-gray-50 dark:hover:bg-white/[0.04] transition-colors"
               onClick={() => setIsOpen(false)}
             >
               <Plus className="w-3 h-3" />

@@ -10,21 +10,13 @@ import { AIActionButton } from "../AIActionButton";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { ai } from "@/lib/ai/client";
 import { useValidation } from "../hooks/useValidation";
-import { Mail, Phone, MapPin, Link2, Globe, Pencil, Check, User, Sparkles } from "lucide-react";
+import { Mail, Phone, MapPin, Link2, Globe, Pencil, Check, Sparkles } from "lucide-react";
 import { ResumeFont } from "../cards/ResumeFont";
 
-/** Initials from a name ("Arvind Abhay Narayan Chauhan" → "AC"). */
-function initialsOf(name: string): string {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length === 0) return "?";
-  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-}
-
-const LINK_FIELDS: Array<{ key: "linkedin" | "github" | "website"; label: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = [
-  { key: "linkedin", label: "LinkedIn", Icon: Link2, color: "text-sky-500" },
-  { key: "github", label: "GitHub", Icon: Link2, color: "text-gray-500 dark:text-slate-400" },
-  { key: "website", label: "Portfolio", Icon: Globe, color: "text-emerald-500" },
+const LINK_FIELDS: Array<{ key: "linkedin" | "github" | "website"; label: string; Icon: React.ComponentType<{ className?: string }> }> = [
+  { key: "linkedin", label: "LinkedIn", Icon: Link2 },
+  { key: "github", label: "GitHub", Icon: Link2 },
+  { key: "website", label: "Portfolio", Icon: Globe },
 ];
 
 export function PersonalSection() {
@@ -81,6 +73,14 @@ export function PersonalSection() {
     }
   };
 
+  /** Enter edit view and generate an AI improvement — contextual, not a
+   *  permanent control (redesign §8). */
+  const handleImproveSummary = () => {
+    setEditing(true);
+    if (resume.summary) void handleRewrite();
+    else void handleGenerateSummary();
+  };
+
   const hasIdentity = !!(resume.name && resume.email && resume.phone);
 
   return (
@@ -93,10 +93,10 @@ export function PersonalSection() {
       actions={
         <button
           onClick={() => setEditing((v) => !v)}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-[11px] font-medium transition-colors cursor-pointer ${
+          className={`inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[11px] font-medium transition-colors cursor-pointer ${
             editing
-              ? "text-cyan-600 dark:text-cyan-400 bg-cyan-500/10"
-              : "text-gray-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-50 dark:hover:bg-cyan-500/10"
+              ? "text-cyan-700 dark:text-cyan-400 bg-cyan-500/10"
+              : "text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06]"
           }`}
         >
           {editing ? <Check className="w-3 h-3" /> : <Pencil className="w-3 h-3" />}
@@ -104,81 +104,88 @@ export function PersonalSection() {
         </button>
       }
     >
-      {/* ── CONTENT VIEW ── */}
+      {/* ── CONTENT VIEW — editorial hierarchy, no dashboard bulk ── */}
       {!editing && (
         <div className="space-y-4">
-          <div className="flex items-center gap-4">
-            <div className="h-16 w-16 shrink-0 rounded-2xl bg-gradient-to-br from-cyan-500/20 via-blue-500/15 to-purple-500/20 border border-cyan-500/20 flex items-center justify-center">
-              <span className="text-lg font-bold text-cyan-600 dark:text-cyan-300">{initialsOf(resume.name || "?")}</span>
-            </div>
-            <div className="min-w-0">
+          {/* Name + title */}
+          <div>
+            <ResumeFont>
+              <h4 className="text-xl font-semibold text-gray-900 dark:text-white leading-tight">
+                {resume.name || "Your Name"}
+              </h4>
+            </ResumeFont>
+            {resume.title && (
               <ResumeFont>
-                <h3 className="text-lg font-bold text-gray-900 dark:text-white leading-tight truncate">
-                  {resume.name || "Your Name"}
-                </h3>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-0.5">{resume.title}</p>
               </ResumeFont>
-              {resume.title && (
-                <ResumeFont>
-                  <p className="text-sm text-gray-500 dark:text-slate-400 truncate">{resume.title}</p>
-                </ResumeFont>
-              )}
-            </div>
+            )}
           </div>
 
-          {/* Contact rows */}
+          {/* Contact — one quiet inline group */}
           {(resume.email || resume.phone || resume.address) && (
-            <div className="space-y-1.5">
-              <ResumeFont>
+            <ResumeFont>
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] text-gray-500 dark:text-slate-400">
                 {resume.email && (
-                  <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
+                  <span className="inline-flex items-center gap-1.5 truncate">
                     <Mail className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
                     <span className="truncate">{resume.email}</span>
-                  </div>
+                  </span>
                 )}
                 {resume.phone && (
-                  <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
+                  <span className="inline-flex items-center gap-1.5">
                     <Phone className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
-                    <span className="truncate">{resume.phone}</span>
-                  </div>
+                    {resume.phone}
+                  </span>
                 )}
                 {resume.address && (
-                  <div className="flex items-center gap-2.5 text-[13px] text-gray-600 dark:text-slate-300">
+                  <span className="inline-flex items-center gap-1.5">
                     <MapPin className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500 shrink-0" />
-                    <span className="truncate">{resume.address}</span>
-                  </div>
+                    {resume.address}
+                  </span>
                 )}
-              </ResumeFont>
+              </div>
+            </ResumeFont>
+          )}
+
+          {/* Links — quiet text links, not chips */}
+          {LINK_FIELDS.some(({ key }) => resume.social[key]) && (
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+              {LINK_FIELDS.filter(({ key }) => resume.social[key]).map(({ key, label }) => (
+                <a
+                  key={key}
+                  href={resume.social[key].startsWith("http") ? resume.social[key] : `https://${resume.social[key]}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors underline-offset-2 hover:underline"
+                >
+                  {label}
+                </a>
+              ))}
             </div>
           )}
 
-          {/* Link chips */}
-          <div className="flex flex-wrap gap-2">
-            {LINK_FIELDS.filter(({ key }) => resume.social[key]).map(({ key, label, Icon, color }) => (
-              <a
-                key={key}
-                href={resume.social[key].startsWith("http") ? resume.social[key] : `https://${resume.social[key]}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-100 dark:bg-white/[0.05] border border-gray-200 dark:border-white/[0.08] text-[11px] font-medium text-gray-600 dark:text-slate-300 hover:border-cyan-400/40 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors"
-              >
-                <Icon className={`w-3 h-3 ${color}`} />
-                {label}
-              </a>
-            ))}
-          </div>
-
-          {/* Summary */}
+          {/* Summary — flat, with contextual AI beneath (§8) */}
           {resume.summary ? (
             <div>
-              <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Summary</h4>
+              <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-1.5">Professional summary</h5>
               <ResumeFont>
                 <p className="text-[13px] leading-relaxed text-gray-600 dark:text-slate-300 whitespace-pre-wrap">{resume.summary}</p>
               </ResumeFont>
+              <button
+                onClick={handleImproveSummary}
+                disabled={aiActions["summary-rewrite"]?.status === "loading" || aiActions["summary-generate"]?.status === "loading"}
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 dark:text-slate-500 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors cursor-pointer disabled:opacity-50"
+              >
+                <Sparkles className="w-3 h-3" />
+                {aiActions["summary-rewrite"]?.status === "loading" || aiActions["summary-generate"]?.status === "loading"
+                  ? "Improving…"
+                  : "Improve summary"}
+              </button>
             </div>
           ) : (
             <button
               onClick={() => setEditing(true)}
-              className="w-full flex items-center justify-center gap-1.5 rounded-lg border border-dashed border-gray-300 dark:border-white/[0.12] px-3 py-2.5 text-xs text-gray-400 dark:text-slate-500 hover:border-cyan-400/50 hover:text-cyan-500 dark:hover:text-cyan-400 transition-colors cursor-pointer"
+              className="w-full flex items-center justify-center gap-1.5 rounded-md border border-dashed border-gray-300 dark:border-white/[0.12] px-3 py-2.5 text-xs text-gray-400 dark:text-slate-500 hover:border-cyan-400/50 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors cursor-pointer"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Add a professional summary
@@ -192,7 +199,7 @@ export function PersonalSection() {
         <SectionContent>
           {/* Identity */}
           <div>
-            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Identity</h4>
+            <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Identity</h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FieldInput
                 label="Full Name"
@@ -215,7 +222,7 @@ export function PersonalSection() {
 
           {/* Contact */}
           <div>
-            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Contact</h4>
+            <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Contact</h5>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <FieldInput
                 label="Email"
@@ -245,7 +252,7 @@ export function PersonalSection() {
 
           {/* Online Presence */}
           <div>
-            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Online</h4>
+            <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Online</h5>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <FieldInput
                 label="LinkedIn"
@@ -274,7 +281,7 @@ export function PersonalSection() {
           {/* Summary */}
           <div>
             <div className="flex items-center justify-between mb-3">
-              <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Summary</h4>
+              <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500">Summary</h5>
               <div className="flex items-center gap-1.5">
                 <AIActionButton
                   label="Generate Summary"
@@ -341,13 +348,6 @@ export function PersonalSection() {
             />
           )}
         </SectionContent>
-      )}
-
-      {!editing && (
-        <div className="flex items-center gap-1.5 text-[11px] text-gray-400 dark:text-slate-500 pt-1">
-          <User className="w-3 h-3" />
-          Edit opens structured fields — changes are saved automatically.
-        </div>
       )}
     </SectionCard>
   );

@@ -30,15 +30,15 @@ function CollapsibleCard({
 }) {
   const [open, setOpen] = useState(defaultOpen);
   return (
-    <div className="rounded-2xl border border-[rgba(148,163,184,.14)] bg-white dark:bg-gradient-to-br dark:from-[rgba(10,18,32,0.96)] dark:to-[rgba(7,14,26,0.92)] overflow-hidden shadow-xl transition-all duration-300">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-3 hover:bg-white/[0.03] transition-colors cursor-pointer group">
-        <div className="flex items-center gap-2.5">
-          <span className="flex h-7 w-7 items-center justify-center rounded-xl border border-white/[0.08] shadow-sm transition-transform group-hover:scale-105" style={{ backgroundColor: `${color}18`, borderColor: `${color}30` }}>{icon}</span>
-          <span className="text-xs font-bold text-gray-900 dark:text-[#f8fafc] tracking-tight">{title}</span>
+    <div className="rounded-lg border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-white/[0.02] overflow-hidden transition-colors">
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors cursor-pointer group">
+        <div className="flex items-center gap-2">
+          <span className="flex h-5 w-5 items-center justify-center" style={{ color }}>{icon}</span>
+          <span className="text-xs font-semibold text-gray-900 dark:text-slate-200">{title}</span>
         </div>
         <div className="flex items-center gap-2">
-          {badge !== undefined && <span className="text-[10px] font-semibold text-cyan-300 bg-cyan-500/10 border border-cyan-500/20 px-2 py-0.5 rounded-full min-w-[22px] text-center">{badge}</span>}
-          {open ? <ChevronUp className="w-3.5 h-3.5 text-gray-500 dark:text-[#94a3b8]" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-500 dark:text-[#94a3b8]" />}
+          {badge !== undefined && <span className="text-[10px] font-medium text-cyan-700 dark:text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded min-w-[20px] text-center">{badge}</span>}
+          {open ? <ChevronUp className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" />}
         </div>
       </button>
       {open && <div className="px-4 pb-4 space-y-3 pt-1">{children}</div>}
@@ -150,19 +150,8 @@ export function RightCopilot() {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}        <div className="flex items-center justify-between px-4 pt-5 pb-3.5 border-b border-gray-200 dark:border-[rgba(148,163,184,.14)] shrink-0 bg-gray-50 dark:bg-[#070d18]">
-        <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-cyan-500/20 via-blue-600/20 to-purple-600/20 border border-cyan-500/30 flex items-center justify-center text-[#22d3ee] shadow-[0_0_15px_rgba(34,211,238,0.15)]">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <div>
-            <h2 className="text-xs font-bold text-gray-900 dark:text-[#f8fafc] tracking-tight">AI Career Copilot</h2>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <div className="w-2 h-2 rounded-full bg-cyan-400 animate-pulse shadow-[0_0_8px_rgba(34,211,238,0.8)]" />
-              <p className="text-[10px] text-gray-500 dark:text-[#94a3b8] font-medium">Live Intelligence</p>
-            </div>
-          </div>
-        </div>
+      {/* Header — quiet, no AI neon (redesign §8) */}        <div className="flex items-center justify-between px-4 pt-4 pb-3 border-b border-gray-200 dark:border-white/[0.06] shrink-0 bg-white dark:bg-[#070d18]">
+        <h2 className="text-[13px] font-semibold text-gray-900 dark:text-white">Match & analysis</h2>
       </div>
 
       {/* Scrollable content */}
@@ -170,36 +159,36 @@ export function RightCopilot() {
 
         {/* Status Banner */}
         {!sufficient && !inProgress && (
-          <div className="rounded-2xl border border-[rgba(34,211,238,0.2)] bg-gradient-to-r from-[rgba(14,165,233,0.08)] to-[rgba(59,130,246,0.08)] px-4 py-3.5 text-center shadow-md">
-            <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1">AI Assistant Ready</p>
-            <p className="text-[11px] text-gray-500 dark:text-[#94a3b8] leading-relaxed">Fill in your experience & skills to unlock professional AI analysis and optimization.</p>
+          <div className="rounded-lg border border-gray-200 dark:border-white/[0.07] bg-gray-50 dark:bg-white/[0.03] px-4 py-3 text-center">
+            <p className="text-xs font-semibold text-gray-900 dark:text-white mb-1">More content needed</p>
+            <p className="text-[11px] text-gray-500 dark:text-slate-400 leading-relaxed">Fill in your experience & skills to run analysis and match against a job.</p>
           </div>
         )}
 
         {sufficient && !completed && !inProgress && (
-          <button onClick={startAnalysis} className="w-full rounded-2xl border border-[rgba(34,211,238,0.3)] bg-gradient-to-r from-[rgba(14,165,233,0.15)] via-[rgba(59,130,246,0.15)] to-[rgba(147,51,234,0.15)] px-4 py-3.5 text-center hover:brightness-110 transition-all cursor-pointer shadow-lg shadow-blue-500/10">
-            <p className="text-xs font-bold text-gray-900 dark:text-white flex items-center justify-center gap-2">
-              <Sparkles className="w-3.5 h-3.5 text-[#22d3ee]" />
-              Run AI Analysis
+          <button onClick={startAnalysis} className="w-full rounded-lg bg-cyan-600 hover:bg-cyan-700 px-4 py-2.5 text-white transition-colors cursor-pointer">
+            <p className="text-xs font-semibold flex items-center justify-center gap-2">
+              <Sparkles className="w-3.5 h-3.5" />
+              Run analysis
             </p>
           </button>
         )}
 
         {analysis?.dataSufficiencyNote && (
-          <div className="rounded-2xl border border-amber-500/20 bg-amber-500/10 px-4 py-3">
-            <p className="text-[11px] text-amber-300 text-center font-medium">{analysis.dataSufficiencyNote}</p>
+          <div className="rounded-lg border border-amber-500/20 bg-amber-500/10 px-4 py-3">
+            <p className="text-[11px] text-amber-700 dark:text-amber-300 text-center font-medium">{analysis.dataSufficiencyNote}</p>
           </div>
         )}
 
         {/* Job Context — PRIMARY WORKFLOW ACTION */}
         {!jobProfile && (
-          <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-r from-cyan-500/10 to-blue-500/10 p-4 space-y-3">
+          <div className="rounded-lg border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-white/[0.03] p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <div className="h-7 w-7 rounded-xl bg-cyan-500/20 flex items-center justify-center">
-                <Briefcase className="w-3.5 h-3.5 text-cyan-400" />
+              <div className="h-7 w-7 rounded-lg bg-cyan-500/10 flex items-center justify-center">
+                <Briefcase className="w-3.5 h-3.5 text-cyan-600 dark:text-cyan-400" />
               </div>
               <div>
-                <p className="text-xs font-bold text-gray-900 dark:text-white">Analyze a Job</p>
+                <p className="text-xs font-semibold text-gray-900 dark:text-white">Analyze a job</p>
                 <p className="text-[10px] text-gray-500 dark:text-slate-400">Paste a job description to match and tailor your resume</p>
               </div>
             </div>

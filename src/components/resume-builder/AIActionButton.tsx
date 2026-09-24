@@ -7,13 +7,13 @@ import { useState, useRef, useEffect } from "react";
 
 const variants = {
   primary:
-    "bg-gradient-to-r from-[#0ea5e9] via-[#2563eb] to-[#9333ea] text-white shadow-xl shadow-blue-500/20 hover:brightness-110 active:scale-[0.99] border border-[rgba(34,211,238,0.3)]",
+    "bg-cyan-600 hover:bg-cyan-700 text-white active:scale-[0.99]",
   secondary:
     "bg-gray-100 dark:bg-white/[0.04] text-gray-700 dark:text-[#cbd5e1] hover:bg-gray-200 dark:hover:bg-white/[0.08] hover:text-gray-900 dark:hover:text-white border border-gray-300 dark:border-[rgba(148,163,184,.15)] active:scale-[0.99]",
   ghost:
     "text-gray-500 dark:text-[#94a3b8] hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] border border-transparent active:scale-[0.99]",
   outline:
-    "bg-transparent text-cyan-600 dark:text-[#22d3ee] border border-cyan-500/30 dark:border-[rgba(34,211,238,0.3)] hover:bg-cyan-50 dark:hover:bg-cyan-500/10 hover:text-cyan-700 dark:hover:text-white active:scale-[0.99]",
+    "bg-transparent text-cyan-700 dark:text-cyan-400 border border-cyan-500/30 hover:bg-cyan-50 dark:hover:bg-cyan-500/10 active:scale-[0.99]",
 };
 
 const sizes = {
@@ -37,7 +37,7 @@ export function AIActionButton({
       disabled={isLoading || disabled}
       className={clsx(
         "inline-flex items-center font-medium transition-all duration-200",
-        "focus:outline-none focus:ring-2 focus:ring-blue-500/40 focus:ring-offset-1 focus:ring-offset-transparent",
+        "focus:outline-none focus:ring-2 focus:ring-cyan-500/40 focus:ring-offset-1 focus:ring-offset-transparent",
         "disabled:opacity-50 disabled:cursor-not-allowed",
         variants[variant],
         sizes[size],
@@ -48,7 +48,7 @@ export function AIActionButton({
       {isLoading ? (
         <Loader2 className="w-3 h-3 animate-spin" />
       ) : icon || (
-        <Sparkles className="w-3 h-3 text-blue-400" />
+        <Sparkles className="w-3 h-3 text-cyan-500" />
       )}
       {label}
     </button>
@@ -93,7 +93,7 @@ export function AIActionDropdown({
         disabled={isLoading}
         className={clsx(
           "inline-flex items-center gap-1 font-medium transition-all duration-200",
-          "focus:outline-none focus:ring-2 focus:ring-blue-500/40",
+          "focus:outline-none focus:ring-2 focus:ring-cyan-500/40",
           "disabled:opacity-50",
           variants[variant],
           sizes.sm,
@@ -118,7 +118,7 @@ export function AIActionDropdown({
               }}
               className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-gray-700 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-white/[0.06] hover:text-gray-900 dark:hover:text-white transition-colors text-left"
             >
-              {item.icon || <Sparkles className="w-3 h-3 text-blue-400 shrink-0" />}
+              {item.icon || <Sparkles className="w-3 h-3 text-cyan-500 shrink-0" />}
               {item.label}
             </button>
           ))}

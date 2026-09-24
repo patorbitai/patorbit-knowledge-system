@@ -14,51 +14,24 @@ import {
   Link2,
   Eye,
   Trash2,
-  Sparkles,
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
-import { ProgressIndicator } from "./ProgressIndicator";
+import { ImportButton } from "./ImportButton";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import type { SectionId } from "@/types/resume";
 
-const sections: Array<{ id: SectionId; label: string; hint: string; Icon: React.ComponentType<{ className?: string }>; color: string }> = [
-  { id: "personal", label: "Profile", hint: "Identity & contact", Icon: User, color: "#22d3ee" },
-  { id: "experience", label: "Experience", hint: "Work history", Icon: Briefcase, color: "#3b82f6" },
-  { id: "education", label: "Education", hint: "Degrees, schools", Icon: GraduationCap, color: "#8b5cf6" },
-  { id: "skills", label: "Skills", hint: "Chips by category", Icon: Zap, color: "#10b981" },
-  { id: "projects", label: "Projects", hint: "Key projects", Icon: FolderKanban, color: "#f59e0b" },
-  { id: "certifications", label: "Certifications", hint: "Credentials", Icon: Award, color: "#f97316" },
-  { id: "achievements", label: "Achievements", hint: "Awards & honors", Icon: Trophy, color: "#ef4444" },
-  { id: "languages", label: "Languages", hint: "Language proficiency", Icon: Globe, color: "#ec4899" },
-  { id: "portfolio", label: "Links", hint: "Portfolio & profiles", Icon: Link2, color: "#14b8a6" },
-  { id: "review", label: "Review & Preview", hint: "Final check", Icon: Eye, color: "#6366f1" },
+const sections: Array<{ id: SectionId; label: string; hint: string; Icon: React.ComponentType<{ className?: string }> }> = [
+  { id: "personal", label: "Profile", hint: "Identity & contact", Icon: User },
+  { id: "experience", label: "Experience", hint: "Work history", Icon: Briefcase },
+  { id: "education", label: "Education", hint: "Degrees, schools", Icon: GraduationCap },
+  { id: "skills", label: "Skills", hint: "Chips by category", Icon: Zap },
+  { id: "projects", label: "Projects", hint: "Key projects", Icon: FolderKanban },
+  { id: "certifications", label: "Certifications", hint: "Credentials", Icon: Award },
+  { id: "achievements", label: "Achievements", hint: "Awards & honors", Icon: Trophy },
+  { id: "languages", label: "Languages", hint: "Language proficiency", Icon: Globe },
+  { id: "portfolio", label: "Links", hint: "Portfolio & profiles", Icon: Link2 },
+  { id: "review", label: "Review & Preview", hint: "Final check", Icon: Eye },
 ];
-
-/** Build data-driven readiness suggestions from the ACTUAL resume state. */
-function readinessSuggestions(resume: ReturnType<typeof useResumeBuilder.getState>["resume"]): string[] {
-  const out: string[] = [];
-  if (!resume.social.linkedin && !resume.social.github && !resume.social.website) {
-    out.push("Add a LinkedIn or portfolio link");
-  }
-  if (resume.skills.length < 5) {
-    out.push("Add more skills to improve keyword matching");
-  }
-  if (resume.projects.length === 0) {
-    out.push("Add a project to showcase your hands-on work");
-  }
-  if (resume.certifications.length === 0) {
-    out.push("Add a certification to boost credibility");
-  }
-  if (!resume.summary) {
-    out.push("Write a professional summary");
-  }
-  const measurable = resume.experience.flatMap((e) => e.bulletPoints ?? [])
-    .some((b) => /\d/.test(b));
-  if (!measurable && resume.experience.length > 0) {
-    out.push("Add measurable outcomes (numbers, %, time saved) to achievements");
-  }
-  return out.slice(0, 3);
-}
 
 export function LeftSidebar() {
   const [hydrated, setHydrated] = useState(false);
@@ -84,39 +57,13 @@ export function LeftSidebar() {
   const completedCount = hydrated
     ? sections.filter((s) => s.id !== "review" && sectionComplete(s.id)).length
     : 0;
-  const suggestions = hydrated ? readinessSuggestions(resume) : [];
+  const pct = hydrated ? Math.round(progress()) : 0;
 
   return (
     <>
     <aside className="flex flex-col h-full overflow-hidden">
-      {/* Readiness */}
-      <div className="px-4 py-4 border-b border-gray-200 dark:border-white/[0.08] space-y-3">
-        <ProgressIndicator
-          title="Resume readiness"
-          value={hydrated ? progress() : 0}
-          color="#22d3ee"
-        />
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-gray-500 dark:text-slate-400">{completedCount} of 9 sections ready</span>
-        </div>
-        {suggestions.length > 0 && (
-          <div className="space-y-1.5">
-            <p className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider flex items-center gap-1">
-              <Sparkles className="w-3 h-3 text-cyan-400" />
-              Potential improvements
-            </p>
-            {suggestions.map((s, i) => (
-              <p key={i} className="text-[11px] text-gray-500 dark:text-slate-400 leading-snug">
-                • {s}
-              </p>
-            ))}
-          </div>
-        )}
-      </div>
-
-      {/* Outline navigator */}
-      <nav className="flex-1 py-2 px-2 space-y-0.5 overflow-y-auto" aria-label="Resume sections">
-        <p className="px-3 pb-1 text-[10px] font-semibold text-gray-400 dark:text-slate-600 uppercase tracking-wider">Resume</p>
+      {/* Outline navigator — compact rows, quiet active state */}
+      <nav className="flex-1 py-2 px-2 space-y-px overflow-y-auto" aria-label="Resume sections">
         {sections.map(({ id, label, Icon }) => {
           const isActive = activeSection === id;
           const isComplete = id !== "review" && sectionComplete(id as Exclude<SectionId, "review">);
@@ -127,8 +74,9 @@ export function LeftSidebar() {
               <button
                 onClick={() => setActiveSection(id)}
                 aria-current={isActive ? "true" : undefined}
+                title={label}
                 className={clsx(
-                  "w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-left transition-all duration-150 cursor-pointer group/section",
+                  "w-full flex items-center gap-2 px-2.5 py-1.5 rounded-md text-left transition-colors duration-150 cursor-pointer group/section",
                   "focus:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/40",
                   isActive
                     ? "bg-gray-100 dark:bg-white/[0.06] text-gray-900 dark:text-white"
@@ -136,14 +84,19 @@ export function LeftSidebar() {
                 )}
               >
                 <Icon className={clsx("w-3.5 h-3.5 shrink-0", isActive ? "text-cyan-600 dark:text-cyan-400" : "text-gray-400 dark:text-slate-500")} />
-                <span className="flex-1 min-w-0 text-xs font-medium truncate">{label}</span>
+                <span className="flex-1 min-w-0 text-xs truncate">{label}</span>
                 {count > 0 && (
-                  <span className="text-[10px] font-semibold text-gray-400 dark:text-slate-500 tabular-nums">{count}</span>
+                  <span className="text-[10px] text-gray-400 dark:text-slate-500 tabular-nums">{count}</span>
                 )}
-                {hydrated && isComplete && (
-                  <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 shrink-0" title="Complete" />
+                {hydrated && id !== "review" && (
+                  <span
+                    className={clsx(
+                      "h-1.5 w-1.5 rounded-full shrink-0",
+                      isComplete ? "bg-emerald-400" : "bg-gray-300 dark:bg-slate-700",
+                    )}
+                    title={isComplete ? "Complete" : "Needs content"}
+                  />
                 )}
-                {!isComplete && id !== "review" && <span className="h-1.5 w-1.5 rounded-full bg-gray-300 dark:bg-slate-700 shrink-0" />}
               </button>
               {/* Experience sub-outline */}
               {id === "experience" && isActive && hydrated && resume.experience.length > 0 && (
@@ -160,18 +113,29 @@ export function LeftSidebar() {
         })}
       </nav>
 
-      {/* Footer */}
-      <div className="px-4 py-3 border-t border-gray-100 dark:border-white/[0.08] space-y-2">
-        <button
-          onClick={() => setShowClearConfirm(true)}
-          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-lg text-xs font-medium text-gray-400 dark:text-slate-500 hover:text-red-400 hover:bg-red-500/10 border border-transparent hover:border-red-500/20 transition-all cursor-pointer"
-        >
-          <Trash2 className="w-3 h-3" />
-          Clear Resume Data
-        </button>
-        <div className="flex items-center gap-2 text-xs text-gray-400 dark:text-slate-500">
-          <div className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-pulse" />
-          Auto-saving
+      {/* Footer — compact readiness + secondary utilities */}
+      <div className="px-3 py-3 border-t border-gray-100 dark:border-white/[0.06] space-y-2">
+        <div className="flex items-center justify-between text-[11px]">
+          <span className="text-gray-400 dark:text-slate-500">Readiness</span>
+          <span className="font-medium text-gray-600 dark:text-slate-300 tabular-nums">
+            {pct}% · {completedCount}/9
+          </span>
+        </div>
+        <div className="h-1 rounded-full bg-gray-200 dark:bg-white/[0.06] overflow-hidden" aria-hidden="true">
+          <div
+            className="h-full rounded-full bg-cyan-500 transition-all duration-700"
+            style={{ width: `${pct}%` }}
+          />
+        </div>
+        <div className="flex items-center justify-between gap-1 pt-0.5">
+          <ImportButton label="Import resume" />
+          <button
+            onClick={() => setShowClearConfirm(true)}
+            className="inline-flex items-center gap-1 px-1.5 py-1 rounded-md text-[10px] font-medium text-gray-400 dark:text-slate-500 hover:text-red-500 transition-colors cursor-pointer"
+          >
+            <Trash2 className="w-3 h-3" />
+            Clear
+          </button>
         </div>
       </div>
     </aside>

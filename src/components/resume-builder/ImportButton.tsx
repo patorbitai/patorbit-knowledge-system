@@ -158,8 +158,8 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
             variant === "hero"
               ? "w-full flex-col gap-3 rounded-xl border border-cyan-400/25 bg-cyan-500/[0.06] px-5 py-6 text-center hover:border-cyan-400/50 hover:bg-cyan-500/[0.1]"
               : variant === "card"
-              ? "inline-flex items-center gap-2 rounded-xl border border-cyan-500/30 bg-gradient-to-br from-[#0a1424] to-[#070d18] px-3.5 py-1.5 text-xs font-semibold text-cyan-300 shadow-sm hover:border-cyan-500/50 hover:bg-cyan-500/10 transition-all whitespace-nowrap"
-              : "gap-2 rounded-lg px-2.5 py-1.5 text-[10px] font-medium text-slate-500 hover:bg-white/[0.04] hover:text-slate-300",
+              ? "inline-flex items-center gap-1.5 rounded-md border border-gray-200 dark:border-white/[0.1] px-2.5 py-1.5 text-[11px] font-medium text-gray-600 dark:text-slate-300 hover:border-cyan-500/40 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors whitespace-nowrap"
+              : "gap-1.5 rounded-md px-1.5 py-1 text-[10px] font-medium text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors",
             className
           )}
         >
@@ -188,14 +188,14 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
                      : ""
                  )}
                >
-                 <Upload className={variant === "hero" ? "h-5 w-5" : variant === "card" ? "h-4 w-4 text-cyan-400 shrink-0" : "h-3 w-3"} />
+                 <Upload className={variant === "hero" ? "h-5 w-5" : variant === "card" ? "h-4 w-4 shrink-0" : "h-3 w-3"} />
                </span>
                <span
                  className={clsx(
                    variant === "hero"
                      ? "text-sm font-semibold text-white"
                      : variant === "card"
-                     ? "text-xs font-semibold text-cyan-300 whitespace-nowrap hidden sm:inline"
+                     ? "text-[11px] font-medium whitespace-nowrap hidden sm:inline"
                      : "text-[10px] font-medium"
                  )}
                >
