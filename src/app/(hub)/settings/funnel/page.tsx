@@ -41,6 +41,11 @@ const STEP_LABELS: Record<string, string> = {
   suggestion_rejected: "AI suggestion rejected",
   suggestion_edited: "AI suggestion edited",
   resume_export_started: "Export started",
+  first_evidence_prompt_viewed: "First evidence prompt viewed",
+  first_experience_started: "First experience entry started",
+  first_experience_saved: "First experience saved",
+  first_skill_saved: "First skills saved",
+  first_evidence_skipped: "First evidence prompt skipped",
 };
 
 function pct(value: number | null): string {

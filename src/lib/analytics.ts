@@ -62,6 +62,14 @@ export const WORKFLOW_EVENTS = [
   "suggestion_edited",
   "resume_export_started",
   "verification_failed",
+  // §activation (M3): first-session evidence activation — measured through the
+  // same pipeline but reported OUTSIDE the activation funnel steps, so the
+  // existing funnel report structure is unchanged.
+  "first_evidence_prompt_viewed",
+  "first_experience_started",
+  "first_experience_saved",
+  "first_skill_saved",
+  "first_evidence_skipped",
 ] as const;
 
 export type WorkflowEvent = (typeof WORKFLOW_EVENTS)[number];

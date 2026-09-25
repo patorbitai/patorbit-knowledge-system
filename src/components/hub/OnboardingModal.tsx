@@ -34,6 +34,10 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   const [expCurrent, setExpCurrent] = useState(false);
   const [expDescription, setExpDescription] = useState("");
   const [skillsText, setSkillsText] = useState("");
+  /* §activation (M3): first-session evidence activation telemetry. Refs (not
+   * trackOnce) keep each event at most once per prompt even under StrictMode. */
+  const evidencePromptTrackedRef = useRef(false);
+  const experienceStartedRef = useRef(false);
   // Funnel: the moment product onboarding actually begins (modal opens),
   // whether the user continues or skips. Ref-guarded for StrictMode.
   const startedRef = useRef(false);
@@ -43,6 +47,13 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
       track("onboarding_started");
     }
   }, [open]);
+  // §activation (M3): the first-evidence prompt was actually shown.
+  useEffect(() => {
+    if (step === "evidence" && !evidencePromptTrackedRef.current) {
+      evidencePromptTrackedRef.current = true;
+      track("first_evidence_prompt_viewed");
+    }
+  }, [step]);
   const createResume = useResumeBuilder((s) => s.createResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
 
@@ -51,6 +62,13 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
     .map((s) => s.trim())
     .filter(Boolean);
   const evidenceReady = Boolean(expPosition.trim() && expCompany.trim()) || evidenceSkills.length > 0;
+
+  /* §activation (M3): the user began entering a real role — fired once. */
+  const markExperienceStarted = useCallback(() => {
+    if (experienceStartedRef.current) return;
+    experienceStartedRef.current = true;
+    track("first_experience_started");
+  }, []);
 
   /* Identity Save → stash basics, move to the lightweight evidence step.
    * ProfessionalIdentityEditor persists profileData itself before onSave;
@@ -108,6 +126,15 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
         /* Funnel: same event as before, props distinguish a thin first
          * profile from one that carries real evidence. */
         track("profile_created", skipped ? { skipped: true } : { experience: hasExperience, skills: skills.length });
+
+        /* §activation (M3): the evidence prompt outcome — saved vs genuinely
+         * skipped. Only fires after the save succeeded, like profile_created. */
+        if (skipped) {
+          track("first_evidence_skipped");
+        } else {
+          if (hasExperience) track("first_experience_saved");
+          if (skills.length > 0) track("first_skill_saved", { skills: skills.length });
+        }
 
         const name = identityData?.fullName?.trim() || "My Resume";
         const newResumeId = createResume(name);
@@ -260,18 +287,27 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
                   </p>
                 </div>
 
+                <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-500 uppercase tracking-wider">
+                  Add experience
+                </p>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   <input
                     type="text"
                     value={expPosition}
-                    onChange={(e) => setExpPosition(e.target.value)}
+                    onChange={(e) => {
+                      markExperienceStarted();
+                      setExpPosition(e.target.value);
+                    }}
                     placeholder="Position (e.g. Senior Data Engineer)"
                     className={EVIDENCE_INPUT}
                   />
                   <input
                     type="text"
                     value={expCompany}
-                    onChange={(e) => setExpCompany(e.target.value)}
+                    onChange={(e) => {
+                      markExperienceStarted();
+                      setExpCompany(e.target.value);
+                    }}
                     placeholder="Company name"
                     className={EVIDENCE_INPUT}
                   />
@@ -280,7 +316,10 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
                   <input
                     type="text"
                     value={expStart}
-                    onChange={(e) => setExpStart(e.target.value)}
+                    onChange={(e) => {
+                      markExperienceStarted();
+                      setExpStart(e.target.value);
+                    }}
                     placeholder="Start date (e.g. Mar 2021)"
                     className={EVIDENCE_INPUT}
                   />
@@ -288,7 +327,10 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
                     <input
                       type="text"
                       value={expEnd}
-                      onChange={(e) => setExpEnd(e.target.value)}
+                      onChange={(e) => {
+                        markExperienceStarted();
+                        setExpEnd(e.target.value);
+                      }}
                       disabled={expCurrent}
                       placeholder="End date (e.g. Feb 2025)"
                       className={EVIDENCE_INPUT}
@@ -297,7 +339,10 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
                       <input
                         type="checkbox"
                         checked={expCurrent}
-                        onChange={(e) => setExpCurrent(e.target.checked)}
+                        onChange={(e) => {
+                          markExperienceStarted();
+                          setExpCurrent(e.target.checked);
+                        }}
                       />
                       I work here now
                     </label>
@@ -305,12 +350,18 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
                 </div>
                 <textarea
                   value={expDescription}
-                  onChange={(e) => setExpDescription(e.target.value)}
+                  onChange={(e) => {
+                    markExperienceStarted();
+                    setExpDescription(e.target.value);
+                  }}
                   rows={3}
                   placeholder="What you did — a line or two in your own words (tools, projects, outcomes)"
                   className={`${EVIDENCE_INPUT} resize-none`}
                 />
 
+                <p className="text-[10px] font-semibold text-gray-500 dark:text-slate-500 uppercase tracking-wider">
+                  Add skills
+                </p>
                 <input
                   type="text"
                   value={skillsText}

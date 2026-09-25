@@ -293,11 +293,16 @@ export default function ResumeBuilderPage() {
   useEffect(() => {
     const handleOpenTailor = () => setTailorOpen(true);
     const handleOpenExport = () => setExportOpen(true);
+    // §activation (M3): the match panel's "Add experience" CTA lands on the
+    // profile editor — on mobile the copilot overlay must yield to the Edit view.
+    const handleOpenEditor = () => setMobileMode("edit");
     window.addEventListener("patorbit:open-tailor", handleOpenTailor);
     window.addEventListener("patorbit:open-export", handleOpenExport);
+    window.addEventListener("patorbit:open-editor", handleOpenEditor);
     return () => {
       window.removeEventListener("patorbit:open-tailor", handleOpenTailor);
       window.removeEventListener("patorbit:open-export", handleOpenExport);
+      window.removeEventListener("patorbit:open-editor", handleOpenEditor);
     };
   }, []);
 

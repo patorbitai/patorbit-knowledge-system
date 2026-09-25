@@ -461,6 +461,16 @@ export function JobMatchPanel() {
     setCorrectionKind(suggestCorrectionKind(requirement));
   };
 
+  /** §activation (M3): route the 0%-match CTA straight to the master-profile
+   *  editor section where the missing evidence lives — never fabricates
+   *  anything itself. The panel only renders inside the resume builder; the
+   *  custom event flips the mobile copilot overlay back to the Edit view so
+   *  the section is reachable at 390px too. */
+  const goToProfileEditor = (section: "experience" | "skills") => {
+    useResumeBuilder.getState().setActiveSection(section);
+    window.dispatchEvent(new CustomEvent("patorbit:open-editor"));
+  };
+
   const StatusDivider = ({ label, count, cls }: { label: string; count: number; cls: string }) => {
     if (count === 0) return null;
     return (
@@ -660,6 +670,42 @@ export function JobMatchPanel() {
                           {MATCH_METHODOLOGY}
                         </p>
                       )}
+                    </div>
+                  )}
+
+                  {/* §activation (M3): honest 0% + the explicit next action.
+                      Classification and score are unchanged — this only
+                      explains the result and routes to the profile editor. */}
+                  {summary && summary.total > 0 && matchPercent === 0 && (
+                    <div
+                      data-testid="match-zero-evidence-cta"
+                      className="rounded-xl border border-amber-500/20 bg-amber-500/[0.06] px-4 py-3 space-y-1.5"
+                    >
+                      <p className="text-[11px] font-semibold text-amber-200">
+                        No evidence matches this job yet
+                      </p>
+                      <p className="text-[10px] text-slate-400 leading-relaxed">
+                        Add experience or skills to improve your match, then analyze this job again. That is
+                        what a 0% means here — not that you are unqualified, only that nothing in your
+                        profile supports these requirements yet. Patorbit will not invent missing
+                        qualifications — it never adds skills or experience you don&apos;t have.
+                      </p>
+                      <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                        <button
+                          onClick={() => goToProfileEditor("experience")}
+                          data-testid="match-zero-cta-add-experience"
+                          className="inline-flex items-center gap-1.5 rounded-lg bg-blue-600/80 hover:bg-blue-600 px-3 py-1.5 text-[10px] font-semibold text-white transition-colors"
+                        >
+                          <PlusCircle className="w-3 h-3" /> Add experience
+                        </button>
+                        <button
+                          onClick={() => goToProfileEditor("skills")}
+                          data-testid="match-zero-cta-add-skills"
+                          className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/[0.04] hover:bg-white/[0.08] px-3 py-1.5 text-[10px] font-semibold text-slate-200 transition-colors"
+                        >
+                          Add skills
+                        </button>
+                      </div>
                     </div>
                   )}
 

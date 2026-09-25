@@ -116,6 +116,8 @@ describe("OnboardingModal — evidence step (§activation)", () => {
     expect(finish!.disabled).toBe(true);
     // Little-information users get a clear way out.
     expect(buttonWith("Skip for now")).not.toBeNull();
+    // §activation (M3): the prompt-viewed event fires when the step shows.
+    expect(trackMock).toHaveBeenCalledWith("first_evidence_prompt_viewed");
   });
 
   it("Finish persists experience + skills to profileData and completes onboarding", async () => {
@@ -127,6 +129,9 @@ describe("OnboardingModal — evidence step (§activation)", () => {
     setInput('input[placeholder^="Start date"]', "Mar 2021");
     setInput('textarea[placeholder^="What you did"]', "Built pipelines in PySpark and Azure Data Factory.");
     setInput('input[placeholder^="Skills you actually use"]', "Python, SQL, PySpark");
+
+    // §activation (M3): entering a real role fires the started event (once).
+    expect(trackMock).toHaveBeenCalledWith("first_experience_started");
 
     const finish = buttonWith("Finish profile")!;
     expect(finish.disabled).toBe(false);
@@ -153,6 +158,10 @@ describe("OnboardingModal — evidence step (§activation)", () => {
     // Existing funnel event, new props distinguish thin vs evidenced profile.
     expect(trackMock).toHaveBeenCalledWith("profile_created", { experience: true, skills: 3 });
 
+    // §activation (M3): the save-with-evidence events fire alongside it.
+    expect(trackMock).toHaveBeenCalledWith("first_experience_saved");
+    expect(trackMock).toHaveBeenCalledWith("first_skill_saved", { skills: 3 });
+
     // First resume creation fires through the existing C30 flow.
     expect(document.body.textContent).toContain("Creating your first resume...");
     await flush(12);
@@ -175,6 +184,8 @@ describe("OnboardingModal — evidence step (§activation)", () => {
     expect(profileData.experience).toBeUndefined();
     expect(profileData.skills).toBeUndefined();
     expect(trackMock).toHaveBeenCalledWith("profile_created", { skipped: true });
+    // §activation (M3): the genuine skip path is counted.
+    expect(trackMock).toHaveBeenCalledWith("first_evidence_skipped");
     expect(document.body.textContent).toContain("Creating your first resume...");
   });
 
@@ -196,5 +207,8 @@ describe("OnboardingModal — evidence step (§activation)", () => {
     );
     expect(completion).toBeTruthy();
     expect(trackMock).toHaveBeenCalledWith("profile_created", { skipped: true });
+    // §activation (M3): the evidence prompt never showed on this path.
+    expect(trackMock).not.toHaveBeenCalledWith("first_evidence_prompt_viewed");
+    expect(trackMock).not.toHaveBeenCalledWith("first_evidence_skipped");
   });
 });
