@@ -410,7 +410,14 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
           matchData: { matched, partial, missing },
         }),
       });
-      track("job_analysis_completed", { items: match.summary.total, score, source: "application-detail" });
+      track("job_analysis_completed", {
+        items: match.summary.total,
+        score,
+        source: "application-detail",
+        /* Distinguishes a thin (basics-only) analysis from one backed by a
+         * real profile experience — lets the funnel compare before/after. */
+        experience: resume.experience?.length ?? 0,
+      });
 
       // Refetch application to get updated data
       const appRes = await fetch(`/api/applications/${app.applicationId}`);
@@ -761,6 +768,31 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                       These are requested by the job but not supported by your profile.
                       Patorbit will not add them unless you have them in your Professional Identity.
                     </p>
+                  </div>
+                )}
+
+                {/* Honest 0% state (§activation): keep the truthful score, explain
+                    that the profile lacks evidence, and route to the master-resume
+                    editing flow where adding a real role changes the NEXT analysis. */}
+                {app.matchScore === 0 && (
+                  <div
+                    data-testid="zero-evidence-cta"
+                    className="rounded-xl border border-subtle bg-surface px-4 py-3.5 space-y-2"
+                  >
+                    <p className="text-label font-semibold text-ink">
+                      Your profile has no evidence for these requirements yet
+                    </p>
+                    <p className="text-meta text-ink-secondary">
+                      That is what a 0% means here — not that you are unqualified. Add one real role and the
+                      skills you actually use, then analyze this job again: the next analysis compares the job
+                      against your evidence. Patorbit will not add qualifications you don&apos;t have.
+                    </p>
+                    <Link
+                      href="/resume-builder"
+                      className="inline-flex items-center h-9 px-4 rounded-md bg-brand text-label font-semibold text-brand-contrast hover:opacity-90 transition-all"
+                    >
+                      Add experience
+                    </Link>
                   </div>
                 )}
               </div>

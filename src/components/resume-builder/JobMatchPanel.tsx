@@ -418,7 +418,11 @@ export function JobMatchPanel() {
           );
           await after.saveQualificationMatchToApplication(match, score);
         }
-        track("job_analysis_completed", { items: match.summary.total, score });
+        track("job_analysis_completed", {
+          items: match.summary.total,
+          score,
+          experience: resume.experience?.length ?? 0,
+        });
       }
       await yieldPaint();
       setStageIdx(4);

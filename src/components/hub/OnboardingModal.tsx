@@ -12,12 +12,28 @@ interface OnboardingModalProps {
   onComplete: () => void;
 }
 
-type Step = "welcome" | "identity" | "creating";
+type Step = "welcome" | "identity" | "evidence" | "creating";
+
+/* Compact input styling shared by the lightweight evidence step (mirrors
+ * ProfessionalIdentityEditor so the two steps feel like one flow). */
+const EVIDENCE_INPUT =
+  "w-full rounded-lg border border-gray-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-3 py-2 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/50";
 
 export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   const [step, setStep] = useState<Step>("welcome");
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /* Evidence step (§activation): one real role + a small skill set, captured
+   * AFTER the essential identity step and BEFORE first-resume creation, so
+   * the seeded master resume carries real evidence for the first analysis. */
+  const [identityData, setIdentityData] = useState<ProfileData | null>(null);
+  const [expPosition, setExpPosition] = useState("");
+  const [expCompany, setExpCompany] = useState("");
+  const [expStart, setExpStart] = useState("");
+  const [expEnd, setExpEnd] = useState("");
+  const [expCurrent, setExpCurrent] = useState(false);
+  const [expDescription, setExpDescription] = useState("");
+  const [skillsText, setSkillsText] = useState("");
   // Funnel: the moment product onboarding actually begins (modal opens),
   // whether the user continues or skips. Ref-guarded for StrictMode.
   const startedRef = useRef(false);
@@ -30,54 +46,84 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
   const createResume = useResumeBuilder((s) => s.createResume);
   const switchResume = useResumeBuilder((s) => s.switchResume);
 
-  const handleIdentitySaved = useCallback(async (data: ProfileData) => {
-    setStep("creating");
-    setCreating(true);
-    setError(null);
+  const evidenceSkills = skillsText
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const evidenceReady = Boolean(expPosition.trim() && expCompany.trim()) || evidenceSkills.length > 0;
 
-    try {
-      // Save profile data AND mark onboarding as completed
-      const res = await fetch("/api/identity", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          profileData: {
-            fullName: data.fullName,
-            headline: data.headline,
-            email: data.email,
-            phone: data.phone,
-            location: data.location,
-            linkedin: data.linkedin,
-            github: data.github,
-            website: data.website,
-            summary: data.summary,
-          },
-          onboardingCompleted: true,
-        }),
-      });
+  /* Identity Save → stash basics, move to the lightweight evidence step.
+   * ProfessionalIdentityEditor persists profileData itself before onSave;
+   * onboarding completion + first-resume creation happen after evidence. */
+  const handleIdentitySaved = useCallback((data: ProfileData) => {
+    setIdentityData(data);
+    setStep("evidence");
+  }, []);
 
-      if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.error || `Failed to save (HTTP ${res.status})`);
+  /* Evidence Finish (or Skip) → complete onboarding, then create the first
+   * resume so the server seeds the master resume from the FULL profileData
+   * (basics + this evidence) via the existing mapProfileToResume path. */
+  const handleEvidenceFinish = useCallback(
+    async (skipped: boolean) => {
+      setError(null);
+      setCreating(true);
+      setStep("creating");
+
+      try {
+        const skills = skipped
+          ? []
+          : skillsText
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+        const position = skipped ? "" : expPosition.trim();
+        const company = skipped ? "" : expCompany.trim();
+        const hasExperience = Boolean(position && company);
+
+        const profileData: Record<string, unknown> = {};
+        if (hasExperience) {
+          profileData.experience = [
+            {
+              position,
+              company,
+              startDate: expStart.trim() || undefined,
+              endDate: expCurrent ? undefined : expEnd.trim() || undefined,
+              current: expCurrent || undefined,
+              description: expDescription.trim() || undefined,
+            },
+          ];
+        }
+        if (skills.length > 0) profileData.skills = skills;
+
+        const res = await fetch("/api/identity", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ profileData, onboardingCompleted: true }),
+        });
+        if (!res.ok) {
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.error || `Failed to save (HTTP ${res.status})`);
+        }
+
+        /* Funnel: same event as before, props distinguish a thin first
+         * profile from one that carries real evidence. */
+        track("profile_created", skipped ? { skipped: true } : { experience: hasExperience, skills: skills.length });
+
+        const name = identityData?.fullName?.trim() || "My Resume";
+        const newResumeId = createResume(name);
+        switchResume(newResumeId);
+
+        setTimeout(() => {
+          window.location.href = "/overview";
+        }, 800);
+      } catch (err: unknown) {
+        setError(err instanceof Error ? err.message : "Failed to complete setup");
+        setCreating(false);
+        setStep("evidence");
       }
-
-      track("profile_created");
-
-      // Create first resume using the existing C30 flow
-      const name = data.fullName || "My Resume";
-      const newResumeId = createResume(name);
-      switchResume(newResumeId);
-
-      // Navigate to the builder
-      setTimeout(() => {
-        window.location.href = "/overview";
-      }, 800);
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to create resume");
-      setCreating(false);
-      setStep("identity");
-    }
-  }, [createResume, switchResume]);
+    },
+    [createResume, switchResume, identityData, expPosition, expCompany, expStart, expEnd, expCurrent, expDescription, skillsText],
+  );
 
   const handleSkip = useCallback(async () => {
     setError(null);
@@ -181,9 +227,131 @@ export function OnboardingModal({ open, onComplete }: OnboardingModalProps) {
                 <ProfessionalIdentityEditor
                   compact
                   showSkip
+                  initialData={identityData ?? undefined}
                   onSave={handleIdentitySaved}
                   onSkip={handleSkip}
                 />
+              </div>
+            )}
+
+            {/* Step: Evidence — one real role + a small skill set (§activation).
+                 Lightweight by design: enough real evidence to make the first
+                 job analysis useful, never a full resume form. */}
+            {step === "evidence" && (
+              <div className="p-6 space-y-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-brand flex items-center justify-center">
+                    <Target className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                      Add your recent experience
+                    </h2>
+                    <p className="text-xs text-gray-500 dark:text-slate-400">
+                      One real role is enough to start — your first job match is compared against this evidence.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-lg bg-gray-50 dark:bg-white/[0.02] border border-gray-100 dark:border-white/[0.06] px-3 py-2">
+                  <p className="text-[11px] text-gray-500 dark:text-slate-400 leading-relaxed">
+                    Only add what you&apos;ve actually done. Patorbit never invents experience, employers,
+                    dates or skills — it only matches jobs against what you enter here.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={expPosition}
+                    onChange={(e) => setExpPosition(e.target.value)}
+                    placeholder="Position (e.g. Senior Data Engineer)"
+                    className={EVIDENCE_INPUT}
+                  />
+                  <input
+                    type="text"
+                    value={expCompany}
+                    onChange={(e) => setExpCompany(e.target.value)}
+                    placeholder="Company name"
+                    className={EVIDENCE_INPUT}
+                  />
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <input
+                    type="text"
+                    value={expStart}
+                    onChange={(e) => setExpStart(e.target.value)}
+                    placeholder="Start date (e.g. Mar 2021)"
+                    className={EVIDENCE_INPUT}
+                  />
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={expEnd}
+                      onChange={(e) => setExpEnd(e.target.value)}
+                      disabled={expCurrent}
+                      placeholder="End date (e.g. Feb 2025)"
+                      className={EVIDENCE_INPUT}
+                    />
+                    <label className="flex items-center gap-1.5 text-xs text-gray-600 dark:text-slate-400 whitespace-nowrap cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={expCurrent}
+                        onChange={(e) => setExpCurrent(e.target.checked)}
+                      />
+                      I work here now
+                    </label>
+                  </div>
+                </div>
+                <textarea
+                  value={expDescription}
+                  onChange={(e) => setExpDescription(e.target.value)}
+                  rows={3}
+                  placeholder="What you did — a line or two in your own words (tools, projects, outcomes)"
+                  className={`${EVIDENCE_INPUT} resize-none`}
+                />
+
+                <input
+                  type="text"
+                  value={skillsText}
+                  onChange={(e) => setSkillsText(e.target.value)}
+                  placeholder="Skills you actually use (e.g. Python, SQL, Azure)"
+                  className={EVIDENCE_INPUT}
+                />
+
+                <p className="text-[11px] text-gray-400 dark:text-slate-500">
+                  Not much to add yet? Skip — your match stays honest until you add real evidence, and you
+                  can add a role any time.
+                </p>
+
+                <div className="flex items-center justify-between gap-3 pt-1">
+                  <button
+                    onClick={() => setStep("identity")}
+                    className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white"
+                  >
+                    Back
+                  </button>
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => handleEvidenceFinish(true)}
+                      className="text-xs text-gray-500 dark:text-slate-400 hover:text-gray-700 dark:hover:text-white"
+                    >
+                      Skip for now
+                    </button>
+                    <button
+                      onClick={() => handleEvidenceFinish(false)}
+                      disabled={!evidenceReady}
+                      className="px-4 py-2 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed text-xs font-medium text-white transition-all"
+                    >
+                      Finish profile
+                    </button>
+                  </div>
+                </div>
+                {!evidenceReady && (
+                  <p className="text-[11px] text-gray-400 dark:text-slate-500 -mt-2">
+                    Add a position and company, or at least one skill, to finish — or skip and add evidence later.
+                  </p>
+                )}
               </div>
             )}
 
