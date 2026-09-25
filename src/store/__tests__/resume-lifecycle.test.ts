@@ -663,6 +663,70 @@ describe("Resume Lifecycle Reliability", () => {
       expect(r.careerStage).toBe("manager");
       expect(r.resumeName).toBe("Full Resume");
     });
+
+    // ── Phantom/local-only resume regression (funnel blocker) ─────────────
+    // The job-detail resume picker read `resumes` straight from this store and
+    // offered a local-only placeholder; PATCH /api/applications/[id] then
+    // rejected it with 400 "The selected resume does not belong to your
+    // account", hard-blocking a fresh account at Analyze Match.
+    it("hydration reconciles stale local state: drops contentless local-only placeholders, keeps drafts and server resumes", () => {
+      const state = useResumeBuilder.getState();
+      // Contented local-only resume (unsaved draft with real content)
+      const draftId = state.createResume("Real Draft");
+      useResumeBuilder.getState().updateField("name", "Draft User");
+      useResumeBuilder.getState().updateField("email", "draft@test.com");
+      // Contentless local-only phantom (e.g. an empty createResume whose
+      // server POST failed, or a stale placeholder from a previous session)
+      const phantomId = useResumeBuilder.getState().createResume("Phantom");
+      // "initial" from beforeEach is also contentless (the default placeholder)
+      const initialId = "initial";
+
+      useResumeBuilder.getState().hydrateFromServer([
+        {
+          resumeId: "server-a",
+          resumeName: "Server Resume A",
+          templateId: "modern-clean",
+          careerStage: "working-professional",
+          resume: { name: "Server User", email: "server@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 1,
+        },
+      ]);
+
+      const after = useResumeBuilder.getState();
+      const ids = after.resumes.map((r) => r.resumeId);
+      // Local-only contentless resumes are gone — they can never become
+      // selectable options for a server operation.
+      expect(ids).not.toContain(initialId);
+      expect(ids).not.toContain(phantomId);
+      // Unsaved draft with content is preserved (no user work lost)
+      expect(ids).toContain(draftId);
+      expect(after.resumes.find((r) => r.resumeId === draftId)?.name).toBe("Draft User");
+      // The real server-backed resume remains usable
+      expect(ids).toContain("server-a");
+      expect(after.serverVersions["server-a"]).toBe(1);
+    });
+
+    it("re-selects a server-backed active resume when the active resume was a phantom", () => {
+      // Fresh session: placeholder + phantom only, active is the phantom
+      const phantomId = useResumeBuilder.getState().createResume("Phantom");
+      expect(useResumeBuilder.getState().activeResumeId).toBe(phantomId);
+
+      useResumeBuilder.getState().hydrateFromServer([
+        {
+          resumeId: "server-a",
+          resumeName: "Server Resume A",
+          templateId: "modern-clean",
+          careerStage: "working-professional",
+          resume: { name: "Server User", email: "server@test.com", experience: [], education: [], skills: [], projects: [], certifications: [], languages: [], interests: [], achievements: [], references: [], portfolio: [], claims: [] },
+          version: 2,
+        },
+      ]);
+
+      const after = useResumeBuilder.getState();
+      expect(after.resumes.map((r) => r.resumeId)).toEqual(["server-a"]);
+      expect(after.activeResumeId).toBe("server-a");
+      expect(after.resume.resumeId).toBe("server-a");
+    });
   });
 
   describe("C29 — Server-Side Delete Propagation", () => {

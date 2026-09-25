@@ -34,6 +34,8 @@ import { clsx } from "clsx";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import { useResumeBuilder } from "@/store/resume-builder";
+import { fetchServerResumes, type ServerResumeRecord } from "@/lib/resume-server-sync/client";
+import { reportPickerReconciliation } from "@/lib/resume-server-sync/debug";
 import { buildCareerProfile } from "@/lib/career-profile";
 import { buildJobProfile } from "@/lib/job-profile";
 import { buildQualificationMatch } from "@/lib/qualification-match";
@@ -178,11 +180,43 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
   // be able to complete it, otherwise the match empty-state promises an
   // analysis it can never start.
   const [selectedResumeId, setSelectedResumeId] = useState(initialApp.resumeId || "");
-  const resumeOptions = useResumeBuilder((s) => s.resumes);
-  // Derived default (no effect): first resume until the user picks one.
+  // Linking a resume is a SERVER operation — PATCH /api/applications/[id]
+  // validates ownership against the database — so the selectable options must
+  // come from the server. The Zustand store can contain local-only/phantom
+  // resumes (e.g. the initial blank draft persisted in localStorage) that the
+  // server correctly rejects with a 400 ownership error.
+  const [serverResumes, setServerResumes] = useState<ServerResumeRecord[] | null>(null);
+  const [serverResumesFailed, setServerResumesFailed] = useState(false);
+  React.useEffect(() => {
+    let cancelled = false;
+    fetchServerResumes()
+      .then((list) => {
+        if (cancelled) return;
+        setServerResumes(list);
+        // Dev-only diagnostic (IDs only, never content): what the picker offers
+        // vs what the local store holds that the server does not know about.
+        const serverIds = list.map((r) => r.resumeId);
+        const localIds = useResumeBuilder.getState().resumes.map((r) => r.resumeId ?? "");
+        reportPickerReconciliation(
+          serverIds,
+          localIds.filter((id) => !serverIds.includes(id)),
+        );
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setServerResumes([]);
+        setServerResumesFailed(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const resumeOptions = serverResumes ?? [];
+  const resumesLoading = serverResumes === null;
+  // Derived default (no effect): first server resume until the user picks one.
   const effectiveResumeId = selectedResumeId || resumeOptions[0]?.resumeId || "";
   const resumeName = (id: string | null) =>
-    id ? resumeOptions.find((r) => r.resumeId === id)?.name || "Linked resume" : null;
+    id ? resumeOptions.find((r) => r.resumeId === id)?.resumeName || "Linked resume" : null;
   
   // Edit mode for tracking fields
   const [editingFields, setEditingFields] = useState(false);
@@ -742,7 +776,13 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                 Patorbit compares your experience and skills against every requirement —
                 no guessing, only evidence.
               </p>
-              {!app.resumeId && resumeOptions.length === 0 ? (
+              {serverResumesFailed ? (
+                <div className="space-y-2">
+                  <p className="text-meta text-ink-secondary">
+                    Could not load your resumes. Check your connection and refresh the page.
+                  </p>
+                </div>
+              ) : !app.resumeId && !resumesLoading && resumeOptions.length === 0 ? (
                 <div className="space-y-2">
                   <p className="text-meta text-ink-secondary">
                     Add a resume first — Patorbit compares it against every requirement.
@@ -756,7 +796,13 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                 </div>
               ) : (
                 <div className="flex flex-wrap items-center justify-center gap-2">
-                  {!app.resumeId && (
+                  {!app.resumeId && resumesLoading && (
+                    <span className="inline-flex items-center gap-1.5 h-9 px-2 text-xs text-ink-muted">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Loading resumes…
+                    </span>
+                  )}
+                  {!app.resumeId && !resumesLoading && (
                     <select
                       aria-label="Resume to compare"
                       value={effectiveResumeId}
@@ -765,7 +811,7 @@ export function ApplicationDetailClient({ application: initialApp, userName }: P
                     >
                       {resumeOptions.map((r) => (
                         <option key={r.resumeId} value={r.resumeId}>
-                          {r.name || "Untitled resume"}
+                          {r.resumeName || "Untitled resume"}
                         </option>
                       ))}
                     </select>

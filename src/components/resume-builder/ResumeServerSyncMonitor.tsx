@@ -16,7 +16,7 @@
  */
 import { useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
-import { useResumeBuilder } from "@/store/resume-builder";
+import { isResumeEffectivelyEmpty, useResumeBuilder } from "@/store/resume-builder";
 import { buildLocalSnapshots } from "@/lib/resume-server-sync/local";
 import { runServerResumeSync } from "@/lib/resume-server-sync/sync";
 import { fetchServerResumes } from "@/lib/resume-server-sync/client";
@@ -55,7 +55,22 @@ export function ResumeServerSyncMonitor() {
           );
         })();
 
-        if (hasServerOnly || localEmpty) {
+        // C-FIX: a contentless local-only resume (the store-init placeholder
+        // persisted in localStorage) is never server-backed. Hydration used to
+        // run only on serverOnly/localEmpty, so when a phantom sat NEXT TO a
+        // server-backed resume it survived forever and could be offered to
+        // server operations (job-detail picker → 400 "does not belong to your
+        // account"). Reconcile whenever such a phantom exists: hydrateFromServer
+        // drops contentless local-only resumes while preserving contented drafts.
+        const hasContentlessLocalOnly = outcome.report.entries.some((entry) => {
+          if (entry.status !== "LOCAL_ONLY") return false;
+          const local = useResumeBuilder
+            .getState()
+            .resumes.find((r) => r.resumeId === entry.resumeId);
+          return local !== undefined && isResumeEffectivelyEmpty(local);
+        });
+
+        if (hasServerOnly || localEmpty || hasContentlessLocalOnly) {
           // Fetch server resumes and hydrate into Zustand
           fetchServerResumes()
             .then((serverResumes) => {

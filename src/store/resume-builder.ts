@@ -1006,10 +1006,17 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
 
           // Add LOCAL_ONLY resumes (not on server) — but only if local state was not empty.
           // When local is empty, the default placeholder should not survive hydration.
+          //
+          // C-FIX: a contentless local-only placeholder (the initial blank
+          // draft from store creation, persisted in localStorage) is NEVER
+          // server-backed. Keeping it made it selectable for server operations
+          // (job-detail resume picker → 400 "does not belong to your account").
+          // Contentless local-only resumes are dropped here; local-only resumes
+          // WITH content (unsaved drafts) are still preserved.
           if (!isLocalEmpty) {
             for (const local of localResumes) {
               const lid = local.resumeId ?? "";
-              if (!serverById.has(lid)) {
+              if (!serverById.has(lid) && !isResumeEffectivelyEmpty(local)) {
                 mergedResumes.push(local);
               }
             }
