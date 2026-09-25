@@ -1,12 +1,17 @@
 "use strict";
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import React from "react";
 import { act } from "react";
 import { LiveStylePreview } from "../LiveStylePreview";
 import { useResumeBuilder, defaultResume } from "@/store/resume-builder";
 import { renderToContainer, click, findButton, installObserverStubs, setFakeScrollHeight } from "./gallery-test-utils";
 import type { Resume } from "@/types/resume";
+
+// Readable-type pagination builds real multi-page sheets in jsdom; under
+// full-suite fork load this suite's 5s default intermittently trips (passes
+// standalone). Same headroom as all-templates-export-validation.
+vi.setConfig({ testTimeout: 20000, hookTimeout: 20000 });
 
 /** A populated USER resume — distinct from the gallery sample. */
 const USER_RESUME: Resume = {

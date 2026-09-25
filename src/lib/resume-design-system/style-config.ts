@@ -1,5 +1,6 @@
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import { fontFamilies } from "./fonts";
+import { typeScaleVar } from "./type-scale";
 
 /* ────────────────────────────────────────────────────────────────────────────
  * ResumeStyleConfig — centralized, content-free visual styling.
@@ -16,6 +17,8 @@ import { fontFamilies } from "./fonts";
  * ──────────────────────────────────────────────────────────────────────────── */
 
 export type HeadingStyle = "uppercase" | "title-case" | "normal";
+/** Global heading prominence tier — Compact / Standard / Prominent. */
+export type HeadingScale = "compact" | "standard" | "prominent";
 export type HeadingWeight = "auto" | "semibold" | "bold";
 export type BulletStyle = "bullet" | "circle" | "dash" | "square";
 export type BulletSize = "auto" | "small" | "normal";
@@ -29,8 +32,10 @@ export type DateFormat = "mm-yyyy" | "month-year" | "short-month" | "year-only";
 export interface ResumeStyleConfig {
   /** Curated font id (must map to a font actually loaded via next/font). */
   fontFamily: string;
-  /** Sheet-wide type scale: 0.9 | 1 | 1.1 */
+  /** Sheet-wide type scale: 0.9 | 1 | 1.1 (Small / Comfortable / Large). */
   fontScale: number;
+  /** Heading prominence relative to body: compact | standard | prominent. */
+  headingScale: HeadingScale;
   /** Body line height: 1.4 | 1.6 | 1.8 */
   lineHeight: number;
   accentColor: string;
@@ -76,6 +81,11 @@ export const FONT_OPTIONS: { id: string; name: string; stack: string; category: 
 
 export const FONT_SCALE_OPTIONS = [0.9, 1, 1.1] as const;
 export const LINE_HEIGHT_OPTIONS = [1.4, 1.6, 1.8] as const;
+export const HEADING_SCALE_OPTIONS: { value: HeadingScale; name: string }[] = [
+  { value: "compact",  name: "Compact" },
+  { value: "standard", name: "Standard" },
+  { value: "prominent", name: "Prominent" },
+];
 
 export const ACCENT_COLOR_OPTIONS = [
   { value: "#0ea5e9", name: "Patorbit Blue" },
@@ -221,6 +231,7 @@ export const ATS_SAFE = {
 export const DEFAULT_STYLE_CONFIG: ResumeStyleConfig = {
   fontFamily: "inter",
   fontScale: 1,
+  headingScale: "standard",
   lineHeight: 1.6,
   accentColor: "#0ea5e9",
   headingColor: HEADING_COLOR_INK,
@@ -249,7 +260,7 @@ const DARK_THEME_TEMPLATES = new Set(["dark-elegance", "gradient-flow"]);
 const MONO_TEMPLATES = new Set(["tech-mono"]);
 
 const ALL_OPTIONS: StyleOptionKey[] = [
-  "fontFamily", "fontScale", "lineHeight",
+  "fontFamily", "fontScale", "headingScale", "lineHeight",
   "accentColor", "headingColor", "bodyColor",
   "headingStyle", "headingWeight", "bulletStyle", "bulletSize",
   "density", "sectionSpacing", "entrySpacing", "pageMargin",
@@ -297,6 +308,7 @@ export function resolveStyleConfig(config?: Partial<ResumeStyleConfig>): ResumeS
     ...merged,
     fontFamily: FONT_OPTIONS.some((f) => f.id === merged.fontFamily) ? merged.fontFamily : DEFAULT_STYLE_CONFIG.fontFamily,
     fontScale: clampNumber(merged.fontScale, ATS_SAFE.minFontScale, ATS_SAFE.maxFontScale, DEFAULT_STYLE_CONFIG.fontScale),
+    headingScale: HEADING_SCALE_OPTIONS.some((o) => o.value === merged.headingScale) ? merged.headingScale : DEFAULT_STYLE_CONFIG.headingScale,
     lineHeight: clampNumber(merged.lineHeight, ATS_SAFE.minLineHeight, ATS_SAFE.maxLineHeight, DEFAULT_STYLE_CONFIG.lineHeight),
     accentColor: /^#[0-9a-fA-F]{6}$/.test(merged.accentColor) ? merged.accentColor : DEFAULT_STYLE_CONFIG.accentColor,
     headingColor: merged.headingColor === HEADING_COLOR_ACCENT || merged.headingColor === HEADING_COLOR_INK || /^#[0-9a-fA-F]{6}$/.test(merged.headingColor)
@@ -343,6 +355,10 @@ export function buildStyleVars(config: ResumeStyleConfig): Record<string, string
   return {
     "--rs-font": font ? font.stack : fontFamilies.sans,
     "--rs-font-scale": String(config.fontScale),
+    // Active type scale: read by rs() in template inline styles. Unlike the
+    // legacy --rs-font-scale (stripped by serializePage with its zoom rule),
+    // this var survives serialization so preview, print/PDF and DOCX agree.
+    "--rs-type": typeScaleVar(config.fontScale),
     "--rs-line-height": String(config.lineHeight),
     "--rs-accent": config.accentColor,
     "--rs-heading": resolveHeadingHex(config),
@@ -375,9 +391,21 @@ export function buildStyleRules(config: ResumeStyleConfig, supported: Set<StyleO
   if (supported.has("fontFamily") && config.fontFamily !== DEFAULT_STYLE_CONFIG.fontFamily) {
     rules.push(`[data-rs-scope], [data-rs-scope] * { font-family: var(--rs-font) !important; }`);
   }
-  if (supported.has("fontScale") && config.fontScale !== DEFAULT_STYLE_CONFIG.fontScale) {
-    // zoom scales px- and rem-based type uniformly without touching templates.
-    rules.push(`[data-rs-scope] { zoom: var(--rs-font-scale); }`);
+  // Text size (fontScale) needs no RULE: templates declare their sizes via
+  // rs() → calc() on --rs-type, and buildStyleVars carries the value. CSS
+  // `zoom` was removed on purpose — PaginatedResumeSheet strips it from
+  // serialized A4 pages (zoom inside a fixed-height page clips), so it never
+  // reached the real preview or the printed/PDF output.
+  if (supported.has("headingScale") && config.headingScale !== DEFAULT_STYLE_CONFIG.headingScale) {
+    // Heading prominence tiers: absolute, coherent values (never per-section)
+    // so a tier can't produce a broken document. Multiplied by --rs-type so
+    // they stay proportional to the chosen text size. h1 = name, h2 = section
+    // titles (every template uses these elements for their headings).
+    const compact = config.headingScale === "compact";
+    const namePx = compact ? 30 : 37;
+    const sectionPx = compact ? 14 : 17.5;
+    rules.push(`[data-rs-scope] h1 { font-size: calc(var(--rs-type, 1) * ${namePx}px) !important; }`);
+    rules.push(`[data-rs-scope] h2 { font-size: calc(var(--rs-type, 1) * ${sectionPx}px) !important; }`);
   }
   if (supported.has("lineHeight") && config.lineHeight !== DEFAULT_STYLE_CONFIG.lineHeight) {
     rules.push(`[data-rs-scope] * { line-height: var(--rs-line-height) !important; }`);
@@ -423,8 +451,8 @@ export function buildStyleRules(config: ResumeStyleConfig, supported: Set<StyleO
       rules.push(`[data-rs-scope] h2 { text-transform: uppercase !important; letter-spacing: 0.1em !important; }`);
     } else if (config.sectionTitleStyle === "bold") {
       rules.push(`[data-rs-scope] h2 { font-weight: 800 !important; }`);
-    } else if (config.sectionTitleStyle === "minimal") {
-      rules.push(`[data-rs-scope] h2 { border-bottom: none !important; padding-bottom: 0 !important; font-weight: 600 !important; font-size: 10px !important; color: var(--rs-heading) !important; }`);
+    } else    if (config.sectionTitleStyle === "minimal") {
+      rules.push(`[data-rs-scope] h2 { border-bottom: none !important; padding-bottom: 0 !important; font-weight: 600 !important; font-size: calc(var(--rs-type, 1) * 13px) !important; color: var(--rs-heading) !important; }`);
     }
   }
 

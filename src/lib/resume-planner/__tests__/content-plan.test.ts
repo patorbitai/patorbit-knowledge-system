@@ -206,11 +206,53 @@ describe("job-aware emphasis (§4, §22) — no fabrication ever", () => {
 });
 
 describe("budgets (§11, §13, §14)", () => {
-  it("caps bullets at 4 for one-page targets and 6 for two-page", () => {
+  it("never caps bullets on the default plan — no silent truncation", () => {
+    // Regression (readability fix): the default plan used to cap bullets at
+    // 4 (one-page target), silently hiding valid user content. Preview, DOCX
+    // and print must render every bullet; overflow flows to page 2.
     const one = buildContentPlan(EARLY_CAREER, { jobAware: false });
-    expect(one.sections.find((s) => s.type === "experience")?.maxBulletsPerItem).toBe(4);
+    expect(one.sections.find((s) => s.type === "experience")?.maxBulletsPerItem).toBeUndefined();
     const two = buildContentPlan(SENIOR, { jobAware: false });
-    expect(two.sections.find((s) => s.type === "experience")?.maxBulletsPerItem).toBe(6);
+    expect(two.sections.find((s) => s.type === "experience")?.maxBulletsPerItem).toBeUndefined();
+  });
+
+  it("caps bullets explicitly only on a job-targeted plan (4 one-page / 6 two-page)", () => {
+    const match = makeMatchFixture([{ classification: "PROVEN", requirement: "SQL" }]);
+
+    // 2 roles, 8 bullets total = exactly the one-page budget → 1 page, cap 4.
+    const onePage = buildContentPlan(
+      makeResume({
+        experience: [
+          { ...EARLY_CAREER.experience[0], id: "a", bulletPoints: ["b1", "b2", "b3", "b4", "b5"] },
+          { ...EARLY_CAREER.experience[0], id: "b", bulletPoints: ["c1", "c2", "c3"] },
+        ],
+      }),
+      { qualificationMatch: match, jobTitle: "Data Analyst" },
+    );
+    expect(onePage.jobAware).toBe(true);
+    expect(onePage.pageTarget).toBe(1);
+    expect(onePage.sections.find((s) => s.type === "experience")?.maxBulletsPerItem).toBe(4);
+
+    // 4+ roles → two-page target → the 6-bullet budget applies.
+    const twoPage = buildContentPlan(SENIOR, { qualificationMatch: match, jobTitle: "Data Analyst" });
+    expect(twoPage.jobAware).toBe(true);
+    expect(twoPage.pageTarget).toBe(2);
+    expect(twoPage.sections.find((s) => s.type === "experience")?.maxBulletsPerItem).toBe(6);
+  });
+
+  it("targets two pages when bullets exceed the one-page budget (content-aware)", () => {
+    const heavy = buildContentPlan(
+      makeResume({
+        experience: [
+          { ...EARLY_CAREER.experience[0], id: "a", bulletPoints: ["b1", "b2", "b3", "b4", "b5"] },
+          { ...EARLY_CAREER.experience[0], id: "b", bulletPoints: ["c1", "c2", "c3", "c4"] },
+        ],
+      }),
+      { jobAware: false },
+    );
+    // 9 bullets > 4 per role on average → the plan admits it needs two pages
+    // instead of planning a trim.
+    expect(heavy.pageTarget).toBe(2);
   });
 
   it("caps projects and skills (keyword-wall guard)", () => {

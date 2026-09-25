@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { rs } from "@/lib/resume-design-system";
 import type { SocialLinks as SocialLinksShape } from "@/types/resume";
 
 /* ── Shared Types ──
@@ -41,7 +42,11 @@ export type {
 export function FormattedDescription({ text, color, mutedColor, size = "xs" }: { text: string; color: string; mutedColor?: string; size?: string }) {
   if (!text) return null;
   const lines = text.split("\n").filter(line => line.trim().length > 0);
-  const sizeClass = size === "sm" ? "text-sm" : "text-xs";
+  // rs()-based inline size (NOT Tailwind text-xs): a fixed 12px class would
+  // override the parent's readable scale — summaries/descriptions must render
+  // at body size (14px) and follow --rs-type like everything else.
+  const sizePx = size === "sm" ? 15 : 14;
+  const sizeStyle: React.CSSProperties = { fontSize: rs(sizePx) };
   const listItems = lines.map(line => {
     const trimmed = line.trim();
     const isBulleted = /^[•\-\*]\s*/.test(trimmed);
@@ -53,9 +58,9 @@ export function FormattedDescription({ text, color, mutedColor, size = "xs" }: {
   const hasList = listItems.some(item => item.type === 'ul' || item.type === 'ol');
   if (hasList) {
     let olCounter = 1;
-    return (<div className="mt-0.5 space-y-0.5">{listItems.map((item, i) => { if (item.type === 'ul') return (<div key={i} className="flex gap-1.5 items-start"><span className="shrink-0 text-sm leading-relaxed" style={{ color: mutedColor || color }}>•</span><span className={`${sizeClass} leading-relaxed`} style={{ color: mutedColor || color }}>{item.content}</span></div>); if (item.type === 'ol') { const c = olCounter++; return (<div key={i} className="flex gap-1.5 items-start"><span className="shrink-0 font-medium text-xs leading-relaxed min-w-[16px]" style={{ color }}>{c}.</span><span className={`${sizeClass} leading-relaxed`} style={{ color: mutedColor || color }}>{item.content}</span></div>); } return <p key={i} className={`${sizeClass} mt-0.5 leading-relaxed`} style={{ color: mutedColor || color }}>{item.content}</p>; })}</div>);
+    return (<div className="mt-0.5 space-y-0.5">{listItems.map((item, i) => { if (item.type === 'ul') return (<div key={i} className="flex gap-1.5 items-start"><span className="shrink-0 leading-relaxed" style={{ color: mutedColor || color, fontSize: rs(sizePx) }}>•</span><span className="leading-relaxed" style={{ color: mutedColor || color, ...sizeStyle }}>{item.content}</span></div>); if (item.type === 'ol') { const c = olCounter++; return (<div key={i} className="flex gap-1.5 items-start"><span className="shrink-0 font-medium leading-relaxed min-w-[16px]" style={{ color, fontSize: rs(sizePx) }}>{c}.</span><span className="leading-relaxed" style={{ color: mutedColor || color, ...sizeStyle }}>{item.content}</span></div>); } return <p key={i} className="mt-0.5 leading-relaxed" style={{ color: mutedColor || color, ...sizeStyle }}>{item.content}</p>; })}</div>);
   }
-  return (<div className="space-y-1">{lines.map((line, i) => (<p key={i} className={`${sizeClass} leading-relaxed`} style={{ color: mutedColor || color, whiteSpace: "pre-wrap" }}>{line}</p>))}</div>);
+  return (<div className="space-y-1">{lines.map((line, i) => (<p key={i} className="leading-relaxed" style={{ color: mutedColor || color, whiteSpace: "pre-wrap", ...sizeStyle }}>{line}</p>))}</div>);
 }
 
 /* ── Social URL helpers ──
@@ -141,7 +146,7 @@ export function SocialLinks({ social, color, size = "sm" }: { social: SocialLink
     { key: "portfolio", href: social.portfolio, icon: <svg className={s} viewBox="0 0 24 24" fill="currentColor"><path d="M12 24C5.385 24 0 18.615 0 12S5.385 0 12 0s12 5.385 12 12-5.385 12-12 12zm-1.286-13.919c.46-.256.85-.49 1.145-.674.532-.33.8-.711.806-1.142.006-.488-.24-.93-.74-1.326-.498-.396-1.232-.594-2.202-.594-1.118 0-2.016.386-2.692 1.158-.676.772-1.014 1.826-1.014 3.163 0 1.416.35 2.482 1.048 3.2.698.716 1.534 1.075 2.508 1.075.562 0 1.146-.16 1.753-.479.162-.083.243-.138.243-.167 0-.076-.016-.482-.049-1.218-.033-.736-.048-1.27-.048-1.603 0-.736.505-1.098 1.506-1.098.356 0 .713.108 1.07.324.357.216.536.54.536.973v.848c0 2.05-.438 3.597-1.314 4.641-.876 1.044-2.11 1.566-3.701 1.566-1.795 0-3.272-.66-4.432-1.98-1.16-1.32-1.74-3.079-1.74-5.279 0-2.23.596-3.98 1.788-5.249 1.192-1.27 2.656-1.905 4.391-1.905 1.574 0 2.891.51 3.951 1.53 1.06 1.02 1.54 2.21 1.44 3.57 0 .56-.262 1.018-.787 1.374z"/></svg> },
     { key: "stackoverflow", href: social.stackoverflow, icon: <svg className={s} viewBox="0 0 24 24" fill="currentColor"><path d="M21.008 0c1.105 0 2 .895 2 2v20c0 1.105-.895 2-2 2H2.998c-1.105 0-2-.895-2-2V2c0-1.105.895-2 2-2h18.01zM8.947 5.356H5.663v12.29h3.284V5.356zm1.905 0v12.29h1.98c2.586 0 3.972-1.469 3.972-3.934 0-2.022-1.18-3.28-2.933-3.392 1.418-.275 2.574-1.575 2.574-3.03 0-2.138-1.34-3.934-3.605-3.934h-1.988zm1.417 5.39c.932 0 1.56.53 1.56 1.557 0 1.025-.628 1.555-1.56 1.555h-1.242v-3.112h1.242zm-.175-4.153c.75 0 1.29.479 1.29 1.341 0 .866-.54 1.34-1.29 1.34h-1.067V6.593h1.067z"/></svg> },
   ];
-  return (<div className="flex flex-wrap gap-x-3 gap-y-1" style={{ color }}>{links.map(({ key, href, icon }) => href && (<a key={key} href={normalizeSocialUrl(href)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">{icon}{<span className={size === "xs" ? "text-xs" : "text-sm"}>{socialUrlLabel(href)}</span>}</a>))}</div>);
+  return (<div className="flex flex-wrap gap-x-3 gap-y-1" style={{ color }}>{links.map(({ key, href, icon }) => href && (<a key={key} href={normalizeSocialUrl(href)} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:underline">{icon}{<span style={{ fontSize: rs(size === "xs" ? 14 : 15) }}>{socialUrlLabel(href)}</span>}</a>))}</div>);
 }
 
 export function levelToDots(level: string | undefined): number {
@@ -177,24 +182,24 @@ export function ExperienceEntry({ exp, theme }: { exp: Resume["experience"][0]; 
   return (
     <div style={{ marginBottom: 12, breakInside: "avoid" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: t.ink, lineHeight: 1.3 }}>{exp.company}</span>
-        {dateStr && <span style={{ fontSize: 9, fontWeight: 500, color: t.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{dateStr}</span>}
+        <span style={{ fontSize: rs(15), fontWeight: 700, color: t.ink, lineHeight: 1.3 }}>{exp.company}</span>
+        {dateStr && <span style={{ fontSize: rs(12.5), fontWeight: 500, color: t.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{dateStr}</span>}
       </div>
-      <div style={{ fontSize: 10, color: t.body, marginTop: 1, lineHeight: 1.4 }}>
+      <div style={{ fontSize: rs(14), color: t.body, marginTop: 1, lineHeight: 1.4 }}>
         <span style={{ fontWeight: 600 }}>{exp.position}</span>
         {exp.employmentType && <span style={{ color: t.muted }}> · {exp.employmentType}</span>}
         {exp.location && <span style={{ color: t.muted }}> · {exp.location}</span>}
       </div>
       {exp.description && (
-        <div style={{ marginTop: 4, fontSize: 10, lineHeight: 1.6, color: t.body }}>
+        <div style={{ marginTop: 4, fontSize: rs(14), lineHeight: 1.6, color: t.body }}>
           <FormattedDescription text={exp.description} color={t.body} mutedColor={t.muted} size="xs" />
         </div>
       )}
       {exp.bulletPoints && exp.bulletPoints.length > 0 && (
         <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
           {exp.bulletPoints.map((bp, i) => (
-            <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: t.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
-              <span style={{ position: "absolute", left: 0, color: t.accent || t.muted, fontSize: 8, top: 2 }}>{b}</span>
+            <li key={i} style={{ fontSize: rs(14), lineHeight: 1.5, color: t.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
+              <span style={{ position: "absolute", left: 0, color: t.accent || t.muted, fontSize: rs(11), top: 2 }}>{b}</span>
               {bp}
             </li>
           ))}
@@ -203,7 +208,7 @@ export function ExperienceEntry({ exp, theme }: { exp: Resume["experience"][0]; 
       {exp.techUsed && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
           {exp.techUsed.split(/[,;]/).map((t2) => t2.trim()).filter(Boolean).map((tech, i) => (
-            <span key={i} style={{ fontSize: 8, fontWeight: 500, color: t.accent || t.muted, backgroundColor: (t.accent || t.muted) + "15", padding: "1px 6px", borderRadius: 3, lineHeight: 1.4 }}>{tech}</span>
+            <span key={i} style={{ fontSize: rs(12.5), fontWeight: 500, color: t.accent || t.muted, backgroundColor: (t.accent || t.muted) + "15", padding: "1px 6px", borderRadius: 3, lineHeight: 1.4 }}>{tech}</span>
           ))}
         </div>
       )}
@@ -217,15 +222,15 @@ export function EducationEntry({ edu, theme, compact = false }: { edu: Resume["e
   return (
     <div style={{ marginBottom: 8, breakInside: "avoid" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: t.ink }}>{edu.school}</span>
-        {edu.year && <span style={{ fontSize: 9, color: t.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
+        <span style={{ fontSize: rs(15), fontWeight: 700, color: t.ink }}>{edu.school}</span>
+        {edu.year && <span style={{ fontSize: rs(12.5), color: t.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
       </div>
-      <div style={{ fontSize: 10, color: t.body, marginTop: 1 }}>
+      <div style={{ fontSize: rs(14), color: t.body, marginTop: 1 }}>
         <span style={{ fontWeight: 500 }}>{edu.degree}{edu.field ? ` in ${edu.field}` : ""}</span>
         {!compact && edu.gpa && <span style={{ color: t.muted }}> · GPA {edu.gpa}</span>}
       </div>
-      {!compact && edu.honors && <div style={{ fontSize: 9, color: t.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
-      {!compact && edu.location && <div style={{ fontSize: 9, color: t.light || t.muted, marginTop: 1 }}>{edu.location}</div>}
+      {!compact && edu.honors && <div style={{ fontSize: rs(12.5), color: t.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
+      {!compact && edu.location && <div style={{ fontSize: rs(12.5), color: t.light || t.muted, marginTop: 1 }}>{edu.location}</div>}
     </div>
   );
 }
@@ -238,27 +243,27 @@ export function ProjectEntry({ proj, theme }: { proj: Resume["projects"][0]; the
   return (
     <div style={{ marginBottom: 10, breakInside: "avoid" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-        <span style={{ fontSize: 11, fontWeight: 700, color: t.ink }}>{proj.name}</span>
-        {dateStr && <span style={{ fontSize: 9, color: t.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
+        <span style={{ fontSize: rs(15), fontWeight: 700, color: t.ink }}>{proj.name}</span>
+        {dateStr && <span style={{ fontSize: rs(12.5), color: t.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
       </div>
-      {proj.role && <div style={{ fontSize: 10, color: t.body, fontWeight: 500, marginTop: 1 }}>{proj.role}</div>}
+      {proj.role && <div style={{ fontSize: rs(14), color: t.body, fontWeight: 500, marginTop: 1 }}>{proj.role}</div>}
       {proj.tech && (
         <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 3 }}>
           {proj.tech.split(/[,;]/).map((t2) => t2.trim()).filter(Boolean).map((tech, i) => (
-            <span key={i} style={{ fontSize: 8, fontWeight: 500, color: t.accent || t.muted, backgroundColor: (t.accent || t.muted) + "15", padding: "1px 5px", borderRadius: 3 }}>{tech}</span>
+            <span key={i} style={{ fontSize: rs(12.5), fontWeight: 500, color: t.accent || t.muted, backgroundColor: (t.accent || t.muted) + "15", padding: "1px 5px", borderRadius: 3 }}>{tech}</span>
           ))}
         </div>
       )}
       {proj.description && (
-        <div style={{ marginTop: 3, fontSize: 10, lineHeight: 1.5, color: t.body }}>
+        <div style={{ marginTop: 3, fontSize: rs(14), lineHeight: 1.5, color: t.body }}>
           <FormattedDescription text={proj.description} color={t.body} mutedColor={t.muted} size="xs" />
         </div>
       )}
       {proj.bulletPoints && proj.bulletPoints.length > 0 && (
         <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
           {proj.bulletPoints.map((bp, i) => (
-            <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: t.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
-              <span style={{ position: "absolute", left: 0, color: t.accent || t.muted, fontSize: 8, top: 2 }}>{b}</span>
+            <li key={i} style={{ fontSize: rs(14), lineHeight: 1.5, color: t.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
+              <span style={{ position: "absolute", left: 0, color: t.accent || t.muted, fontSize: rs(11), top: 2 }}>{b}</span>
               {bp}
             </li>
           ))}
@@ -276,10 +281,10 @@ export function CertificationsList({ certs, theme }: { certs: Resume["certificat
       {certs.map((c) => (
         <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4, breakInside: "avoid" }}>
           <div>
-            <span style={{ fontSize: 10, fontWeight: 600, color: t.ink }}>{c.name}</span>
-            {c.issuer && <span style={{ fontSize: 9, color: t.muted }}> — {c.issuer}</span>}
+            <span style={{ fontSize: rs(14), fontWeight: 600, color: t.ink }}>{c.name}</span>
+            {c.issuer && <span style={{ fontSize: rs(12.5), color: t.muted }}> — {c.issuer}</span>}
           </div>
-          {c.date && <span style={{ fontSize: 9, color: t.muted, whiteSpace: "nowrap" }}>{c.date}</span>}
+          {c.date && <span style={{ fontSize: rs(12.5), color: t.muted, whiteSpace: "nowrap" }}>{c.date}</span>}
         </div>
       ))}
     </>
@@ -292,11 +297,11 @@ export function AchievementsList({ achievements, theme }: { achievements: Resume
   return (
     <>
       {achievements.map((a) => (
-        <div key={a.id} style={{ fontSize: 10, color: t.body, marginBottom: 3, breakInside: "avoid" }}>
+        <div key={a.id} style={{ fontSize: rs(14), color: t.body, marginBottom: 3, breakInside: "avoid" }}>
           {a.title && <span style={{ fontWeight: 600 }}>{a.title}</span>}
           {a.title && a.description && <span> — </span>}
           {a.description && <span>{a.description}</span>}
-          {a.date && <span style={{ color: t.muted, fontSize: 9 }}> ({a.date})</span>}
+          {a.date && <span style={{ color: t.muted, fontSize: rs(12.5) }}> ({a.date})</span>}
         </div>
       ))}
     </>
@@ -307,7 +312,7 @@ export function AchievementsList({ achievements, theme }: { achievements: Resume
 export function LanguagesList({ languages, theme }: { languages: Resume["languages"]; theme: SectionTheme }) {
   const t = theme;
   return (
-    <div style={{ fontSize: 10, color: t.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
+    <div style={{ fontSize: rs(14), color: t.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
       {languages.map((l) => (
         <span key={l.id}>
           {l.name}

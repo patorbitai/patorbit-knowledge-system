@@ -223,12 +223,19 @@ export function buildContentPlan(
 
   /* ── Page target & density (§9–§10) ── */
   const roleCount = resume.experience.length;
-  const pageTarget: 1 | 2 = roleCount >= 4 ? 2 : 1;
 
   const bulletCount = resume.experience.reduce(
     (n, e) => n + (e.bulletPoints?.length ?? 0),
     0,
   );
+
+  // Content-aware two-page target: beyond the role-count rule, a profile
+  // whose bullets exceed the one-page budget (4 per role on average)
+  // HONESTLY targets two pages instead of planning a trim. Overflow flows to
+  // page 2 — we never hide bullets to preserve a one-page layout (§9/§11).
+  const overBulletBudget =
+    bulletCount > BUDGETS.bulletsPage1 * Math.max(roleCount, 1);
+  const pageTarget: 1 | 2 = roleCount >= 4 || overBulletBudget ? 2 : 1;
   const heavyContent =
     bulletCount > 18 ||
     resume.skills.length > BUDGETS.maxSkills ||
@@ -307,7 +314,13 @@ export function buildContentPlan(
     };
 
     if (type === "experience") {
-      planned.maxBulletsPerItem = bulletCap;
+      // §11's bullet cap is an EXPLICIT planning decision, applied only to a
+      // job-targeted plan (§22): the user chose a job to tailor for, so the
+      // planner selects the strongest bullets for that target and the quality
+      // check reports the trim. The default plan never trims — preview, DOCX
+      // and print render every bullet and the paginator flows the overflow
+      // onto page 2 (readability-first, no silent truncation).
+      if (jobAware) planned.maxBulletsPerItem = bulletCap;
     } else if (type === "projects") {
       planned.maxItems = projectsCap;
     } else if (type === "certs") {

@@ -13,6 +13,12 @@ import { TEMPLATES } from "@/app/resume-builder/templates";
 
 vi.mock("file-saver", () => ({ saveAs: vi.fn() }));
 
+// Readable type sizes (readability milestone) mean the sample resume often
+// paginates onto a second A4 page, which pushes this 29-template render suite
+// past vitest's 5s default under full-suite worker load — timeouts, not
+// assertions. Same rationale as StyleScope.test.tsx.
+vi.setConfig({ testTimeout: 20000, hookTimeout: 20000 });
+
 /**
  * FINAL 29-TEMPLATE PDF EXPORT VALIDATION
  *

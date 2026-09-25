@@ -8,6 +8,7 @@ import {
   spacing,
   layout,
   formatDuration,
+  rs,
 } from "@/lib/resume-design-system";
 import { useResumeStyle } from "@/components/resume/StyleScope";
 import { useResumePlanContext } from "@/components/resume/ResumePlanContext";
@@ -53,7 +54,7 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <h2
       style={{
-        fontSize: 9,
+        fontSize: rs(15),
         fontWeight: 700,
         letterSpacing: "0.16em",
         textTransform: "uppercase",
@@ -75,7 +76,7 @@ function SkillChip({ skill }: { skill: Resume["skills"][0] }) {
     <span
       style={{
         display: "inline-block",
-        fontSize: 9,
+        fontSize: rs(12.5),
         fontWeight: 500,
         color: C.navy,
         backgroundColor: "#f1f5f9",
@@ -101,7 +102,7 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
     return (
       <section style={{ marginBottom: 16, breakInside: "avoid" }}>
         <SectionTitle>Technical Skills</SectionTitle>
-        <p style={{ fontSize: 10, color: C.body, lineHeight: 1.6 }}>
+        <p style={{ fontSize: rs(14), color: C.body, lineHeight: 1.6 }}>
           {skills.map((s) => s.name).join(" · ")}
         </p>
       </section>
@@ -118,7 +119,7 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
             key={s.id}
             style={{
               display: "inline-block",
-              fontSize: 9,
+              fontSize: rs(12.5),
               fontWeight: 500,
               color: C.navy,
               backgroundColor: "#f1f5f9",
@@ -170,7 +171,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
           <div style={{ flex: 1 }}>
             <h1
               style={{
-                fontSize: 24,
+                fontSize: rs(32),
                 fontWeight: 800,
                 color: C.white,
                 letterSpacing: "-0.02em",
@@ -183,7 +184,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
             {resume.title && (
               <p
                 style={{
-                  fontSize: 12,
+                  fontSize: rs(16.5),
                   fontWeight: 500,
                   color: C.gold,
                   marginTop: 4,
@@ -198,19 +199,19 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
           {/* Contact Info */}
           <div style={{ textAlign: "right", flexShrink: 0 }}>
             {resume.email && (
-              <p style={{ fontSize: 9, color: C.light, lineHeight: 1.6 }}>{resume.email}</p>
+              <p style={{ fontSize: rs(12.5), color: C.light, lineHeight: 1.6 }}>{resume.email}</p>
             )}
             {resume.phone && (
-              <p style={{ fontSize: 9, color: C.light, lineHeight: 1.6 }}>{resume.phone}</p>
+              <p style={{ fontSize: rs(12.5), color: C.light, lineHeight: 1.6 }}>{resume.phone}</p>
             )}
             {resume.address && (
-              <p style={{ fontSize: 9, color: C.light, lineHeight: 1.6 }}>{resume.address}</p>
+              <p style={{ fontSize: rs(12.5), color: C.light, lineHeight: 1.6 }}>{resume.address}</p>
             )}
             {resume.social?.linkedin && (
-              <a href={normalizeSocialUrl(resume.social.linkedin)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 9, color: C.gold, marginTop: 2, display: "block" }}>{socialUrlLabel(resume.social.linkedin)}</a>
+              <a href={normalizeSocialUrl(resume.social.linkedin)} target="_blank" rel="noopener noreferrer" style={{ fontSize: rs(12.5), color: C.gold, marginTop: 2, display: "block" }}>{socialUrlLabel(resume.social.linkedin)}</a>
             )}
             {resume.social?.github && (
-              <a href={normalizeSocialUrl(resume.social.github)} target="_blank" rel="noopener noreferrer" style={{ fontSize: 9, color: C.gold, display: "block" }}>{socialUrlLabel(resume.social.github)}</a>
+              <a href={normalizeSocialUrl(resume.social.github)} target="_blank" rel="noopener noreferrer" style={{ fontSize: rs(12.5), color: C.gold, display: "block" }}>{socialUrlLabel(resume.social.github)}</a>
             )}
           </div>
         </div>
@@ -227,7 +228,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
             summary: resume.summary && (
           <section style={{ marginBottom: 16, breakInside: "avoid" }}>
             <SectionTitle>Professional Profile</SectionTitle>
-            <div style={{ fontSize: 10, lineHeight: 1.65, color: C.body }}>
+            <div style={{ fontSize: rs(14), lineHeight: 1.65, color: C.body }}>
               <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
             </div>
           </section>
@@ -238,21 +239,21 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
             {resume.experience.map((exp) => {
               const dateStr = exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
               return (
-                <div key={exp.id} style={{ marginBottom: 12 }}>
+                <div key={exp.id} style={{ marginBottom: 12, breakInside: "avoid" }}>
                   {/* Company + Date */}
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: C.ink, lineHeight: 1.3 }}>
+                    <span style={{ fontSize: rs(15), fontWeight: 700, color: C.ink, lineHeight: 1.3 }}>
                       {exp.company}
                     </span>
                     {dateStr && (
-                      <span style={{ fontSize: 9, fontWeight: 500, color: C.muted, whiteSpace: "nowrap", flexShrink: 0 }}>
+                      <span style={{ fontSize: rs(12.5), fontWeight: 500, color: C.muted, whiteSpace: "nowrap", flexShrink: 0 }}>
                         {dateStr}
                       </span>
                     )}
                   </div>
 
                   {/* Position */}
-                  <div style={{ fontSize: 10, color: C.body, marginTop: 1, lineHeight: 1.4 }}>
+                  <div style={{ fontSize: rs(14), color: C.body, marginTop: 1, lineHeight: 1.4 }}>
                     <span style={{ fontWeight: 600 }}>{exp.position}</span>
                     {exp.employmentType && <span style={{ color: C.muted }}> · {exp.employmentType}</span>}
                     {exp.location && <span style={{ color: C.muted }}> · {exp.location}</span>}
@@ -260,7 +261,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
 
                   {/* Description */}
                   {exp.description && (
-                    <div style={{ marginTop: 4, fontSize: 10, lineHeight: 1.6, color: C.body }}>
+                    <div style={{ marginTop: 4, fontSize: rs(14), lineHeight: 1.6, color: C.body }}>
                       <FormattedDescription text={exp.description} color={C.body} mutedColor={C.muted} size="xs" />
                     </div>
                   )}
@@ -272,7 +273,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
                         <li
                           key={i}
                           style={{
-                            fontSize: 10,
+                            fontSize: rs(14),
                             lineHeight: 1.5,
                             color: C.body,
                             paddingLeft: 12,
@@ -280,7 +281,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
                             marginBottom: 2,
                           }}
                         >
-                          <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>{bChar || "●"}</span>
+                          <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: rs(11), top: 2 }}>{bChar || "●"}</span>
                           {bp}
                         </li>
                       ))}
@@ -294,7 +295,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
                         <span
                           key={i}
                           style={{
-                            fontSize: 8,
+                            fontSize: rs(12.5),
                             fontWeight: 500,
                             color: C.navy,
                             backgroundColor: C.goldLight,
@@ -321,29 +322,29 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
             {resume.projects.map((p) => {
               const dateStr = [p.startDate, p.endDate].filter(Boolean).join(" – ");
               return (
-                <div key={p.id} style={{ marginBottom: 10 }}>
+                <div key={p.id} style={{ marginBottom: 10, breakInside: "avoid" }}>
                   <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                    <span style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>{p.name}</span>
-                    {dateStr && <span style={{ fontSize: 9, color: C.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
+                    <span style={{ fontSize: rs(15), fontWeight: 700, color: C.ink }}>{p.name}</span>
+                    {dateStr && <span style={{ fontSize: rs(12.5), color: C.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
                   </div>
-                  {p.role && <div style={{ fontSize: 10, color: C.body, fontWeight: 500, marginTop: 1 }}>{p.role}</div>}
+                  {p.role && <div style={{ fontSize: rs(14), color: C.body, fontWeight: 500, marginTop: 1 }}>{p.role}</div>}
                   {p.tech && (
                     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 3 }}>
                       {p.tech.split(/[,;]/).map((t) => t.trim()).filter(Boolean).map((t, i) => (
-                        <span key={i} style={{ fontSize: 8, fontWeight: 500, color: C.navy, backgroundColor: C.goldLight, padding: "1px 5px", borderRadius: 3 }}>{t}</span>
+                        <span key={i} style={{ fontSize: rs(12.5), fontWeight: 500, color: C.navy, backgroundColor: C.goldLight, padding: "1px 5px", borderRadius: 3 }}>{t}</span>
                       ))}
                     </div>
                   )}
                   {p.description && (
-                    <div style={{ marginTop: 3, fontSize: 10, lineHeight: 1.5, color: C.body }}>
+                    <div style={{ marginTop: 3, fontSize: rs(14), lineHeight: 1.5, color: C.body }}>
                       <FormattedDescription text={p.description} color={C.body} mutedColor={C.muted} size="xs" />
                     </div>
                   )}
                   {p.bulletPoints && p.bulletPoints.length > 0 && (
                     <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
                       {p.bulletPoints.map((bp, i) => (
-                        <li key={i} style={{ fontSize: 10, lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
-                          <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: 8, top: 2 }}>{bChar || "●"}</span>
+                        <li key={i} style={{ fontSize: rs(14), lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
+                          <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: rs(11), top: 2 }}>{bChar || "●"}</span>
                           {bp}
                         </li>
                       ))}
@@ -358,17 +359,17 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
           <section style={{ marginBottom: 16, breakInside: "avoid" }}>
             <SectionTitle>Education</SectionTitle>
             {resume.education.map((edu) => (
-              <div key={edu.id} style={{ marginBottom: 8 }}>
+              <div key={edu.id} style={{ marginBottom: 8, breakInside: "avoid" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 700, color: C.ink }}>{edu.school}</span>
-                  {edu.year && <span style={{ fontSize: 9, color: C.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
+                  <span style={{ fontSize: rs(15), fontWeight: 700, color: C.ink }}>{edu.school}</span>
+                  {edu.year && <span style={{ fontSize: rs(12.5), color: C.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
                 </div>
-                <div style={{ fontSize: 10, color: C.body, marginTop: 1 }}>
+                <div style={{ fontSize: rs(14), color: C.body, marginTop: 1 }}>
                   <span style={{ fontWeight: 500 }}>{edu.degree}{edu.field ? ` in ${edu.field}` : ""}</span>
                   {edu.gpa && <span style={{ color: C.muted }}> · GPA {edu.gpa}</span>}
                 </div>
-                {edu.honors && <div style={{ fontSize: 9, color: C.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
-                {edu.location && <div style={{ fontSize: 9, color: C.light, marginTop: 1 }}>{edu.location}</div>}
+                {edu.honors && <div style={{ fontSize: rs(12.5), color: C.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
+                {edu.location && <div style={{ fontSize: rs(12.5), color: C.light, marginTop: 1 }}>{edu.location}</div>}
               </div>
             ))}
           </section>
@@ -379,10 +380,10 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
             {resume.certifications.map((c) => (
               <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
                 <div>
-                  <span style={{ fontSize: 10, fontWeight: 600, color: C.ink }}>{c.name}</span>
-                  {c.issuer && <span style={{ fontSize: 9, color: C.muted }}> — {c.issuer}</span>}
+                  <span style={{ fontSize: rs(14), fontWeight: 600, color: C.ink }}>{c.name}</span>
+                  {c.issuer && <span style={{ fontSize: rs(12.5), color: C.muted }}> — {c.issuer}</span>}
                 </div>
-                {c.date && <span style={{ fontSize: 9, color: C.muted, whiteSpace: "nowrap" }}>{c.date}</span>}
+                {c.date && <span style={{ fontSize: rs(12.5), color: C.muted, whiteSpace: "nowrap" }}>{c.date}</span>}
               </div>
             ))}
           </section>
@@ -390,7 +391,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
         languages: resume.languages.length > 0 && (
           <section style={{ marginBottom: 16, breakInside: "avoid" }}>
             <SectionTitle>Languages</SectionTitle>
-            <div style={{ fontSize: 10, color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
+            <div style={{ fontSize: rs(14), color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
               {resume.languages.map((l) => (
                 <span key={l.id}>
                   {l.name}
@@ -404,11 +405,11 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
           <section style={{ marginBottom: 16, breakInside: "avoid" }}>
             <SectionTitle>Achievements</SectionTitle>
             {resume.achievements.map((a) => (
-              <div key={a.id} style={{ fontSize: 10, color: C.body, marginBottom: 3 }}>
+              <div key={a.id} style={{ fontSize: rs(14), color: C.body, marginBottom: 3 }}>
                 {a.title && <span style={{ fontWeight: 600 }}>{a.title}</span>}
                 {a.title && a.description && <span> — </span>}
                 {a.description && <span>{a.description}</span>}
-                {a.date && <span style={{ color: C.muted, fontSize: 9 }}> ({a.date})</span>}
+                {a.date && <span style={{ color: C.muted, fontSize: rs(12.5) }}> ({a.date})</span>}
               </div>
             ))}
           </section>
@@ -416,7 +417,7 @@ export function PatorbitModernPreview({ resume, bulletChar: bChar }: { resume: R
         interests: resume.interests.length > 0 && (
           <section style={{ breakInside: "avoid" }}>
             <SectionTitle>Interests</SectionTitle>
-            <p style={{ fontSize: 10, color: C.muted, lineHeight: 1.6 }}>
+            <p style={{ fontSize: rs(14), color: C.muted, lineHeight: 1.6 }}>
               {resume.interests.map((i) => i.name).join(" · ")}
             </p>
           </section>

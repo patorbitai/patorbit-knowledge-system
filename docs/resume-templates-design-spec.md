@@ -16,6 +16,39 @@ Every template must pass these tests:
 
 ---
 
+## Typography Architecture (M2 — resume readability fix)
+
+All template font sizes flow through a single type scale — `rs(px)` from
+`src/lib/resume-design-system/type-scale.ts`, which emits
+`calc(var(--rs-type, 1) * Npx)`. The `--rs-type` variable is set by the
+**Text size** control (Small 0.95 / Comfortable 1.0 / Large 1.1), lives on the
+style scope, and survives `serializePage()` — so preview, gallery, print/PDF
+and DOCX all scale from one source.
+
+| Tier | `rs()` value | Default rendered size |
+|------|--------------|----------------------|
+| Body / bullets / descriptions | `rs(14)` | 14px ≈ 10.5pt |
+| Company / school / project names | `rs(15)` | 15px ≈ 11pt |
+| Section titles (h2) | `rs(15)` (+ heading rules) | 15px, 17.5px prominent |
+| Dates, meta, tech chips, skill pills | `rs(12.5)` | 12.5px ≈ 9.4pt |
+| Name (h1) | `rs(30)` (37px prominent) | 30px ≈ 22.5pt |
+| Bullet glyphs (decorative `• ▸ ●`) | `rs(11)` | decorative only — not content |
+
+Rules:
+- **No content-bearing text below 12.5px.** Tailwind `text-xs`/`text-sm`
+  classes are banned inside template components (they hardcode 12/14px and
+  bypass the scale) — use `rs()` inline styles.
+- **Heading size** is a second tier (`headingScale`: compact 0.9 /
+  standard 1 / prominent 1.15) that multiplies name + section titles in CSS
+  *and* DOCX — one configuration for both.
+- **Never shrink type to force one page.** Readable 2 pages > microscopic
+  1 page; the Export dialog states this explicitly when content spills.
+- The per-template tables below predate this architecture; their old px
+  values (10–11px body etc.) are superseded by the tiers above. Layout,
+  color and section-order rows remain authoritative.
+
+---
+
 ## Template 1 — Executive
 
 | Attribute | Specification |

@@ -255,15 +255,24 @@ describe("Pagination — Semantic Item Atomicity", () => {
 });
 
 describe("Pagination — Atomic Item Algorithm", () => {
-  it("splitOverTall passes atomicItems=true to distribute", async () => {
+  it("splitOverTall keeps entries atomic and headings attached to their entry", async () => {
     const fs = await import("fs");
     const path = await import("path");
     const content = fs.readFileSync(
       path.resolve(__dirname, "../PaginatedResumeSheet.tsx"),
       "utf-8"
     );
-    // The entire file must contain this exact call in splitOverTall
-    expect(content).toContain("distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx, 0, true, true)");
+    // atomicItems=true: entry-level children of a split section are never
+    // fragmented. independentHeadings=false: a section title keeps with its
+    // first entry instead of being orphaned at a page bottom (readability fix
+    // — with readable type, sections split across pages far more often).
+    expect(content).toContain(
+      "distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx, 0, false, true)",
+    );
+    // Inline break-inside:avoid entries count as atomic descendants, so a
+    // wrapping section is a splittable container (no whole-section move that
+    // abandons a mostly-empty page).
+    expect(content).toContain('cs.breakInside === "avoid"');
   });
 
   it("distribute has atomicItems parameter", async () => {

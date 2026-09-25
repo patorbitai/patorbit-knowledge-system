@@ -3,6 +3,11 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import React from "react";
 
+// Readable-type pagination builds real multi-page sheets in jsdom; under
+// full-suite fork load this suite's 5s default intermittently trips (passes
+// standalone). Same headroom as all-templates-export-validation.
+vi.setConfig({ testTimeout: 20000, hookTimeout: 20000 });
+
 // AccountMenu (now in the Builder header) needs next-auth's session hook
 // and the ThemeProvider context.
 vi.mock("next-auth/react", () => ({

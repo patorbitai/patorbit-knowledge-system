@@ -1,10 +1,15 @@
 "use strict";
 
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import React from "react";
 import { CustomizePanel } from "../CustomizePanel";
 import { useResumeBuilder, defaultResume } from "@/store/resume-builder";
 import { renderToContainer, click, findButton, installObserverStubs, setFakeScrollHeight } from "./gallery-test-utils";
+
+// Readable-type pagination builds real multi-page sheets in jsdom; under
+// full-suite fork load this suite's 5s default intermittently trips (passes
+// standalone). Same headroom as all-templates-export-validation.
+vi.setConfig({ testTimeout: 20000, hookTimeout: 20000 });
 
 function seedStore(templateId = "modern-clean") {
   useResumeBuilder.setState({
@@ -99,6 +104,21 @@ describe("CustomizePanel", () => {
     expect(useResumeBuilder.getState().styleConfigs["r1"]?.headingWeight).toBe("semibold");
     click(findButton("Small"));
     expect(useResumeBuilder.getState().styleConfigs["r1"]?.bulletSize).toBe("small");
+    unmount();
+  });
+
+  it("applies text size, heading size, and line spacing tiers immediately", () => {
+    const { unmount } = renderToContainer(<CustomizePanel open onClose={() => {}} />);
+    const text = panelText();
+    // Design-studio labels (readability milestone): Small/Comfortable/Large,
+    // Compact/Standard/Prominent, Tight/Standard/Relaxed — no raw CSS values.
+    expect(text).toContain("Heading size");
+    click(findButton("Size Large"));
+    expect(useResumeBuilder.getState().styleConfigs["r1"]?.fontScale).toBe(1.1);
+    click(findButton("Heading size Prominent"));
+    expect(useResumeBuilder.getState().styleConfigs["r1"]?.headingScale).toBe("prominent");
+    click(findButton("Line height Relaxed"));
+    expect(useResumeBuilder.getState().styleConfigs["r1"]?.lineHeight).toBe(1.8);
     unmount();
   });
 

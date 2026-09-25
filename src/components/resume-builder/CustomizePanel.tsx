@@ -37,6 +37,7 @@ import {
   HEADING_COLOR_ACCENT,
   BULLET_STYLE_OPTIONS,
   BULLET_SIZE_OPTIONS,
+  HEADING_SCALE_OPTIONS,
   DENSITY_OPTIONS,
   SECTION_SPACING_TIERS,
   SECTION_TITLE_STYLE_OPTIONS,
@@ -50,6 +51,7 @@ import {
   getTemplateStyleSupport,
   type ResumeStyleConfig,
   type StyleOptionKey,
+  type HeadingScale,
 } from "@/lib/resume-design-system/style-config";
 
 /** One-line descriptors shown under each font specimen. */
@@ -61,9 +63,12 @@ const FONT_DESCRIPTORS: Record<string, string> = {
   mono: "Technical mono",
 };
 
-/** Outcome-language labels mapped onto the existing scale values (§4/§5). */
-const FONT_SCALE_LABELS: Record<number, string> = { 0.9: "Compact", 1: "Balanced", 1.1: "Large" };
-const LINE_HEIGHT_LABELS: Record<number, string> = { 1.4: "Compact", 1.6: "Comfortable", 1.8: "Airy" };
+/** Outcome-language labels mapped onto the existing scale values (§4/§5).
+ *  Typography tiers read as a design studio: Small / Comfortable / Large,
+ *  Compact / Standard / Prominent, Tight / Standard / Relaxed. The stored
+ *  values (0.9/1/1.1, 1.4/1.6/1.8) are unchanged. */
+const FONT_SCALE_LABELS: Record<number, string> = { 0.9: "Small", 1: "Comfortable", 1.1: "Large" };
+const LINE_HEIGHT_LABELS: Record<number, string> = { 1.4: "Tight", 1.6: "Standard", 1.8: "Relaxed" };
 
 /** Visual captions for heading-style presets (§7) — values unchanged. */
 const HEADING_STYLE_CAPTIONS: Record<string, string> = {
@@ -188,7 +193,7 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
               <Section
                 title="Typography"
                 description="Fonts and reading rhythm"
-                options={["fontFamily", "fontScale", "lineHeight"]}
+                options={["fontFamily", "fontScale", "headingScale", "lineHeight"]}
                 supported={supported}
               >
                 <OptionRow label="Font family" option="fontFamily" supported={supported}>
@@ -230,6 +235,14 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
                     options={FONT_SCALE_OPTIONS_LIST}
                     value={config.fontScale}
                     onSelect={(v) => patch({ fontScale: v as number })}
+                  />
+                </OptionRow>
+                <OptionRow label="Heading size" option="headingScale" supported={supported}>
+                  <Segmented
+                    srPrefix="Heading size"
+                    options={HEADING_SCALE_OPTIONS.map((o) => ({ value: o.value, label: o.name }))}
+                    value={config.headingScale}
+                    onSelect={(v) => patch({ headingScale: v as HeadingScale })}
                   />
                 </OptionRow>
                 <OptionRow label="Line height" option="lineHeight" supported={supported}>

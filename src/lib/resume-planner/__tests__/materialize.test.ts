@@ -66,10 +66,10 @@ describe("materializePlan", () => {
     expect(JSON.parse(JSON.stringify(resume))).toEqual(before);
   });
 
-  it("caps bullets per role for a one-page target", () => {
+  it("renders every bullet on the default plan; caps only a job-targeted plan", () => {
     const plan = buildContentPlan(EARLY_CAREER, { jobAware: false });
     const vm = materializePlan(EARLY_CAREER, plan);
-    // 3 bullets, cap 4 → untouched
+    // 3 bullets, no cap → untouched
     expect(vm.experience[0].bulletPoints).toHaveLength(3);
 
     const longRole = makeResume({
@@ -80,10 +80,23 @@ describe("materializePlan", () => {
         },
       ],
     });
+    // Default plan: all 7 bullets render — silently truncating to preserve a
+    // one-page layout is a bug (readability fix, §11).
     const plan2 = buildContentPlan(longRole, { jobAware: false });
     const vm2 = materializePlan(longRole, plan2);
-    expect(vm2.experience[0].bulletPoints).toHaveLength(4);
-    expect(vm2.experience[0].bulletPoints).toEqual(["b1", "b2", "b3", "b4"]);
+    expect(vm2.experience[0].bulletPoints).toHaveLength(7);
+
+    // Job-targeted plan: the planner's explicit 6-bullet selection applies.
+    const jobPlan = buildContentPlan(longRole, {
+      qualificationMatch: makeMatchFixture([{ classification: "PROVEN", requirement: "SQL" }]),
+      jobTitle: "Data Analyst",
+    });
+    expect(
+      jobPlan.sections.find((s) => s.type === "experience")?.maxBulletsPerItem,
+    ).toBe(6);
+    const jobVm = materializePlan(longRole, jobPlan);
+    expect(jobVm.experience[0].bulletPoints).toHaveLength(6);
+    expect(jobVm.experience[0].bulletPoints).toEqual(["b1", "b2", "b3", "b4", "b5", "b6"]);
   });
 
   it("dedupes and budgets skills, highlighted first (§13)", () => {

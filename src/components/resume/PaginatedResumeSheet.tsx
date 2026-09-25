@@ -184,7 +184,17 @@ function hasAtomicDescendant(el: HTMLElement): boolean {
   const walker = document.createTreeWalker(el, NodeFilter.SHOW_ELEMENT);
   let n: Node | null = walker.nextNode();
   while (n) {
-    if ((n as HTMLElement).classList.contains("break-inside-avoid")) return true;
+    const d = n as HTMLElement;
+    // Class OR inline/computed `break-inside: avoid` — templates mark their
+    // entries with the inline style (shared ExperienceEntry, factory entries),
+    // and a section that wraps them must count as a SPLITTABLE container:
+    // otherwise the section is an "atomic leaf" and moves whole, abandoning a
+    // large blank gap on the previous page once type is readable-sized.
+    if (d.classList.contains("break-inside-avoid")) return true;
+    // Single getComputedStyle per node — this walks whole section subtrees and
+    // getComputedStyle is expensive (jsdom), so never call it twice.
+    const cs = getComputedStyle(d);
+    if (cs.breakInside === "avoid" || cs.pageBreakInside === "avoid") return true;
     n = walker.nextNode();
   }
   return false;
@@ -206,7 +216,13 @@ function isAtomicLeaf(el: HTMLElement): boolean {
 function keepsWithNext(el: HTMLElement): boolean {
   if (/^H[1-6]$/.test(el.tagName)) return true;
   if (el.classList.contains("break-after-avoid")) return true;
-  return getComputedStyle(el).breakAfter === "avoid";
+  if (getComputedStyle(el).breakAfter === "avoid") return true;
+  // A section title wrapped in a plain single-child div (SECTION > DIV > H2)
+  // must keep with the block it introduces — otherwise the wrapper is treated
+  // as ordinary content and the title orphans at a page bottom.
+  const kids = elementChildren(el);
+  if (kids.length === 1 && /^H[1-6]$/.test(kids[0].tagName)) return true;
+  return false;
 }
 
 interface Metrics {
@@ -546,7 +562,12 @@ function splitOverTall(
     const startPage = state.page;
     const collected: HTMLElement[][] = [];
     const subState: DistState = { page: startPage, used: state.used, lastMB: state.lastMB };
-    distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx, 0, true, true);
+    // independentHeadings=false: a section title keeps with its FIRST entry
+    // (keepsWithNext → nextUnitMetrics measures an atomic entry whole), so a
+    // heading is never orphaned at the bottom of a page — the pair moves to
+    // the next page together. Entries below stay atomic: never fragment an
+    // experience entry (single-item exception only).
+    distribute(sub, subState, collected, chromeT + bPadT, chromeB + bPadB, ctx, 0, false, true);
     for (let k = startPage; k <= subState.page; k++) {
       const clone = item.cloneNode(false) as HTMLElement;
       for (const b of collected[k] ?? []) clone.appendChild(b.cloneNode(true));
@@ -1028,6 +1049,25 @@ function reflowPages(
       if (kidBottom <= pageBottom + 1) fit++;
       else break;
     }
+    // Never cut immediately AFTER a keep-with-next block (a heading): if the
+    // last fitted child introduces the next one, carry it forward too — an
+    // orphaned section title at a page bottom is a visible defect. If that
+    // zeroes the cut, the heading itself is what overflows: split anyway only
+    // when the block can't fit a fresh page either (single-item exception);
+    // otherwise carry the whole block so the title travels with its entry.
+    let cut = fit;
+    while (cut > 0 && keepsWithNext(liveKids[cut - 1])) cut--;
+    if (cut <= 0 && fit > 0) {
+      const blockH = liveBlock.getBoundingClientRect().height / ctx.zoom;
+      const nextUsable0 = usableFor(k + 1, 0, 0, ctx);
+      if (blockH <= nextUsable0) {
+        if (!out[k + 1]) out.push([]);
+        out[k + 1].unshift(block);
+        continue;
+      }
+      cut = fit; // block taller than a page — split at the heading as a last resort
+    }
+    fit = cut;
     if (fit <= 0) {
       out[k].push(block); // no strict progress — give up
       break;

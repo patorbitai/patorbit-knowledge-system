@@ -59,9 +59,22 @@ export interface DocxResumeData {
     degree?: string;
     year?: string;
     field?: string;
+    gpa?: string;
+    honors?: string;
+    location?: string;
   }[];
   skills?: { id: number | string; name?: string; level?: string; category?: string; years?: string }[];
-  projects?: { id: number | string; name?: string; description?: string; tech?: string; link?: string }[];
+  projects?: {
+    id: number | string;
+    name?: string;
+    description?: string;
+    tech?: string;
+    link?: string;
+    role?: string;
+    startDate?: string;
+    endDate?: string;
+    bulletPoints?: string[];
+  }[];
   certifications?: { id: number | string; name?: string; issuer?: string; date?: string }[];
   achievements?: { id: number | string; title?: string; description?: string; issuer?: string; date?: string }[];
   languages?: { id: number | string; name?: string; proficiency?: string }[];
@@ -120,6 +133,10 @@ export const BULLET_GLYPHS: Record<string, string> = {
 export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?: ResumeContentPlan): Document {
   const font = wordFontName(style.fontFamily);
   const scale = clamp(style.fontScale, 0.9, 1.1, 1);
+  // Heading prominence tier — the SAME Compact/Standard/Prominent choice the
+  // Customize panel applies to h1/h2 in the preview (§3 parity: customization
+  // → preview → DOCX/PDF uses one configuration).
+  const headingK = style.headingScale === "compact" ? 0.9 : style.headingScale === "prominent" ? 1.15 : 1;
   const accent = hexColor(style.accentColor, "0ea5e9");
   const headingHex = hexColor(style.headingColor, "0f172a");
   const body = hexColor(style.bodyColor, "374151");
@@ -134,17 +151,19 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
 
   const sz = (halfPoints: number) => Math.max(8, Math.round(halfPoints * scale));
 
-  const headingRun = (text: string, size: number, color: string): TextRun =>
+  const headingRun = (text: string, size: number, color: string, tiered = false): TextRun =>
     new TextRun({
       text: applyHeadingCase(text, style.headingStyle),
       bold: headingBold,
       allCaps: headingCaps,
-      size: sz(size),
+      size: sz(size * (tiered ? headingK : 1)),
       font,
       color,
     });
 
-  const bodyRun = (text: string, size = 20, color = body): TextRun =>
+  // Readable body size: 21 half-points = 10.5pt — mirrors the preview's 14px
+  // body on the 96dpi A4 sheet (both multiplied by the Text size tier).
+  const bodyRun = (text: string, size = 21, color = body): TextRun =>
     new TextRun({ text, size: sz(size), font, color });
 
   const children: Paragraph[] = [];
@@ -154,7 +173,7 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
     new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: { after: 60, line },
-      children: [headingRun(data.name || "Your Name", 32, headingHex)],
+      children: [headingRun(data.name || "Your Name", 44, headingHex, true)],
     }),
   );
 
@@ -163,7 +182,7 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
       new Paragraph({
         alignment: AlignmentType.CENTER,
         spacing: { after: 80, line },
-        children: [bodyRun(data.title, 22, muted)],
+        children: [bodyRun(data.title, 26, muted)],
       }),
     );
   }
@@ -171,7 +190,7 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
   // Contact line — LinkedIn/GitHub become real hyperlinks where present.
   const contactChildren: ParagraphChild[] = [];
   const pushContact = (text: string, link?: string) => {
-    const run = bodyRun(text, 18, muted);
+    const run = bodyRun(text, 19, muted);
     contactChildren.push(
       link
         ? new ExternalHyperlink({ link, children: [run] })
@@ -209,7 +228,7 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
       new Paragraph({
         spacing: { before: sectionSpacing, after: 40, line },
         border: { bottom: { color: accent, size: 6, style: BorderStyle.SINGLE, space: 4 } },
-        children: [headingRun(title, 20, headingHex)],
+        children: [headingRun(title, 22, headingHex, true)],
       }),
     );
   }
@@ -254,9 +273,9 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
         new Paragraph({
           spacing: { before: 60, after: 20, line },
           children: [
-            headingRun(exp.position || "", 21, headingHex),
-            ...(exp.company ? [bodyRun(`  at ${exp.company}`, 20, muted)] : []),
-            ...(exp.duration ? [bodyRun(`  (${exp.duration})`, 18, muted)] : []),
+            headingRun(exp.position || "", 22, headingHex),
+            ...(exp.company ? [bodyRun(`  at ${exp.company}`, 21, muted)] : []),
+            ...(exp.duration ? [bodyRun(`  (${exp.duration})`, 19, muted)] : []),
           ],
         }),
       );
@@ -264,11 +283,16 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
         children.push(
           new Paragraph({
             spacing: { after: 20, line },
-            children: [bodyRun(exp.location, 18, muted)],
+            children: [bodyRun(exp.location, 19, muted)],
           }),
         );
       }
       if (exp.description) addBullets(exp.description, entrySpacing);
+      // bulletPoints is what the preview renders as the <ul> list — without
+      // this the DOCX silently dropped every bullet (content loss vs preview).
+      if (exp.bulletPoints?.length) {
+        for (const bp of exp.bulletPoints) addBullets(bp, entrySpacing);
+      }
       children.push(new Paragraph({ spacing: { after: entrySpacing } }));
     }
   };
@@ -281,16 +305,33 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
         new Paragraph({
           spacing: { before: 40, after: 20, line },
           children: [
-            headingRun(edu.school || "", 21, headingHex),
-            ...(edu.degree ? [bodyRun(`  — ${edu.degree}${edu.field ? `, ${edu.field}` : ""}`, 20, muted)] : []),
+            headingRun(edu.school || "", 22, headingHex),
+            ...(edu.degree ? [bodyRun(`  — ${edu.degree}${edu.field ? `, ${edu.field}` : ""}`, 21, muted)] : []),
+            ...(edu.gpa ? [bodyRun(`  · GPA ${edu.gpa}`, 21, muted)] : []),
           ],
         }),
       );
       if (edu.year) {
         children.push(
           new Paragraph({
+            spacing: { after: 20, line },
+            children: [bodyRun(edu.year, 19, muted)],
+          }),
+        );
+      }
+      if (edu.honors) {
+        children.push(
+          new Paragraph({
+            spacing: { after: 20, line },
+            children: [bodyRun(edu.honors, 19, muted)],
+          }),
+        );
+      }
+      if (edu.location) {
+        children.push(
+          new Paragraph({
             spacing: { after: entrySpacing, line },
-            children: [bodyRun(edu.year, 18, muted)],
+            children: [bodyRun(edu.location, 19, muted)],
           }),
         );
       }
@@ -327,9 +368,9 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
             spacing: { after: Math.round(entrySpacing / 2), line },
             children: [
               ...(group.label
-                ? [new TextRun({ text: `${group.label}: `, bold: true, size: sz(19), font, color: headingHex })]
+                ? [new TextRun({ text: `${group.label}: `, bold: true, size: sz(21), font, color: headingHex })]
                 : []),
-              bodyRun(names.join(" · "), 19),
+              bodyRun(names.join(" · "), 21),
             ],
           }),
         );
@@ -358,12 +399,21 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
         new Paragraph({
           spacing: { before: 40, after: 20, line },
           children: [
-            headingRun(proj.name || "", 21, headingHex),
-            ...(proj.tech ? [bodyRun(`  | ${proj.tech}`, 20, muted)] : []),
+            headingRun(proj.name || "", 22, headingHex),
+            ...(proj.role ? [bodyRun(`  — ${proj.role}`, 21, muted)] : []),
+            ...(proj.tech ? [bodyRun(`  | ${proj.tech}`, 21, muted)] : []),
+            ...(() => {
+              const d = [proj.startDate, proj.endDate].filter(Boolean).join(" – ");
+              return d ? [bodyRun(`  (${d})`, 19, muted)] : [];
+            })(),
           ],
         }),
       );
       if (proj.description) addBullets(proj.description, entrySpacing);
+      // Same preview-parity rule as experience: bulletPoints ARE the content.
+      if (proj.bulletPoints?.length) {
+        for (const bp of proj.bulletPoints) addBullets(bp, entrySpacing);
+      }
       children.push(new Paragraph({ spacing: { after: entrySpacing } }));
     }
   };
@@ -376,8 +426,8 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
         new Paragraph({
           spacing: { after: entrySpacing, line },
           children: [
-            headingRun(cert.name || "", 20, headingHex),
-            ...(cert.issuer ? [bodyRun(`  — ${cert.issuer}`, 20, muted)] : []),
+            headingRun(cert.name || "", 21, headingHex),
+            ...(cert.issuer ? [bodyRun(`  — ${cert.issuer}`, 21, muted)] : []),
           ],
         }),
       );
@@ -392,9 +442,9 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
         new Paragraph({
           spacing: { after: Math.round(entrySpacing / 2), line },
           children: [
-            headingRun(a.title || "", 19, headingHex),
-            ...(a.description ? [bodyRun(`  — ${a.description}`, 19, muted)] : []),
-            ...(a.issuer ? [bodyRun(` (${a.issuer})`, 18, muted)] : []),
+            headingRun(a.title || "", 21, headingHex),
+            ...(a.description ? [bodyRun(`  — ${a.description}`, 21, muted)] : []),
+            ...(a.issuer ? [bodyRun(` (${a.issuer})`, 19, muted)] : []),
           ],
         }),
       );
@@ -478,7 +528,7 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
           basedOn: "Normal",
           next: "Normal",
           quickFormat: true,
-          run: { font, size: sz(22), color: body },
+          run: { font, size: sz(21), color: body },
         },
       ],
     },

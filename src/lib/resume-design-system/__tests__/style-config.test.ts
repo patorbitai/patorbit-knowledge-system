@@ -116,15 +116,32 @@ describe("buildStyleRules", () => {
     expect(rules).toContain("font-family: var(--rs-font) !important");
   });
 
-  it("emits zoom, spacing, and margin rules on divergence", () => {
+  it("emits spacing and margin rules on divergence (type scale is var-driven)", () => {
     const rules = buildStyleRules(
       { ...DEFAULT_STYLE_CONFIG, fontScale: 1.1, sectionSpacing: 32, entrySpacing: 8, pageMargin: 48 },
       getTemplateStyleSupport("modern-clean"),
     );
-    expect(rules).toContain("zoom: var(--rs-font-scale)");
+    // Text size no longer emits a CSS `zoom` rule: zoom was stripped by
+    // serializePage (fixed-height A4 pages), so it never reached the real
+    // preview or the printed/PDF output. Templates scale via rs() → --rs-type.
+    expect(rules).not.toContain("zoom:");
     expect(rules).toContain("margin-bottom: var(--rs-section-spacing)");
     expect(rules).toContain("margin-top: var(--rs-entry-spacing)");
     expect(rules).toContain("padding: var(--rs-page-margin)");
+  });
+
+  it("emits heading-size tiers only when diverged from Standard", () => {
+    const standard = buildStyleRules(resolveStyleConfig(), getTemplateStyleSupport("modern-clean"));
+    expect(standard).not.toContain("h1 { font-size");
+    expect(standard).not.toContain("h2 { font-size");
+
+    const compact = buildStyleRules(resolveStyleConfig({ headingScale: "compact" }), getTemplateStyleSupport("modern-clean"));
+    expect(compact).toContain("[data-rs-scope] h1 { font-size: calc(var(--rs-type, 1) * 30px) !important; }");
+    expect(compact).toContain("[data-rs-scope] h2 { font-size: calc(var(--rs-type, 1) * 14px) !important; }");
+
+    const prominent = buildStyleRules(resolveStyleConfig({ headingScale: "prominent" }), getTemplateStyleSupport("modern-clean"));
+    expect(prominent).toContain("[data-rs-scope] h1 { font-size: calc(var(--rs-type, 1) * 37px) !important; }");
+    expect(prominent).toContain("[data-rs-scope] h2 { font-size: calc(var(--rs-type, 1) * 17.5px) !important; }");
   });
 
   it("never emits rules for unsupported options", () => {
@@ -233,5 +250,18 @@ describe("buildStyleVars", () => {
     expect(vars["--rs-heading-transform"]).toBe("uppercase");
     expect(vars["--rs-heading-spacing"]).toBe("0.08em");
     expect(vars["--rs-bullet"]).toBe("-");
+  });
+
+  it("carries the text-size factor on --rs-type for rs() template styles", () => {
+    // The active type scale must survive serializePage (it strips the legacy
+    // --rs-font-scale + zoom rule), so preview and PDF/print agree with DOCX.
+    expect(buildStyleVars(resolveStyleConfig({ fontScale: 1.1 }))["--rs-type"]).toBe("1.1");
+    expect(buildStyleVars(resolveStyleConfig({ fontScale: 0.9 }))["--rs-type"]).toBe("0.9");
+    expect(buildStyleVars(resolveStyleConfig())["--rs-type"]).toBe("1");
+  });
+
+  it("rejects unknown heading-scale values, falling back to Standard", () => {
+    expect(resolveStyleConfig({ headingScale: "huge" as never }).headingScale).toBe("standard");
+    expect(resolveStyleConfig({ headingScale: "prominent" }).headingScale).toBe("prominent");
   });
 });

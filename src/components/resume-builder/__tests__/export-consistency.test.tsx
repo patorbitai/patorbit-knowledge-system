@@ -12,6 +12,11 @@ import { A4 } from "@/lib/resume-design-system/geometry";
 
 vi.mock("file-saver", () => ({ saveAs: vi.fn() }));
 
+// Readable-type pagination renders real 2-page scopes in jsdom; under full-suite
+// fork load this suite's 5s default intermittently trips (passes at ~0.8s/test
+// standalone). Give it the same headroom as all-templates-export-validation.
+vi.setConfig({ testTimeout: 20000, hookTimeout: 20000 });
+
 import { exportToDocx } from "@/utils/export";
 
 /**
