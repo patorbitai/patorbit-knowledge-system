@@ -7,6 +7,7 @@ import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { useResumePlan } from "@/lib/resume-planner/react";
 import { A4 } from "@/lib/resume-design-system/geometry";
 import { InlineEditLayer } from "@/components/resume-builder/inline/InlineEditLayer";
+import { EditHint } from "@/components/resume-builder/inline/EditHint";
 
 /**
  * MobilePreview — a lightweight, crash-safe resume preview for mobile viewports.
@@ -31,6 +32,13 @@ export function MobilePreview() {
       <div className="shrink-0 px-4 py-2 text-[10px] text-gray-400 dark:text-slate-500 text-center">
         A4 Preview • {Math.round(scale * 100)}%
       </div>
+
+      {/* M5A — first-use touch discoverability: one quiet line inside the
+          existing meta area, dismissible, gone after the first edit. */}
+      <EditHint
+        text="Tap any text to edit"
+        className="shrink-0 px-4 pb-1 text-[10px] font-medium text-gray-400 dark:text-slate-500 justify-center"
+      />
 
       {/* Preview container */}
       <div className="flex-1 min-h-0 w-full overflow-auto flex justify-center pb-8">

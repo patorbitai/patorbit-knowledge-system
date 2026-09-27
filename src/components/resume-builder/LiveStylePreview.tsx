@@ -8,6 +8,7 @@ import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { useResumePlan } from "@/lib/resume-planner/react";
 import { A4 } from "@/lib/resume-design-system/geometry";
 import { InlineEditLayer } from "@/components/resume-builder/inline/InlineEditLayer";
+import { EditHint } from "@/components/resume-builder/inline/EditHint";
 
 const PAGE_WIDTH = A4.widthPx;
 const PAGE_HEIGHT = A4.heightPx;
@@ -290,6 +291,12 @@ export function LiveStylePreview({
         <span className="text-[10px] text-gray-400 dark:text-slate-500 hidden lg:inline">
           {pages} page{pages > 1 ? "s" : ""} · A4
         </span>
+        {/* M5A — first-use discoverability: quiet, dismissible, gone after
+            the first popover open. Lives in the existing toolbar row. */}
+        <EditHint
+          text="Click any text to edit"
+          className="px-2 py-0.5 rounded-full border border-gray-200 dark:border-white/[0.08] text-[10px] font-medium text-gray-400 dark:text-slate-500"
+        />
       </div>
 
       {/* Stage — a neutral canvas holding the document (§6): the sheet is

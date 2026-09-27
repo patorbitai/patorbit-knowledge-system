@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { SectionCard } from "../section-card";
 import { SectionContent } from "../fields/SectionContent";
@@ -31,6 +31,18 @@ export function PersonalSection() {
   const [editing, setEditing] = useState(false);
   const [summarySuggestion, setSummarySuggestion] = useState<string | null>(null);
   const [toneSuggestion, setToneSuggestion] = useState<string | null>(null);
+  // M5A — summary edit affordance. "Edit summary" opens the SAME edit view
+  // (no second editor, no extra save path) and scrolls the summary field in.
+  // The intent lives in a ref and is consumed inside the effect, so no state
+  // is ever set from an effect.
+  const focusSummaryRef = useRef(false);
+  const summaryAnchorRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (editing && focusSummaryRef.current) {
+      focusSummaryRef.current = false;
+      summaryAnchorRef.current?.scrollIntoView?.({ block: "center" });
+    }
+  }, [editing]);
 
   /** Validation message for a link field (undefined when valid/empty). */
   const urlError = (value: string): string | undefined => {
@@ -175,10 +187,27 @@ export function PersonalSection() {
             </div>
           )}
 
-          {/* Summary — flat, with contextual AI beneath (§8) */}
+          {/* Summary — flat, with contextual AI beneath (§8).
+              M5A: the heading row carries a quiet Edit affordance so ordinary
+              editing is discoverable, kept visually separate from the AI
+              action below it. */}
           {resume.summary ? (
             <div>
-              <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-1.5">Professional summary</h5>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500">Professional summary</h5>
+                <button
+                  type="button"
+                  onClick={() => {
+                    focusSummaryRef.current = true;
+                    setEditing(true);
+                  }}
+                  aria-label="Edit summary"
+                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+                >
+                  <Pencil className="w-3 h-3" aria-hidden="true" />
+                  Edit
+                </button>
+              </div>
               <ResumeFont>
                 <p className="text-[13px] leading-relaxed text-gray-600 dark:text-slate-300 whitespace-pre-wrap">{resume.summary}</p>
               </ResumeFont>
@@ -320,7 +349,7 @@ export function PersonalSection() {
           </div>
 
           {/* Summary */}
-          <div>
+          <div ref={summaryAnchorRef}>
             <div className="flex items-center justify-between mb-3">
               <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500">Summary</h5>
               <div className="flex items-center gap-1.5">

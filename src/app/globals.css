@@ -1033,3 +1033,24 @@ button, label, [role="button"] {
      border-radius, shadow, or text-shadow stripping — those rules changed
      template designs (rounded chips printed as squares). */
 }
+
+/* ── M5A: transient hover affordance for click-to-edit regions ─────────── *
+ * The attribute is only ever present while the pointer is over a region
+ * that would open the edit popover (set/removed by InlineEditLayer), so the
+ * idle resume keeps its pure document look: no permanent boxes anywhere.
+ * Neutral slate — never template accent colors — and suppressed for print. */
+[data-rs-edit-hover] {
+  cursor: pointer !important;
+  border-radius: 3px;
+  box-shadow: 0 0 0 3px rgba(100, 116, 139, 0.35);
+  background-color: rgba(100, 116, 139, 0.08);
+  transition: box-shadow 120ms ease-out, background-color 120ms ease-out;
+}
+
+@media print {
+  [data-rs-edit-hover] {
+    box-shadow: none;
+    background-color: transparent;
+    cursor: auto;
+  }
+}
