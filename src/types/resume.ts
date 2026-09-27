@@ -115,6 +115,34 @@ export interface Portfolio {
 
 export type CareerStage = "student" | "recent-graduate" | "working-professional" | "manager" | "freelancer";
 
+/**
+ * M4 §6 — resume-version-scoped section preferences.
+ *
+ * Keys mirror the planner's SectionType (the sections the rendering system
+ * can draw). Stored ON the resume document, so ordering/visibility belongs
+ * to THIS resume version: editing a job version's section order can never
+ * reorder the Master Profile, and switching templates preserves it (the
+ * planner applies the same prefs to every template).
+ */
+export type ResumeSectionKey =
+  | "summary"
+  | "experience"
+  | "skills"
+  | "projects"
+  | "education"
+  | "certs"
+  | "achievements"
+  | "languages"
+  | "interests";
+
+export interface SectionPrefs {
+  /** Explicit user order; sections missing from this list keep their
+   *  strategy order after the listed ones. */
+  order?: ResumeSectionKey[];
+  /** Sections the user hid from THIS resume version. */
+  hidden?: ResumeSectionKey[];
+}
+
 export const CAREER_STAGES: { value: CareerStage; label: string; description: string }[] = [
   { value: "student", label: "Student", description: "Currently enrolled in an academic program" },
   { value: "recent-graduate", label: "Recent Graduate", description: "Graduated within the last 2 years" },
@@ -151,6 +179,8 @@ export interface Resume {
   palettePreference?: string;
   exportFormat?: string;
   pageSize?: string;
+  /** Optional, additive: per-version section order/visibility (M4 §6). */
+  sectionPrefs?: SectionPrefs;
   claims: Claim[];
 }
 

@@ -10,6 +10,6 @@ export const PremiumSlatePreview = generateTemplate({
   density: "normal",
   sectionOrder: ["summary", "experience", "skills", "projects", "education", "certs", "achievements", "languages"],
   sectionTitleStyle: "boxed",
-  skillStyle: "chips",
+  skillStyle: "grouped",
   bullet: "•",
 });

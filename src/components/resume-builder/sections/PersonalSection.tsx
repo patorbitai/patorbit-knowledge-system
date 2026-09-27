@@ -12,6 +12,7 @@ import { ai } from "@/lib/ai/client";
 import { useValidation } from "../hooks/useValidation";
 import { Mail, Phone, MapPin, Link2, Globe, Pencil, Check, Sparkles } from "lucide-react";
 import { ResumeFont } from "../cards/ResumeFont";
+import { safeHref, validateWebUrl } from "@/lib/resume-links";
 
 const LINK_FIELDS: Array<{ key: "linkedin" | "github" | "website"; label: string; Icon: React.ComponentType<{ className?: string }> }> = [
   { key: "linkedin", label: "LinkedIn", Icon: Link2 },
@@ -30,6 +31,12 @@ export function PersonalSection() {
   const [editing, setEditing] = useState(false);
   const [summarySuggestion, setSummarySuggestion] = useState<string | null>(null);
   const [toneSuggestion, setToneSuggestion] = useState<string | null>(null);
+
+  /** Validation message for a link field (undefined when valid/empty). */
+  const urlError = (value: string): string | undefined => {
+    const check = validateWebUrl(value);
+    return check.valid ? undefined : check.message;
+  };
 
   const handleGenerateSummary = async () => {
     setAIAction("summary-generate", { status: "loading", result: null, error: null });
@@ -150,17 +157,21 @@ export function PersonalSection() {
           {/* Links — quiet text links, not chips */}
           {LINK_FIELDS.some(({ key }) => resume.social[key]) && (
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
-              {LINK_FIELDS.filter(({ key }) => resume.social[key]).map(({ key, label }) => (
-                <a
-                  key={key}
-                  href={resume.social[key].startsWith("http") ? resume.social[key] : `https://${resume.social[key]}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors underline-offset-2 hover:underline"
-                >
-                  {label}
-                </a>
-              ))}
+              {LINK_FIELDS.filter(({ key }) => resume.social[key]).map(({ key, label }) => {
+                const href = safeHref(resume.social[key]);
+                const cls =
+                  "inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors underline-offset-2 hover:underline";
+                // Unsafe/invalid values stay visible as plain text — never clickable.
+                return href ? (
+                  <a key={key} href={href} target="_blank" rel="noreferrer" className={cls}>
+                    {label}
+                  </a>
+                ) : (
+                  <span key={key} className={cls}>
+                    {label}
+                  </span>
+                );
+              })}
             </div>
           )}
 
@@ -259,6 +270,7 @@ export function PersonalSection() {
                 placeholder="linkedin.com/in/yourprofile"
                 value={resume.social.linkedin}
                 onChange={(v) => updateSocial("linkedin", v)}
+                error={urlError(resume.social.linkedin)}
                 type="url"
               />
               <FieldInput
@@ -266,16 +278,45 @@ export function PersonalSection() {
                 placeholder="github.com/yourhandle"
                 value={resume.social.github}
                 onChange={(v) => updateSocial("github", v)}
+                error={urlError(resume.social.github)}
                 type="url"
               />
               <FieldInput
-                label="Portfolio"
+                label="Website"
                 placeholder="yourwebsite.com"
                 value={resume.social.website}
                 onChange={(v) => updateSocial("website", v)}
+                error={urlError(resume.social.website)}
+                type="url"
+              />
+              <FieldInput
+                label="Portfolio link"
+                placeholder="yourname.com/work"
+                value={resume.social.portfolio}
+                onChange={(v) => updateSocial("portfolio", v)}
+                error={urlError(resume.social.portfolio)}
+                type="url"
+              />
+              <FieldInput
+                label="Twitter / X"
+                placeholder="x.com/yourhandle"
+                value={resume.social.twitter}
+                onChange={(v) => updateSocial("twitter", v)}
+                error={urlError(resume.social.twitter)}
+                type="url"
+              />
+              <FieldInput
+                label="Stack Overflow"
+                placeholder="stackoverflow.com/users/…"
+                value={resume.social.stackoverflow}
+                onChange={(v) => updateSocial("stackoverflow", v)}
+                error={urlError(resume.social.stackoverflow)}
                 type="url"
               />
             </div>
+            <p className="text-[11px] text-gray-400 dark:text-slate-500 mt-1.5">
+              Links must be http(s) URLs — they render as real clickable links in your resume and exports.
+            </p>
           </div>
 
           {/* Summary */}

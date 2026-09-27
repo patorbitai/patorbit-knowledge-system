@@ -13,11 +13,12 @@
  * hidden on small screens).
  */
 import { useState } from "react";
-import { ArrowUpRight, Crown, GitBranch, ShieldAlert, Target } from "lucide-react";
+import { ArrowUpRight, Crown, GitBranch, Layers, ShieldAlert, Target } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import { SaveToIdentityButton } from "./SaveToIdentityButton";
 import { SafetyFindingsList, useResumeSafety } from "./SafetyFindingsList";
+import { SectionManager } from "./SectionManager";
 
 export function ResumeContextBar() {
   const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
@@ -29,6 +30,7 @@ export function ResumeContextBar() {
   const promoteResumeToMaster = useResumeBuilder((s) => s.promoteResumeToMaster);
   const safety = useResumeSafety();
   const [confirmPromote, setConfirmPromote] = useState(false);
+  const [sectionsOpen, setSectionsOpen] = useState(false);
 
   const master = lineage
     ? resumes.find((r) => r.resumeId === lineage.sourceResumeId)
@@ -113,6 +115,15 @@ export function ResumeContextBar() {
           </span>
           <button
             type="button"
+            onClick={() => setSectionsOpen(true)}
+            aria-label="Manage sections"
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-gray-200 dark:border-white/[0.1] text-[11px] font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+          >
+            <Layers className="w-3.5 h-3.5" aria-hidden="true" />
+            Sections
+          </button>
+          <button
+            type="button"
             onClick={() => window.dispatchEvent(new CustomEvent("patorbit:open-tailor"))}
             className="inline-flex items-center gap-1.5 h-7 px-3 rounded-md bg-cyan-600 hover:bg-cyan-700 text-white text-[11px] font-medium transition-colors cursor-pointer"
           >
@@ -158,6 +169,8 @@ export function ResumeContextBar() {
         }}
         onCancel={() => setConfirmPromote(false)}
       />
+
+      <SectionManager open={sectionsOpen} onClose={() => setSectionsOpen(false)} />
     </div>
   );
 }

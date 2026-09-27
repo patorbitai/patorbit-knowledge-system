@@ -11,5 +11,6 @@ export const CreativePortfolioPreview = generateTemplate({
   sectionOrder: ["summary", "experience", "projects", "certs", "achievements", "languages", "interests", "skills", "education"],
   sectionTitleStyle: "boxed",
   skillStyle: "chips",
+  expressive: true,
   bullet: "✦",
 });

@@ -33,6 +33,6 @@ export const TimelineLayoutPreview = generateTemplate({
     "languages",
   ],
   sectionTitleStyle: "underline",
-  skillStyle: "chips",
+  skillStyle: "grouped",
   bullet: "\u25b8",
 });

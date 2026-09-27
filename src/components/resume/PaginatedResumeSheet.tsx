@@ -42,6 +42,12 @@ const SAFE_TOP = PAGE_FRAME.safe.top;
 const SAFE_BOTTOM = PAGE_FRAME.safe.bottom;
 /** Safety margin so splitter estimation drift can never clip content. */
 const SLACK = 6;
+/** Containers at or below this height are never recursed into when they are
+ *  columnar: a small flex ROW (e.g. a certification line with side-by-side
+ *  label + date) must move WHOLE. Splitting it via splitColumnar() wastes
+ *  whole pages — its conservative tail advances state to a fresh page with
+ *  used=full, abandoning ~1000px of the current page. */
+const MIN_SPLITTABLE = 160;
 /** Styles for the off-screen holders used to measure detached clones. */
 const HOLDER_CSS =
   "position:fixed;left:-99999px;top:0;width:794px;visibility:hidden;pointer-events:none";
@@ -494,7 +500,11 @@ function splitColumnar(
       ctx,
       chromeTop,
     );
-    return collected;
+    // `collected` is indexed by ABSOLUTE page number (sub-distribute starts at
+    // the current page), but the render loop below and the tail math are
+    // 0-based relative to startPage. Shift so a block starting mid-document
+    // doesn't overcount numPages and jump state forward with used=full.
+    return collected.slice(startPage);
   });
 
   let numPages = Math.max(rowPages.length, ...colPages.map((c) => c.length));
@@ -667,18 +677,23 @@ function distribute(
     // ── ATOMIC ITEMS MODE ──────────────────────────────────────────────
     // When atomicItems is true (called from splitOverTall distributing a
     // section's children), every child is a semantic pagination unit
-    // (e.g. one Experience entry). Move it WHOLE to the next page.
-    // Only split if the item itself is taller than the entire page.
+    // (e.g. one Experience entry). Leaf / atomic / small-row units move
+    // WHOLE to the next page — never fragment an entry; only an item taller
+    // than the entire page may split (single-item exception). Splittable
+    // containers (a section / body wrapper not marked break-inside-avoid)
+    // RECURSE so their own entries paginate individually: moving a whole
+    // section abandons 600px+ gaps and adds phantom pages. Small columnar
+    // rows (cert lines, chip rows) also move whole — splitting them via
+    // splitColumnar wastes whole pages (see MIN_SPLITTABLE).
     if (atomicItems) {
-      if (m.mt + m.h + m.mb <= nextUsable) {
+      const kidCount = elementChildren(item).length;
+      const smallColumnar = m.h <= MIN_SPLITTABLE && isColumnar(item);
+      if ((kidCount === 0 || isAtomic(item) || smallColumnar) && m.mt + m.h + m.mb <= nextUsable) {
         debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "MOVE_TO_NEXT_PAGE" });
         nextPage(state);
         place(state, out, item, m.mt, m.mb, m.h);
         continue;
       }
-      // Item is taller than the entire page — single-item exception.
-      // Allow splitOverTall to break it, but this is ONLY for items
-      // that physically cannot fit on any single page.
       debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "SPLIT" });
       splitOverTall(item, state, out, chromeT, chromeB, ctx);
       continue;
@@ -693,7 +708,10 @@ function distribute(
     }
 
     const childCount = elementChildren(item).length;
-    if (m.mt + m.h + m.mb <= nextUsable && m.h <= nextUsable / 2 && childCount <= 1) {
+    // Small columnar rows (cert lines, chip rows) move whole — splitting them
+    // through splitColumnar is pathological (see MIN_SPLITTABLE).
+    const smallColumnarN = m.h <= MIN_SPLITTABLE && isColumnar(item);
+    if (m.mt + m.h + m.mb <= nextUsable && m.h <= nextUsable / 2 && (childCount <= 1 || smallColumnarN)) {
       debugLogDecision({ pageIndex: state.page, blockLabel, blockHeight: m.h, remaining, decision: "MOVE_TO_NEXT_PAGE" });
       nextPage(state);
       place(state, out, item, m.mt, m.mb, m.h);
@@ -1097,9 +1115,51 @@ function reflowPages(
     const n = Math.min(fit, origKids.length);
     // Keep any blocks that fit on this page; only the crossing block is
     // replaced by its measured fit slice, and its tail leads the next page.
-    out[k].push(rebuildChain(makeLeaf(0, n)));
+    //
+    // One-level descent: the crossing child (n) may itself be a splittable
+    // container (e.g. a section holding experience entries). Shedding it
+    // WHOLE abandons hundreds of px of the current page and cascades into
+    // phantom extra pages. If some of its own children fit below the
+    // boundary, keep them here and carry only its remainder — heading
+    // keep-with-next protection applies inside the descent too.
+    let carriedHead: HTMLElement | null = null;
+    let carriedRest: HTMLElement | null = null;
+    if (n < origKids.length && n < liveKids.length) {
+      const cLive = liveKids[n];
+      const cOrig = origKids[n];
+      const ck = elementChildren(cLive);
+      const co = elementChildren(cOrig);
+      if (ck.length >= 2 && ck.length === co.length && !isAtomicLeaf(cLive) && !isAtomic(cOrig)) {
+        let g = 0;
+        for (const kid of ck) {
+          const kb = kid.getBoundingClientRect().bottom + px(getComputedStyle(kid).marginBottom);
+          if (kb <= pageBottom + 1) g++;
+          else break;
+        }
+        let gcut = g;
+        while (gcut > 0 && keepsWithNext(ck[gcut - 1])) gcut--;
+        if (gcut > 0 && gcut < co.length) {
+          carriedHead = cOrig.cloneNode(false) as HTMLElement;
+          for (let i = 0; i < gcut; i++) carriedHead.appendChild(co[i].cloneNode(true));
+          carriedRest = cOrig.cloneNode(false) as HTMLElement;
+          for (let i = gcut; i < co.length; i++) carriedRest.appendChild(co[i].cloneNode(true));
+        }
+      }
+    }
+
+    const leafK = makeLeaf(0, n);
+    if (carriedHead) leafK.appendChild(carriedHead);
+    out[k].push(rebuildChain(leafK));
     if (!out[k + 1]) out.push([]);
-    out[k + 1].unshift(rebuildChain(makeLeaf(n, origKids.length)));
+    let tailLeaf: HTMLElement;
+    if (carriedRest) {
+      tailLeaf = deepest.orig.cloneNode(false) as HTMLElement;
+      tailLeaf.appendChild(carriedRest);
+      for (let i = n + 1; i < origKids.length; i++) tailLeaf.appendChild(origKids[i].cloneNode(true));
+    } else {
+      tailLeaf = makeLeaf(n, origKids.length);
+    }
+    out[k + 1].unshift(rebuildChain(tailLeaf));
   }
   return pageRoots;
 }

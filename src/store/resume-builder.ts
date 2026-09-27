@@ -218,6 +218,8 @@ export interface ResumeBuilderState {
   setResume: (resume: Resume) => void;
   updateField: <K extends keyof Resume>(key: K, value: Resume[K]) => void;
   updateSocial: (key: keyof typeof defaultSocial, value: string) => void;
+  /** M4 §6 — section order/visibility for THIS resume version only. */
+  setSectionPrefs: (next: import("@/types/resume").SectionPrefs) => void;
   setActiveSection: (id: SectionId) => void;
   setCareerStage: (stage: import("@/types/resume").CareerStage) => void;
   resetResume: () => void;
@@ -231,7 +233,7 @@ export interface ResumeBuilderState {
   startAnalysis: () => Promise<void>;
   addExperience: () => void; updateExperience: (id: string, field: string, value: unknown) => void; removeExperience: (id: string) => void; moveExperience: (id: string, dir: -1 | 1) => void;
   addEducation: () => void; updateEducation: (id: string, field: string, value: unknown) => void; removeEducation: (id: string) => void; moveEducation: (id: string, dir: -1 | 1) => void;
-  addSkill: () => void; updateSkill: (id: string, field: string, value: unknown) => void; removeSkill: (id: string) => void;
+  addSkill: () => void; updateSkill: (id: string, field: string, value: unknown) => void; removeSkill: (id: string) => void; moveSkill: (id: string, dir: -1 | 1) => void;
   addProject: () => void; updateProject: (id: string, field: string, value: unknown) => void; removeProject: (id: string) => void; moveProject: (id: string, dir: -1 | 1) => void;
   addCertification: () => void; updateCertification: (id: string, field: string, value: unknown) => void; removeCertification: (id: string) => void; moveCertification: (id: string, dir: -1 | 1) => void;
   addAchievement: () => void; updateAchievement: (id: string, field: string, value: unknown) => void; removeAchievement: (id: string) => void;
@@ -860,6 +862,13 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
           return { resumes, resume: updatedResume, saveStatus: "unsaved" };
         }),
+        setSectionPrefs: (next) => set((s) => {
+          // Version-scoped: only the ACTIVE resume document is touched —
+          // the Master Profile's section order can never change here.
+          const updatedResume = { ...s.resume, sectionPrefs: next };
+          const resumes = s.resumes.map((r) => r.resumeId === s.activeResumeId ? updatedResume : r);
+          return { resumes, resume: updatedResume, saveStatus: "unsaved" };
+        }),
         setActiveSection: (id) => set({ activeSection: id }),
         setCareerStage: (stage) => set((s) => {
           const updatedResume = { ...s.resume, careerStage: stage };
@@ -1460,7 +1469,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
         },
         addExperience: expH.add, updateExperience: expH.update, removeExperience: expH.remove, moveExperience: expH.move,
         addEducation: eduH.add, updateEducation: eduH.update, removeEducation: eduH.remove, moveEducation: eduH.move,
-        addSkill: skillH.add, updateSkill: skillH.update, removeSkill: skillH.remove,
+        addSkill: skillH.add, updateSkill: skillH.update, removeSkill: skillH.remove, moveSkill: skillH.move,
         addProject: projH.add, updateProject: projH.update, removeProject: projH.remove, moveProject: projH.move,
         addCertification: certH.add, updateCertification: certH.update, removeCertification: certH.remove, moveCertification: certH.move,
         addAchievement: achH.add, updateAchievement: achH.update, removeAchievement: achH.remove,

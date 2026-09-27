@@ -1,14 +1,13 @@
 "use client";
 
 import React, { Fragment, type ReactNode } from "react";
-import { Resume, FormattedDescription, ContactRow } from "./shared";
+import { Resume, FormattedDescription, ContactRow, ContactValue, SocialLinkRow } from "./shared";
 import {
   fontFamilies,
-  typography,
-  spacing,
   layout,
   formatDuration,
-  rs,
+  typeSize,
+  spaceSize,
 } from "@/lib/resume-design-system";
 import { useResumeStyle } from "@/components/resume/StyleScope";
 import { useResumePlanContext } from "@/components/resume/ResumePlanContext";
@@ -49,12 +48,12 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <h2
       style={{
-        fontSize: rs(15),
+        fontSize: typeSize("section"),
         fontWeight: 700,
         letterSpacing: "0.16em",
         textTransform: "uppercase",
         color: C.gold,
-        margin: "0 0 8px 0",
+        margin: "0 0 9px 0",
         paddingBottom: 4,
         borderBottom: `1.5px solid ${C.gold}`,
         lineHeight: 1,
@@ -72,9 +71,9 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
 
   if (presentation === "inline" || presentation === "list") {
     return (
-      <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+      <section style={{ marginBottom: spaceSize("sectionGap") }}>
         <SectionTitle>Core Competencies</SectionTitle>
-        <p style={{ fontSize: rs(14), color: C.body, lineHeight: 1.6 }}>
+        <p style={{ fontSize: typeSize("body"), color: C.body, lineHeight: 1.6 }}>
           {skills.map((s) => s.name).join(" · ")}
         </p>
       </section>
@@ -83,12 +82,12 @@ function SkillsSection({ skills }: { skills: Resume["skills"] }) {
 
   const isPills = presentation === "pills";
   return (
-    <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+    <section style={{ marginBottom: spaceSize("sectionGap") }}>
       <SectionTitle>Core Competencies</SectionTitle>
       <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : "4px 16px" }}>
         {skills.map((s) => (
           <span key={s.id} style={{
-            fontSize: rs(14),
+            fontSize: typeSize("body"),
             color: C.body,
             padding: isPills ? "2px 10px" : 0,
             borderRadius: isPills ? 9999 : 0,
@@ -126,8 +125,8 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
       <header style={{ marginBottom: 20, paddingBottom: 16, borderBottom: `2px solid ${C.gold}` }}>
         <h1
           style={{
-            fontSize: rs(34),
-            fontWeight: 700,
+            fontSize: typeSize("name"),
+            fontWeight: 800,
             color: C.ink,
             letterSpacing: "-0.01em",
             lineHeight: 1.1,
@@ -138,22 +137,20 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </h1>
 
         {resume.title && (
-          <p style={{ fontSize: rs(18), fontWeight: 500, color: C.gold, marginTop: 4, letterSpacing: "0.03em" }}>
+          <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: C.gold, marginTop: 4, letterSpacing: "0.03em" }}>
             {resume.title}
           </p>
         )}
 
         {/* Contact */}
-        <div style={{ fontSize: rs(12.5), color: C.muted, marginTop: 8, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
-          {resume.email && <span>{resume.email}</span>}
-          {resume.phone && <span>{resume.phone}</span>}
-          {resume.address && <span>{resume.address}</span>}
+        <div style={{ fontSize: typeSize("meta"), color: C.muted, marginTop: 8, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
+          <ContactValue value={resume.email} kind="email" />
+          <ContactValue value={resume.phone} kind="phone" />
+          <ContactValue value={resume.address} kind="text" />
         </div>
         {resume.social && (
-          <div style={{ fontSize: rs(12.5), color: C.gold, marginTop: 3, display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
-            {resume.social.linkedin && <span>{resume.social.linkedin}</span>}
-            {resume.social.github && <span>{resume.social.github}</span>}
-            {resume.social.website && <span>{resume.social.website}</span>}
+          <div style={{ fontSize: typeSize("meta"), color: C.gold, marginTop: 3, display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
+            <SocialLinkRow social={resume.social} />
           </div>
         )}
       </header>
@@ -161,46 +158,46 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
       {(() => {
         const nodes: Partial<Record<SectionType, ReactNode>> = {
           summary: resume.summary && (
-        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+        <section style={{ marginBottom: spaceSize("sectionGap") }}>
           <SectionTitle>Executive Summary</SectionTitle>
-          <div style={{ fontSize: rs(14), lineHeight: 1.65, color: C.body }}>
+          <div style={{ fontSize: typeSize("body"), lineHeight: 1.65, color: C.body }}>
             <FormattedDescription text={resume.summary} color={C.body} mutedColor={C.muted} size="xs" />
           </div>
         </section>
       ),
       experience: resume.experience.length > 0 && (
-        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+        <section style={{ marginBottom: spaceSize("sectionGap") }}>
           <SectionTitle>Professional Experience</SectionTitle>
           {resume.experience.map((exp) => {
             const dateStr = exp.duration || [exp.startDate, exp.endDate].filter(Boolean).join(" – ");
             return (
-              <div key={exp.id} style={{ marginBottom: 14, breakInside: "avoid" }}>
+              <div key={exp.id} style={{ marginBottom: spaceSize("itemGap"), breakInside: "avoid" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontSize: rs(15), fontWeight: 700, color: C.ink }}>{exp.company}</span>
-                  {dateStr && <span style={{ fontSize: rs(12.5), color: C.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{dateStr}</span>}
+                  <span style={{ fontSize: typeSize("company"), fontWeight: 700, color: C.ink }}>{exp.company}</span>
+                  {dateStr && <span style={{ fontSize: typeSize("meta"), color: C.muted, whiteSpace: "nowrap", flexShrink: 0 }}>{dateStr}</span>}
                 </div>
-                <div style={{ fontSize: rs(14), color: C.body, marginTop: 1, fontStyle: "italic" }}>
+                <div style={{ fontSize: typeSize("body"), color: C.body, marginTop: spaceSize("metaGap"), fontStyle: "italic" }}>
                   <span style={{ fontWeight: 500 }}>{exp.position}</span>
                   {exp.employmentType && <span style={{ color: C.muted, fontStyle: "normal" }}> · {exp.employmentType}</span>}
                   {exp.location && <span style={{ color: C.muted, fontStyle: "normal" }}> · {exp.location}</span>}
                 </div>
                 {exp.description && (
-                  <div style={{ marginTop: 4, fontSize: rs(14), lineHeight: 1.65, color: C.body }}>
+                  <div style={{ marginTop: spaceSize("roleGap"), fontSize: typeSize("body"), lineHeight: 1.65, color: C.body }}>
                     <FormattedDescription text={exp.description} color={C.body} mutedColor={C.muted} size="xs" />
                   </div>
                 )}
                 {exp.bulletPoints && exp.bulletPoints.length > 0 && (
                   <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
                     {exp.bulletPoints.map((bp, i) => (
-                      <li key={i} style={{ fontSize: rs(14), lineHeight: 1.55, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
-                        <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: rs(11), top: 2 }}>{bChar || "◆"}</span>
+                      <li key={i} style={{ fontSize: typeSize("body"), lineHeight: 1.55, color: C.body, paddingLeft: 12, position: "relative", marginBottom: spaceSize("bulletGap") }}>
+                        <span style={{ position: "absolute", left: 0, color: C.muted, fontSize: typeSize("bullet"), top: 2 }}>{bChar || "◆"}</span>
                         {bp}
                       </li>
                     ))}
                   </ul>
                 )}
                 {exp.techUsed && (
-                  <div style={{ fontSize: rs(12.5), color: C.muted, marginTop: 4, fontStyle: "italic" }}>
+                  <div style={{ fontSize: typeSize("skill"), color: C.muted, marginTop: spaceSize("roleGap"), fontStyle: "italic" }}>
                     {exp.techUsed.split(/[,;]/).map((t) => t.trim()).filter(Boolean).join(" · ")}
                   </div>
                 )}
@@ -213,27 +210,27 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         <SkillsSection skills={resume.skills} />
       ),
       projects: resume.projects.length > 0 && (
-        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+        <section style={{ marginBottom: spaceSize("sectionGap") }}>
           <SectionTitle>Key Projects</SectionTitle>
           {resume.projects.map((p) => {
             const dateStr = [p.startDate, p.endDate].filter(Boolean).join(" – ");
             return (
-              <div key={p.id} style={{ marginBottom: 10, breakInside: "avoid" }}>
+              <div key={p.id} style={{ marginBottom: spaceSize("itemGap"), breakInside: "avoid" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                  <span style={{ fontSize: rs(15), fontWeight: 700, color: C.ink }}>{p.name}</span>
-                  {dateStr && <span style={{ fontSize: rs(12.5), color: C.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
+                  <span style={{ fontSize: typeSize("company"), fontWeight: 700, color: C.ink }}>{p.name}</span>
+                  {dateStr && <span style={{ fontSize: typeSize("meta"), color: C.muted, whiteSpace: "nowrap" }}>{dateStr}</span>}
                 </div>
-                {p.role && <div style={{ fontSize: rs(14), color: C.body, fontWeight: 500, marginTop: 1, fontStyle: "italic" }}>{p.role}</div>}
+                {p.role && <div style={{ fontSize: typeSize("body"), color: C.body, fontWeight: 500, marginTop: spaceSize("metaGap"), fontStyle: "italic" }}>{p.role}</div>}
                 {p.description && (
-                  <div style={{ marginTop: 3, fontSize: rs(14), lineHeight: 1.55, color: C.body }}>
+                  <div style={{ marginTop: spaceSize("metaGap"), fontSize: typeSize("body"), lineHeight: 1.55, color: C.body }}>
                     <FormattedDescription text={p.description} color={C.body} mutedColor={C.muted} size="xs" />
                   </div>
                 )}
                 {p.bulletPoints && p.bulletPoints.length > 0 && (
                   <ul style={{ margin: "3px 0 0 0", padding: 0, listStyle: "none" }}>
                     {p.bulletPoints.map((bp, i) => (
-                      <li key={i} style={{ fontSize: rs(14), lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: 1 }}>
-                        <span style={{ position: "absolute", left: 0, color: C.gold, fontSize: rs(11), top: 2 }}>{bChar || "◆"}</span>
+                      <li key={i} style={{ fontSize: typeSize("body"), lineHeight: 1.5, color: C.body, paddingLeft: 12, position: "relative", marginBottom: spaceSize("bulletGap") }}>
+                        <span style={{ position: "absolute", left: 0, color: C.muted, fontSize: typeSize("bullet"), top: 2 }}>{bChar || "◆"}</span>
                         {bp}
                       </li>
                     ))}
@@ -245,55 +242,55 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </section>
       ),
       education: resume.education.length > 0 && (
-        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+        <section style={{ marginBottom: spaceSize("sectionGap") }}>
           <SectionTitle>Education</SectionTitle>
           {resume.education.map((edu) => (
-            <div key={edu.id} style={{ marginBottom: 8, breakInside: "avoid" }}>
+            <div key={edu.id} style={{ marginBottom: spaceSize("itemGap"), breakInside: "avoid" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
-                <span style={{ fontSize: rs(15), fontWeight: 700, color: C.ink }}>{edu.school}</span>
-                {edu.year && <span style={{ fontSize: rs(12.5), color: C.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
+                <span style={{ fontSize: typeSize("company"), fontWeight: 700, color: C.ink }}>{edu.school}</span>
+                {edu.year && <span style={{ fontSize: typeSize("meta"), color: C.muted, whiteSpace: "nowrap" }}>{edu.year}</span>}
               </div>
-              <div style={{ fontSize: rs(14), color: C.body, marginTop: 1 }}>
-                <span style={{ fontWeight: 500 }}>{edu.degree}{edu.field ? ` in ${edu.field}` : ""}</span>
-                {edu.gpa && <span style={{ color: C.muted }}> · GPA {edu.gpa}</span>}
+              <div style={{ fontSize: typeSize("role"), color: C.body, marginTop: spaceSize("metaGap"), fontStyle: "italic" }}>
+                {(edu.degree || edu.field) && <span style={{ fontWeight: 500 }}>{edu.degree}{edu.field ? ` in ${edu.field}` : ""}</span>}
+                {edu.gpa && <span style={{ color: C.muted, fontStyle: "normal" }}> · GPA {edu.gpa}</span>}
+                {edu.honors && <span style={{ color: C.muted, fontStyle: "normal" }}> · {edu.honors}</span>}
+                {edu.location && <span style={{ color: C.muted, fontStyle: "normal" }}> · {edu.location}</span>}
               </div>
-              {edu.honors && <div style={{ fontSize: rs(12.5), color: C.muted, marginTop: 1, fontStyle: "italic" }}>{edu.honors}</div>}
-              {edu.location && <div style={{ fontSize: rs(12.5), color: C.light, marginTop: 1 }}>{edu.location}</div>}
             </div>
           ))}
         </section>
       ),
       certs: resume.certifications.length > 0 && (
-        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+        <section style={{ marginBottom: spaceSize("sectionGap") }}>
           <SectionTitle>Certifications</SectionTitle>
           {resume.certifications.map((c) => (
-            <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+            <div key={c.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: spaceSize("bulletGap") }}>
               <div>
-                <span style={{ fontSize: rs(14), fontWeight: 600, color: C.ink }}>{c.name}</span>
-                {c.issuer && <span style={{ fontSize: rs(12.5), color: C.muted }}> — {c.issuer}</span>}
+                <span style={{ fontSize: typeSize("body"), fontWeight: 600, color: C.ink }}>{c.name}</span>
+                {c.issuer && <span style={{ fontSize: typeSize("meta"), color: C.muted }}> — {c.issuer}</span>}
               </div>
-              {c.date && <span style={{ fontSize: rs(12.5), color: C.muted, whiteSpace: "nowrap" }}>{c.date}</span>}
+              {c.date && <span style={{ fontSize: typeSize("meta"), color: C.muted, whiteSpace: "nowrap" }}>{c.date}</span>}
             </div>
           ))}
         </section>
       ),
       achievements: resume.achievements.length > 0 && (
-        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+        <section style={{ marginBottom: spaceSize("sectionGap") }}>
           <SectionTitle>Achievements</SectionTitle>
           {resume.achievements.map((a) => (
-            <div key={a.id} style={{ fontSize: rs(14), color: C.body, marginBottom: 3 }}>
+            <div key={a.id} style={{ fontSize: typeSize("body"), color: C.body, marginBottom: spaceSize("bulletGap") }}>
               {a.title && <span style={{ fontWeight: 600 }}>{a.title}</span>}
               {a.title && a.description && <span> — </span>}
               {a.description && <span>{a.description}</span>}
-              {a.date && <span style={{ color: C.muted, fontSize: rs(12.5) }}> ({a.date})</span>}
+              {a.date && <span style={{ color: C.muted, fontSize: typeSize("meta") }}> ({a.date})</span>}
             </div>
           ))}
         </section>
       ),
       languages: resume.languages.length > 0 && (
-        <section style={{ marginBottom: 16, breakInside: "avoid" }}>
+        <section style={{ marginBottom: spaceSize("sectionGap") }}>
           <SectionTitle>Languages</SectionTitle>
-          <div style={{ fontSize: rs(14), color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
+          <div style={{ fontSize: typeSize("body"), color: C.body, display: "flex", flexWrap: "wrap", gap: "0 16px" }}>
             {resume.languages.map((l) => (
               <span key={l.id}>
                 {l.name}
@@ -304,9 +301,9 @@ export function ExecutiveProPreview({ resume, bulletChar: bChar }: { resume: Res
         </section>
       ),
       interests: resume.interests.length > 0 && (
-        <section style={{ breakInside: "avoid" }}>
+        <section>
           <SectionTitle>Interests</SectionTitle>
-          <p style={{ fontSize: rs(14), color: C.muted, lineHeight: 1.6 }}>
+          <p style={{ fontSize: typeSize("body"), color: C.muted, lineHeight: 1.6 }}>
             {resume.interests.map((i) => i.name).join(" · ")}
           </p>
         </section>

@@ -11,5 +11,6 @@ export const BannerBoldPreview = generateTemplate({
   sectionOrder: ["summary", "experience", "skills", "projects", "education", "certs", "achievements", "languages"],
   sectionTitleStyle: "bordered",
   skillStyle: "chips",
+  expressive: true,
   bullet: "▸",
 });

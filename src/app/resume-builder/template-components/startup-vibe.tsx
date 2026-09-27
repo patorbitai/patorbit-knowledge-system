@@ -11,5 +11,6 @@ export const StartupVibePreview = generateTemplate({
   sectionOrder: ["summary", "experience", "projects", "certs", "achievements", "languages", "interests", "skills", "education"],
   sectionTitleStyle: "minimal",
   skillStyle: "chips",
+  expressive: true,
   bullet: "▸",
 });

@@ -5,6 +5,9 @@ import type { Resume } from "@/types/resume";
 import {
   FormattedDescription,
   ContactRow,
+  ContactValue,
+  SocialLink,
+  SocialLinkRow,
   ExperienceEntry,
   EducationEntry,
   ProjectEntry,
@@ -13,7 +16,7 @@ import {
   LanguagesList,
   type SectionTheme,
 } from "./shared";
-import { fontFamilies, layout, rs } from "@/lib/resume-design-system";
+import { fontFamilies, layout, typeSize, spaceSize } from "@/lib/resume-design-system";
 import { useResumeStyle } from "@/components/resume/StyleScope";
 import { useResumePlanContext } from "@/components/resume/ResumePlanContext";
 import { FONT_OPTIONS, DEFAULT_STYLE_CONFIG } from "@/lib/resume-design-system/style-config";
@@ -64,6 +67,8 @@ export interface TemplateConfig {
   sidebarPosition?: "left" | "right";
   /** Section title style */
   sectionTitleStyle?: "underline" | "bordered" | "minimal" | "boxed";
+  /** Expressive mode (creative families): accent headings + accent glyphs. */
+  expressive?: boolean;
 }
 
 /** Standard section titles */
@@ -79,34 +84,38 @@ const TITLES = {
   interests: "Interests",
 };
 
-/** Spacing scale — §5/§8: section gaps kept tight enough that a near-miss
- *  tail section (1 cert, 1 interest) can still land on page 1 instead of
- *  opening a 2-word page 2 (visual QA finding). */
+/** Spacing scale — M4B rhythm tokens (section18–24, item12–18, bullet4–7).
+ *  Density presets step within those ranges; pagination compaction is the
+ *  planner's job (never micro-type). */
 const SPACING = {
-  compact: { sectionGap: 10, entryGap: 8, bulletGap: 1, padding: "28px 24px 16px" },
-  normal: { sectionGap: 14, entryGap: 12, bulletGap: 2, padding: "40px 32px 20px" },
-  spacious: { sectionGap: 18, entryGap: 14, bulletGap: 3, padding: "48px 36px 24px" },
+  compact: { sectionGap: 16, entryGap: 12, bulletGap: 4, padding: "28px 24px 16px" },
+  normal: { sectionGap: 20, entryGap: 14, bulletGap: 5, padding: "40px 32px 20px" },
+  spacious: { sectionGap: 24, entryGap: 16, bulletGap: 6, padding: "48px 36px 24px" },
 };
 
 // ── Header Components ──────────────────────────────────────────────────────
 
 function HeaderCentered({ resume, theme }: { resume: Resume; theme: SectionTheme }) {
+  const titleColor = theme.accentHeadings ? (theme.accent || theme.muted) : theme.ink;
   return (
     <header style={{ marginBottom: 16, textAlign: "center" }}>
-      <h1 style={{ fontSize: rs(30), fontWeight: 800, color: theme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
+      <h1 style={{ fontSize: typeSize("name"), fontWeight: 800, color: theme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
         {resume.name || "Your Name"}
       </h1>
       {resume.title && (
-        <p style={{ fontSize: rs(16.5), fontWeight: 500, color: theme.accent || theme.muted, marginTop: 3 }}>{resume.title}</p>
+        <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: titleColor, marginTop: 3 }}>{resume.title}</p>
       )}
-      <div style={{ fontSize: rs(12.5), color: theme.muted, marginTop: 6, lineHeight: 1.6 }}>
-        {[resume.email, resume.phone, resume.address].filter(Boolean).join(" | ")}
+      <div style={{ fontSize: typeSize("meta"), color: theme.muted, marginTop: 6, lineHeight: 1.6 }}>
+        <ContactRow
+          parts={[resume.email, resume.phone, resume.address].filter(Boolean)}
+          email={resume.email}
+          phone={resume.phone}
+          separator=" | "
+        />
       </div>
       {resume.social && (
-        <div style={{ fontSize: rs(12.5), color: theme.accent || theme.muted, marginTop: 2, display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "0 10px" }}>
-          {resume.social.linkedin && <span>{resume.social.linkedin}</span>}
-          {resume.social.github && <span>{resume.social.github}</span>}
-          {resume.social.website && <span>{resume.social.website}</span>}
+        <div style={{ fontSize: typeSize("meta"), color: theme.accent || theme.muted, marginTop: 2, display: "flex", justifyContent: "center", flexWrap: "wrap", gap: "0 10px" }}>
+          <SocialLinkRow social={resume.social} />
         </div>
       )}
     </header>
@@ -114,24 +123,23 @@ function HeaderCentered({ resume, theme }: { resume: Resume; theme: SectionTheme
 }
 
 function HeaderLeft({ resume, theme }: { resume: Resume; theme: SectionTheme }) {
+  const titleColor = theme.accentHeadings ? (theme.accent || theme.muted) : theme.ink;
   return (
     <header style={{ marginBottom: 16 }}>
-      <h1 style={{ fontSize: rs(30), fontWeight: 800, color: theme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
+      <h1 style={{ fontSize: typeSize("name"), fontWeight: 800, color: theme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
         {resume.name || "Your Name"}
       </h1>
       {resume.title && (
-        <p style={{ fontSize: rs(16.5), fontWeight: 500, color: theme.accent || theme.muted, marginTop: 3 }}>{resume.title}</p>
+        <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: titleColor, marginTop: 3 }}>{resume.title}</p>
       )}
-      <div style={{ fontSize: rs(12.5), color: theme.muted, marginTop: 6, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
-        {resume.email && <span>{resume.email}</span>}
-        {resume.phone && <span>{resume.phone}</span>}
-        {resume.address && <span>{resume.address}</span>}
+      <div style={{ fontSize: typeSize("meta"), color: theme.muted, marginTop: 6, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
+        <ContactValue value={resume.email} kind="email" />
+        <ContactValue value={resume.phone} kind="phone" />
+        <ContactValue value={resume.address} kind="text" />
       </div>
       {resume.social && (
-        <div style={{ fontSize: rs(12.5), color: theme.accent || theme.muted, marginTop: 3, display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
-          {resume.social.linkedin && <span>{resume.social.linkedin}</span>}
-          {resume.social.github && <span>{resume.social.github}</span>}
-          {resume.social.website && <span>{resume.social.website}</span>}
+        <div style={{ fontSize: typeSize("meta"), color: theme.accent || theme.muted, marginTop: 3, display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
+          <SocialLinkRow social={resume.social} />
         </div>
       )}
     </header>
@@ -144,19 +152,20 @@ function HeaderDarkBar({ resume, theme }: { resume: Resume; theme: SectionTheme 
     <div style={{ backgroundColor: theme.ink, padding: "28px 32px 22px", color: "#ffffff" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 16 }}>
         <div style={{ flex: 1 }}>
-          <h1 style={{ fontSize: rs(32), fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
+          <h1 style={{ fontSize: typeSize("name"), fontWeight: 800, color: "#ffffff", letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
             {resume.name || "Your Name"}
           </h1>
           {resume.title && (
-            <p style={{ fontSize: rs(16.5), fontWeight: 500, color: accent, marginTop: 4, letterSpacing: "0.02em" }}>{resume.title}</p>
+            <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: accent, marginTop: 4, letterSpacing: "0.02em" }}>{resume.title}</p>
           )}
         </div>
         <div style={{ textAlign: "right", flexShrink: 0 }}>
-          {resume.email && <p style={{ fontSize: rs(12.5), color: "#94a3b8", lineHeight: 1.6 }}>{resume.email}</p>}
-          {resume.phone && <p style={{ fontSize: rs(12.5), color: "#94a3b8", lineHeight: 1.6 }}>{resume.phone}</p>}
-          {resume.address && <p style={{ fontSize: rs(12.5), color: "#94a3b8", lineHeight: 1.6 }}>{resume.address}</p>}
-          {resume.social?.linkedin && <p style={{ fontSize: rs(12.5), color: accent, marginTop: 2 }}>{resume.social.linkedin}</p>}
-          {resume.social?.github && <p style={{ fontSize: rs(12.5), color: accent }}>{resume.social.github}</p>}
+          <p style={{ fontSize: typeSize("meta"), color: "#94a3b8", lineHeight: 1.6 }}><ContactValue value={resume.email} kind="email" /></p>
+          <p style={{ fontSize: typeSize("meta"), color: "#94a3b8", lineHeight: 1.6 }}><ContactValue value={resume.phone} kind="phone" /></p>
+          <p style={{ fontSize: typeSize("meta"), color: "#94a3b8", lineHeight: 1.6 }}><ContactValue value={resume.address} kind="text" /></p>
+          <div style={{ fontSize: typeSize("meta"), color: accent, marginTop: 2 }}>
+            <SocialLinkRow social={resume.social} style={{ color: accent }} separator=" · " />
+          </div>
         </div>
       </div>
     </div>
@@ -165,24 +174,23 @@ function HeaderDarkBar({ resume, theme }: { resume: Resume; theme: SectionTheme 
 
 function HeaderGoldAccent({ resume, theme }: { resume: Resume; theme: SectionTheme }) {
   const accent = theme.accent || "#b45309";
+  const titleColor = theme.accentHeadings ? accent : theme.ink;
   return (
     <header style={{ marginBottom: 20, paddingBottom: 16, borderBottom: `2px solid ${accent}` }}>
-      <h1 style={{ fontSize: rs(34), fontWeight: 700, color: theme.ink, letterSpacing: "-0.01em", lineHeight: 1.1, margin: 0 }}>
+      <h1 style={{ fontSize: typeSize("name"), fontWeight: 800, color: theme.ink, letterSpacing: "-0.01em", lineHeight: 1.1, margin: 0 }}>
         {resume.name || "Your Name"}
       </h1>
       {resume.title && (
-        <p style={{ fontSize: rs(18), fontWeight: 500, color: accent, marginTop: 4, letterSpacing: "0.03em" }}>{resume.title}</p>
+        <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: titleColor, marginTop: 4, letterSpacing: "0.03em" }}>{resume.title}</p>
       )}
-      <div style={{ fontSize: rs(12.5), color: theme.muted, marginTop: 8, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
-        {resume.email && <span>{resume.email}</span>}
-        {resume.phone && <span>{resume.phone}</span>}
-        {resume.address && <span>{resume.address}</span>}
+      <div style={{ fontSize: typeSize("meta"), color: theme.muted, marginTop: 8, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
+        <ContactValue value={resume.email} kind="email" />
+        <ContactValue value={resume.phone} kind="phone" />
+        <ContactValue value={resume.address} kind="text" />
       </div>
       {resume.social && (
-        <div style={{ fontSize: rs(12.5), color: accent, marginTop: 3, display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
-          {resume.social.linkedin && <span>{resume.social.linkedin}</span>}
-          {resume.social.github && <span>{resume.social.github}</span>}
-          {resume.social.website && <span>{resume.social.website}</span>}
+        <div style={{ fontSize: typeSize("meta"), color: accent, marginTop: 3, display: "flex", flexWrap: "wrap", gap: "0 10px" }}>
+          <SocialLinkRow social={resume.social} />
         </div>
       )}
     </header>
@@ -190,18 +198,24 @@ function HeaderGoldAccent({ resume, theme }: { resume: Resume; theme: SectionThe
 }
 
 function HeaderMinimal({ resume, theme }: { resume: Resume; theme: SectionTheme }) {
+  const titleColor = theme.accentHeadings ? (theme.accent || theme.muted) : theme.ink;
   return (
     <header style={{ marginBottom: 12, textAlign: "center" }}>
-      <h1 style={{ fontSize: rs(28), fontWeight: 700, color: theme.ink, margin: 0, lineHeight: 1.2 }}>
+      <h1 style={{ fontSize: typeSize("name"), fontWeight: 800, color: theme.ink, margin: 0, lineHeight: 1.2 }}>
         {resume.name || "Your Name"}
       </h1>
-      {resume.title && <p style={{ fontSize: rs(15), color: theme.muted, marginTop: 2 }}>{resume.title}</p>}
-      <p style={{ fontSize: rs(12.5), color: theme.muted, marginTop: 4, lineHeight: 1.6 }}>
-        {[resume.email, resume.phone, resume.address].filter(Boolean).join(" | ")}
+      {resume.title && <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: titleColor, marginTop: 2 }}>{resume.title}</p>}
+      <p style={{ fontSize: typeSize("meta"), color: theme.muted, marginTop: 4, lineHeight: 1.6 }}>
+        <ContactRow
+          parts={[resume.email, resume.phone, resume.address].filter(Boolean)}
+          email={resume.email}
+          phone={resume.phone}
+          separator=" | "
+        />
       </p>
       {resume.social && (
-        <p style={{ fontSize: rs(12.5), color: theme.muted, marginTop: 2 }}>
-          {[resume.social.linkedin, resume.social.github, resume.social.website].filter(Boolean).join(" | ")}
+        <p style={{ fontSize: typeSize("meta"), color: theme.muted, marginTop: 2 }}>
+          <SocialLinkRow social={resume.social} separator=" | " />
         </p>
       )}
     </header>
@@ -210,22 +224,24 @@ function HeaderMinimal({ resume, theme }: { resume: Resume; theme: SectionTheme 
 
 function HeaderSplitContact({ resume, theme }: { resume: Resume; theme: SectionTheme }) {
   const accent = theme.accent || theme.muted;
+  const titleColor = theme.accentHeadings ? accent : theme.ink;
   return (
     <header style={{ marginBottom: 16, display: "flex", justifyContent: "space-between", alignItems: "flex-end", borderBottom: `1px solid ${theme.border || "#e2e8f0"}`, paddingBottom: 12 }}>
       <div>
-        <h1 style={{ fontSize: rs(32), fontWeight: 800, color: theme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
+        <h1 style={{ fontSize: typeSize("name"), fontWeight: 800, color: theme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
           {resume.name || "Your Name"}
         </h1>
         {resume.title && (
-          <p style={{ fontSize: rs(16.5), fontWeight: 500, color: accent, marginTop: 3 }}>{resume.title}</p>
+          <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: titleColor, marginTop: 3 }}>{resume.title}</p>
         )}
       </div>
-      <div style={{ textAlign: "right", fontSize: rs(12.5), color: theme.muted, lineHeight: 1.6, flexShrink: 0 }}>
-        {resume.email && <div>{resume.email}</div>}
-        {resume.phone && <div>{resume.phone}</div>}
-        {resume.address && <div>{resume.address}</div>}
-        {resume.social?.linkedin && <div style={{ color: accent }}>{resume.social.linkedin}</div>}
-        {resume.social?.github && <div style={{ color: accent }}>{resume.social.github}</div>}
+      <div style={{ textAlign: "right", fontSize: typeSize("meta"), color: theme.muted, lineHeight: 1.6, flexShrink: 0 }}>
+        <div><ContactValue value={resume.email} kind="email" /></div>
+        <div><ContactValue value={resume.phone} kind="phone" /></div>
+        <div><ContactValue value={resume.address} kind="text" /></div>
+        <div style={{ color: accent }}>
+          <SocialLinkRow social={resume.social} style={{ color: accent }} separator=" · " />
+        </div>
       </div>
     </header>
   );
@@ -235,16 +251,16 @@ function HeaderBoldBanner({ resume, theme }: { resume: Resume; theme: SectionThe
   const accent = theme.accent || "#dc2626";
   return (
     <div style={{ backgroundColor: accent, padding: "32px 32px 24px", color: "#ffffff", marginBottom: 0 }}>
-      <h1 style={{ fontSize: rs(36), fontWeight: 900, color: "#ffffff", letterSpacing: "-0.01em", lineHeight: 1.1, margin: 0, textTransform: "uppercase" }}>
+      <h1 style={{ fontSize: typeSize("name"), fontWeight: 800, color: "#ffffff", letterSpacing: "-0.01em", lineHeight: 1.1, margin: 0, textTransform: "uppercase" }}>
         {resume.name || "Your Name"}
       </h1>
       {resume.title && (
-        <p style={{ fontSize: rs(18), fontWeight: 500, color: "rgba(255,255,255,0.85)", marginTop: 4, letterSpacing: "0.05em", textTransform: "uppercase" }}>{resume.title}</p>
+        <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: "rgba(255,255,255,0.85)", marginTop: 4, letterSpacing: "0.05em", textTransform: "uppercase" }}>{resume.title}</p>
       )}
-      <div style={{ fontSize: rs(12.5), color: "rgba(255,255,255,0.7)", marginTop: 8, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
-        {resume.email && <span>{resume.email}</span>}
-        {resume.phone && <span>{resume.phone}</span>}
-        {resume.address && <span>{resume.address}</span>}
+      <div style={{ fontSize: typeSize("meta"), color: "rgba(255,255,255,0.7)", marginTop: 8, lineHeight: 1.6, display: "flex", flexWrap: "wrap", gap: "0 12px" }}>
+        <ContactValue value={resume.email} kind="email" />
+        <ContactValue value={resume.phone} kind="phone" />
+        <ContactValue value={resume.address} kind="text" />
       </div>
     </div>
   );
@@ -254,7 +270,7 @@ function HeaderBoldBanner({ resume, theme }: { resume: Resume; theme: SectionThe
 
 function SectionTitleUnderline({ children, color }: { children: React.ReactNode; color: string }) {
   return (
-    <h2 style={{ fontSize: rs(15), fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color, margin: "0 0 8px 0", paddingBottom: 4, borderBottom: `1.5px solid ${color}`, lineHeight: 1 }}>
+    <h2 style={{ fontSize: typeSize("section"), fontWeight: 700, letterSpacing: "0.15em", textTransform: "uppercase", color, margin: "0 0 9px 0", paddingBottom: 4, borderBottom: `1.5px solid ${color}`, lineHeight: 1 }}>
       {children}
     </h2>
   );
@@ -262,7 +278,7 @@ function SectionTitleUnderline({ children, color }: { children: React.ReactNode;
 
 function SectionTitleBordered({ children, color }: { children: React.ReactNode; color: string }) {
   return (
-    <h2 style={{ fontSize: rs(15), fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#ffffff", margin: "0 0 8px 0", padding: "3px 8px", backgroundColor: color, lineHeight: 1, display: "inline-block" }}>
+    <h2 style={{ fontSize: typeSize("section"), fontWeight: 700, letterSpacing: "0.12em", textTransform: "uppercase", color: "#ffffff", margin: "0 0 9px 0", padding: "3px 8px", backgroundColor: color, lineHeight: 1, display: "inline-block" }}>
       {children}
     </h2>
   );
@@ -270,7 +286,7 @@ function SectionTitleBordered({ children, color }: { children: React.ReactNode; 
 
 function SectionTitleMinimal({ children, color }: { children: React.ReactNode; color: string }) {
   return (
-    <h2 style={{ fontSize: rs(15), fontWeight: 600, color, margin: "0 0 6px 0", paddingBottom: 3, borderBottom: `0.5px solid ${color}30`, lineHeight: 1 }}>
+    <h2 style={{ fontSize: typeSize("section"), fontWeight: 700, color, margin: "0 0 7px 0", paddingBottom: 3, borderBottom: `0.5px solid ${color}30`, lineHeight: 1 }}>
       {children}
     </h2>
   );
@@ -278,7 +294,7 @@ function SectionTitleMinimal({ children, color }: { children: React.ReactNode; c
 
 function SectionTitleBoxed({ children, color }: { children: React.ReactNode; color: string }) {
   return (
-    <h2 style={{ fontSize: rs(15), fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color, margin: "0 0 8px 0", padding: "4px 10px", border: `1px solid ${color}`, lineHeight: 1, display: "inline-block" }}>
+    <h2 style={{ fontSize: typeSize("section"), fontWeight: 700, letterSpacing: "0.1em", textTransform: "uppercase", color, margin: "0 0 9px 0", padding: "4px 10px", border: `1px solid ${color}`, lineHeight: 1, display: "inline-block" }}>
       {children}
     </h2>
   );
@@ -289,9 +305,9 @@ function SectionTitleBoxed({ children, color }: { children: React.ReactNode; col
 function SkillsChips({ skills, theme, skillPresentation }: { skills: Resume["skills"]; theme: SectionTheme; skillPresentation?: string }) {
   const isPills = skillPresentation === "pills";
   return (
-    <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 6 : 4 }}>
+    <div data-rs-skills style={{ display: "flex", flexWrap: "wrap", gap: isPills ? 5 : 4 }}>
       {skills.map((s) => (
-        <span key={s.id} style={{ fontSize: rs(12.5), fontWeight: 500, color: theme.body, backgroundColor: theme.border ? theme.border + "40" : "#f1f5f9", border: `1px solid ${theme.border || "#e2e8f0"}`, padding: isPills ? "3px 12px" : "2px 8px", borderRadius: isPills ? 9999 : 4, lineHeight: 1.5 }}>
+        <span key={s.id} style={{ fontSize: typeSize("skill"), fontWeight: 500, color: theme.body, backgroundColor: theme.border ? theme.border + "40" : "#f1f5f9", border: `1px solid ${theme.border || "#e2e8f0"}`, padding: isPills ? "2px 9px" : "1.5px 7px", borderRadius: isPills ? 9999 : 3, lineHeight: 1.5 }}>
           {s.name}
           {s.level && s.level !== "Intermediate" && <span style={{ color: theme.muted, fontWeight: 400 }}> · {s.level}</span>}
         </span>
@@ -302,13 +318,17 @@ function SkillsChips({ skills, theme, skillPresentation }: { skills: Resume["ski
 
 function SkillsInline({ skills, theme }: { skills: Resume["skills"]; theme: SectionTheme }) {
   return (
-    <p style={{ fontSize: rs(14), color: theme.body, lineHeight: 1.6 }}>
+    <p style={{ fontSize: typeSize("body"), color: theme.body, lineHeight: 1.6 }}>
       {skills.map((s) => s.name).join(" · ")}
     </p>
   );
 }
 
 function SkillsGrouped({ skills, theme }: { skills: Resume["skills"]; theme: SectionTheme }) {
+  // No categories on any skill → a single "Tools" bucket would look fake;
+  // fall back to the restrained inline list instead.
+  const anyCategory = skills.some((s) => (s.category || "").trim());
+  if (!anyCategory) return <SkillsInline skills={skills} theme={theme} />;
   const SKILL_GROUP_ORDER = ["Languages", "Frameworks", "Cloud", "Databases", "DevOps", "AI/ML", "Tools"];
   const map = new Map<string, string[]>();
   for (const s of skills) {
@@ -329,8 +349,8 @@ function SkillsGrouped({ skills, theme }: { skills: Resume["skills"]; theme: Sec
     <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
       {groups.map(([group, names]) => (
         <div key={group} style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
-          <span style={{ flexShrink: 0, minWidth: 80, maxWidth: 110, fontSize: rs(12.5), fontWeight: 600, color: theme.ink }}>{group}</span>
-          <span style={{ fontSize: rs(14), color: theme.body, lineHeight: 1.6 }}>{names.join(" · ")}</span>
+          <span style={{ flexShrink: 0, minWidth: 80, maxWidth: 110, fontSize: typeSize("skill"), fontWeight: 600, color: theme.ink }}>{group}</span>
+          <span style={{ fontSize: typeSize("body"), color: theme.body, lineHeight: 1.6 }}>{names.join(" · ")}</span>
         </div>
       ))}
     </div>
@@ -343,7 +363,7 @@ function SkillsDots({ skills, theme }: { skills: Resume["skills"]; theme: Sectio
     <div style={{ display: "flex", flexWrap: "wrap", gap: "6px 16px" }}>
       {skills.map((s) => (
         <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 4 }}>
-          <span style={{ fontSize: rs(14), color: theme.body }}>{s.name}</span>
+          <span style={{ fontSize: typeSize("skill"), color: theme.body }}>{s.name}</span>
           <span style={{ display: "flex", gap: 2 }}>
             {Array.from({ length: 4 }, (_, i) => (
               <span key={i} style={{ width: 5, height: 5, borderRadius: "50%", backgroundColor: i < (levelDots[s.level] || 2) ? (theme.accent || theme.muted) : (theme.border || "#e2e8f0") }} />
@@ -359,7 +379,7 @@ function SkillsDots({ skills, theme }: { skills: Resume["skills"]; theme: Sectio
 
 function InterestsInline({ interests, theme }: { interests: Resume["interests"]; theme: SectionTheme }) {
   return (
-    <p style={{ fontSize: rs(14), color: theme.muted, lineHeight: 1.6 }}>
+    <p style={{ fontSize: typeSize("body"), color: theme.muted, lineHeight: 1.6 }}>
       {interests.map((i) => i.name).join(" · ")}
     </p>
   );
@@ -402,13 +422,17 @@ export function generateTemplate(config: TemplateConfig) {
       ? (sc.headingColor === "accent" ? (sc.accentColor || theme.accent || theme.ink) : sc.headingColor === "ink" ? theme.ink : sc.headingColor)
       : theme.ink;
     const effectiveAccent: string = sc.accentColor && supported.has("accentColor") && sc.accentColor !== DEFAULT_STYLE.accentColor ? sc.accentColor : theme.accent || theme.muted;
-    const effectiveTheme: SectionTheme = { ...theme, body: effectiveBodyColor, ink: effectiveHeadingColor, accent: effectiveAccent, bulletChar: bulletCharOverride || bullet };
+    const effectiveTheme: SectionTheme = { ...theme, body: effectiveBodyColor, ink: effectiveHeadingColor, accent: effectiveAccent, bulletChar: bulletCharOverride || bullet, accentHeadings: config.expressive || false, bulletAccent: config.expressive || false };
 
     // Skill presentation: user overrides template default
     const userSkillPresentation = sc.skillPresentation;
-    const skillStyle = (userSkillPresentation === "tags" || userSkillPresentation === "pills" || userSkillPresentation === "list" || userSkillPresentation === "inline")
+    // "tags" is the platform DEFAULT sentinel — not an explicit user choice —
+    // so the template's native skill style (per family) wins unless the user
+    // actually diverged (pills/list/inline). Professional families default to
+    // grouped/inline lists, never UI chips (M4B).
+    const skillStyle = (userSkillPresentation === "pills" || userSkillPresentation === "list" || userSkillPresentation === "inline")
       ? userSkillPresentation
-      : (config.skillStyle || "chips");
+      : (config.skillStyle || "inline");
 
     // Section title style: user overrides template default
     const effectiveSectionTitleStyle = sc.sectionTitleStyle && supported.has("sectionTitleStyle") && sc.sectionTitleStyle !== DEFAULT_STYLE.sectionTitleStyle ? sc.sectionTitleStyle : sectionTitleStyle;
@@ -448,20 +472,24 @@ export function generateTemplate(config: TemplateConfig) {
       SkillsChips;
 
     const renderSection = (key: string) => {
-      const secColor = effectiveTheme.accent || effectiveTheme.muted;
+      // Section headings are DARK NEUTRAL by default (professional document,
+      // not dashboard); expressive (creative) families opt into accent.
+      const secColor = effectiveTheme.accentHeadings
+        ? (effectiveTheme.accent || effectiveTheme.muted)
+        : effectiveTheme.ink;
       switch (key) {
         case "summary":
           return resume.summary ? (
-            <section key="summary" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section key="summary" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.summary}</SectionTitle>
-              <div style={{ fontSize: rs(14), lineHeight: 1.65, color: effectiveTheme.body }}>
+              <div style={{ fontSize: typeSize("body"), lineHeight: 1.65, color: effectiveTheme.body }}>
                 <FormattedDescription text={resume.summary} color={effectiveTheme.body} mutedColor={effectiveTheme.muted} size="xs" />
               </div>
             </section>
           ) : null;
         case "experience":
           return resume.experience.length > 0 ? (
-            <section key="experience" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section key="experience" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.experience}</SectionTitle>
               {resume.experience.map((exp) => (
                 <ExperienceEntry key={exp.id} exp={exp} theme={themedSection} />
@@ -470,14 +498,14 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "skills":
           return resume.skills.length > 0 ? (
-            <section key="skills" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section key="skills" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.skills}</SectionTitle>
               <SkillsComp skills={resume.skills} theme={effectiveTheme} skillPresentation={userSkillPresentation} />
             </section>
           ) : null;
         case "projects":
           return resume.projects.length > 0 ? (
-            <section key="projects" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section key="projects" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.projects}</SectionTitle>
               {resume.projects.map((p) => (
                 <ProjectEntry key={p.id} proj={p} theme={themedSection} />
@@ -486,7 +514,7 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "education":
           return resume.education.length > 0 ? (
-            <section key="education" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section key="education" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.education}</SectionTitle>
               {resume.education.map((edu) => (
                 <EducationEntry key={edu.id} edu={edu} theme={themedSection} compact={compressEducation} />
@@ -495,28 +523,28 @@ export function generateTemplate(config: TemplateConfig) {
           ) : null;
         case "certs":
           return resume.certifications.length > 0 ? (
-            <section key="certs" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section key="certs" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.certs}</SectionTitle>
               <CertificationsList certs={resume.certifications} theme={themedSection} />
             </section>
           ) : null;
         case "achievements":
           return resume.achievements.length > 0 ? (
-            <section key="achievements" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section key="achievements" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.achievements}</SectionTitle>
               <AchievementsList achievements={resume.achievements} theme={themedSection} />
             </section>
           ) : null;
         case "languages":
           return resume.languages.length > 0 ? (
-            <section key="languages" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section key="languages" style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={secColor}>{TITLES.languages}</SectionTitle>
               <LanguagesList languages={resume.languages} theme={themedSection} />
             </section>
           ) : null;
         case "interests":
           return resume.interests.length > 0 ? (
-            <section key="interests" style={{ breakInside: "avoid" }}>
+            <section key="interests">
               <SectionTitle color={secColor}>{TITLES.interests}</SectionTitle>
               <InterestsInline interests={resume.interests} theme={effectiveTheme} />
             </section>
@@ -552,20 +580,24 @@ export function generateTemplate(config: TemplateConfig) {
           {/* Left sidebar — colored background */}
           <div style={{ width: 200, backgroundColor: effectiveTheme.ink + "08", borderRight: `1px solid ${effectiveTheme.border || "#e2e8f0"}`, paddingRight: 16, paddingLeft: 0 }}>
             <header style={{ marginBottom: 16 }}>
-              <h1 style={{ fontSize: rs(28), fontWeight: 800, color: effectiveTheme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
+              <h1 style={{ fontSize: typeSize("name"), fontWeight: 800, color: effectiveTheme.ink, letterSpacing: "-0.02em", lineHeight: 1.1, margin: 0 }}>
                 {resume.name || "Your Name"}
               </h1>
               {resume.title && (
-                <p style={{ fontSize: rs(15), fontWeight: 500, color: effectiveTheme.accent || effectiveTheme.muted, marginTop: 3 }}>{resume.title}</p>
+                <p style={{ fontSize: typeSize("title"), fontWeight: 500, color: effectiveTheme.accentHeadings ? (effectiveTheme.accent || effectiveTheme.muted) : effectiveTheme.ink, marginTop: 3 }}>{resume.title}</p>
               )}
             </header>
-            <div style={{ fontSize: rs(12.5), color: effectiveTheme.muted, marginBottom: 16, lineHeight: 1.8 }}>
-              {resume.email && <div style={{ marginBottom: 2 }}>{resume.email}</div>}
-              {resume.phone && <div style={{ marginBottom: 2 }}>{resume.phone}</div>}
-              {resume.address && <div style={{ marginBottom: 2 }}>{resume.address}</div>}
-              {resume.social?.linkedin && <div style={{ color: effectiveTheme.accent || effectiveTheme.muted, marginBottom: 2 }}>{resume.social.linkedin}</div>}
-              {resume.social?.github && <div style={{ color: effectiveTheme.accent || effectiveTheme.muted, marginBottom: 2 }}>{resume.social.github}</div>}
-              {resume.social?.website && <div style={{ color: effectiveTheme.accent || effectiveTheme.muted, marginBottom: 2 }}>{resume.social.website}</div>}
+            <div style={{ fontSize: typeSize("meta"), color: effectiveTheme.muted, marginBottom: 16, lineHeight: 1.8 }}>
+              <div style={{ marginBottom: 2 }}><ContactValue value={resume.email} kind="email" /></div>
+              <div style={{ marginBottom: 2 }}><ContactValue value={resume.phone} kind="phone" /></div>
+              <div style={{ marginBottom: 2 }}><ContactValue value={resume.address} kind="text" /></div>
+              <div style={{ color: effectiveTheme.accent || effectiveTheme.muted, marginBottom: 2 }}>
+                <SocialLinkRow
+                  social={resume.social}
+                  style={{ color: effectiveTheme.accent || effectiveTheme.muted }}
+                  separator=" · "
+                />
+              </div>
             </div>
             {sideContent}
           </div>
@@ -581,9 +613,9 @@ export function generateTemplate(config: TemplateConfig) {
     if (layoutVariant === "timeline") {
       const accent = effectiveTheme.accent || effectiveTheme.muted;
       const summarySection = resume.summary ? (
-        <section key="summary" style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+        <section key="summary" style={{ marginBottom: themedSpacing.sectionGap }}>
           <SectionTitle color={accent}>{TITLES.summary}</SectionTitle>
-          <div style={{ fontSize: rs(14), lineHeight: 1.65, color: effectiveTheme.body }}>
+          <div style={{ fontSize: typeSize("body"), lineHeight: 1.65, color: effectiveTheme.body }}>
             <FormattedDescription text={resume.summary} color={effectiveTheme.body} mutedColor={effectiveTheme.muted} size="xs" />
           </div>
         </section>
@@ -597,7 +629,7 @@ export function generateTemplate(config: TemplateConfig) {
           {summarySection}
           {/* Timeline experience section */}
           {resume.experience.length > 0 && (
-            <section style={{ marginBottom: themedSpacing.sectionGap, breakInside: "avoid" }}>
+            <section style={{ marginBottom: themedSpacing.sectionGap }}>
               <SectionTitle color={accent}>{TITLES.experience}</SectionTitle>
               <div style={{ position: "relative", paddingLeft: 20 }}>
                 {/* Vertical spine */}
@@ -609,41 +641,39 @@ export function generateTemplate(config: TemplateConfig) {
                     <div key={exp.id} style={{ position: "relative", marginBottom: themedSpacing.entryGap, breakInside: "avoid" }}>
                       {/* Timeline dot */}
                       <div style={{ position: "absolute", left: -20, top: 3, width: 12, height: 12, borderRadius: "50%", backgroundColor: accent, border: `2px solid ${backgroundColor}` }} />
-                      {/* Date badge */}
+                      {/* Date — secondary meta, never competing with company */}
                       {dateStr && (
-                        <div style={{ fontSize: rs(12.5), fontWeight: 600, color: accent, marginBottom: 2, letterSpacing: "0.03em" }}>
+                        <div style={{ fontSize: typeSize("meta"), fontWeight: 400, color: effectiveTheme.muted, marginBottom: spaceSize("metaGap"), letterSpacing: "0.03em" }}>
                           {dateStr}
                         </div>
                       )}
                       {/* Company + Position */}
-                      <div style={{ fontSize: rs(15), fontWeight: 700, color: effectiveTheme.ink, lineHeight: 1.3 }}>
+                      <div style={{ fontSize: typeSize("company"), fontWeight: 700, color: effectiveTheme.ink, lineHeight: 1.3 }}>
                         {exp.company}
                       </div>
-                      <div style={{ fontSize: rs(14), color: effectiveTheme.body, marginTop: 1 }}>
+                      <div style={{ fontSize: typeSize("role"), color: effectiveTheme.body, marginTop: spaceSize("metaGap") }}>
                         <span style={{ fontWeight: 600 }}>{exp.position}</span>
                         {exp.employmentType && <span style={{ color: effectiveTheme.muted }}> \u00b7 {exp.employmentType}</span>}
                         {exp.location && <span style={{ color: effectiveTheme.muted }}> \u00b7 {exp.location}</span>}
                       </div>
                       {exp.description && (
-                        <div style={{ marginTop: 4, fontSize: rs(14), lineHeight: 1.6, color: effectiveTheme.body }}>
+                        <div style={{ marginTop: spaceSize("roleGap"), fontSize: typeSize("body"), lineHeight: 1.6, color: effectiveTheme.body }}>
                           <FormattedDescription text={exp.description} color={effectiveTheme.body} mutedColor={effectiveTheme.muted} size="xs" />
                         </div>
                       )}
                       {exp.bulletPoints && exp.bulletPoints.length > 0 && (
                         <ul style={{ margin: "4px 0 0 0", padding: 0, listStyle: "none" }}>
                           {exp.bulletPoints.map((bp, i) => (
-                            <li key={i} style={{ fontSize: rs(14), lineHeight: 1.5, color: effectiveTheme.body, paddingLeft: 12, position: "relative", marginBottom: 2 }}>
-                              <span style={{ position: "absolute", left: 0, color: accent, fontSize: rs(11), top: 2 }}>{b}</span>
+                            <li key={i} style={{ fontSize: typeSize("body"), lineHeight: 1.5, color: effectiveTheme.body, paddingLeft: 12, position: "relative", marginBottom: spaceSize("bulletGap") }}>
+                              <span style={{ position: "absolute", left: 0, color: effectiveTheme.bulletAccent ? accent : effectiveTheme.muted, fontSize: typeSize("bullet"), top: 2 }}>{b}</span>
                               {bp}
                             </li>
                           ))}
                         </ul>
                       )}
                       {exp.techUsed && (
-                        <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginTop: 4 }}>
-                          {exp.techUsed.split(/[,;]/).map((t) => t.trim()).filter(Boolean).map((t, i) => (
-                            <span key={i} style={{ fontSize: rs(12.5), fontWeight: 500, color: accent, backgroundColor: accent + "12", padding: "1px 6px", borderRadius: 3 }}>{t}</span>
-                          ))}
+                        <div style={{ fontSize: typeSize("skill"), color: effectiveTheme.muted, marginTop: spaceSize("metaGap"), lineHeight: 1.5 }}>
+                          {exp.techUsed.split(/[,;]/).map((t) => t.trim()).filter(Boolean).join(" \u00b7 ")}
                         </div>
                       )}
                     </div>
@@ -691,7 +721,7 @@ export function generateTemplate(config: TemplateConfig) {
     if (layoutVariant === "compact") {
       const compactSpacing = SPACING.compact;
       return (
-        <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: compactSpacing.padding, backgroundColor, fontSize: rs(12.5) }}>
+        <div style={{ fontFamily: effectiveFont, color: effectiveTheme.body, maxWidth: layout.pageWidth, padding: compactSpacing.padding, backgroundColor, fontSize: typeSize("body") }}>
           {HeaderComp ? <HeaderComp resume={resume} theme={effectiveTheme} /> : null}
           {sectionOrder.map(renderSection)}
         </div>

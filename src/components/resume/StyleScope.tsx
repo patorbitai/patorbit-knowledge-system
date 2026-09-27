@@ -9,6 +9,7 @@ import {
   type ResumeStyleConfig,
   type StyleOptionKey,
 } from "@/lib/resume-design-system/style-config";
+import { resumeVars } from "@/lib/resume-design-system/resume-tokens";
 
 interface ResumeStyleContextValue {
   /** Resolved, clamped style config for the current sheet. */
@@ -46,7 +47,13 @@ export function StyleScope({
 }) {
   const resolved = useMemo(() => resolveStyleConfig(config), [config]);
   const supported = useMemo(() => getTemplateStyleSupport(templateId), [templateId]);
-  const vars = useMemo(() => buildStyleVars(resolved), [resolved]);
+  // User style vars + the M4B semantic resume tokens (--resume-*) share this
+  // one root, so serializePage carries them into every paginated page, the
+  // print/PDF target and the gallery.
+  const vars = useMemo(
+    () => ({ ...buildStyleVars(resolved), ...resumeVars(templateId) }),
+    [resolved, templateId],
+  );
   const rules = useMemo(() => buildStyleRules(resolved, supported), [resolved, supported]);
 
   const ctxValue = useMemo(() => ({ config: resolved, supported }), [resolved, supported]);

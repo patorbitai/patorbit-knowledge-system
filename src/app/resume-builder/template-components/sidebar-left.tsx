@@ -33,6 +33,6 @@ export const SidebarLeftPreview = generateTemplate({
     "interests",
   ],
   sectionTitleStyle: "underline",
-  skillStyle: "chips",
+  skillStyle: "grouped",
   bullet: "▸",
 });

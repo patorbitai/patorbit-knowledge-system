@@ -6,6 +6,7 @@ import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { useResumePlan } from "@/lib/resume-planner/react";
 import { A4 } from "@/lib/resume-design-system/geometry";
+import { InlineEditLayer } from "@/components/resume-builder/inline/InlineEditLayer";
 
 /**
  * MobilePreview — a lightweight, crash-safe resume preview for mobile viewports.
@@ -24,6 +25,7 @@ export function MobilePreview() {
   const scale = Math.max(0.35, Math.min(0.65, viewportWidth / A4.widthPx));
 
   return (
+    <InlineEditLayer>
     <div className="flex flex-col h-full items-center" data-testid="mobile-preview">
       {/* Zoom info */}
       <div className="shrink-0 px-4 py-2 text-[10px] text-gray-400 dark:text-slate-500 text-center">
@@ -51,5 +53,6 @@ export function MobilePreview() {
         </div>
       </div>
     </div>
+    </InlineEditLayer>
   );
 }

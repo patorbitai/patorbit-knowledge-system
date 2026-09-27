@@ -22,6 +22,7 @@ import {
 } from "docx";
 import type { ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
 import type { ResumeContentPlan } from "@/lib/resume-planner";
+import { linkLabel, mailtoHref, safeHref, telHref } from "@/lib/resume-links";
 
 /* ── Input types ── */
 
@@ -114,13 +115,6 @@ export function applyHeadingCase(text: string, style: ResumeStyleConfig["heading
   return text;
 }
 
-function normalizeUrl(value: string): string {
-  const trimmed = value.trim();
-  if (!trimmed) return "";
-  if (/^https?:\/\//i.test(trimmed)) return trimmed;
-  return `https://${trimmed}`;
-}
-
 export const BULLET_GLYPHS: Record<string, string> = {
   bullet: "•",
   circle: "◦",
@@ -187,7 +181,10 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
     );
   }
 
-  // Contact line — LinkedIn/GitHub become real hyperlinks where present.
+  // Contact line — email (mailto:), phone (tel:) and EVERY social link are
+  // real DOCX hyperlink relationships (ExternalHyperlink), never plain text.
+  // Display text mirrors the preview: the clean URL for socials, the raw
+  // value for email/phone.
   const contactChildren: ParagraphChild[] = [];
   const pushContact = (text: string, link?: string) => {
     const run = bodyRun(text, 19, muted);
@@ -204,14 +201,26 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
     firstContact = false;
     pushContact(text, link);
   };
-  addContact(data.email || "");
-  addContact(data.phone || "");
+  addContact(data.email || "", mailtoHref(data.email) || undefined);
+  addContact(data.phone || "", telHref(data.phone) || undefined);
   addContact(data.address || "");
   addContact(data.nationality || "");
-  const linkedin = data.social?.linkedin ? normalizeUrl(data.social.linkedin) : "";
-  const github = data.social?.github ? normalizeUrl(data.social.github) : "";
-  if (linkedin) addContact("LinkedIn", linkedin);
-  if (github) addContact("GitHub", github);
+  const socialEntries: Array<[string, string | undefined]> = [
+    ["linkedin", data.social?.linkedin],
+    ["github", data.social?.github],
+    ["website", data.social?.website],
+    ["portfolio", data.social?.portfolio],
+    ["twitter", data.social?.twitter],
+    ["stackoverflow", data.social?.stackoverflow],
+  ];
+  for (const [, value] of socialEntries) {
+    const raw = (value ?? "").trim();
+    if (!raw) continue;
+    const href = safeHref(raw);
+    // Unsafe/un-parseable values stay VISIBLE as plain text runs — never a
+    // relationship, never silently dropped (mirrors the preview fallback).
+    addContact(linkLabel(raw), href || undefined);
+  }
   if (contactChildren.length > 0) {
     children.push(
       new Paragraph({
@@ -413,6 +422,21 @@ export function buildDocx(data: DocxResumeData, style: ResumeStyleConfig, plan?:
       // Same preview-parity rule as experience: bulletPoints ARE the content.
       if (proj.bulletPoints?.length) {
         for (const bp of proj.bulletPoints) addBullets(bp, entrySpacing);
+      }
+      // Project link — a real hyperlink relationship when present.
+      const projHref = safeHref(proj.link);
+      if (projHref) {
+        children.push(
+          new Paragraph({
+            spacing: { after: entrySpacing, line },
+            children: [
+              new ExternalHyperlink({
+                link: projHref,
+                children: [bodyRun(linkLabel(proj.link), 19, accent)],
+              }),
+            ],
+          }),
+        );
       }
       children.push(new Paragraph({ spacing: { after: entrySpacing } }));
     }

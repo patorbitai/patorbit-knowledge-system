@@ -12,5 +12,6 @@ export const CreativeBurstPreview = generateTemplate({
   sectionOrder: ["summary", "projects", "experience", "certs", "achievements", "languages", "interests", "skills", "education"],
   sectionTitleStyle: "bordered",
   skillStyle: "chips",
+  expressive: true,
   bullet: "✦",
 });

@@ -10,6 +10,6 @@ export const DarkElegancePreview = generateTemplate({
   density: "compact",
   sectionOrder: ["experience", "skills", "projects", "education", "summary", "certs", "achievements", "languages"],
   sectionTitleStyle: "minimal",
-  skillStyle: "dots",
+  skillStyle: "inline",
   bullet: "▸",
 });

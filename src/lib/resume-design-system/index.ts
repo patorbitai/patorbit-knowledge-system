@@ -1,4 +1,5 @@
 export * from "./tokens";
+export * from "./resume-tokens";
 export * from "./type-scale";
 export * from "./fonts";
 export * from "./ats";

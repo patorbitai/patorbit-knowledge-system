@@ -10,6 +10,6 @@ export const LuxuryGoldPreview = generateTemplate({
   density: "spacious",
   sectionOrder: ["summary", "experience", "education", "skills", "certs", "projects", "achievements", "languages"],
   sectionTitleStyle: "bordered",
-  skillStyle: "chips",
+  skillStyle: "inline",
   bullet: "◆",
 });

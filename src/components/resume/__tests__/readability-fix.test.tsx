@@ -97,7 +97,9 @@ describe("D — typography controls reach the live preview", () => {
     // At least one element declares a calc() size driven by --rs-type.
     expect(scope.innerHTML).toContain("calc(var(--rs-type, 1) *");
     // Body/bullet text is in the readable range (14px ≈ 10.5pt at 96dpi A4).
-    expect(scope.innerHTML).toContain("* 14px)");
+    // M4B: sizes flow through the --resume-* tokens; the var fallback pins
+    // the readable default even outside a scope.
+    expect(scope.innerHTML).toContain("--resume-body, 14px)");
     unmount();
   });
 

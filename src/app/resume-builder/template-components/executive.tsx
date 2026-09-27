@@ -10,6 +10,6 @@ export const ExecutivePreview = generateTemplate({
   density: "spacious",
   sectionOrder: ["summary", "experience", "education", "skills", "certs", "achievements", "languages"],
   sectionTitleStyle: "bordered",
-  skillStyle: "chips",
+  skillStyle: "inline",
   bullet: "◆",
 });

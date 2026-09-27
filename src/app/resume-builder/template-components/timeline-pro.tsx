@@ -10,6 +10,6 @@ export const TimelineProPreview = generateTemplate({
   density: "spacious",
   sectionOrder: ["summary", "experience", "education", "skills", "projects", "certs", "achievements", "languages"],
   sectionTitleStyle: "underline",
-  skillStyle: "chips",
+  skillStyle: "grouped",
   bullet: "▸",
 });

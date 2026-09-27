@@ -12,5 +12,6 @@ export const GradientFlowPreview = generateTemplate({
   sectionOrder: ["summary", "experience", "projects", "certs", "achievements", "languages", "interests", "skills", "education"],
   sectionTitleStyle: "minimal",
   skillStyle: "grouped",
+  expressive: true,
   bullet: "▸",
 });

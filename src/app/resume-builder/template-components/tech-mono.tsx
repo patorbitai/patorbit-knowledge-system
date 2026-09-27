@@ -9,6 +9,6 @@ export const TechMonoPreview = generateTemplate({
   density: "compact",
   sectionOrder: ["experience", "skills", "projects", "education", "summary", "certs", "achievements", "languages"],
   sectionTitleStyle: "minimal",
-  skillStyle: "dots",
+  skillStyle: "grouped",
   bullet: ">",
 });

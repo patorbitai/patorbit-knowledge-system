@@ -281,6 +281,28 @@ export function buildContentPlan(
     order.unshift("education");
   }
 
+  /* ── M4 §6: resume-version-scoped section preferences ──
+   * `sectionPrefs` lives ON the resume document, so this is version-scoped
+   * by construction (a job version's order never reaches the master).
+   * Applied AFTER the strategy/early-career defaults so an explicit user
+   * choice always wins — and only when the user has actually chosen. */
+  const sectionPrefs = resume.sectionPrefs;
+  if (sectionPrefs?.hidden?.length) {
+    for (const key of sectionPrefs.hidden) {
+      if ((order as string[]).includes(key) && !excludedSections.includes(key as SectionType)) {
+        excludedSections.push(key as SectionType);
+      }
+    }
+  }
+  if (sectionPrefs?.order?.length) {
+    const preferred = sectionPrefs.order.filter((key) =>
+      (order as string[]).includes(key),
+    ) as SectionType[];
+    if (preferred.length > 0) {
+      order = [...preferred, ...order.filter((t) => !preferred.includes(t))];
+    }
+  }
+
   const n = order.length;
   const sections: PlannedSection[] = [];
   for (const type of order) {

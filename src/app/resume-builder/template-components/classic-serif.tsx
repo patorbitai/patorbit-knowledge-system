@@ -9,6 +9,6 @@ export const ClassicSerifPreview = generateTemplate({
   density: "spacious",
   sectionOrder: ["summary", "experience", "education", "skills", "certs", "achievements", "languages"],
   sectionTitleStyle: "underline",
-  skillStyle: "chips",
+  skillStyle: "inline",
   bullet: "•",
 });

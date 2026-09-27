@@ -8,7 +8,7 @@ import { AIActionButton, AIActionDropdown } from "../AIActionButton";
 import { ai } from "@/lib/ai/client";
 import { SmartSuggestion } from "../SmartSuggestion";
 import { EmptyState } from "../cards/EmptyState";
-import { Plus, Sparkles, Filter, Zap, X, Check } from "lucide-react";
+import { Plus, Sparkles, Filter, Zap, X, Check, ChevronUp, ChevronDown } from "lucide-react";
 import { motion } from "framer-motion";
 import { SKILL_LEVELS } from "@/utils/resume-parser";
 import { ResumeFont } from "../cards/ResumeFont";
@@ -21,6 +21,7 @@ export function SkillsSection() {
   const addSkill = useResumeBuilder((s) => s.addSkill);
   const updateSkill = useResumeBuilder((s) => s.updateSkill);
   const removeSkill = useResumeBuilder((s) => s.removeSkill);
+  const moveSkill = useResumeBuilder((s) => s.moveSkill);
   const updateField = useResumeBuilder((s) => s.updateField);
 
   const [suggestions, setSuggestions] = useState<string[] | null>(null);
@@ -205,6 +206,27 @@ export function SkillsSection() {
                           >
                             {SKILL_LEVELS.map((l) => <option key={l} value={l}>{l}</option>)}
                           </select>
+                          <button
+                            onClick={() => moveSkill(skill.id, -1)}
+                            disabled={resume.skills.findIndex((s) => s.id === skill.id) <= 0}
+                            className="opacity-0 group-hover/chip:opacity-100 transition-opacity text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 cursor-pointer"
+                            aria-label={`Move ${skill.name} up`}
+                            title="Move up"
+                          >
+                            <ChevronUp className="w-3 h-3" />
+                          </button>
+                          <button
+                            onClick={() => moveSkill(skill.id, 1)}
+                            disabled={
+                              resume.skills.findIndex((s) => s.id === skill.id) >=
+                              resume.skills.length - 1
+                            }
+                            className="opacity-0 group-hover/chip:opacity-100 transition-opacity text-gray-400 hover:text-gray-900 dark:hover:text-white disabled:opacity-20 cursor-pointer"
+                            aria-label={`Move ${skill.name} down`}
+                            title="Move down"
+                          >
+                            <ChevronDown className="w-3 h-3" />
+                          </button>
                           <button
                             onClick={() => removeSkill(skill.id)}
                             className="opacity-0 group-hover/chip:opacity-100 transition-opacity text-red-400 hover:text-red-300 cursor-pointer"

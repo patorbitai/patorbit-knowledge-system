@@ -7,6 +7,7 @@ import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
 import { useResumePlan } from "@/lib/resume-planner/react";
 import { A4 } from "@/lib/resume-design-system/geometry";
+import { InlineEditLayer } from "@/components/resume-builder/inline/InlineEditLayer";
 
 const PAGE_WIDTH = A4.widthPx;
 const PAGE_HEIGHT = A4.heightPx;
@@ -169,6 +170,7 @@ export function LiveStylePreview({
   const pageButtons = Array.from({ length: pages }, (_, i) => i + 1);
 
   return (
+    <InlineEditLayer>
     <div
       role="region"
       aria-label="Live resume preview"
@@ -318,5 +320,6 @@ export function LiveStylePreview({
         </div>
       </div>
     </div>
+    </InlineEditLayer>
   );
 }

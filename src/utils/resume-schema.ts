@@ -128,6 +128,42 @@ export const ResumeSchema = z.object({
   palettePreference: z.string().default("slate"),
   exportFormat: z.string().default("pdf"),
   pageSize: z.string().default("letter"),
+  // M4 §6 — additive, optional: per-version section order/visibility.
+  // Unknown keys inside are dropped (zod default) but the shape round-trips.
+  sectionPrefs: z
+    .object({
+      order: z
+        .array(
+          z.enum([
+            "summary",
+            "experience",
+            "skills",
+            "projects",
+            "education",
+            "certs",
+            "achievements",
+            "languages",
+            "interests",
+          ]),
+        )
+        .optional(),
+      hidden: z
+        .array(
+          z.enum([
+            "summary",
+            "experience",
+            "skills",
+            "projects",
+            "education",
+            "certs",
+            "achievements",
+            "languages",
+            "interests",
+          ]),
+        )
+        .optional(),
+    })
+    .optional(),
   claims: z.array(ClaimSchema).default([]),
 });
 
