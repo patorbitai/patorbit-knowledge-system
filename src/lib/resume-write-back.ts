@@ -27,6 +27,105 @@ function sanitizeCareerStage(stage: unknown): CareerStage {
 const pendingSaves = new Map<string, ReturnType<typeof setTimeout>>();
 const SAVE_DEBOUNCE_MS = 1500;
 
+/* ── M5B — save sequencing & failure recovery ──────────────────────────────
+ *
+ * Truthful save-state model:
+ *   edit → "unsaved" → (debounce) → "saving" → PUT 200 → "saved"
+ * "saved" is ONLY ever set from a successful server response (plus the
+ * adopting of server content via conflict resolution / hydration).
+ *
+ * - saveSeq:    every started save supersedes earlier ones for that resume;
+ *               a stale completion may never write status or serverVersion.
+ * - sentResumes: the exact local object a request carried — if NEWER local
+ *               edits exist when it completes, the indicator must not claim
+ *               "Saved" for them (their save is pending/in flight).
+ * - bounded auto-retry with backoff for TRANSIENT failures (network/408/429/
+ *   5xx); terminal rejections (400/401/403) rely on the explicit manual
+ *   Retry action. Auto-retry is disabled under tests (deterministic timers).
+ */
+const saveSeq = new Map<string, number>();
+const sentResumes = new Map<string, Resume>();
+const retryTimers = new Map<string, ReturnType<typeof setTimeout>>();
+/** Failure-attempt counter per resume — also gates one log per failure episode. */
+const retryAttempts = new Map<string, number>();
+const AUTO_RETRY_DELAYS_MS = [2000, 4000, 8000];
+const IS_TEST_ENV =
+  typeof process !== "undefined" &&
+  (process.env.NODE_ENV === "test" || !!process.env.VITEST);
+let autoRetryEnabled = !IS_TEST_ENV;
+
+/** Test seam: focused M5B tests flip this to exercise auto-retry timing. */
+export function setAutoRetryEnabled(enabled: boolean): void {
+  autoRetryEnabled = enabled;
+}
+
+/** Cancel scheduled auto-retries (one resume, or all). */
+export function cancelSaveRetry(resumeId?: string): void {
+  if (resumeId) {
+    const t = retryTimers.get(resumeId);
+    if (t) {
+      clearTimeout(t);
+      retryTimers.delete(resumeId);
+    }
+    return;
+  }
+  for (const t of retryTimers.values()) clearTimeout(t);
+  retryTimers.clear();
+}
+
+/**
+ * Reset the bounded-retry budget (one resume, or all) — cancels any
+ * scheduled timer as well. Test/maintenance seam so failure episodes do not
+ * leak into each other; production paths reset implicitly on new edits,
+ * explicit saves and successes.
+ */
+export function resetSaveRetryBudget(resumeId?: string): void {
+  if (resumeId) {
+    retryAttempts.delete(resumeId);
+    const t = retryTimers.get(resumeId);
+    if (t) {
+      clearTimeout(t);
+      retryTimers.delete(resumeId);
+    }
+    return;
+  }
+  retryAttempts.clear();
+  for (const t of retryTimers.values()) clearTimeout(t);
+  retryTimers.clear();
+}
+
+/** True while a debounced (not yet sent) save is pending. */
+export function hasPendingSave(resumeId?: string): boolean {
+  return resumeId ? pendingSaves.has(resumeId) : pendingSaves.size > 0;
+}
+
+/** HTTP statuses worth retrying automatically (transient/server-side). */
+function isRetriableHttpStatus(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+/** Schedule ONE bounded auto-retry for a failed resume save. */
+function scheduleAutoRetry(resumeId: string): void {
+  if (!autoRetryEnabled) return;
+  // Actual connectivity loss: the online listener + offline queue recover.
+  if (typeof navigator !== "undefined" && navigator.onLine === false) return;
+  const attempt = retryAttempts.get(resumeId) ?? 0;
+  if (attempt >= AUTO_RETRY_DELAYS_MS.length) return; // bounded
+  retryAttempts.set(resumeId, attempt + 1);
+  const existing = retryTimers.get(resumeId);
+  if (existing) clearTimeout(existing);
+  const timer = setTimeout(() => {
+    retryTimers.delete(resumeId);
+    void saveLocalResumeToServer(resumeId);
+  }, AUTO_RETRY_DELAYS_MS[attempt]);
+  retryTimers.set(resumeId, timer);
+}
+
+/** Log a save failure at most once per failure episode (console hygiene). */
+function logFailureOnce(resumeId: string, ...args: unknown[]): void {
+  if ((retryAttempts.get(resumeId) ?? 0) === 0) console.error("[write-back]", ...args);
+}
+
 /**
  * In-flight POST guard — prevents duplicate POST requests for the same resumeId.
  * When a POST is in flight for resumeId X, any subsequent write-back for X
@@ -95,6 +194,28 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
     },
   };
 
+  // M5B — sequencing: this save supersedes earlier ones for this resume; a
+  // stale completion may never write status or serverVersion (and an older
+  // snapshot completing late must never overwrite a newer one).
+  const rid: string = resume.resumeId; // narrowed once — closures capture this
+  const seq = (saveSeq.get(rid) ?? 0) + 1;
+  saveSeq.set(rid, seq);
+  sentResumes.set(rid, resume);
+  cancelSaveRetry(rid); // this attempt replaces any scheduled retry
+  const isCurrent = () => saveSeq.get(rid) === seq;
+  const finish = (apply: () => void) => {
+    if (isCurrent()) apply();
+  };
+  /** Newer local edits exist beyond the exact object THIS request carried. */
+  const hasNewerEdits = () => {
+    const st = useResumeBuilder.getState();
+    const fromList = Array.isArray(st.resumes)
+      ? st.resumes.find((r) => r.resumeId === rid)
+      : undefined;
+    const latest = fromList ?? (st.resume?.resumeId === rid ? st.resume : undefined);
+    return !!latest && latest !== resume;
+  };
+
   // Set saving status (gated to the active resume)
   state.setSaveStatus("saving");
 
@@ -129,16 +250,25 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
       } catch {
         // Best-effort — if snapshot fetch fails, show conflict without server data
       }
-      useResumeBuilder.setState({
-        writeConflict: {
-          resumeId: resume.resumeId,
-          localResume: { ...resume },
-          serverResume: serverResume as unknown as Resume,
-          localBaseVersion: baseVersion > 0 ? baseVersion : undefined,
-          serverVersion,
-        },
-        // A background-save conflict must not flip the ACTIVE resume's indicator.
-        ...(isActive() ? { saveStatus: "unsaved" as const } : {}),
+      finish(() => {
+        cancelSaveRetry(rid);
+        retryAttempts.delete(rid);
+        useResumeBuilder.setState((s) => ({
+          writeConflict: {
+            resumeId: rid,
+            localResume: { ...resume },
+            serverResume: serverResume as unknown as Resume,
+            localBaseVersion: baseVersion > 0 ? baseVersion : undefined,
+            serverVersion,
+          },
+          // M5B: this content is NOT on the server — persist that truth so a
+          // refresh resumes truthfully instead of claiming "Saved".
+          pendingSyncIds: (s.pendingSyncIds ?? []).includes(rid)
+            ? (s.pendingSyncIds ?? [])
+            : [...(s.pendingSyncIds ?? []), rid],
+          // A background-save conflict must not flip the ACTIVE resume's indicator.
+          ...(isActive() ? { saveStatus: "unsaved" as const } : {}),
+        }));
       });
       return;
     }
@@ -155,9 +285,13 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
       if (existingPost) {
         console.log("[write-back] POST already in flight for", resume.resumeId, "— waiting");
         await existingPost;
-        // After the in-flight POST completes, re-check: try PUT again.
-        // If the server now has the resume, PUT will succeed.
-        state.setSaveStatus("unsaved"); // trigger a fresh save cycle
+        // M5B — after the other caller's POST settles, run a fresh save
+        // cycle: the status must resolve from a real server response instead
+        // of stranding on "unsaved" with nothing scheduled.
+        finish(() => {
+          state.setSaveStatus("unsaved");
+          debouncedSave();
+        });
         return;
       }
 
@@ -196,10 +330,16 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
                 .catch(() => {});
               return;
             }
-            if (created.version !== undefined && rid) {
-              useResumeBuilder.getState().setServerVersion(rid, created.version);
-            }
-            state.setSaveStatus("saved");
+            finish(() => {
+              if (created.version !== undefined && rid) {
+                useResumeBuilder.getState().setServerVersion(rid, created.version);
+              }
+              cancelSaveRetry(rid);
+              retryAttempts.delete(rid);
+              removeOfflineEntry(rid).catch(() => {});
+              // Never claim "Saved" for newer edits that landed mid-POST.
+              state.setSaveStatus(hasNewerEdits() ? "unsaved" : "saved");
+            });
             return;
           }
           // C16: Cross-identity duplicate — resumeId belongs to another user.
@@ -228,15 +368,34 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
           // POST also failed — fall through to generic error handling
           const createBody = await createRes.json().catch(() => ({}));
           const createMsg = (createBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
-          console.error("[write-back] Create failed:", createMsg);
-          state.setSaveStatus("sync-failed");
-          state.setLastSaveError(createMsg);
+          finish(() => {
+            logFailureOnce(rid, "Create failed:", createMsg);
+            state.setSaveStatus("sync-failed");
+            state.setLastSaveError(createMsg);
+            if (isRetriableHttpStatus(createRes.status)) scheduleAutoRetry(rid);
+          });
         } catch (createErr) {
-          console.error("[write-back] Create network error:", createErr);
-          state.setSaveStatus("sync-failed");
-          state.setLastSaveError(
-            "Can't reach the server. Changes are saved on this device — we'll keep retrying.",
-          );
+          // M5B: a thrown fetch is an ACTUAL connectivity failure — report
+          // Offline (device-local copy queued), never a generic failure.
+          if (isCurrent()) {
+            logFailureOnce(rid, "Create network error:", createErr);
+            try {
+              await enqueueOfflineSave(
+                rid,
+                resume as unknown as Record<string, unknown>,
+                baseVersion > 0 ? baseVersion : undefined,
+              );
+            } catch (queueErr) {
+              console.error("[write-back] Failed to enqueue offline save:", queueErr);
+            }
+            if (isCurrent()) {
+              state.setSaveStatus("offline");
+              state.setLastSaveError(
+                "Can't reach the server. Changes are saved on this device — we'll keep retrying.",
+              );
+              scheduleAutoRetry(rid);
+            }
+          }
         } finally {
           if (rid) inflightPosts.delete(rid);
         }
@@ -250,21 +409,37 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`;
-      console.error("[write-back] Save failed:", msg);
-      state.setSaveStatus("sync-failed");
-      state.setLastSaveError(msg);
+      finish(() => {
+        logFailureOnce(rid, "Save failed:", msg);
+        state.setSaveStatus("sync-failed");
+        state.setLastSaveError(msg);
+        // Transient failures (429/5xx/408) get bounded automatic retries;
+        // terminal rejections wait for the explicit Retry action.
+        if (isRetriableHttpStatus(res.status)) scheduleAutoRetry(rid);
+      });
       return;
     }
 
     const data = await res.json() as { version?: number; resumeId?: string };
 
-    // Success — update server version, mark saved
-    if (data.version !== undefined) {
-      state.setServerVersion(resume.resumeId, data.version);
-    }
-    state.setSaveStatus("saved");
+    // Success — the SERVER confirmed this exact content (M5B: the only path
+    // that may transition to "saved").
+    finish(() => {
+      if (data.version !== undefined) {
+        state.setServerVersion(rid, data.version);
+      }
+      cancelSaveRetry(rid);
+      retryAttempts.delete(rid);
+      // Any queued offline copy of this resume is now redundant.
+      removeOfflineEntry(rid).catch(() => {});
+      // Never claim "Saved" for NEWER edits that landed mid-flight — their
+      // own save cycle (pending debounce or in-flight request) resolves them.
+      state.setSaveStatus(hasNewerEdits() ? "unsaved" : "saved");
+    });
   } catch (err) {
-    console.error("[write-back] Network error:", err);
+    // A newer save already started for this resume — it owns status + queue.
+    if (!isCurrent()) return;
+    logFailureOnce(resume.resumeId, "Network error:", err);
     // C8: Persist to IndexedDB offline queue so edits survive refresh
     try {
       await enqueueOfflineSave(
@@ -275,7 +450,9 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
     } catch (queueErr) {
       console.error("[write-back] Failed to enqueue offline save:", queueErr);
     }
+    if (!isCurrent()) return; // re-check: a newer attempt may have raced in
     state.setSaveStatus("offline");
+    scheduleAutoRetry(rid);
   }
 }
 
@@ -291,6 +468,10 @@ export function debouncedSave(): void {
   // Cancel any pending save for this resume
   const existing = pendingSaves.get(resumeId);
   if (existing) clearTimeout(existing);
+
+  // M5B: a fresh user-edit cycle starts a new bounded retry budget.
+  cancelSaveRetry(resumeId);
+  retryAttempts.delete(resumeId);
 
   // Set unsaved status immediately
   state.setSaveStatus("unsaved");
@@ -317,8 +498,50 @@ export async function forceSaveNow(): Promise<void> {
     const existing = pendingSaves.get(resumeId);
     if (existing) clearTimeout(existing);
     pendingSaves.delete(resumeId);
+    // M5B: an explicit save is a fresh (user-driven) attempt.
+    cancelSaveRetry(resumeId);
+    retryAttempts.delete(resumeId);
   }
   await saveLocalResumeToServer();
+}
+
+/**
+ * M5B — explicit manual Retry action: save the LATEST local content now
+ * (latest snapshot, fresh bounded auto-retry budget; any pending debounce is
+ * coalesced away). Used by the save indicator, context bar pill and popover.
+ */
+export async function retryFailedSave(): Promise<void> {
+  const state = useResumeBuilder.getState();
+  if (state.activeResumeId) retryAttempts.delete(state.activeResumeId);
+  await forceSaveNow();
+}
+
+/**
+ * M5B — recovery entry point (browser "online" event + app startup):
+ * flush queued offline edits; if nothing is queued but the active resume is
+ * still unacknowledged by the server, force a fresh save of the latest
+ * content. Also re-saves background resumes whose saves failed in a previous
+ * session (their persisted pendingSync marker survived the refresh).
+ */
+export async function recoverFromOffline(): Promise<void> {
+  try {
+    const entries = await getAllOfflineEntries();
+    if (entries.length > 0) {
+      await flushOfflineQueue();
+      return;
+    }
+  } catch {
+    // IndexedDB unavailable — fall through to direct save attempts
+  }
+  const st = useResumeBuilder.getState();
+  const ids = st.pendingSyncIds ?? [];
+  const activeUnconfirmed = ids.includes(st.activeResumeId) && st.saveStatus !== "saving";
+  if (st.saveStatus === "offline" || activeUnconfirmed) {
+    await retryFailedSave();
+  }
+  for (const id of ids) {
+    if (id !== st.activeResumeId) await saveLocalResumeToServer(id);
+  }
 }
 
 /**
@@ -346,7 +569,14 @@ function handleBeforeUnload(): void {
   // the user may have edited resume A, switched to B, and closed the tab
   // before A's save fired; A must not lose its pending server save).
   const pendingIds = [...pendingSaves.keys()];
-  const activeDirty = state.saveStatus === "unsaved";
+  // M5B: any state whose content the server never confirmed deserves one last
+  // keepalive attempt on unload ("saving" = an in-flight attempt the browser
+  // may kill with the page). "saved" and conflict resolution are excluded.
+  const activeDirty =
+    state.saveStatus === "unsaved" ||
+    state.saveStatus === "saving" ||
+    state.saveStatus === "sync-failed" ||
+    state.saveStatus === "offline";
 
   // Cancel all pending debounce timers — we're saving NOW
   for (const id of pendingIds) {
@@ -414,9 +644,10 @@ function flushKeepalive(resume: Resume, baseVersion: number): void {
       headers: { "Content-Type": "application/json" },
       body: payload,
       keepalive: true,
-    }).then(() => {
-      // If the fetch succeeded, remove from offline queue
-      if (resume.resumeId) removeOfflineEntry(resume.resumeId).catch(() => {});
+    }).then((res) => {
+      // M5B: only a CONFIRMED success may drop the queued safety copy — a
+      // failed unload-flush must not silently discard it.
+      if (res && res.ok && resume.resumeId) removeOfflineEntry(resume.resumeId).catch(() => {});
     }).catch(() => {
       // Best-effort — the offline queue entry will be flushed on next startup
     });
@@ -466,9 +697,22 @@ export async function flushOfflineQueue(): Promise<void> {
         if (data.version !== undefined) {
           state.setServerVersion(entry.resumeId, data.version);
         }
-        // Only set saved if this is the active resume
-        if (state.activeResumeId === entry.resumeId) {
-          state.setSaveStatus("saved");
+        cancelSaveRetry(entry.resumeId);
+        retryAttempts.delete(entry.resumeId);
+        // M5B: claim "Saved" only if the server now holds EXACTLY the local
+        // content (newer local edits keep their own pending save cycle) and
+        // never clobber an in-flight save's "saving" state.
+        if (localMatchesPayload(entry.resumeId, entry.resume)) {
+          useResumeBuilder.setState((s) => ({
+            pendingSyncIds: (s.pendingSyncIds ?? []).filter((pid) => pid !== entry.resumeId),
+          }));
+          if (
+            state.activeResumeId === entry.resumeId &&
+            state.saveStatus !== "saving" &&
+            state.saveStatus !== "saved"
+          ) {
+            state.setSaveStatus("saved");
+          }
         }
       } else if (res.status === 404) {
         // Resume does not exist on server — create via POST
@@ -500,8 +744,17 @@ export async function flushOfflineQueue(): Promise<void> {
             if (created.version !== undefined) {
               state.setServerVersion(entry.resumeId, created.version);
             }
-            if (state.activeResumeId === entry.resumeId) {
-              state.setSaveStatus("saved");
+            if (localMatchesPayload(entry.resumeId, entry.resume)) {
+              useResumeBuilder.setState((s) => ({
+                pendingSyncIds: (s.pendingSyncIds ?? []).filter((pid) => pid !== entry.resumeId),
+              }));
+              if (
+                state.activeResumeId === entry.resumeId &&
+                state.saveStatus !== "saving" &&
+                state.saveStatus !== "saved"
+              ) {
+                state.setSaveStatus("saved");
+              }
             }
           } else {
             const qBody = await createRes.json().catch(() => ({}));
@@ -511,10 +764,16 @@ export async function flushOfflineQueue(): Promise<void> {
             if (qState.activeResumeId === entry.resumeId) {
               qState.setSaveStatus("sync-failed");
               qState.setLastSaveError(qMsg);
+              if (isRetriableHttpStatus(createRes.status)) scheduleAutoRetry(entry.resumeId);
             }
           }
         } catch (createErr) {
-          console.error(`[write-back] Queue flush create network error for ${entry.resumeId}:`, createErr);
+          // M5B: connectivity failure, not a generic sync failure.
+          logFailureOnce(entry.resumeId, `Queue flush create network error for ${entry.resumeId}:`, createErr);
+          const st = useResumeBuilder.getState();
+          if (st.activeResumeId === entry.resumeId) {
+            st.setSaveStatus("offline");
+          }
         }
       } else if (res.status === 409) {
         // C7 conflict — remove from queue, let C7 handle it
@@ -533,6 +792,13 @@ export async function flushOfflineQueue(): Promise<void> {
           // Best-effort
         }
         const state = useResumeBuilder.getState();
+        // M5B: the queue's content was rejected by the server — persist that
+        // truth so a refresh resumes truthfully instead of claiming "Saved".
+        useResumeBuilder.setState((s) => ({
+          pendingSyncIds: (s.pendingSyncIds ?? []).includes(entry.resumeId)
+            ? (s.pendingSyncIds ?? [])
+            : [...(s.pendingSyncIds ?? []), entry.resumeId],
+        }));
         // Only set conflict if this is the active resume
         if (state.activeResumeId === entry.resumeId) {
           useResumeBuilder.setState({
@@ -552,13 +818,35 @@ export async function flushOfflineQueue(): Promise<void> {
         const fState = useResumeBuilder.getState();
         if (fState.activeResumeId === entry.resumeId) {
           fState.setSaveStatus("sync-failed");
-          fState.setLastSaveError(`Sync failed (HTTP ${res.status}) — we'll retry automatically.`);
+          fState.setLastSaveError(
+            `Sync failed (HTTP ${res.status}) — your changes are kept on this device.`,
+          );
+          if (isRetriableHttpStatus(res.status)) scheduleAutoRetry(entry.resumeId);
         }
       }
     } catch {
       // Network still unavailable — keep entry for next retry
-      console.error(`[write-back] Queue flush network error for ${entry.resumeId}`);
+      logFailureOnce(entry.resumeId, `Queue flush network error for ${entry.resumeId}`);
+      const st = useResumeBuilder.getState();
+      if (st.activeResumeId === entry.resumeId) {
+        st.setSaveStatus("offline"); // an actual connectivity failure occurred
+      }
     }
+  }
+}
+
+/** True when the store's local copy of `resumeId` deep-matches `payload`. */
+function localMatchesPayload(resumeId: string, payload: Record<string, unknown>): boolean {
+  const st = useResumeBuilder.getState();
+  const fromList = Array.isArray(st.resumes)
+    ? st.resumes.find((r) => r.resumeId === resumeId)
+    : undefined;
+  const local = fromList ?? (st.resume?.resumeId === resumeId ? st.resume : undefined);
+  if (!local) return false;
+  try {
+    return JSON.stringify(local) === JSON.stringify(payload);
+  } catch {
+    return false;
   }
 }
 
@@ -596,23 +884,17 @@ export function hookWriteBackToStore(): void {
     // Flush pending saves on page unload (best-effort)
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // C8: Flush offline queue when browser comes back online
+    // C8/M5B: on reconnect, flush queued offline edits and/or force a fresh
+    // save for anything the server never confirmed.
     window.addEventListener("online", () => {
-      console.log("[write-back] Browser online — flushing offline queue");
-      flushOfflineQueue();
+      console.log("[write-back] Browser online — recovering unacknowledged saves");
+      void recoverFromOffline();
     });
 
-    // C8: On startup, if there are queued entries and we're online, flush them
-    // (handles the case where user was offline, refreshed, and is now back online)
+    // C8/M5B: on startup (online), flush queued entries and re-save resumes
+    // whose previous session ended on a failed/unacknowledged save.
     if (navigator.onLine) {
-      getAllOfflineEntries().then((entries) => {
-        if (entries.length > 0) {
-          console.log(`[write-back] Found ${entries.length} queued entries on startup — flushing`);
-          flushOfflineQueue();
-        }
-      }).catch(() => {
-        // IndexedDB not available — ignore
-      });
+      void recoverFromOffline();
     }
   }
 }

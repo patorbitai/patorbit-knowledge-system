@@ -133,6 +133,19 @@ export function isResumeEffectivelyEmpty(r: Resume): boolean {
 
 /* ── Store types ── */
 
+/**
+ * M5B — server-truth save states.
+ *  unsaved      local changes exist that the server has NOT confirmed
+ *  saving       a server write is in flight (only its outcome leaves this)
+ *  saved        the SERVER confirmed the latest content — never set because
+ *               local React/localStorage state merely changed
+ *  sync-failed  the server rejected/failed the write (edits kept locally)
+ *  offline      an actual connectivity failure was established (edits are
+ *               queued on this device)
+ * A version CONFLICT (HTTP 409) is not a member here: `writeConflict` holds
+ * it and the save indicators derive a "Conflict" display from that state so
+ * the existing conflict-resolution workflow is never bypassed.
+ */
 export type SaveStatus = "saved" | "saving" | "unsaved" | "offline" | "sync-failed";
 
 /** Outcome of the most recent tailoring (session-persisted, §17). */
@@ -162,6 +175,13 @@ export interface ResumeBuilderState {
   activeSection: SectionId;  saveStatus: SaveStatus;
   /** Human-readable reason behind the last sync failure (cleared on recovery). */
   lastSaveError: string | null;
+  /**
+   * M5B — resume IDs whose latest content has NOT been confirmed by the
+   * server (a save failed or went offline). Persisted so a refresh after a
+   * failed save truthfully resumes as "Unsaved" instead of claiming "Saved";
+   * the marker clears only on a confirmed server write.
+   */
+  pendingSyncIds: string[];
   /** True after Zustand persist has rehydrated from localStorage. */
   hydrated: boolean;
   /** True while server-first hydration is in progress (prevents write-back loop). */
@@ -457,7 +477,9 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                         };
                       });
                     }
-                    get().setSaveStatus("saved");
+                    // M5B: a late POST completion must not flip a DIFFERENT
+                    // resume's indicator to "saved".
+                    if (get().activeResumeId === id) get().setSaveStatus("saved");
                     return true;
                   });
                 }
@@ -525,7 +547,8 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                     if (data.version !== undefined) {
                       get().setServerVersion(resumeId, data.version);
                     }
-                    get().setSaveStatus("saved");
+                    // M5B: only the ACTIVE resume's indicator may flip.
+                    if (get().activeResumeId === resumeId) get().setSaveStatus("saved");
                   });
                 }
               })
@@ -636,7 +659,8 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
                     if (data.version !== undefined) {
                       get().setServerVersion(newId, data.version);
                     }
-                    get().setSaveStatus("saved");
+                    // M5B: only the ACTIVE resume's indicator may flip.
+                    if (get().activeResumeId === newId) get().setSaveStatus("saved");
                   });
                 }
               })
@@ -647,7 +671,7 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           return newId;
         },
 
-        analysis: null, activeSection: "personal", saveStatus: "unsaved", lastSaveError: null,
+        analysis: null, activeSection: "personal", saveStatus: "unsaved", lastSaveError: null, pendingSyncIds: [],
         hydrated: false, hydratingFromServer: false,
         serverVersions: {}, pendingDeletes: [], shareStates: {}, writeConflict: null,
         analysisLoading: false, jobMatch: null, jobDescription: "", jobProfile: null, aiActions: {},
@@ -887,12 +911,26 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           });
         },
         setSaveStatus: (status) =>
-          set({
+          set((s) => ({
             saveStatus: status,
             // Entering any active state clears the previous failure reason;
             // the failure branches re-set it right after via setLastSaveError.
             ...(status === "sync-failed" ? {} : { lastSaveError: null }),
-          }),
+            // M5B — keep the persisted pendingSync marker in lockstep with
+            // server truth: a failure means this resume's latest content is
+            // NOT on the server; "saved" means the server confirmed it.
+            ...(s.activeResumeId
+              ? status === "sync-failed" || status === "offline"
+                ? {
+                    pendingSyncIds: (s.pendingSyncIds ?? []).includes(s.activeResumeId)
+                      ? (s.pendingSyncIds ?? [])
+                      : [...(s.pendingSyncIds ?? []), s.activeResumeId],
+                  }
+                : status === "saved"
+                  ? { pendingSyncIds: (s.pendingSyncIds ?? []).filter((id) => id !== s.activeResumeId) }
+                  : {}
+              : {}),
+          })),
         setLastSaveError: (msg) => set({ lastSaveError: msg }),
         setServerVersion: (resumeId, version) => set((s) => ({
           serverVersions: { ...s.serverVersions, [resumeId]: version },
@@ -947,6 +985,9 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
             resume: state.activeResumeId === conflict.resumeId ? updated : state.resume,
             serverVersions: { ...state.serverVersions, [conflict.resumeId]: conflict.serverVersion },
             writeConflict: null,
+            // Adopting the server's content means local === server again —
+            // clear the M5B pending-sync marker alongside "saved".
+            pendingSyncIds: (state.pendingSyncIds ?? []).filter((pid) => pid !== conflict.resumeId),
             saveStatus: "saved",
           });
         },
@@ -1599,7 +1640,7 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
     {
       name: "patorbit-resume-v2",
       merge: mergePersistedResumeState,
-      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, activeJobApplicationId: state.activeJobApplicationId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes, shareStates: state.shareStates, lineage: state.lineage, versions: state.versions }),
+      partialize: (state) => ({ resumes: state.resumes, activeResumeId: state.activeResumeId, activeJobApplicationId: state.activeJobApplicationId, evidence: state.evidence, styleConfigs: state.styleConfigs, serverVersions: state.serverVersions, pendingDeletes: state.pendingDeletes, shareStates: state.shareStates, lineage: state.lineage, versions: state.versions, pendingSyncIds: state.pendingSyncIds }),
       onRehydrateStorage: () => (snapshot) => {
         // In Zustand v5 the `snapshot` parameter may be stale — the persist
         // middleware's own internal setState(merged) may not have fired yet.
@@ -1626,7 +1667,12 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
             serverVersions: live.serverVersions ?? {},
             pendingDeletes: live.pendingDeletes ?? [],
             writeConflict: null,
-            saveStatus: "saved" as const,
+            // M5B: a refresh after a FAILED save must not claim "Saved" —
+            // the persisted pendingSync marker says the server never
+            // confirmed this resume's latest content.
+            saveStatus: (live.pendingSyncIds ?? []).includes(activeResumeId)
+              ? ("unsaved" as const)
+              : ("saved" as const),
             hydrated: true,
           });
         };
@@ -1647,7 +1693,10 @@ export const useResumeBuilder = create<ResumeBuilderState>()(
             serverVersions: snapshot.serverVersions ?? {},
             pendingDeletes: snapshot.pendingDeletes ?? [],
             writeConflict: null,
-            saveStatus: "saved" as const,
+            // M5B: see above — never claim "Saved" for an unconfirmed resume.
+            saveStatus: (snapshot.pendingSyncIds ?? []).includes(activeResumeId)
+              ? ("unsaved" as const)
+              : ("saved" as const),
             hydrated: true,
           });
         }

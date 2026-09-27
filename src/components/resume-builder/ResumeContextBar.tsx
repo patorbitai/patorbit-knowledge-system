@@ -15,6 +15,7 @@
 import { useState } from "react";
 import { ArrowUpRight, Crown, GitBranch, Layers, ShieldAlert, Target } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
+import { retryFailedSave } from "@/lib/resume-write-back";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import { SaveToIdentityButton } from "./SaveToIdentityButton";
 import { SafetyFindingsList, useResumeSafety } from "./SafetyFindingsList";
@@ -26,6 +27,7 @@ export function ResumeContextBar() {
   const lineage = useResumeBuilder((s) => s.lineage[s.activeResumeId]);
   const resumes = useResumeBuilder((s) => s.resumes);
   const saveStatus = useResumeBuilder((s) => s.saveStatus);
+  const writeConflict = useResumeBuilder((s) => s.writeConflict);
   const switchResume = useResumeBuilder((s) => s.switchResume);
   const promoteResumeToMaster = useResumeBuilder((s) => s.promoteResumeToMaster);
   const safety = useResumeSafety();
@@ -36,27 +38,53 @@ export function ResumeContextBar() {
     ? resumes.find((r) => r.resumeId === lineage.sourceResumeId)
     : undefined;
 
+  // M5B: the mobile pill must carry the FULL truth — failure/offline/
+  // conflict were previously all lumped into "Unsaved changes".
+  const saveState = writeConflict ? "conflict" : saveStatus;
   const savePill = (
     <span
       className="sm:hidden ml-auto inline-flex items-center gap-1.5 text-[11px] text-gray-500 dark:text-slate-400"
       data-testid="mobile-save-state"
+      data-save-status={saveState}
+      role="status"
+      aria-live="polite"
     >
       <span
         className={
           "w-1.5 h-1.5 rounded-full " +
-          (saveStatus === "saved"
+          (saveState === "saved"
             ? "bg-emerald-500"
-            : saveStatus === "saving"
+            : saveState === "saving"
               ? "bg-cyan-500 animate-pulse"
-              : "bg-amber-500")
+              : saveState === "conflict"
+                ? "bg-violet-500"
+                : saveState === "sync-failed"
+                  ? "bg-rose-500"
+                  : "bg-amber-500")
         }
         aria-hidden="true"
       />
-      {saveStatus === "saved"
+      {saveState === "saved"
         ? "Saved"
-        : saveStatus === "saving"
+        : saveState === "saving"
           ? "Saving…"
-          : "Unsaved changes"}
+          : saveState === "conflict"
+            ? "Conflict"
+            : saveState === "sync-failed"
+              ? "Save failed"
+              : saveState === "offline"
+                ? "Offline"
+                : "Unsaved changes"}
+      {(saveState === "sync-failed" || saveState === "offline") && (
+        <button
+          type="button"
+          onClick={() => void retryFailedSave()}
+          aria-label="Retry save"
+          className="rounded border border-gray-300 dark:border-white/15 px-1 py-px text-[10px] font-medium text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-cyan-500"
+        >
+          Retry
+        </button>
+      )}
     </span>
   );
 

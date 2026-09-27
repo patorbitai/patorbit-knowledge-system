@@ -32,6 +32,7 @@ import {
 } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { ai } from "@/lib/ai/client";
+import { retryFailedSave } from "@/lib/resume-write-back";
 import { safeHref, validateWebUrl } from "@/lib/resume-links";
 import { useResumePlan } from "@/lib/resume-planner/react";
 import type { ResumeSectionKey, SectionPrefs } from "@/types/resume";
@@ -258,6 +259,7 @@ export function InlinePopover({
   const setSectionPrefs = useResumeBuilder((s) => s.setSectionPrefs);
   const setActiveSection = useResumeBuilder((s) => s.setActiveSection);
   const saveStatus = useResumeBuilder((s) => s.saveStatus);
+  const writeConflict = useResumeBuilder((s) => s.writeConflict);
   const plan = useResumePlan();
   const isMobile = useIsMobile();
 
@@ -1082,16 +1084,21 @@ export function InlinePopover({
     }
   };
 
+  // M5B: the popover's save chip mirrors the header indicator's truth —
+  // including the 409 conflict state (derived from `writeConflict`).
+  const saveState = writeConflict ? "conflict" : saveStatus;
   const saveLabel =
-    saveStatus === "saved"
+    saveState === "saved"
       ? "Saved"
-      : saveStatus === "saving"
+      : saveState === "saving"
         ? "Saving…"
-        : saveStatus === "offline"
+        : saveState === "offline"
           ? "Offline"
-          : saveStatus === "sync-failed"
-            ? "Sync failed"
-            : "Unsaved";
+          : saveState === "sync-failed"
+            ? "Save failed"
+            : saveState === "conflict"
+              ? "Conflict"
+              : "Unsaved";
 
   return (
     <div
@@ -1128,19 +1135,34 @@ export function InlinePopover({
         <span
           className="inline-flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-slate-400"
           data-testid="inline-popover-save-state"
+          data-save-status={saveState}
         >
           <span
             aria-hidden="true"
             className={
               "w-1.5 h-1.5 rounded-full " +
-              (saveStatus === "saved"
+              (saveState === "saved"
                 ? "bg-emerald-500"
-                : saveStatus === "saving"
+                : saveState === "saving"
                   ? "bg-cyan-500 animate-pulse"
-                  : "bg-amber-500")
+                  : saveState === "conflict"
+                    ? "bg-violet-500"
+                    : saveState === "sync-failed"
+                      ? "bg-rose-500"
+                      : "bg-amber-500")
             }
           />
           {saveLabel}
+          {(saveState === "sync-failed" || saveState === "offline") && (
+            <button
+              type="button"
+              onClick={() => void retryFailedSave()}
+              aria-label="Retry save"
+              className="ml-0.5 rounded border border-gray-300 dark:border-white/15 px-1.5 py-px text-[10px] font-medium text-gray-600 dark:text-slate-300 hover:bg-black/5 dark:hover:bg-white/10 cursor-pointer focus-visible:outline focus-visible:outline-1 focus-visible:outline-offset-1 focus-visible:outline-cyan-500"
+            >
+              Retry
+            </button>
+          )}
         </span>
         <div className="flex items-center gap-1.5">
           <button

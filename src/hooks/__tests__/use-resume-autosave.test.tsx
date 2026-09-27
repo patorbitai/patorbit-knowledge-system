@@ -2,8 +2,11 @@
 
 /**
  * useResumeAutosave (extracted from the builder page):
- *  - unsaved → saving → saved flow with the 1200ms debounce
- *  - an "Edited" version is captured when the save lands (§4)
+ *  - M5B: this hook NEVER writes saveStatus — local state changes are not
+ *    persistence. After an edit the status stays "unsaved" until the
+ *    write-back actually sends a request (only server responses may reach
+ *    "saving" → "saved"; see m5b-save-truthfulness.test.ts).
+ *  - an "Edited" version is still captured at 1200ms (§4 local history)
  *  - typing bursts coalesce into ONE history row
  *  - content-identical saves never stack junk rows
  *  - the debounced AI analysis fires at 1500ms with the live resume
@@ -73,19 +76,22 @@ const tick = async (ms: number) => {
 const versions = () => useResumeBuilder.getState().versions["r1"] ?? [];
 
 describe("useResumeAutosave", () => {
-  it("runs the unsaved → saving → saved flow and captures an Edited version", async () => {
+  it("never claims server persistence locally — edit stays 'unsaved' while history capture still runs", async () => {
     expect(useResumeBuilder.getState().saveStatus).toBe("saved");
 
     act(() => {
       useResumeBuilder.getState().updateField("summary", "First edit");
     });
-    // act() flushes effects, so the effect has already flipped to "saving"
-    expect(useResumeBuilder.getState().saveStatus).toBe("saving");
+    // M5B: a local change must NOT flip to "saving"/"saved" — only the
+    // write-back transitions those, and only from real server responses.
+    expect(useResumeBuilder.getState().saveStatus).toBe("unsaved");
     // nothing captured before the debounce lands
     expect(versions()).toHaveLength(0);
 
     await tick(1200);
-    expect(useResumeBuilder.getState().saveStatus).toBe("saved");
+    // §4 history capture still works — but the STATUS is untouched: there
+    // was no server response, so "Saved" must not appear.
+    expect(useResumeBuilder.getState().saveStatus).toBe("unsaved");
     const rows = versions();
     expect(rows).toHaveLength(1);
     expect(rows[0]).toMatchObject({ kind: "edit", label: "Edited" });
@@ -124,14 +130,15 @@ describe("useResumeAutosave", () => {
     });
     await tick(1200);
     expect(versions()).toHaveLength(1);
-    expect(useResumeBuilder.getState().saveStatus).toBe("saved");
+    // M5B: no local "saved" flip — the write-back owns the transition.
+    expect(useResumeBuilder.getState().saveStatus).toBe("unsaved");
   });
 
   it("never clobbers a server sync failure with a blind 'saved' (live acceptance fix)", async () => {
     act(() => {
       useResumeBuilder.getState().updateField("summary", "Edit during outage");
     });
-    expect(useResumeBuilder.getState().saveStatus).toBe("saving");
+    expect(useResumeBuilder.getState().saveStatus).toBe("unsaved");
 
     // write-back reports the failure while the local debounce is pending
     act(() => {
