@@ -182,7 +182,7 @@ function TemplateCard({
         {isActive && (
           <div className="absolute top-2 right-2 flex items-center gap-1 px-2 py-1 rounded-full bg-cyan-500 text-white text-[10px] font-semibold shadow-lg">
             <Check className="w-3 h-3" />
-            Current
+            Current Template
           </div>
         )}
         {/* Hover actions — always visible on mobile, hover-only on desktop */}
@@ -200,7 +200,7 @@ function TemplateCard({
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-500 text-white text-xs font-semibold hover:bg-cyan-400 transition-colors cursor-pointer"
             >
               <Palette className="w-3.5 h-3.5" />
-              Use Template
+              Use This Template
             </button>
           </div>
         </div>

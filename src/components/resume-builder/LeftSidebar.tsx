@@ -29,8 +29,8 @@ const sections: Array<{ id: SectionId; label: string; hint: string; Icon: React.
   { id: "certifications", label: "Certifications", hint: "Credentials", Icon: Award },
   { id: "achievements", label: "Achievements", hint: "Awards & honors", Icon: Trophy },
   { id: "languages", label: "Languages", hint: "Language proficiency", Icon: Globe },
-  { id: "portfolio", label: "Links", hint: "Portfolio & profiles", Icon: Link2 },
-  { id: "review", label: "Review & Preview", hint: "Final check", Icon: Eye },
+  { id: "portfolio", label: "Portfolio", hint: "Portfolio & profiles", Icon: Link2 },
+  { id: "review", label: "Review", hint: "Final check", Icon: Eye },
 ];
 
 export function LeftSidebar() {

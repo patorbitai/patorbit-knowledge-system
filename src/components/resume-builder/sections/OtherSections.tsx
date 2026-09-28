@@ -10,6 +10,7 @@ import { AIActionButton } from "../AIActionButton";
 import { EmptyState } from "../cards/EmptyState";
 import { Trash2, Plus, Sparkles, Trophy, Globe, Link2, Eye, CheckCircle2, AlertTriangle, XCircle, Pencil, Check, ExternalLink, X } from "lucide-react";
 import { clsx } from "clsx";
+import { useRouter } from "next/navigation";
 import { ai } from "@/lib/ai/client";
 import { AnalysisScore } from "../AnalysisScore";
 import { ProgressIndicator } from "../ProgressIndicator";
@@ -324,6 +325,9 @@ export function PortfolioSection() {
  * REVIEW SECTION (unchanged)
  * ==================================================================== */
 export function ReviewSection() {
+  // M5D: keep the Edit → Preview hop on the client router — a full page load
+  // here would drop session-level job context (typed JD, match, analysis).
+  const router = useRouter();
   const resume = useResumeBuilder((s) => s.resume);
   const analysis = useResumeBuilder((s) => s.analysis);
   const progress = useResumeBuilder((s) => s.progress);
@@ -346,7 +350,7 @@ export function ReviewSection() {
   };
 
   const sections: Array<{ id: Parameters<typeof sectionComplete>[0]; label: string }> = [
-    { id: "personal", label: "Personal Information" },
+    { id: "personal", label: "Profile" },
     { id: "experience", label: "Experience" },
     { id: "education", label: "Education" },
     { id: "skills", label: "Skills" },
@@ -370,7 +374,7 @@ export function ReviewSection() {
   return (
     <SectionCard
       id="review"
-      title="Review & Finalize"
+      title="Review"
       description="Review your complete profile before generating your Professional Passport"
       icon="👁️"
     >
@@ -485,7 +489,7 @@ export function ReviewSection() {
           <div className="flex items-center justify-center pt-4 border-t border-gray-200 dark:border-white/[0.06]">
             <AIActionButton
               label="Continue to Preview"
-              onClick={() => window.location.href = "/resume-builder/preview"}
+              onClick={() => router.push("/resume-builder/preview")}
               variant="primary"
               size="md"
               icon={<Eye className="w-4 h-4" />}

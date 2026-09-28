@@ -153,7 +153,7 @@ describe("Builder Preview UX refactor", () => {
     expect(findButtonContaining("Export")).toBeTruthy();
 
     // Subtle save status text (one of the known labels).
-    const statusKnown = ["Saved", "Saving…", "Unsaved", "Offline", "Failed"];
+    const statusKnown = ["Saved", "Saving…", "Unsaved changes", "Offline", "Save failed"];
     expect(statusKnown.some((t) => document.body.textContent?.includes(t))).toBe(true);
 
     // The resume is the hero: the live contained preview fills the canvas.

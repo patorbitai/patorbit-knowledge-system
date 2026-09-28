@@ -21,12 +21,12 @@ const sections: Array<{
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
 }> = [
-  { id: "personal", label: "Personal", Icon: User },
+  { id: "personal", label: "Profile", Icon: User },
   { id: "experience", label: "Experience", Icon: Briefcase },
   { id: "education", label: "Education", Icon: GraduationCap },
   { id: "skills", label: "Skills", Icon: Zap },
   { id: "projects", label: "Projects", Icon: FolderKanban },
-  { id: "certifications", label: "Certs", Icon: Award },
+  { id: "certifications", label: "Certifications", Icon: Award },
   { id: "achievements", label: "Achievements", Icon: Trophy },
   { id: "languages", label: "Languages", Icon: Globe },
   { id: "portfolio", label: "Portfolio", Icon: Link2 },

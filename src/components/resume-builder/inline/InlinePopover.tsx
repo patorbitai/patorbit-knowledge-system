@@ -1096,9 +1096,9 @@ export function InlinePopover({
           ? "Offline"
           : saveState === "sync-failed"
             ? "Save failed"
-            : saveState === "conflict"
-              ? "Conflict"
-              : "Unsaved";
+          : saveState === "conflict"
+            ? "Conflict"
+            : "Unsaved changes";
 
   return (
     <div

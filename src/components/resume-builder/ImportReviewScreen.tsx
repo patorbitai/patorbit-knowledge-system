@@ -397,7 +397,7 @@ function LanguagesPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resu
 /* ── Section config ── */
 
 const SECTIONS: { key: SectionKey; label: string }[] = [
-  { key: "personal", label: "Personal" },
+  { key: "personal", label: "Profile" },
   { key: "summary", label: "Summary" },
   { key: "experience", label: "Experience" },
   { key: "education", label: "Education" },

@@ -25,9 +25,9 @@ const tabs = [
 const SAVE_STATUS: Record<string, { label: string; color: string }> = {
   saved: { label: "Saved", color: "bg-emerald-400" },
   saving: { label: "Saving…", color: "bg-amber-400 animate-pulse" },
-  unsaved: { label: "Unsaved", color: "bg-amber-400" },
+  unsaved: { label: "Unsaved changes", color: "bg-amber-400" },
   offline: { label: "Offline", color: "bg-slate-500" },
-  "sync-failed": { label: "Failed", color: "bg-rose-400" },
+  "sync-failed": { label: "Save failed", color: "bg-rose-400" },
 };
 
 export default function PreviewPage() {

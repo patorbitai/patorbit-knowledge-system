@@ -246,6 +246,21 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
     return !!latest && latest !== resume;
   };
 
+  // M5D — pendingSync is RESUME-scoped truth, not view state: a failed save
+  // must mark THIS resume even when another one is on screen (reopening or
+  // refreshing must never claim "Saved" for content the server rejected),
+  // and a server-confirmed save clears THIS resume's marker the same way.
+  const markUnsynced = () =>
+    useResumeBuilder.setState((s) => ({
+      pendingSyncIds: (s.pendingSyncIds ?? []).includes(rid)
+        ? (s.pendingSyncIds ?? [])
+        : [...(s.pendingSyncIds ?? []), rid],
+    }));
+  const clearUnsynced = () =>
+    useResumeBuilder.setState((s) => ({
+      pendingSyncIds: (s.pendingSyncIds ?? []).filter((id) => id !== rid),
+    }));
+
   // Set saving status (gated to the active resume)
   state.setSaveStatus("saving");
 
@@ -368,7 +383,9 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
               retryAttempts.delete(rid);
               removeOfflineEntry(rid).catch(() => {});
               // Never claim "Saved" for newer edits that landed mid-POST.
-              state.setSaveStatus(hasNewerEdits() ? "unsaved" : "saved");
+              const postNewer = hasNewerEdits();
+              state.setSaveStatus(postNewer ? "unsaved" : "saved");
+              if (!postNewer) clearUnsynced();
             });
             return;
           }
@@ -400,8 +417,11 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
           const createMsg = (createBody as { error?: string }).error ?? `POST HTTP ${createRes.status}`;
           finish(() => {
             logFailureOnce(rid, "Create failed:", createMsg);
+            markUnsynced();
             state.setSaveStatus("sync-failed");
-            state.setLastSaveError(createMsg);
+            // The failure reason describes THIS resume — never leak it onto
+            // another resume's indicator.
+            if (isActive()) state.setLastSaveError(createMsg);
             if (isRetriableHttpStatus(createRes.status)) scheduleAutoRetry(rid);
           });
         } catch (createErr) {
@@ -419,10 +439,13 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
               console.error("[write-back] Failed to enqueue offline save:", queueErr);
             }
             if (isCurrent()) {
+              markUnsynced();
               state.setSaveStatus("offline");
-              state.setLastSaveError(
-                "Can't reach the server. Changes are saved on this device — we'll keep retrying.",
-              );
+              if (isActive()) {
+                state.setLastSaveError(
+                  "Can't reach the server. Changes are saved on this device — we'll keep retrying.",
+                );
+              }
               scheduleAutoRetry(rid);
             }
           }
@@ -441,8 +464,11 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
       const msg = (body as { error?: string }).error ?? `HTTP ${res.status}`;
       finish(() => {
         logFailureOnce(rid, "Save failed:", msg);
+        markUnsynced();
         state.setSaveStatus("sync-failed");
-        state.setLastSaveError(msg);
+        // The failure reason describes THIS resume — never leak it onto
+        // another resume's indicator.
+        if (isActive()) state.setLastSaveError(msg);
         // Transient failures (429/5xx/408) get bounded automatic retries;
         // terminal rejections wait for the explicit Retry action.
         if (isRetriableHttpStatus(res.status)) scheduleAutoRetry(rid);
@@ -464,7 +490,9 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
       removeOfflineEntry(rid).catch(() => {});
       // Never claim "Saved" for NEWER edits that landed mid-flight — their
       // own save cycle (pending debounce or in-flight request) resolves them.
-      state.setSaveStatus(hasNewerEdits() ? "unsaved" : "saved");
+      const newer = hasNewerEdits();
+      state.setSaveStatus(newer ? "unsaved" : "saved");
+      if (!newer) clearUnsynced();
     });
   } catch (err) {
     // A newer save already started for this resume — it owns status + queue.
@@ -480,6 +508,7 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
       console.error("[write-back] Failed to enqueue offline save:", queueErr);
     }
     if (!isCurrent()) return; // re-check: a newer attempt may have raced in
+    markUnsynced();
     state.setSaveStatus("offline");
     scheduleAutoRetry(rid);
   }

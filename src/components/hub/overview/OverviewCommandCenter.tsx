@@ -658,11 +658,11 @@ export function OverviewCommandCenter({ name, email, data, onboardingCompleted =
                         className="inline-flex items-center rounded-md bg-gray-100 dark:bg-white/[0.05] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400"
                         title={
                           tailored
-                            ? "Derived from your master profile — the master resume is never changed by tailoring"
+                            ? "Derived from your master profile — tailoring never changes the source"
                             : "Your source-of-truth resume"
                         }
                       >
-                        {tailored ? "From master profile" : "Master resume"}
+                        {tailored ? "From master profile" : "Master profile"}
                       </span>
                       {targetApp && (
                         <Link

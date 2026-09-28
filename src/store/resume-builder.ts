@@ -524,14 +524,31 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           set((s) => {
             const found = s.resumes.find((r) => r.resumeId === resumeId);
             if (!found) return s;
-            return { activeResumeId: resumeId, resume: found };
+            // Re-selecting the active resume must not clobber its status.
+            if (s.activeResumeId === resumeId) return { activeResumeId: resumeId, resume: found };
+            // M5D — save status is RESUME-scoped lineage: reopening a resume
+            // restores that resume's truth instead of inheriting the one left
+            // behind. Same rule as rehydration — a persisted pendingSync marker
+            // means "not on the server yet" (Unsaved); otherwise the content
+            // was server-confirmed (Saved). The write-back subscriber re-arms
+            // on the identity swap, so local edits are re-saved and re-truthed.
+            const targetUnsynced = (s.pendingSyncIds ?? []).includes(resumeId);
+            return {
+              activeResumeId: resumeId,
+              resume: found,
+              saveStatus: targetUnsynced ? "unsaved" as const : "saved" as const,
+              lastSaveError: null,
+            };
           });
         },
         renameResume: (resumeId: string, name: string) => {
           set((s) => {
             const resumes = s.resumes.map((r) => r.resumeId === resumeId ? { ...r, resumeName: name } : r);
             const resume = resumes.find((r) => r.resumeId === s.activeResumeId) || resumes[0];
-            return { resumes, resume, saveStatus: "unsaved" };
+            // M5D — only the ACTIVE resume's indicator may change; renaming a
+            // background resume must not claim unsaved edits on this one.
+            const renamingActive = s.activeResumeId === resumeId;
+            return { resumes, resume, ...(renamingActive ? { saveStatus: "unsaved" as const } : {}) };
           });
 
           // Persist rename to server
@@ -564,13 +581,34 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           // 1. Immediately update local state (fast UI response)
           set((s) => {
             const resumes = s.resumes.filter((r) => r.resumeId !== resumeId);
-            const activeResumeId = s.activeResumeId === resumeId ? resumes[0].resumeId : s.activeResumeId;
+            const deletingActive = s.activeResumeId === resumeId;
+            const activeResumeId = deletingActive ? resumes[0].resumeId : s.activeResumeId;
             const resume = resumes.find((r) => r.resumeId === activeResumeId) || resumes[0];
             const lineage = { ...s.lineage };
             delete lineage[resumeId];
             const versions = { ...s.versions };
             delete versions[resumeId];
-            return { resumes, activeResumeId, resume, saveStatus: "unsaved", lineage, versions };
+            // M5D — deleting a resume deletes its whole identity: the style
+            // config, share state and pendingSync marker are all keyed by this
+            // resumeId and must not outlive it (attachment lineage hygiene).
+            const styleConfigs = { ...s.styleConfigs };
+            delete styleConfigs[resumeId];
+            const shareStates = { ...s.shareStates };
+            delete shareStates[resumeId];
+            const pendingSyncIds = (s.pendingSyncIds ?? []).filter((id) => id !== resumeId);
+            // Status lineage: a background delete never touches the indicator;
+            // a foreground delete re-truths the survivor by the same rule as
+            // hydration (marker → Unsaved, server-confirmed → Saved).
+            let saveStatus: SaveStatus = s.saveStatus;
+            if (deletingActive) {
+              // Survivor truth by the hydration rule: marker → Unsaved, else
+              // server-confirmed → Saved; a degenerate missing id stays conservative.
+              saveStatus =
+                activeResumeId !== undefined && !pendingSyncIds.includes(activeResumeId)
+                  ? "saved"
+                  : "unsaved";
+            }
+            return { resumes, activeResumeId, resume, saveStatus, lineage, versions, styleConfigs, shareStates, pendingSyncIds };
           });
 
           // 2. Cancel any pending write-back for this resume (prevents resurrection)

@@ -39,7 +39,14 @@ function DiffRow({ diff }: { diff: SectionDiff }) {
 }
 
 export function ConflictResolutionModal() {
-  const writeConflict = useResumeBuilder((s) => s.writeConflict);
+  const rawConflict = useResumeBuilder((s) => s.writeConflict);
+  const activeResumeId = useResumeBuilder((s) => s.activeResumeId);
+  // M5D — lineage scoping: a 409 from a BACKGROUND save belongs to the
+  // resume it happened on, not to whatever is on screen now. The pendingSync
+  // marker still records the truth; the modal reappears once that resume is
+  // the active one.
+  const writeConflict =
+    rawConflict && rawConflict.resumeId === activeResumeId ? rawConflict : null;
   const clearWriteConflict = useResumeBuilder((s) => s.clearWriteConflict);
   const resolveConflictKeepMine = useResumeBuilder((s) => s.resolveConflictKeepMine);
   const resolveConflictUseServer = useResumeBuilder((s) => s.resolveConflictUseServer);
