@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { Passport } from "@/components/identity/Passport";
@@ -8,8 +8,10 @@ import { NetworkView } from "@/components/identity/NetworkView";
 import { TrustTimelineView } from "@/components/identity/TrustTimelineView";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
 import { CustomizePanel } from "@/components/resume-builder/CustomizePanel";
+import { TemplateGallery } from "@/components/resume-builder/TemplateGallery";
 import { LiveStylePreview } from "@/components/resume-builder/LiveStylePreview";
 import { ArrowLeft, FileText, CreditCard, Network, Clock, Palette, Download, SlidersHorizontal } from "lucide-react";
+import { track } from "@/lib/analytics";
 import Link from "next/link";
 import { clsx } from "clsx";
 
@@ -34,8 +36,14 @@ export default function PreviewPage() {
   const [activeTab, setActiveTab] = useState<typeof tabs[number]["id"]>("resume");
   const [showExport, setShowExport] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const template = getActiveTemplate(resume);
   const status = SAVE_STATUS[saveStatus] ?? SAVE_STATUS.saved;
+
+  // M5C §H — the standalone preview is a distinct workflow surface.
+  useEffect(() => {
+    track("builder_preview_opened", { surface: "page" });
+  }, []);
 
   return (
     <main className="h-[100dvh] flex bg-[#060a14] text-white font-sans antialiased selection:bg-cyan-500/30 overflow-hidden">
@@ -88,22 +96,29 @@ export default function PreviewPage() {
           {/* Divider */}
           <div className="w-8 h-px bg-white/[0.06] mb-1" />
 
-          <Link
-            href="/templates"
+          {/* M5C §D — template choice is contextual here too: the in-builder
+              gallery opens over the preview instead of navigating away, so
+              applying a template keeps the preview (and every other bit of
+              context) exactly where it was. */}
+          <button
+            type="button"
+            onClick={() => setShowTemplates(true)}
             aria-label="Browse templates"
-            className="flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-xl text-[10px] font-medium text-slate-500 hover:text-cyan-300 hover:bg-white/[0.04] transition-all w-full"
+            className="flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-xl text-[10px] font-medium text-slate-500 hover:text-cyan-300 hover:bg-white/[0.04] transition-all w-full cursor-pointer"
           >
             <Palette className="w-[18px] h-[18px]" />
             <span>Templates</span>
-          </Link>
+          </button>
 
+          {/* M5C §B — "Customize" is the canonical name for this action
+              (was "Style" + aria-label "Customize style"). */}
           <button
             onClick={() => setShowCustomize(true)}
-            aria-label="Customize style"
+            aria-label="Customize"
             className="flex flex-col items-center gap-1.5 px-2 py-2.5 rounded-xl text-[10px] font-medium text-slate-500 hover:text-cyan-300 hover:bg-white/[0.04] transition-all w-full cursor-pointer"
           >
             <SlidersHorizontal className="w-[18px] h-[18px]" />
-            <span>Style</span>
+            <span>Customize</span>
           </button>
 
           <button
@@ -160,6 +175,7 @@ export default function PreviewPage() {
       {/* Modals */}
       <ExportModal open={showExport} onClose={() => setShowExport(false)} />
       <CustomizePanel open={showCustomize} onClose={() => setShowCustomize(false)} />
+      <TemplateGallery open={showTemplates} onClose={() => setShowTemplates(false)} />
     </main>
   );
 }

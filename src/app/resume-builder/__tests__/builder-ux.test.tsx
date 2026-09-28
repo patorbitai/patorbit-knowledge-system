@@ -79,19 +79,33 @@ describe("Builder Preview UX refactor", () => {
     document.body.innerHTML = "";
   });
 
-  it("main Builder header is simplified — no Templates/Customize controls", () => {
+  it("builder header: Customize is first-class; ONE Preview nav entry; no header Templates", () => {
     const { unmount } = renderToContainer(<ResumeBuilderPage />);
 
-    const buttons = Array.from(document.body.querySelectorAll("button"));
-    expect(buttons.some((b) => b.textContent?.includes("Templates"))).toBe(false);
-    expect(buttons.some((b) => b.textContent?.includes("Customize"))).toBe(false);
-    expect(buttons.some((b) => b.textContent?.includes("Choose a template"))).toBe(false);
+    const header = document.body.querySelector("header");
+    expect(header).toBeTruthy();
 
-    // Primary actions kept: Preview link + Profile menu. The dead Settings
-    // gear is gone (no implemented feature behind it).
-    const previewLink = document.body.querySelector('a[href="/resume-builder/preview"]');
-    expect(previewLink).toBeTruthy();
-    expect(previewLink?.textContent).toContain("Preview");
+    // M5C §A/§B — Customize is a first-class header action carrying the
+    // canonical accessible name "Customize".
+    const customizeBtn = header?.querySelector('[aria-label="Customize"]');
+    expect(customizeBtn).toBeTruthy();
+    expect(customizeBtn?.textContent).toContain("Customize");
+
+    // The header itself never carries Templates or a duplicate Preview entry
+    // (Templates lives in the editor context bar; Preview navigation lives
+    // inside the preview surface).
+    const headerButtons = Array.from(header?.querySelectorAll("button") ?? []);
+    expect(headerButtons.some((b) => b.textContent?.includes("Templates"))).toBe(false);
+    expect(headerButtons.some((b) => b.textContent?.includes("Choose a template"))).toBe(false);
+    expect(header?.querySelector('a[href="/resume-builder/preview"]')).toBeNull();
+
+    // M5C §C — exactly ONE navigation entry to the standalone preview page,
+    // inside the right panel's preview surface with a distinct accessible
+    // name (never confused with the Preview tab).
+    const previewLinks = Array.from(document.body.querySelectorAll('a[href="/resume-builder/preview"]'));
+    expect(previewLinks.length).toBe(1);
+    expect(previewLinks[0].getAttribute("aria-label")).toBe("Open full preview");
+
     expect(findButton("Settings")).toBeFalsy();
     expect(findButton("Account menu")).toBeTruthy();
     unmount();
@@ -105,7 +119,7 @@ describe("Builder Preview UX refactor", () => {
     unmount();
   });
 
-  it("Preview workspace is the finalization surface: Resume + Templates + Style + Export", () => {
+  it("Preview workspace is the finalization surface: Resume + Templates + Customize + Export", () => {
     const { unmount } = renderToContainer(<PreviewPage />);
 
     const text = document.body.textContent ?? "";
@@ -114,8 +128,11 @@ describe("Builder Preview UX refactor", () => {
     expect(text).toContain("Ada Lovelace");
     expect(text).not.toContain("Jordan Rivera"); // gallery sample never used
 
-    // Templates is a link to /templates, Style and Export are buttons
-    expect(document.body.querySelector('a[href="/templates"]')).toBeTruthy();
+    // M5C §B/§D — Templates and Customize are in-place contextual buttons
+    // (no navigation away from the preview), Export stays a button.
+    expect(document.body.querySelector('a[href="/templates"]')).toBeNull();
+    expect(document.body.querySelector('[aria-label="Browse templates"]')).toBeTruthy();
+    expect(document.body.querySelector('[aria-label="Customize"]')).toBeTruthy();
     expect(findButtonContaining("Export")).toBeTruthy();
     unmount();
   });
@@ -145,35 +162,45 @@ describe("Builder Preview UX refactor", () => {
     unmount();
   });
 
-  it("Templates link inside Preview navigates to the template gallery", () => {
+  it("Templates button inside Preview opens the gallery in place (no navigation)", () => {
     const { unmount } = renderToContainer(<PreviewPage />);
 
-    // Templates is a link to /templates (not a button that opens inline)
-    const templatesLink = document.body.querySelector('a[href="/templates"]');
-    expect(templatesLink).toBeTruthy();
+    // M5C §D — a button opening the existing in-builder TemplateGallery,
+    // not a link that leaves the preview.
+    expect(document.body.querySelector('a[href="/templates"]')).toBeNull();
+    const templatesBtn = document.body.querySelector('[aria-label="Browse templates"]') as HTMLButtonElement;
+    expect(templatesBtn).toBeTruthy();
+
+    click(templatesBtn);
+    expect(document.body.textContent).toContain("Choose a Resume Template");
+    // Still on the preview surface — context intact.
+    expect(document.body.textContent).toContain("Professional Preview");
+    expect(document.body.textContent).toContain("Ada Lovelace");
     unmount();
   });
 
-  it("Style button inside Preview opens the customization panel", () => {
+  it("Customize button inside Preview opens the customization panel", () => {
     const { unmount } = renderToContainer(<PreviewPage />);
 
-    // Style button has aria-label "Customize style"
-    const styleBtn = document.body.querySelector('[aria-label="Customize style"]') as HTMLButtonElement;
-    expect(styleBtn).toBeTruthy();
+    // M5C §B — canonical accessible name "Customize" (was "Customize style").
+    const customizeBtn = document.body.querySelector('[aria-label="Customize"]') as HTMLButtonElement;
+    expect(customizeBtn).toBeTruthy();
+    expect(customizeBtn.textContent).toContain("Customize");
 
-    click(styleBtn);
-    // After clicking Style, the CustomizePanel should appear
-    const text = document.body.textContent ?? "";
-    expect(text).toContain("Ada Lovelace");
+    click(customizeBtn);
+    const dialog = document.querySelector('[role="dialog"][aria-labelledby="customize-panel-title"]');
+    expect(dialog).toBeTruthy();
+    // Live preview inside the panel still shows the user's resume — context
+    // preserved (no navigation happened).
+    expect(document.body.textContent).toContain("Ada Lovelace");
     unmount();
   });
 
-  it("navigating to templates and back preserves content", () => {
+  it("opening the gallery in Preview preserves stored content", () => {
     const { unmount } = renderToContainer(<PreviewPage />);
 
-    // Templates link exists and points to /templates
-    const templatesLink = document.body.querySelector('a[href="/templates"]');
-    expect(templatesLink).toBeTruthy();
+    // Templates opens in place (button, not a link away).
+    expect(document.body.querySelector('[aria-label="Browse templates"]')).toBeTruthy();
 
     // Resume content is preserved in the store
     const resume = useResumeBuilder.getState().resume;

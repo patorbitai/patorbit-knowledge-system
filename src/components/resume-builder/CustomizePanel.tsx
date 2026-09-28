@@ -22,6 +22,7 @@
 import { ArrowLeft, Check, ChevronDown, RotateCcw } from "lucide-react";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
+import { track } from "@/lib/analytics";
 import { LiveStylePreview } from "./LiveStylePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import {
@@ -103,21 +104,62 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
   const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
+  // M5C §G — focus follows the dialog: whatever opened the panel gets focus
+  // back on close (tracked across re-renders via ref, so the parent's inline
+  // onClose identity can never re-run this lifecycle).
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!open) return;
+    restoreFocusRef.current =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    track("builder_customize_opened");
     const t = setTimeout(() => closeButtonRef.current?.focus(), 0);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
-        onClose();
+        onCloseRef.current();
+        return;
+      }
+      // M5C §G — keep keyboard focus inside the modal dialog (Tab wraps).
+      if (e.key === "Tab") {
+        const root = dialogRef.current;
+        if (!root) return;
+        const focusables = Array.from(
+          root.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        const active = document.activeElement;
+        const inside = active instanceof HTMLElement && root.contains(active);
+        if (e.shiftKey) {
+          if (!inside || active === first) {
+            e.preventDefault();
+            last.focus();
+          }
+        } else if (!inside || active === last) {
+          e.preventDefault();
+          first.focus();
+        }
       }
     };
     window.addEventListener("keydown", onKey);
     return () => {
       clearTimeout(t);
       window.removeEventListener("keydown", onKey);
+      const el = restoreFocusRef.current;
+      restoreFocusRef.current = null;
+      if (el && el.isConnected) el.focus();
     };
-  }, [open, onClose]);
+  }, [open]);
 
   // Lock the document while the modal is open so the outer page can never
   // scroll behind the workspace. Restore previous overflow values on close.
@@ -135,7 +177,11 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
 
   if (!open) return null;
 
-  const patch = (partial: Partial<ResumeStyleConfig>) => setStyleConfig(resumeId, partial);
+  const patch = (partial: Partial<ResumeStyleConfig>) => {
+    setStyleConfig(resumeId, partial);
+    // M5C §H — one event per user-applied customization change.
+    track("customization_changed");
+  };
 
   const applyDensity = (value: (typeof DENSITY_OPTIONS)[number]["value"]) => {
     const option = DENSITY_OPTIONS.find((d) => d.value === value);
@@ -148,6 +194,7 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
 
   return (
     <div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-labelledby="customize-panel-title"
@@ -523,7 +570,10 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
             className="shrink-0 px-4 py-2.5 bg-[#070d18] border-t border-white/[0.06] flex items-center justify-between gap-3"
           >
             <button
-              onClick={() => resetStyleConfig(resumeId)}
+              onClick={() => {
+                resetStyleConfig(resumeId);
+                track("customization_changed", { reset: true });
+              }}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-slate-500 hover:text-slate-200 hover:bg-white/[0.04] transition-colors ${FOCUS_CLASS}`}
             >
               <RotateCcw className="w-3 h-3" />

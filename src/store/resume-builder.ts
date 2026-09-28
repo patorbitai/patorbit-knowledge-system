@@ -23,6 +23,7 @@ import { buildCareerProfile } from "@/lib/career-profile";
 import { buildJobProfile } from "@/lib/job-profile";
 import { buildQualificationMatch } from "@/lib/qualification-match";
 import { hasSufficientData } from "@/types/resume";
+import { track } from "@/lib/analytics";
 import { ai } from "@/lib/ai/client";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import {
@@ -1314,6 +1315,9 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           // Only the template changes — every other field of the user's resume
           // (name, contact, sections, font/color customization) stays intact.
           if (TEMPLATES.some((t) => t.id === templateId)) {
+            // M5C §H — single choke point for template-choice telemetry so every
+            // entry (in-builder gallery, /templates page) is counted once.
+            track("builder_template_changed", { templateId });
             set((s) => {
               const updatedResume = {
                 ...s.resume,

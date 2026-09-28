@@ -12,7 +12,30 @@
 
 import { useResumeBuilder, type SaveStatus } from "@/store/resume-builder";
 import type { Resume, CareerStage } from "@/types/resume";
+import type { ResumeStyleConfig } from "@/lib/resume-design-system/style-config";
 import { enqueueOfflineSave, removeOfflineEntry, getAllOfflineEntries } from "@/lib/offline-queue";
+
+/**
+ * M5C — customization joins the write-back payload.
+ *
+ * The store keeps style configs in `styleConfigs[resumeId]` (not inside the
+ * resume document), but the server payload contract (ResumePayloadSchema,
+ * ADR-003) carries them under `resume.styleConfigs`. Merging here means ONE
+ * save covers content AND customization, so the M5B status machine stays
+ * truthful about both. Seams that predate the style map (test mocks) pass
+ * `undefined` and keep the exact previous payload.
+ */
+function withStyleConfigs(
+  resume: Resume,
+  styleConfigs: Record<string, ResumeStyleConfig> | undefined,
+): Resume {
+  if (!styleConfigs || !resume.resumeId) return resume;
+  const config = styleConfigs[resume.resumeId];
+  return {
+    ...resume,
+    styleConfigs: config ? { [resume.resumeId]: config } : {},
+  } as Resume;
+}
 
 /** Valid careerStage values accepted by the server. */
 const VALID_CAREER_STAGES = new Set<string>(["student", "recent-graduate", "working-professional", "manager", "freelancer"]);
@@ -201,6 +224,10 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
   const seq = (saveSeq.get(rid) ?? 0) + 1;
   saveSeq.set(rid, seq);
   sentResumes.set(rid, resume);
+  // M5C — the exact style config THIS request carries. A newer local style
+  // edit beyond it keeps the status truthful when this request completes.
+  const sentStyleRef = snapshot.styleConfigs?.[resume.resumeId];
+  const payloadResume = withStyleConfigs(resume, snapshot.styleConfigs);
   cancelSaveRetry(rid); // this attempt replaces any scheduled retry
   const isCurrent = () => saveSeq.get(rid) === seq;
   const finish = (apply: () => void) => {
@@ -209,6 +236,9 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
   /** Newer local edits exist beyond the exact object THIS request carried. */
   const hasNewerEdits = () => {
     const st = useResumeBuilder.getState();
+    // M5C: a customization edit is a local edit too — a style config newer
+    // than the one THIS request carried must never be claimed "Saved".
+    if (st.styleConfigs?.[rid] !== sentStyleRef) return true;
     const fromList = Array.isArray(st.resumes)
       ? st.resumes.find((r) => r.resumeId === rid)
       : undefined;
@@ -230,7 +260,7 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
         resumeName: resume.resumeName || resume.name || "My Resume",
         templateId: resume.templateId,
         careerStage: sanitizeCareerStage(resume.careerStage),
-        resume,
+        resume: payloadResume,
         baseVersion: baseVersion > 0 ? baseVersion : undefined,
       }),
     });
@@ -312,7 +342,7 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
               resumeName: resume.resumeName || resume.name || "My Resume",
               templateId: resume.templateId,
               careerStage: sanitizeCareerStage(resume.careerStage),
-              resume,
+              resume: payloadResume,
             }),
           });
           if (createRes.ok) {
@@ -382,7 +412,7 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
             try {
               await enqueueOfflineSave(
                 rid,
-                resume as unknown as Record<string, unknown>,
+                payloadResume as unknown as Record<string, unknown>,
                 baseVersion > 0 ? baseVersion : undefined,
               );
             } catch (queueErr) {
@@ -438,15 +468,14 @@ export async function saveLocalResumeToServer(targetResumeId?: string): Promise<
     });
   } catch (err) {
     // A newer save already started for this resume — it owns status + queue.
-    if (!isCurrent()) return;
-    logFailureOnce(resume.resumeId, "Network error:", err);
-    // C8: Persist to IndexedDB offline queue so edits survive refresh
-    try {
-      await enqueueOfflineSave(
-        resume.resumeId,
-        resume as unknown as Record<string, unknown>,
-        baseVersion > 0 ? baseVersion : undefined,
-      );
+    if (!isCurrent()) return;            logFailureOnce(resume.resumeId, "Network error:", err);
+            // C8: Persist to IndexedDB offline queue so edits survive refresh
+            try {
+              await enqueueOfflineSave(
+                resume.resumeId,
+                payloadResume as unknown as Record<string, unknown>,
+                baseVersion > 0 ? baseVersion : undefined,
+              );
     } catch (queueErr) {
       console.error("[write-back] Failed to enqueue offline save:", queueErr);
     }
@@ -616,12 +645,18 @@ function handleBeforeUnload(): void {
 function flushKeepalive(resume: Resume, baseVersion: number): void {
   if (!resume.resumeId) return;
   try {
+    // M5C: include styleConfigs so an unload-flush also persists the latest
+    // customization (same merge as saveLocalResumeToServer).
+    const payloadResume = withStyleConfigs(
+      resume,
+      useResumeBuilder.getState().styleConfigs,
+    );
     const payload = JSON.stringify({
       resumeId: resume.resumeId,
       resumeName: resume.resumeName || resume.name || "My Resume",
       templateId: resume.templateId,
       careerStage: sanitizeCareerStage(resume.careerStage),
-      resume,
+      resume: payloadResume,
       baseVersion: baseVersion > 0 ? baseVersion : undefined,
     });
 
@@ -630,7 +665,7 @@ function flushKeepalive(resume: Resume, baseVersion: number): void {
     // ensures the edit is not lost on refresh.
     enqueueOfflineSave(
       resume.resumeId,
-      resume as unknown as Record<string, unknown>,
+      payloadResume as unknown as Record<string, unknown>,
       baseVersion > 0 ? baseVersion : undefined,
     ).catch(() => {
       // Best-effort — IndexedDB write may not complete before unload
@@ -844,7 +879,18 @@ function localMatchesPayload(resumeId: string, payload: Record<string, unknown>)
   const local = fromList ?? (st.resume?.resumeId === resumeId ? st.resume : undefined);
   if (!local) return false;
   try {
-    return JSON.stringify(local) === JSON.stringify(payload);
+    // M5C — the queued payload carries the style config alongside the content
+    // (withStyleConfigs). Compare content and customization separately so a
+    // reserved styleConfigs key on either side can never hide the truth.
+    const { styleConfigs: queuedStyles, ...payloadDoc } = payload;
+    const localDoc = { ...(local as unknown as Record<string, unknown>) };
+    delete localDoc.styleConfigs;
+    if (JSON.stringify(localDoc) !== JSON.stringify(payloadDoc)) return false;
+    const queued = (
+      queuedStyles as Record<string, Record<string, unknown> | undefined> | undefined
+    )?.[resumeId];
+    const current = st.styleConfigs?.[resumeId];
+    return JSON.stringify(queued ?? null) === JSON.stringify(current ?? null);
   } catch {
     return false;
   }
@@ -870,8 +916,10 @@ export function hookWriteBackToStore(): void {
     if (!isHydrated) return;
     // C28: Skip write-back during server-first hydration to prevent loops.
     if (state.hydratingFromServer || prevState.hydratingFromServer) return;
-    // Only save when resume content actually changed
-    if (state.resume === prevState.resume) return;
+    // Only save when resume content actually changed — M5C: or the per-resume
+    // customization (style config), which now enters the SAME debounced
+    // write-back so customization changes follow the truthful save states.
+    if (state.resume === prevState.resume && state.styleConfigs === prevState.styleConfigs) return;
     // Don't trigger during active saving
     if (state.saveStatus === "saving") return;
     // Don't trigger server sync result propagation

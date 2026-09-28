@@ -17,11 +17,14 @@ import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
 import AccountMenu from "@/components/hub/AccountMenu";
 import { WorkflowStatusBar } from "@/components/resume-builder/WorkflowStatusBar";
 import { JobApplicationSelector } from "@/components/resume-builder/JobApplicationSelector";
-import { Eye, ArrowLeft, ChevronRight, History, PenLine, Target, Download } from "lucide-react";
+import { Eye, ArrowLeft, ChevronRight, History, PenLine, Target, Download, SlidersHorizontal, Maximize2 } from "lucide-react";
 import { PreviewErrorBoundary } from "@/components/resume-builder/PreviewErrorBoundary";
 import { MobilePreview } from "@/components/resume-builder/MobilePreview";
 import { TailorResumeModal } from "@/components/resume-builder/TailorResumeModal";
 import { ExportModal } from "@/components/resume-builder/ExportModal";
+import { CustomizePanel } from "@/components/resume-builder/CustomizePanel";
+import { TemplateGallery } from "@/components/resume-builder/TemplateGallery";
+import { track } from "@/lib/analytics";
 
 /* ── Dynamic imports for heavy panels (SSR=false to avoid layout-effect crashes) ── */
 const LiveStylePreview = dynamic(
@@ -153,7 +156,7 @@ function RightPanel({ mode, onModeChange }: { mode: "preview" | "copilot"; onMod
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-1 border-b border-gray-200 dark:border-white/[0.06] shrink-0 bg-white dark:bg-[#070d18] px-2">
-        <button onClick={() => onModeChange("preview")}
+        <button onClick={() => { if (mode !== "preview") track("builder_preview_opened", { surface: "panel" }); onModeChange("preview"); }}
           className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors cursor-pointer border-b-2 -mb-px ${mode === "preview" ? "text-gray-900 dark:text-white border-cyan-500" : "text-gray-400 dark:text-slate-500 border-transparent hover:text-gray-600 dark:hover:text-slate-300"}`}>
           <Eye className="w-3.5 h-3.5" /> Preview
         </button>
@@ -161,6 +164,20 @@ function RightPanel({ mode, onModeChange }: { mode: "preview" | "copilot"; onMod
           className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors cursor-pointer border-b-2 -mb-px ${mode === "copilot" ? "text-gray-900 dark:text-white border-cyan-500" : "text-gray-400 dark:text-slate-500 border-transparent hover:text-gray-600 dark:hover:text-slate-300"}`}>
           <Target className="w-3.5 h-3.5" /> Match
         </button>
+        {/* M5C §C — ONE navigation entry to the standalone "review" preview,
+            living inside the preview surface itself (the header's duplicate
+            Preview link was removed). Distinct accessible name so it is never
+            confused with the Preview tab. */}
+        {mode === "preview" && (
+          <Link
+            href="/resume-builder/preview"
+            aria-label="Open full preview"
+            title="Open full preview"
+            className="shrink-0 ml-1 flex items-center justify-center h-8 w-8 rounded-md text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors"
+          >
+            <Maximize2 className="w-3.5 h-3.5" />
+          </Link>
+        )}
       </div>
       <div className="flex-1 min-h-0 overflow-hidden">
         {mode === "preview" ? (
@@ -199,7 +216,7 @@ function MobileModeToggle({ mode, onModeChange }: { mode: MobileMode; onModeChan
         <Target className="w-3.5 h-3.5" /> Match
       </button>
       <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.08]" />
-      <button onClick={() => onModeChange("preview")} className={`${base} ${mode === "preview" ? active : idle}`}>
+      <button onClick={() => { if (mode !== "preview") track("builder_preview_opened", { surface: "mobile" }); onModeChange("preview"); }} className={`${base} ${mode === "preview" ? active : idle}`}>
         <Eye className="w-3.5 h-3.5" /> Preview
       </button>
     </div>
@@ -252,11 +269,21 @@ function AppHeader({ onOpenHistory }: { onOpenHistory: () => void }) {
           >
             <History className="w-4 h-4" />
           </button>
-          <Link href="/resume-builder/preview"
-            className="hidden sm:flex items-center gap-1.5 h-8 px-2.5 rounded-md text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors">
-            <Eye className="w-3.5 h-3.5" />
-            Preview
-          </Link>
+          {/* M5C §A — Customize is a first-class workflow action next to the
+              other header actions. It opens the full-screen CustomizePanel
+              IN PLACE: no navigation, so resume/job/scroll/unsaved editor
+              state all survive. Icon-only below sm (label hidden, aria-label
+              keeps the accessible name "Customize"). */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("patorbit:open-customize"))}
+            aria-label="Customize"
+            title="Customize"
+            className="flex items-center gap-1.5 h-8 px-2 sm:px-2.5 rounded-md text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Customize</span>
+          </button>
           {/* §20: export must stay reachable on mobile. */}
           <button
             onClick={() => window.dispatchEvent(new CustomEvent("patorbit:open-export"))}
@@ -280,6 +307,11 @@ export default function ResumeBuilderPage() {
   const [mobileMode, setMobileMode] = useState<MobileMode>("edit");
   const [tailorOpen, setTailorOpen] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
+  // M5C §A/§D — Customize and Templates are contextual surfaces over the
+  // builder: opening them never navigates away, so editing context (scroll,
+  // active section, unsaved state) is untouched.
+  const [customizeOpen, setCustomizeOpen] = useState(false);
+  const [templatesOpen, setTemplatesOpen] = useState(false);
   // §1.3: the header/copilot opener hands the CURRENT job context to the
   // tailor modal so the user never re-pastes the same JD.
   const sessionJobDescription = useResumeBuilder((s) => s.jobDescription);
@@ -289,19 +321,25 @@ export default function ResumeBuilderPage() {
     sessionJobDescription || activeJobApplication?.jobDescription || undefined;
   const [exportOpen, setExportOpen] = useState(false);
 
-  // Listen for custom events from WorkflowStatusBar
+  // Listen for custom events from WorkflowStatusBar / header / context bar
   useEffect(() => {
     const handleOpenTailor = () => setTailorOpen(true);
     const handleOpenExport = () => setExportOpen(true);
+    const handleOpenCustomize = () => setCustomizeOpen(true);
+    const handleOpenTemplates = () => setTemplatesOpen(true);
     // §activation (M3): the match panel's "Add experience" CTA lands on the
     // profile editor — on mobile the copilot overlay must yield to the Edit view.
     const handleOpenEditor = () => setMobileMode("edit");
     window.addEventListener("patorbit:open-tailor", handleOpenTailor);
     window.addEventListener("patorbit:open-export", handleOpenExport);
+    window.addEventListener("patorbit:open-customize", handleOpenCustomize);
+    window.addEventListener("patorbit:open-templates", handleOpenTemplates);
     window.addEventListener("patorbit:open-editor", handleOpenEditor);
     return () => {
       window.removeEventListener("patorbit:open-tailor", handleOpenTailor);
       window.removeEventListener("patorbit:open-export", handleOpenExport);
+      window.removeEventListener("patorbit:open-customize", handleOpenCustomize);
+      window.removeEventListener("patorbit:open-templates", handleOpenTemplates);
       window.removeEventListener("patorbit:open-editor", handleOpenEditor);
     };
   }, []);
@@ -368,6 +406,8 @@ export default function ResumeBuilderPage() {
         />
         <ExportModal open={exportOpen} onClose={() => setExportOpen(false)} />
         <VersionHistoryPanel open={historyOpen} onClose={() => setHistoryOpen(false)} />
+        <CustomizePanel open={customizeOpen} onClose={() => setCustomizeOpen(false)} />
+        <TemplateGallery open={templatesOpen} onClose={() => setTemplatesOpen(false)} />
       </div>
     </DndProvider>
   );

@@ -13,7 +13,7 @@
  * hidden on small screens).
  */
 import { useState } from "react";
-import { ArrowUpRight, Crown, GitBranch, Layers, ShieldAlert, Target } from "lucide-react";
+import { ArrowUpRight, Crown, GitBranch, Layers, Palette, ShieldAlert, Target } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { retryFailedSave } from "@/lib/resume-write-back";
 import { ConfirmationDialog } from "@/components/common/ConfirmationDialog";
@@ -141,6 +141,18 @@ export function ResumeContextBar() {
           <span className="hidden sm:inline-flex">
             <SaveToIdentityButton />
           </span>
+          {/* M5C §D — template choice is the first step of the workflow
+              (Choose template → Edit → Customize → Preview → Export), so the
+              existing in-builder TemplateGallery is mounted as a contextual
+              action here instead of requiring a trip to /templates. */}
+          <button
+            type="button"
+            onClick={() => window.dispatchEvent(new CustomEvent("patorbit:open-templates"))}
+            className="inline-flex items-center gap-1.5 h-7 px-2.5 rounded-md border border-gray-200 dark:border-white/[0.1] text-[11px] font-medium text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+          >
+            <Palette className="w-3.5 h-3.5" aria-hidden="true" />
+            Templates
+          </button>
           <button
             type="button"
             onClick={() => setSectionsOpen(true)}

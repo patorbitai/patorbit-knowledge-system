@@ -70,6 +70,13 @@ export const WORKFLOW_EVENTS = [
   "first_experience_saved",
   "first_skill_saved",
   "first_evidence_skipped",
+  // M5C — builder workflow integration (Customize / Preview / Template).
+  // Feature-engagement events like the rest of §24: reported outside the
+  // activation funnel, through the same track() pipeline.
+  "builder_customize_opened",
+  "customization_changed",
+  "builder_preview_opened",
+  "builder_template_changed",
 ] as const;
 
 export type WorkflowEvent = (typeof WORKFLOW_EVENTS)[number];
