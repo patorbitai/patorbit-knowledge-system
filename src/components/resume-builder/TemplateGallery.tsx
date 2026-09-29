@@ -1,6 +1,6 @@
 "use client";
 
-import { Fragment, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { clsx } from "clsx";
 import { X, Check, Eye, Shield, Layers, AlertTriangle, Sparkles, Search } from "lucide-react";
@@ -92,6 +92,83 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
   const [previewing, setPreviewing] = useState<string | null>(null);
   const [confirmOverwrite, setConfirmOverwrite] = useState<string | null>(null);
   const searchRef = useRef<HTMLInputElement>(null);
+  // M5E — dialog focus management: the gallery is the "Choose template" step,
+  // so keyboard users must be able to enter it, cycle inside it, and leave it
+  // with Escape back to the button that opened it.
+  const panelRef = useRef<HTMLDivElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const confirmRef = useRef<HTMLDivElement>(null);
+  const confirmCancelRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  // M5E — move focus into the dialog on open; restore it to the opener on close.
+  useEffect(() => {
+    if (!open) return;
+    openerRef.current = document.activeElement as HTMLElement | null;
+    const t = setTimeout(() => closeButtonRef.current?.focus(), 0);
+    return () => {
+      clearTimeout(t);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, [open]);
+
+  // M5E — focus the confirm dialog's safe action when the overwrite prompt
+  // opens; when it closes while the gallery stays open (Cancel / Escape),
+  // focus returns to the gallery's close button instead of dropping to <body>.
+  // If the gallery itself is closing in the same commit, the opener-restore
+  // effect already moved focus — activeElement is no longer inside the
+  // confirm dialog, so we skip and never steal it back.
+  useEffect(() => {
+    if (!confirmOverwrite) return;
+    confirmCancelRef.current?.focus();
+    // Capture the nodes now — cleanups run after refs may have been reset.
+    const confirmEl = confirmRef.current;
+    const closeBtn = closeButtonRef.current;
+    return () => {
+      const active = document.activeElement;
+      if (active && confirmEl?.contains(active)) {
+        closeBtn?.focus();
+      }
+    };
+  }, [confirmOverwrite]);
+
+  // M5E — Escape closes (confirm prompt first, then the gallery) and Tab is
+  // trapped inside whichever dialog is topmost. The full-screen preview is a
+  // nested portal with its own keyboard handling, so it owns the keys while
+  // it is open.
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (previewing) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        if (confirmOverwrite) setConfirmOverwrite(null);
+        else onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = confirmOverwrite ? confirmRef.current : panelRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, previewing, confirmOverwrite, onClose]);
 
   const handleSelect = (id: string) => {
     // Check if this is a premium template and user has access
@@ -149,6 +226,10 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
             onClick={() => { if (!confirmOverwrite) onClose(); }}
           />
           <motion.div
+            ref={panelRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="template-gallery-title"
             initial={{ opacity: 0, scale: 0.96, y: 24 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.96, y: 24 }}
@@ -164,7 +245,7 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                   <Sparkles className="w-4 h-4 text-cyan-400" />
                 </div>
                 <div className="hidden sm:block">
-                  <h2 className="text-base font-semibold text-white tracking-tight">Choose a Resume Template</h2>
+                  <h2 id="template-gallery-title" className="text-base font-semibold text-white tracking-tight">Choose a Resume Template</h2>
                   <p className="text-[11px] text-slate-500 mt-0.5">
                     {filteredTemplates.length} template{filteredTemplates.length !== 1 ? "s" : ""} available
                   </p>
@@ -196,6 +277,7 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
               </div>
 
               <button
+                ref={closeButtonRef}
                 onClick={() => { if (!confirmOverwrite) onClose(); }}
                 className="p-2 shrink-0 text-slate-500 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cyan-500/50"
                 aria-label="Close"
@@ -215,7 +297,9 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                       <div className="my-2 border-t border-white/[0.05]" />
                     )}
                     <button
+                      type="button"
                       onClick={() => setActiveCategory(section.id)}
+                      aria-pressed={activeCategory === section.id}
                       className={clsx(
                         "w-full text-left px-3 py-2 rounded-lg text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50 flex items-center gap-2",
                         activeCategory === section.id
@@ -416,8 +500,12 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                   exit={{ opacity: 0 }}
                   className="absolute inset-0 z-20 bg-black/75 backdrop-blur-md flex items-center justify-center p-6"
                 >
-                  <motion.div
-                    initial={{ scale: 0.92, y: 20 }}
+                <motion.div
+                  ref={confirmRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="template-gallery-confirm-title"
+                  initial={{ scale: 0.92, y: 20 }}
                     animate={{ scale: 1, y: 0 }}
                     exit={{ scale: 0.92, y: 20 }}
                     transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
@@ -429,7 +517,7 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                         <AlertTriangle className="w-5 h-5 text-amber-400" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-semibold text-white">Switch Template?</h3>
+                        <h3 id="template-gallery-confirm-title" className="text-sm font-semibold text-white">Switch Template?</h3>
                         <p className="text-[11px] text-slate-500 mt-0.5">Your content will be preserved.</p>
                       </div>
                     </div>
@@ -438,6 +526,7 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
                     </p>
                     <div className="flex items-center gap-2 justify-end">
                       <button
+                        ref={confirmCancelRef}
                         onClick={() => setConfirmOverwrite(null)}
                         className="px-4 py-2 rounded-lg text-[11px] font-medium text-slate-400 hover:text-white hover:bg-white/[0.06] transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/20"
                       >

@@ -139,7 +139,7 @@ export function EducationSection() {
                       >
                         <div className="px-4 py-4 space-y-5">
                           <div>
-                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Academic Details</h4>
+                            <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Academic Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <FieldInput label="School / University" placeholder="Stanford University" value={edu.school} onChange={(v) => updateEducation(edu.id, "school", v)} onBlur={() => touch(`education.${idx}.school`)} error={getFieldError("education", "school", idx)} />
                               <FieldInput label="Degree" placeholder="Bachelor of Science" value={edu.degree} onChange={(v) => updateEducation(edu.id, "degree", v)} onBlur={() => touch(`education.${idx}.degree`)} error={getFieldError("education", "degree", idx)} />
@@ -151,7 +151,7 @@ export function EducationSection() {
                           </div>
 
                           <div>
-                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Additional Info</h4>
+                            <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Additional Info</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <FieldInput label="Honors" placeholder="Cum Laude, Dean's List" value={edu.honors} onChange={(v) => updateEducation(edu.id, "honors", v)} />
                               <FieldInput label="Activities" placeholder="Robotics Club, Hackathon Organizer" value={edu.activities} onChange={(v) => updateEducation(edu.id, "activities", v)} />

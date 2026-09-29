@@ -583,6 +583,67 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
     doClose();
   }, [isDirty, step, doClose]);
 
+  // M5E — dialog focus management: focus moves into the modal on open, Tab
+  // stays inside, Escape closes via handleClose (so the discard confirmation
+  // still appears for unsaved review edits), and focus returns to the opener.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const handleCloseRef = useRef(handleClose);
+  const discardConfirmOpenRef = useRef(showDiscardConfirm);
+  // Latest-value refs for the keydown handler: written after commit (never
+  // during render — react-hooks/refs) so Escape/Tab always read current state.
+  useEffect(() => {
+    handleCloseRef.current = handleClose;
+    discardConfirmOpenRef.current = showDiscardConfirm;
+  });
+
+  useEffect(() => {
+    if (!open) return;
+    openerRef.current = document.activeElement as HTMLElement | null;
+    const t = setTimeout(() => {
+      const first = dialogRef.current?.querySelector<HTMLElement>("button, input, textarea, select");
+      first?.focus();
+    }, 0);
+    return () => {
+      clearTimeout(t);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      // The discard ConfirmationDialog owns Escape while it is open.
+      if (discardConfirmOpenRef.current) return;
+      if (e.key === "Escape") {
+        e.preventDefault();
+        handleCloseRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   const handleDiscardConfirm = useCallback(() => {
     setShowDiscardConfirm(false);
     if (discardAction === "reset") doReset();
@@ -602,6 +663,10 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
           onClick={handleClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="tailor-modal-title"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -615,7 +680,7 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                   <Target className="w-5 h-5 text-white" />
                 </div>
                 <div>
-                  <h2 className="text-sm font-semibold text-gray-900 dark:text-white">
+                  <h2 id="tailor-modal-title" className="text-sm font-semibold text-gray-900 dark:text-white">
                     {step === "editing" ? "Edit Tailored Draft" : step === "review" ? "Review Tailored Resume" : "Tailor Resume to Job"}
                   </h2>
                   <p className="text-xs text-gray-500 dark:text-slate-400">
@@ -633,8 +698,8 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                     Unsaved edits
                   </span>
                 )}
-                <button onClick={handleClose} className="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white">
-                  <X className="h-4 w-4" />
+                <button onClick={handleClose} aria-label="Close tailor dialog" className="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white">
+                  <X className="h-4 w-4" aria-hidden="true" />
                 </button>
               </div>
             </div>

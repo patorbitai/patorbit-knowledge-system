@@ -291,6 +291,20 @@ export function InlinePopover({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [snapshot]);
 
+  // M5E — when the popover closes (Done or Escape), focus returns to the
+  // field control that opened it instead of falling back to <body>.
+  // Captured in the lazy initializer — during the FIRST render — because this
+  // popover autofocusses its own textarea during commit, which would beat any
+  // post-mount effect to document.activeElement.
+  const [opener] = useState<HTMLElement | null>(
+    () => document.activeElement as HTMLElement | null,
+  );
+  useEffect(() => {
+    return () => {
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, [opener]);
+
   const position = useMemo<React.CSSProperties>(() => {
     if (isMobile) {
       return { left: 0, right: 0, bottom: 0, width: "100%", maxHeight: "70vh" };

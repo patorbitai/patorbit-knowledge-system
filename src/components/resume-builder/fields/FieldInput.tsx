@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useId, useMemo } from "react";
 import { clsx } from "clsx";
 import { useResumeBuilder } from "@/store/resume-builder";
 import type { AIActionState } from "@/types/resume";
@@ -46,6 +46,10 @@ export function FieldInput({
   const aiActions = useResumeBuilder((s) => aiActionKey ? s.aiActions[aiActionKey] : undefined);
   const styleConfig = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
   const fontFamily = useMemo(() => resolveFontFamily(styleConfig), [styleConfig]);
+  // M5E — associate the label + error message with the control (KI-305:
+  // error text was never announced and the label was not linked).
+  const fieldId = useId();
+  const errorId = `${fieldId}-error`;
 
   const charCount = typeof value === "string" ? value.length : 0;
 
@@ -71,7 +75,7 @@ export function FieldInput({
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-medium text-gray-500 dark:text-slate-400">{label}</label>
+        <label htmlFor={fieldId} className="text-xs font-medium text-gray-500 dark:text-slate-400">{label}</label>
         {maxLength && (
           <span className={clsx(
             "text-[10px] font-mono",
@@ -84,17 +88,21 @@ export function FieldInput({
 
       {type === "textarea" ? (
         <textarea
+          id={fieldId}
           value={value ?? ""}
           onChange={handleInput}
           onBlur={onBlur}
           placeholder={placeholder}
           rows={Math.max(rows, 5)}
           disabled={disabled}
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           style={{ fontFamily }}
           className={inputClasses}
         />
       ) : (
         <input
+          id={fieldId}
           type={type === "email" ? "email" : type === "tel" ? "tel" : "text"}
           value={value ?? ""}
           onChange={handleInput}
@@ -102,11 +110,14 @@ export function FieldInput({
           placeholder={placeholder}
           disabled={disabled}
           autoComplete="off"
+          aria-invalid={error ? true : undefined}
+          aria-describedby={error ? errorId : undefined}
           className={inputClasses}
         />
       )}
 
-      {/* AI action indicator */}
+      {/* AI action indicator — announced via the persistent live region. */}
+      <div role="status" aria-live="polite">
       <AnimatePresence>
         {aiActionKey && aiActions?.status === "streaming" && (
           <motion.div
@@ -142,8 +153,9 @@ export function FieldInput({
           </motion.div>
         )}
       </AnimatePresence>
+      </div>
 
-      {error && <p className="text-[11px] text-red-400">{error}</p>}
+      {error && <p id={errorId} role="alert" className="text-[11px] text-red-400">{error}</p>}
     </div>
   );
 }

@@ -43,9 +43,9 @@ export function SectionCard({
           aria-expanded={!collapsed}
           aria-label={`${collapsed ? "Expand" : "Collapse"} ${title}`}
         >
-          <h3 className="text-[15px] font-semibold text-gray-900 dark:text-white truncate">
+          <h2 className="text-[15px] font-semibold text-gray-900 dark:text-white truncate">
             {title}
-          </h3>
+          </h2>
           {isValid !== undefined && (
             <span
               className={clsx(

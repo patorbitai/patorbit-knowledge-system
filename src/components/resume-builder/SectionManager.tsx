@@ -43,15 +43,51 @@ export function SectionManager({ open, onClose }: { open: boolean; onClose: () =
   const setActiveSection = useResumeBuilder((s) => s.setActiveSection);
   const plan = useResumePlan();
   const dialogRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
   const [announcement, setAnnouncement] = useState("");
 
-  // Escape closes (professional dialog behavior).
+  // M5E — focus moves into the dialog on open (the close button) and returns
+  // to the "Manage sections" button on close. The opener must be captured
+  // BEFORE any autofocus steals activeElement, so focus-in is deferred.
+  useEffect(() => {
+    if (!open) return;
+    openerRef.current = document.activeElement as HTMLElement | null;
+    const t = setTimeout(() => {
+      dialogRef.current?.querySelector<HTMLElement>("button")?.focus();
+    }, 0);
+    return () => {
+      clearTimeout(t);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, [open]);
+
+  // Escape closes (professional dialog behavior) and Tab stays inside.
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
         e.preventDefault();
         onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
       }
     };
     window.addEventListener("keydown", onKey);
@@ -207,7 +243,6 @@ export function SectionManager({ open, onClose }: { open: boolean; onClose: () =
             type="button"
             onClick={onClose}
             aria-label="Close section manager"
-            autoFocus
             className="p-1.5 rounded-md text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] cursor-pointer"
           >
             <X className="w-4 h-4" aria-hidden="true" />

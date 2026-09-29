@@ -81,11 +81,15 @@ export function JobApplicationSelector() {
     return () => document.removeEventListener("mousedown", handleClick);
   }, [isOpen]);
 
-  // Close on Escape
+  // M5E — Escape closes the listbox and returns focus to the trigger.
+  const triggerRef = useRef<HTMLButtonElement>(null);
   useEffect(() => {
     if (!isOpen) return;
     const handleKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setIsOpen(false);
+      if (e.key === "Escape") {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
     };
     document.addEventListener("keydown", handleKey);
     return () => document.removeEventListener("keydown", handleKey);
@@ -131,6 +135,7 @@ export function JobApplicationSelector() {
     <div className="relative" ref={dropdownRef}>
       {/* Trigger button */}
       <button
+        ref={triggerRef}
         onClick={() => setIsOpen(!isOpen)}
         aria-label="Select job application"
         aria-expanded={isOpen}

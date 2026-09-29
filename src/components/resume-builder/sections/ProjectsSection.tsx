@@ -185,7 +185,7 @@ export function ProjectsSection() {
                       >
                         <div className="px-4 py-4 space-y-5">
                           <div>
-                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Project Details</h4>
+                            <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Project Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <FieldInput label="Project Name" placeholder="AI Chat Platform" value={proj.name} onChange={(v) => updateProject(proj.id, "name", v)} onBlur={() => touch(`projects.${idx}.name`)} error={getFieldError("projects", "name", idx)} />
                               <FieldInput label="Technologies Used" placeholder="React, Node.js, OpenAI" value={proj.tech} onChange={(v) => updateProject(proj.id, "tech", v)} />
@@ -197,7 +197,7 @@ export function ProjectsSection() {
                           </div>
 
                           <div>
-                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Description</h4>
+                            <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Description</h3>
                             <div className="flex items-center flex-wrap gap-1.5 mb-3">
                               <AIActionButton label="Generate Description" onClick={() => handleGenerateDescription(proj.id)} isLoading={aiActions[`proj-${proj.id}-gen`]?.status === "loading"} variant="ghost" />
                             </div>
@@ -208,7 +208,7 @@ export function ProjectsSection() {
                           </div>
 
                           <div>
-                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Bullets</h4>
+                            <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2">Bullets</h3>
                             <BulletList
                               bullets={proj.bulletPoints ?? []}
                               onChange={(bullets) => updateProject(proj.id, "bulletPoints", bullets)}

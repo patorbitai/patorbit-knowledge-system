@@ -63,7 +63,10 @@ export default function MobileSectionNav() {
             <Icon className="h-3.5 w-3.5" />
             {label}
             {isComplete && (
-              <span className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-emerald-400" />
+              <span
+                aria-hidden="true"
+                className="absolute -top-0.5 -right-0.5 h-1.5 w-1.5 rounded-full bg-emerald-400"
+              />
             )}
           </button>
         );

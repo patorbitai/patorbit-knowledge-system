@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Link, Copy, Check, ExternalLink } from "lucide-react";
 import { useResumeBuilder } from "@/store/resume-builder";
@@ -20,6 +20,56 @@ export function ShareResumeModal({ open, onClose, resumeId, resumeName }: ShareR
   const [loading, setLoading] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // M5E — dialog focus management: focus moves in on open, Tab is trapped,
+  // Escape closes, and focus returns to the opener on close.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    openerRef.current = document.activeElement as HTMLElement | null;
+    const t = setTimeout(() => {
+      const first = dialogRef.current?.querySelector<HTMLElement>("button");
+      first?.focus();
+    }, 0);
+    return () => {
+      clearTimeout(t);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
 
   // Fetch current share status on open
   useEffect(() => {
@@ -116,6 +166,10 @@ export function ShareResumeModal({ open, onClose, resumeId, resumeName }: ShareR
           onClick={onClose}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="share-resume-title"
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
@@ -125,14 +179,15 @@ export function ShareResumeModal({ open, onClose, resumeId, resumeName }: ShareR
             {/* Header */}
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">Share Resume</h2>
+                <h2 id="share-resume-title" className="text-sm font-semibold text-gray-900 dark:text-white">Share Resume</h2>
                 <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">{resumeName}</p>
               </div>
               <button
                 onClick={onClose}
+                aria-label="Close share dialog"
                 className="rounded-lg p-1 text-gray-400 hover:text-gray-600 dark:hover:text-white"
               >
-                <X className="h-4 w-4" />
+                <X className="h-4 w-4" aria-hidden="true" />
               </button>
             </div>
 

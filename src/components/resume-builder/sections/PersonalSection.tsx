@@ -129,9 +129,9 @@ export function PersonalSection() {
           {/* Name + title */}
           <div>
             <ResumeFont>
-              <h4 className="text-xl font-semibold text-gray-900 dark:text-white leading-tight">
+              <h3 className="text-xl font-semibold text-gray-900 dark:text-white leading-tight">
                 {resume.name || "Your Name"}
-              </h4>
+              </h3>
             </ResumeFont>
             {resume.title && (
               <ResumeFont>
@@ -194,7 +194,7 @@ export function PersonalSection() {
           {resume.summary ? (
             <div>
               <div className="flex items-center justify-between gap-2 mb-1.5">
-                <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500">Professional summary</h5>
+                <h4 className="text-[11px] font-medium text-gray-400 dark:text-slate-500">Professional summary</h4>
                 <button
                   type="button"
                   onClick={() => {
@@ -239,7 +239,7 @@ export function PersonalSection() {
         <SectionContent>
           {/* Identity */}
           <div>
-            <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Identity</h5>
+            <h4 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Identity</h4>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <FieldInput
                 label="Full Name"
@@ -262,7 +262,7 @@ export function PersonalSection() {
 
           {/* Contact */}
           <div>
-            <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Contact</h5>
+            <h4 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Contact</h4>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <FieldInput
                 label="Email"
@@ -292,7 +292,7 @@ export function PersonalSection() {
 
           {/* Online Presence */}
           <div>
-            <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Online</h5>
+            <h4 className="text-[11px] font-medium text-gray-400 dark:text-slate-500 mb-3">Online</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
               <FieldInput
                 label="LinkedIn"
@@ -351,7 +351,7 @@ export function PersonalSection() {
           {/* Summary */}
           <div ref={summaryAnchorRef}>
             <div className="flex items-center justify-between mb-3">
-              <h5 className="text-[11px] font-medium text-gray-400 dark:text-slate-500">Summary</h5>
+              <h4 className="text-[11px] font-medium text-gray-400 dark:text-slate-500">Summary</h4>
               <div className="flex items-center gap-1.5">
                 <AIActionButton
                   label="Generate Summary"

@@ -45,6 +45,21 @@ export function FullTemplatePreview({
   const [zoom, setZoom] = useState<number | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const measureRef = useRef<HTMLDivElement>(null);
+  // M5E — dialog focus management: move focus in on open, trap Tab inside,
+  // and return focus to the opener (e.g. a gallery card button) on close.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const closeBtnRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    openerRef.current = document.activeElement as HTMLElement | null;
+    const t = setTimeout(() => closeBtnRef.current?.focus(), 0);
+    return () => {
+      clearTimeout(t);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, []);
 
   const template = templates.find((t) => t.id === activeId) ?? templates[0];
   const index = templates.findIndex((t) => t.id === activeId);
@@ -150,6 +165,25 @@ export function FullTemplatePreview({
           target.isContentEditable);
       if (e.key === "Escape") {
         onClose();
+      } else if (e.key === "Tab") {
+        // M5E — keep keyboard focus inside the preview dialog (Tab wraps).
+        const root = dialogRef.current;
+        if (!root) return;
+        const focusables = Array.from(
+          root.querySelectorAll<HTMLElement>(
+            'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          ),
+        );
+        if (focusables.length === 0) return;
+        const first = focusables[0];
+        const last = focusables[focusables.length - 1];
+        if (e.shiftKey && document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
       } else if (isEditable) {
         return;
       } else if (e.key === "ArrowLeft") {
@@ -179,6 +213,7 @@ export function FullTemplatePreview({
 
   return createPortal(
     <motion.div
+      ref={dialogRef}
       role="dialog"
       aria-modal="true"
       aria-label={`${template.name} preview`}
@@ -224,6 +259,7 @@ export function FullTemplatePreview({
           <div className="w-px h-6 bg-white/[0.1] mx-1 hidden sm:block shrink-0" />
 
           <button
+            ref={closeBtnRef}
             type="button"
             onClick={onClose}
             aria-label="Close preview"

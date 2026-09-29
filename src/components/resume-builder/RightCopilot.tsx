@@ -31,14 +31,14 @@ function CollapsibleCard({
   const [open, setOpen] = useState(defaultOpen);
   return (
     <div className="rounded-lg border border-gray-200 dark:border-white/[0.07] bg-white dark:bg-white/[0.02] overflow-hidden transition-colors">
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors cursor-pointer group">
+      <button onClick={() => setOpen(!open)} aria-expanded={open} className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-gray-50 dark:hover:bg-white/[0.03] transition-colors cursor-pointer group">
         <div className="flex items-center gap-2">
-          <span className="flex h-5 w-5 items-center justify-center" style={{ color }}>{icon}</span>
+          <span className="flex h-5 w-5 items-center justify-center" style={{ color }} aria-hidden="true">{icon}</span>
           <span className="text-xs font-semibold text-gray-900 dark:text-slate-200">{title}</span>
         </div>
         <div className="flex items-center gap-2">
           {badge !== undefined && <span className="text-[10px] font-medium text-cyan-700 dark:text-cyan-400 bg-cyan-500/10 px-1.5 py-0.5 rounded min-w-[20px] text-center">{badge}</span>}
-          {open ? <ChevronUp className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" />}
+          {open ? <ChevronUp className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5 text-gray-400 dark:text-slate-500" aria-hidden="true" />}
         </div>
       </button>
       {open && <div className="px-4 pb-4 space-y-3 pt-1">{children}</div>}

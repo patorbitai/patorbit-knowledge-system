@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   AlertTriangle,
@@ -54,6 +54,61 @@ export function ConflictResolutionModal() {
   const [showDetails, setShowDetails] = useState(false);
   const [resolving, setResolving] = useState<"keep" | "server" | null>(null);
 
+  // M5E — the conflict dialog interrupts the save flow: move focus into it
+  // when it appears (announcing it to screen readers), keep Tab inside,
+  // Escape dismisses (unless a resolution is in flight), and focus returns
+  // to whatever was active before the conflict surfaced.
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+  const resolvingRef = useRef(resolving);
+  const handleCancelRef = useRef<() => void>(() => {});
+
+  useEffect(() => {
+    if (!writeConflict) return;
+    openerRef.current = document.activeElement as HTMLElement | null;
+    const t = setTimeout(() => {
+      const first = dialogRef.current?.querySelector<HTMLElement>("button");
+      first?.focus();
+    }, 0);
+    return () => {
+      clearTimeout(t);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, [writeConflict]);
+
+  useEffect(() => {
+    if (!writeConflict) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        if (resolvingRef.current) return;
+        e.preventDefault();
+        handleCancelRef.current();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = dialogRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [writeConflict]);
+
   const diffs = useMemo(() => {
     if (!writeConflict) return [];
     return computeSectionDiffs(writeConflict.localResume, writeConflict.serverResume);
@@ -77,6 +132,12 @@ export function ConflictResolutionModal() {
     // Preserve local state, close UI, keep conflict available for later
     clearWriteConflict();
   };
+  // Latest-value refs for the keydown handler: written after commit (never
+  // during render — react-hooks/refs) so Escape/Tab always read current state.
+  useEffect(() => {
+    resolvingRef.current = resolving;
+    handleCancelRef.current = handleCancel;
+  });
 
   return (
     <AnimatePresence>
@@ -92,6 +153,10 @@ export function ConflictResolutionModal() {
           }}
         >
           <motion.div
+            ref={dialogRef}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="conflict-resolution-title"
             initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
@@ -105,7 +170,7 @@ export function ConflictResolutionModal() {
                   <AlertTriangle className="w-5 h-5 text-amber-400" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-semibold text-white">Resume Conflict</h2>
+                  <h2 id="conflict-resolution-title" className="text-lg font-semibold text-white">Resume Conflict</h2>
                   <p className="text-sm text-slate-400 mt-1">
                     This resume was modified on another device or session.
                   </p>
@@ -113,6 +178,7 @@ export function ConflictResolutionModal() {
                 <button
                   onClick={handleCancel}
                   disabled={!!resolving}
+                  aria-label="Close conflict resolution"
                   className="flex-shrink-0 p-1.5 rounded-lg hover:bg-white/[0.06] text-slate-500 hover:text-slate-300 transition-colors disabled:opacity-50"
                 >
                   <X className="w-4 h-4" />

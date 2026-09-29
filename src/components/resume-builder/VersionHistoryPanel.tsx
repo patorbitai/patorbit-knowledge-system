@@ -6,7 +6,7 @@
  * a confirmed restore that preserves resume identity and always captures
  * a "Before restore" undo point first.
  */
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import {
   Download,
@@ -65,6 +65,59 @@ export function VersionHistoryPanel({
   const restoreVersion = useResumeBuilder((s) => s.restoreVersion);
   const [target, setTarget] = useState<ResumeVersion | null>(null);
 
+  // M5E — slide-over dialog: focus moves in on open, Tab is trapped, Escape
+  // closes (unless the restore confirmation owns the keystroke), and focus
+  // returns to the header's "Version history" button on close.
+  const panelRef = useRef<HTMLElement>(null);
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const openerRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    openerRef.current = document.activeElement as HTMLElement | null;
+    const t = setTimeout(() => closeButtonRef.current?.focus(), 0);
+    return () => {
+      clearTimeout(t);
+      const opener = openerRef.current;
+      if (opener && opener.isConnected) opener.focus();
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => {
+      // The restore ConfirmationDialog listens for Escape itself; let it win.
+      if (document.querySelector('[role="dialog"][aria-labelledby="confirm-dialog-title"]')) {
+        return;
+      }
+      if (e.key === "Escape") {
+        e.preventDefault();
+        onClose();
+        return;
+      }
+      if (e.key !== "Tab") return;
+      const root = panelRef.current;
+      if (!root) return;
+      const focusables = Array.from(
+        root.querySelectorAll<HTMLElement>(
+          'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+        ),
+      );
+      if (focusables.length === 0) return;
+      const first = focusables[0];
+      const last = focusables[focusables.length - 1];
+      if (e.shiftKey && document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      } else if (!e.shiftKey && document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open, onClose]);
+
   return (
     <AnimatePresence>
       {open && (
@@ -77,7 +130,9 @@ export function VersionHistoryPanel({
             onClick={onClose}
           />
           <motion.aside
+            ref={panelRef}
             role="dialog"
+            aria-modal="true"
             aria-label="Version history"
             initial={{ opacity: 0, x: 40 }}
             animate={{ opacity: 1, x: 0 }}
@@ -102,6 +157,7 @@ export function VersionHistoryPanel({
                 </div>
               </div>
               <button
+                ref={closeButtonRef}
                 type="button"
                 onClick={onClose}
                 aria-label="Close version history"

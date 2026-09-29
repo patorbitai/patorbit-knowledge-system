@@ -156,7 +156,7 @@ export function SkillsSection() {
         <SectionContent>
           {groups.map((group) => (
             <div key={group.name}>
-              <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">{group.name}</h4>
+              <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-2.5">{group.name}</h3>
               <div className="flex flex-wrap gap-2">
                 {group.skills.map((skill) => {
                   const isEditing = editingId === skill.id;

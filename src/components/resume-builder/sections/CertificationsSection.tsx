@@ -133,7 +133,7 @@ export function CertificationsSection() {
                       >
                         <div className="px-4 py-4 space-y-5">
                           <div>
-                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Certification Details</h4>
+                            <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Certification Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <FieldInput label="Certification Name" placeholder="AWS Solutions Architect" value={cert.name} onChange={(v) => updateCertification(cert.id, "name", v)} onBlur={() => touch(`certifications.${idx}.name`)} error={getFieldError("certifications", "name", idx)} />
                               <FieldInput label="Issuer" placeholder="Amazon Web Services" value={cert.issuer} onChange={(v) => updateCertification(cert.id, "issuer", v)} />
@@ -144,7 +144,7 @@ export function CertificationsSection() {
                           </div>
 
                           <div>
-                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Additional Info</h4>
+                            <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Additional Info</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <FieldInput label="Description" placeholder="Cert details..." value={cert.description} onChange={(v) => updateCertification(cert.id, "description", v)} type="textarea" rows={3} />
                               <FieldInput label="Relevant Skills" placeholder="DevOps, Cloud Architecture" value={cert.skills} onChange={(v) => updateCertification(cert.id, "skills", v)} />

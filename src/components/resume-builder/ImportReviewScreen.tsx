@@ -165,18 +165,18 @@ const textareaCls = (empty: boolean) => clsx(
     : "border-gray-200 dark:border-white/[0.08] placeholder:text-gray-400 dark:placeholder:text-slate-500",
 );
 
-function FieldLabel({ children }: { children: React.ReactNode }) {
-  return <label className="block text-[12px] font-semibold text-gray-600 dark:text-slate-300 mb-1.5">{children}</label>;
+function FieldLabel({ children, htmlFor }: { children: React.ReactNode; htmlFor?: string }) {
+  return <label htmlFor={htmlFor} className="block text-[12px] font-semibold text-gray-600 dark:text-slate-300 mb-1.5">{children}</label>;
 }
 
-function EntryCard({ children, onRemove }: { children: React.ReactNode; onRemove: () => void }) {
+function EntryCard({ children, onRemove, removeLabel = "Remove entry" }: { children: React.ReactNode; onRemove: () => void; removeLabel?: string }) {
   return (
     <div className="relative rounded-xl border border-gray-200 dark:border-white/[0.08] bg-gray-50 dark:bg-white/[0.025] p-4 space-y-3 shadow-sm shadow-black/20">
       <button
         type="button"
         onClick={onRemove}
         className="absolute top-4 right-4 p-1.5 rounded-lg text-slate-600 hover:text-red-400 hover:bg-red-500/10 transition"
-        aria-label="Remove entry"
+        aria-label={removeLabel}
       >
         <X className="w-4 h-4" />
       </button>
@@ -195,24 +195,24 @@ function PersonalPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resum
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-2 gap-3">
-        <div><FieldLabel>Name</FieldLabel><input className={inputCls(!draft.name)} value={draft.name} onChange={f("name")} placeholder="Not detected" /></div>
-        <div><FieldLabel>Title / Headline</FieldLabel><input className={inputCls(!draft.title)} value={draft.title} onChange={f("title")} placeholder="Not detected" /></div>
+        <div><FieldLabel htmlFor="imp-name">Name</FieldLabel><input id="imp-name" aria-invalid={!draft.name || undefined} className={inputCls(!draft.name)} value={draft.name} onChange={f("name")} placeholder="Not detected" /></div>
+        <div><FieldLabel htmlFor="imp-title">Title / Headline</FieldLabel><input id="imp-title" aria-invalid={!draft.title || undefined} className={inputCls(!draft.title)} value={draft.title} onChange={f("title")} placeholder="Not detected" /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><FieldLabel>Email</FieldLabel><input className={inputCls(!draft.email)} value={draft.email} onChange={f("email")} placeholder="Not detected" /></div>
-        <div><FieldLabel>Phone</FieldLabel><input className={inputCls(!draft.phone)} value={draft.phone} onChange={f("phone")} placeholder="Not detected" /></div>
+        <div><FieldLabel htmlFor="imp-email">Email</FieldLabel><input id="imp-email" aria-invalid={!draft.email || undefined} className={inputCls(!draft.email)} value={draft.email} onChange={f("email")} placeholder="Not detected" /></div>
+        <div><FieldLabel htmlFor="imp-phone">Phone</FieldLabel><input id="imp-phone" aria-invalid={!draft.phone || undefined} className={inputCls(!draft.phone)} value={draft.phone} onChange={f("phone")} placeholder="Not detected" /></div>
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <div><FieldLabel>Address</FieldLabel><input className={inputCls(!draft.address)} value={draft.address} onChange={f("address")} placeholder="Not detected" /></div>
-        <div><FieldLabel>Nationality</FieldLabel><input className={inputCls(!draft.nationality)} value={draft.nationality} onChange={f("nationality")} placeholder="Not detected" /></div>
+        <div><FieldLabel htmlFor="imp-address">Address</FieldLabel><input id="imp-address" className={inputCls(!draft.address)} value={draft.address} onChange={f("address")} placeholder="Not detected" /></div>
+        <div><FieldLabel htmlFor="imp-nationality">Nationality</FieldLabel><input id="imp-nationality" className={inputCls(!draft.nationality)} value={draft.nationality} onChange={f("nationality")} placeholder="Not detected" /></div>
       </div>
       <div className="pt-1 border-t border-white/[0.06]">
         <h3 className="text-[12px] font-bold text-gray-600 dark:text-slate-300 uppercase tracking-[0.12em] mb-3 mt-4">Social Links</h3>
         <div className="grid grid-cols-2 gap-3">
-          <div><FieldLabel>LinkedIn</FieldLabel><input className={inputCls(!draft.social.linkedin)} value={draft.social.linkedin} onChange={sf("linkedin")} placeholder="Not detected" /></div>
-          <div><FieldLabel>GitHub</FieldLabel><input className={inputCls(!draft.social.github)} value={draft.social.github} onChange={sf("github")} placeholder="Not detected" /></div>
-          <div><FieldLabel>Website</FieldLabel><input className={inputCls(!draft.social.website)} value={draft.social.website} onChange={sf("website")} placeholder="Not detected" /></div>
-          <div><FieldLabel>Portfolio</FieldLabel><input className={inputCls(!draft.social.portfolio)} value={draft.social.portfolio} onChange={sf("portfolio")} placeholder="Not detected" /></div>
+          <div><FieldLabel htmlFor="imp-linkedin">LinkedIn</FieldLabel><input id="imp-linkedin" className={inputCls(!draft.social.linkedin)} value={draft.social.linkedin} onChange={sf("linkedin")} placeholder="Not detected" /></div>
+          <div><FieldLabel htmlFor="imp-github">GitHub</FieldLabel><input id="imp-github" className={inputCls(!draft.social.github)} value={draft.social.github} onChange={sf("github")} placeholder="Not detected" /></div>
+          <div><FieldLabel htmlFor="imp-website">Website</FieldLabel><input id="imp-website" className={inputCls(!draft.social.website)} value={draft.social.website} onChange={sf("website")} placeholder="Not detected" /></div>
+          <div><FieldLabel htmlFor="imp-portfolio">Portfolio</FieldLabel><input id="imp-portfolio" className={inputCls(!draft.social.portfolio)} value={draft.social.portfolio} onChange={sf("portfolio")} placeholder="Not detected" /></div>
         </div>
       </div>
     </div>
@@ -222,8 +222,10 @@ function PersonalPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resum
 function SummaryPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resume) => void }) {
   return (
     <div className="space-y-3">
-      <FieldLabel>Professional Summary</FieldLabel>
+      <FieldLabel htmlFor="imp-summary">Professional Summary</FieldLabel>
       <textarea
+        id="imp-summary"
+        aria-invalid={!draft.summary || undefined}
         className={textareaCls(!draft.summary)}
         rows={6}
         value={draft.summary}
@@ -244,16 +246,16 @@ function ExperiencePanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Res
   return (
     <div className="space-y-4">
       {draft.experience.map((exp, i) => (
-        <EntryCard key={exp.id} onRemove={() => remove(i)}>
+        <EntryCard key={exp.id} onRemove={() => remove(i)} removeLabel={`Remove experience entry ${i + 1}`}>
           <div className="grid grid-cols-2 gap-3">
-            <div><FieldLabel>Company</FieldLabel><input className={inputCls(!exp.company)} value={exp.company} onChange={e => update(i, "company", e.target.value)} placeholder="Not detected" /></div>
-            <div><FieldLabel>Position</FieldLabel><input className={inputCls(!exp.position)} value={exp.position} onChange={e => update(i, "position", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-exp-${i}-company`}>Company</FieldLabel><input id={`imp-exp-${i}-company`} aria-invalid={!exp.company || undefined} className={inputCls(!exp.company)} value={exp.company} onChange={e => update(i, "company", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-exp-${i}-position`}>Position</FieldLabel><input id={`imp-exp-${i}-position`} aria-invalid={!exp.position || undefined} className={inputCls(!exp.position)} value={exp.position} onChange={e => update(i, "position", e.target.value)} placeholder="Not detected" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><FieldLabel>Duration</FieldLabel><input className={inputCls(!exp.duration)} value={exp.duration} onChange={e => update(i, "duration", e.target.value)} placeholder="Not detected" /></div>
-            <div><FieldLabel>Location</FieldLabel><input className={inputCls(!exp.location)} value={exp.location} onChange={e => update(i, "location", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-exp-${i}-duration`}>Duration</FieldLabel><input id={`imp-exp-${i}-duration`} className={inputCls(!exp.duration)} value={exp.duration} onChange={e => update(i, "duration", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-exp-${i}-location`}>Location</FieldLabel><input id={`imp-exp-${i}-location`} className={inputCls(!exp.location)} value={exp.location} onChange={e => update(i, "location", e.target.value)} placeholder="Not detected" /></div>
           </div>
-          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!exp.description)} rows={5} value={exp.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
+          <div><FieldLabel htmlFor={`imp-exp-${i}-description`}>Description</FieldLabel><textarea id={`imp-exp-${i}-description`} className={textareaCls(!exp.description)} rows={5} value={exp.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
         </EntryCard>
       ))}
     </div>
@@ -270,16 +272,16 @@ function EducationPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resu
   return (
     <div className="space-y-4">
       {draft.education.map((edu, i) => (
-        <EntryCard key={edu.id} onRemove={() => remove(i)}>
+        <EntryCard key={edu.id} onRemove={() => remove(i)} removeLabel={`Remove education entry ${i + 1}`}>
           <div className="grid grid-cols-2 gap-3">
-            <div><FieldLabel>School</FieldLabel><input className={inputCls(!edu.school)} value={edu.school} onChange={e => update(i, "school", e.target.value)} placeholder="Not detected" /></div>
-            <div><FieldLabel>Degree</FieldLabel><input className={inputCls(!edu.degree)} value={edu.degree} onChange={e => update(i, "degree", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-edu-${i}-school`}>School</FieldLabel><input id={`imp-edu-${i}-school`} aria-invalid={!edu.school || undefined} className={inputCls(!edu.school)} value={edu.school} onChange={e => update(i, "school", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-edu-${i}-degree`}>Degree</FieldLabel><input id={`imp-edu-${i}-degree`} className={inputCls(!edu.degree)} value={edu.degree} onChange={e => update(i, "degree", e.target.value)} placeholder="Not detected" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><FieldLabel>Field of Study</FieldLabel><input className={inputCls(!edu.field)} value={edu.field} onChange={e => update(i, "field", e.target.value)} placeholder="Not detected" /></div>
-            <div><FieldLabel>Year</FieldLabel><input className={inputCls(!edu.year)} value={edu.year} onChange={e => update(i, "year", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-edu-${i}-field`}>Field of Study</FieldLabel><input id={`imp-edu-${i}-field`} className={inputCls(!edu.field)} value={edu.field} onChange={e => update(i, "field", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-edu-${i}-year`}>Year</FieldLabel><input id={`imp-edu-${i}-year`} className={inputCls(!edu.year)} value={edu.year} onChange={e => update(i, "year", e.target.value)} placeholder="Not detected" /></div>
           </div>
-          <div><FieldLabel>GPA / Honors</FieldLabel><input className={inputCls(!edu.gpa)} value={edu.gpa} onChange={e => update(i, "gpa", e.target.value)} placeholder="Not detected" /></div>
+          <div><FieldLabel htmlFor={`imp-edu-${i}-gpa`}>GPA / Honors</FieldLabel><input id={`imp-edu-${i}-gpa`} className={inputCls(!edu.gpa)} value={edu.gpa} onChange={e => update(i, "gpa", e.target.value)} placeholder="Not detected" /></div>
         </EntryCard>
       ))}
     </div>
@@ -298,13 +300,14 @@ function SkillsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resume)
       {draft.skills.map((skill, i) => (
         <div key={skill.id} className="flex items-center gap-2 rounded-lg border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] px-3 py-2.5">
           <input
+            aria-label={`Skill ${i + 1} name`}
             className="flex-1 bg-transparent text-[13px] text-gray-900 dark:text-white outline-none placeholder:text-gray-400 dark:placeholder:text-slate-600"
             value={skill.name}
             onChange={e => update(i, "name", e.target.value)}
             placeholder="Skill name"
           />
-          <button type="button" onClick={() => remove(i)} className="p-0.5 text-slate-700 hover:text-red-400 transition">
-            <X className="w-3.5 h-3.5" />
+          <button type="button" onClick={() => remove(i)} aria-label={`Remove skill ${skill.name || i + 1}`} className="p-1.5 min-h-6 min-w-6 flex items-center justify-center text-slate-700 hover:text-red-400 transition">
+            <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
       ))}
@@ -322,13 +325,13 @@ function ProjectsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resum
   return (
     <div className="space-y-4">
       {draft.projects.map((proj, i) => (
-        <EntryCard key={proj.id} onRemove={() => remove(i)}>
+        <EntryCard key={proj.id} onRemove={() => remove(i)} removeLabel={`Remove project ${i + 1}`}>
           <div className="grid grid-cols-2 gap-3">
-            <div><FieldLabel>Project Name</FieldLabel><input className={inputCls(!proj.name)} value={proj.name} onChange={e => update(i, "name", e.target.value)} placeholder="Not detected" /></div>
-            <div><FieldLabel>Link</FieldLabel><input className={inputCls(!proj.link)} value={proj.link} onChange={e => update(i, "link", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-proj-${i}-name`}>Project Name</FieldLabel><input id={`imp-proj-${i}-name`} aria-invalid={!proj.name || undefined} className={inputCls(!proj.name)} value={proj.name} onChange={e => update(i, "name", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-proj-${i}-link`}>Link</FieldLabel><input id={`imp-proj-${i}-link`} className={inputCls(!proj.link)} value={proj.link} onChange={e => update(i, "link", e.target.value)} placeholder="Not detected" /></div>
           </div>
-          <div><FieldLabel>Tech Stack</FieldLabel><input className={inputCls(!proj.tech)} value={proj.tech} onChange={e => update(i, "tech", e.target.value)} placeholder="Not detected" /></div>
-          <div><FieldLabel>Description</FieldLabel><textarea className={textareaCls(!proj.description)} rows={5} value={proj.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
+          <div><FieldLabel htmlFor={`imp-proj-${i}-tech`}>Tech Stack</FieldLabel><input id={`imp-proj-${i}-tech`} className={inputCls(!proj.tech)} value={proj.tech} onChange={e => update(i, "tech", e.target.value)} placeholder="Not detected" /></div>
+          <div><FieldLabel htmlFor={`imp-proj-${i}-description`}>Description</FieldLabel><textarea id={`imp-proj-${i}-description`} className={textareaCls(!proj.description)} rows={5} value={proj.description} onChange={e => update(i, "description", e.target.value)} placeholder="Not detected" /></div>
         </EntryCard>
       ))}
     </div>
@@ -345,14 +348,14 @@ function CertificationsPanel({ draft, setDraft }: { draft: Resume; setDraft: (r:
   return (
     <div className="space-y-4">
       {draft.certifications.map((cert, i) => (
-        <EntryCard key={cert.id} onRemove={() => remove(i)}>
+        <EntryCard key={cert.id} onRemove={() => remove(i)} removeLabel={`Remove certification ${i + 1}`}>
           <div className="grid grid-cols-2 gap-3">
-            <div><FieldLabel>Name</FieldLabel><input className={inputCls(!cert.name)} value={cert.name} onChange={e => update(i, "name", e.target.value)} placeholder="Not detected" /></div>
-            <div><FieldLabel>Issuer</FieldLabel><input className={inputCls(!cert.issuer)} value={cert.issuer} onChange={e => update(i, "issuer", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-cert-${i}-name`}>Name</FieldLabel><input id={`imp-cert-${i}-name`} aria-invalid={!cert.name || undefined} className={inputCls(!cert.name)} value={cert.name} onChange={e => update(i, "name", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-cert-${i}-issuer`}>Issuer</FieldLabel><input id={`imp-cert-${i}-issuer`} className={inputCls(!cert.issuer)} value={cert.issuer} onChange={e => update(i, "issuer", e.target.value)} placeholder="Not detected" /></div>
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <div><FieldLabel>Date</FieldLabel><input className={inputCls(!cert.date)} value={cert.date} onChange={e => update(i, "date", e.target.value)} placeholder="Not detected" /></div>
-            <div><FieldLabel>Link</FieldLabel><input className={inputCls(!cert.link)} value={cert.link} onChange={e => update(i, "link", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-cert-${i}-date`}>Date</FieldLabel><input id={`imp-cert-${i}-date`} className={inputCls(!cert.date)} value={cert.date} onChange={e => update(i, "date", e.target.value)} placeholder="Not detected" /></div>
+            <div><FieldLabel htmlFor={`imp-cert-${i}-link`}>Link</FieldLabel><input id={`imp-cert-${i}-link`} className={inputCls(!cert.link)} value={cert.link} onChange={e => update(i, "link", e.target.value)} placeholder="Not detected" /></div>
           </div>
         </EntryCard>
       ))}
@@ -372,12 +375,14 @@ function LanguagesPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resu
       {draft.languages.map((lang, i) => (
         <div key={lang.id} className="flex items-center gap-3 rounded-lg border border-gray-200 dark:border-white/[0.06] bg-gray-50 dark:bg-white/[0.02] px-3 py-2.5">
           <input
+            aria-label={`Language ${i + 1} name`}
             className="flex-1 bg-transparent text-[13px] text-gray-900 dark:text-white outline-none placeholder:text-gray-400 dark:placeholder:text-slate-600"
             value={lang.name}
             onChange={e => update(i, "name", e.target.value)}
             placeholder="Language"
           />
           <select
+            aria-label={`Proficiency for ${lang.name || `language ${i + 1}`}`}
             className="text-[13px] bg-transparent text-gray-500 dark:text-slate-400 outline-none border-none cursor-pointer"
             value={lang.proficiency}
             onChange={e => update(i, "proficiency", e.target.value)}
@@ -385,8 +390,8 @@ function LanguagesPanel({ draft, setDraft }: { draft: Resume; setDraft: (r: Resu
             {["Native", "Fluent", "Professional", "Conversational", "Beginner"].map(p => (               <option key={p} value={p} className="bg-white dark:bg-[#0A0E1B]">{p}</option>
             ))}
           </select>
-          <button type="button" onClick={() => remove(i)} className="p-0.5 text-slate-700 hover:text-red-400 transition">
-            <X className="w-3.5 h-3.5" />
+          <button type="button" onClick={() => remove(i)} aria-label={`Remove language ${lang.name || i + 1}`} className="p-1.5 min-h-6 min-w-6 flex items-center justify-center text-slate-700 hover:text-red-400 transition">
+            <X className="w-3.5 h-3.5" aria-hidden="true" />
           </button>
         </div>
       ))}
@@ -556,6 +561,7 @@ export function ImportReviewScreen({ resume, meta, onConfirm, onCancel }: Import
                 key={key}
                 type="button"
                 onClick={() => setActiveSection(key)}
+                aria-current={isActive ? "true" : undefined}
                 className={clsx(
                   "w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-[13px] transition-all text-left",
                   isActive

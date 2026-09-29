@@ -307,7 +307,7 @@ export function ExperienceSection() {
                         <div className="px-4 py-4 space-y-5">
                           {/* Role Details */}
                           <div>
-                            <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Role Details</h4>
+                            <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mb-3">Role Details</h3>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                               <FieldInput
                                 label="Position"
@@ -351,7 +351,7 @@ export function ExperienceSection() {
                           {/* Narrative description (kept separate from bullets) */}
                           <div>
                             <div className="flex items-center flex-wrap gap-1.5 mb-3">
-                              <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mr-1">Description</h4>
+                              <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider mr-1">Description</h3>
                               <AIActionDropdown
                                 label="Rewrite with AI"
                                 items={[
@@ -408,7 +408,7 @@ export function ExperienceSection() {
                           {/* Bullets (structured list) */}
                           <div>
                             <div className="flex items-center justify-between mb-1">
-                              <h4 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Achievements</h4>
+                              <h3 className="text-[11px] font-semibold text-gray-400 dark:text-slate-500 uppercase tracking-wider">Achievements</h3>
                               <button
                                 onClick={() => handleAddBullet(exp.id)}
                                 className="text-[11px] text-cyan-600 dark:text-cyan-400 hover:text-cyan-700 dark:hover:text-cyan-300 font-medium flex items-center gap-1"
