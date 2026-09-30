@@ -140,16 +140,15 @@ Sprint 2 chose localStorage for speed and offline capability. Database sync was 
 
 ### M-05: Resume Builder Editor Not Fully Mobile-Responsive
 
-**Status:** Partially Implemented
+**Status:** Implemented — device QA pending
 **Affected:** Resume Builder 3-column editor layout
-**Impact:** The editor itself is desktop-focused (sections may overlap on small screens)
+**Impact:** The three-column layout only assembles at desktop widths; smaller screens use dedicated mobile surfaces instead of the columns.
 
-**Current state:** The Template Gallery, FullTemplatePreview, Professional Preview, and Customize workspace are responsive (stack on mobile, no horizontal overflow). The core editor columns (`LeftSidebar` / `CenterWorkspace` / `RightCopilot`) remain desktop-first.
+**Current state (post-M5):** The old "sections may overlap on small screens" impact no longer reprodu (verified 375–1280px with no horizontal overflow). Phones get an Edit / Match / Preview mode bar, a horizontally scrolling section tab strip, a full-screen preview overlay, and a Template Gallery category rail that wraps as chips instead of squeezing the grid; tap targets in the editor are ≥24px. `LeftSidebar` renders from `xl` and the right panel from `md`, so the columns collapse rather than overlap below those breakpoints. The Template Gallery, FullTemplatePreview, Professional Preview, and Customize workspace remain responsive.
 
 **Next Steps:**
-1. Collapse sidebar + copilot on `md` breakpoint
-2. Add tab navigation for sections on mobile
-3. Test on iOS Safari + Android Chrome
+1. Test on iOS Safari + Android Chrome
+2. Revisit column density for tablet portrait (backlog I-07)
 
 **Backlog Item:** I-07
 
