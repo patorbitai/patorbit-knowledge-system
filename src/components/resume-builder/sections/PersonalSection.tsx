@@ -171,8 +171,10 @@ export function PersonalSection() {
             <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
               {LINK_FIELDS.filter(({ key }) => resume.social[key]).map(({ key, label }) => {
                 const href = safeHref(resume.social[key]);
+                // py-1: M5G — 17px text links were too small to tap reliably;
+                // padding-only so the quiet look is unchanged.
                 const cls =
-                  "inline-flex items-center gap-1 text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors underline-offset-2 hover:underline";
+                  "inline-flex items-center gap-1 py-1 text-[11px] font-medium text-gray-500 dark:text-slate-400 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors underline-offset-2 hover:underline";
                 // Unsafe/invalid values stay visible as plain text — never clickable.
                 return href ? (
                   <a key={key} href={href} target="_blank" rel="noreferrer" className={cls}>
@@ -202,7 +204,7 @@ export function PersonalSection() {
                     setEditing(true);
                   }}
                   aria-label="Edit summary"
-                  className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[11px] font-medium text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
+                  className="inline-flex items-center gap-1 px-1.5 py-1.5 rounded text-[11px] font-medium text-gray-400 dark:text-slate-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-white/[0.06] transition-colors cursor-pointer"
                 >
                   <Pencil className="w-3 h-3" aria-hidden="true" />
                   Edit
@@ -214,7 +216,7 @@ export function PersonalSection() {
               <button
                 onClick={handleImproveSummary}
                 disabled={aiActions["summary-rewrite"]?.status === "loading" || aiActions["summary-generate"]?.status === "loading"}
-                className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-gray-400 dark:text-slate-500 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors cursor-pointer disabled:opacity-50"
+                className="mt-2 inline-flex items-center gap-1 py-1.5 text-[11px] font-medium text-gray-400 dark:text-slate-500 hover:text-cyan-700 dark:hover:text-cyan-400 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <Sparkles className="w-3 h-3" />
                 {aiActions["summary-rewrite"]?.status === "loading" || aiActions["summary-generate"]?.status === "loading"

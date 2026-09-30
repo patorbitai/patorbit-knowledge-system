@@ -287,21 +287,23 @@ export function TemplateGallery({ open, onClose }: { open: boolean; onClose: () 
             </div>
 
             {/* Main */}
-            <div className="flex flex-1 overflow-hidden">
-              {/* Audience Sidebar */}
-              <div className="w-44 shrink-0 border-r border-white/[0.05] overflow-y-auto p-3 space-y-0.5">
-                <p className="text-[9px] font-bold uppercase tracking-widest text-slate-600 px-3 pt-1 pb-2">Browse</p>
+            <div className="flex flex-col md:flex-row flex-1 overflow-hidden">
+              {/* Audience Sidebar — a wrapping chip row on small screens (the
+                  fixed w-44 column squeezed the grid to ~104–124px wide at
+                  375/390, M5G D3); unchanged vertical rail from md up. */}
+              <div className="w-full shrink-0 flex flex-wrap items-center gap-1 border-b border-white/[0.05] p-3 md:w-44 md:block md:space-y-0.5 md:border-b-0 md:border-r md:overflow-y-auto">
+                <p className="hidden md:block text-[9px] font-bold uppercase tracking-widest text-slate-600 px-3 pt-1 pb-2">Browse</p>
                 {SIDEBAR_SECTIONS.map((section, i) => (
                   <Fragment key={section.id}>
                     {i === 1 && (
-                      <div className="my-2 border-t border-white/[0.05]" />
+                      <div className="hidden md:block my-2 border-t border-white/[0.05]" />
                     )}
                     <button
                       type="button"
                       onClick={() => setActiveCategory(section.id)}
                       aria-pressed={activeCategory === section.id}
                       className={clsx(
-                        "w-full text-left px-3 py-2 rounded-lg text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50 flex items-center gap-2",
+                        "shrink-0 whitespace-nowrap text-left px-3 py-2 rounded-lg text-[11px] font-medium transition-all duration-150 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-cyan-500/50 flex items-center gap-2 md:w-full",
                         activeCategory === section.id
                           ? "bg-gradient-to-r from-cyan-500/10 to-violet-500/10 text-white border border-white/[0.07]"
                           : "text-slate-400 hover:text-slate-200 hover:bg-white/[0.04]"

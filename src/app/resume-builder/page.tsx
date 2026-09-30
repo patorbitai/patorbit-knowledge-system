@@ -239,8 +239,11 @@ function MobileModeToggle({ mode, onModeChange }: { mode: MobileMode; onModeChan
   const base = "flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors cursor-pointer";
   const active = "text-cyan-600 dark:text-cyan-400";
   const idle = "text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300";
+  // M5G D1: the bar sits above main content and the z-30 mobile overlays,
+  // but BELOW the z-50 modals (gallery/export/history/tailor) so it never
+  // floats over a dialog or steals its taps.
   return (
-    <div className="relative z-[60] flex md:hidden items-center border-t border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#070d18] shrink-0">
+    <div className="relative z-40 flex md:hidden items-center border-t border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#070d18] shrink-0">
       <button onClick={() => onModeChange("edit")} aria-pressed={mode === "edit"} className={`${base} ${mode === "edit" ? active : idle}`}>
         <PenLine className="w-3.5 h-3.5" aria-hidden="true" /> Edit
       </button>

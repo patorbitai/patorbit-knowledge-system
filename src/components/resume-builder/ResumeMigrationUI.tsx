@@ -83,7 +83,11 @@ export function ResumeMigrationUI({ onResumeMigrated }: MigrationUIProps) {
     return (
       <button
         onClick={() => setShowUI(true)}
-        className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#0a1424]/90 backdrop-blur-xl px-3.5 py-2 text-xs font-medium text-slate-400 shadow-lg hover:border-cyan-500/30 hover:text-slate-200 transition-all"
+        // M5G: sits above the mobile section strip + mode bar (bottom-24)
+        // and the tablet-only strip (md:bottom-14); bottom-4 from xl where
+        // neither is on screen — otherwise it covers the strip's right-hand
+        // chips and swallows their taps.
+        className="fixed right-4 bottom-24 md:bottom-14 xl:bottom-4 z-30 flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#0a1424]/90 backdrop-blur-xl px-3.5 py-2 text-xs font-medium text-slate-400 shadow-lg hover:border-cyan-500/30 hover:text-slate-200 transition-all"
         title="Resume backup status"
       >
         <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
@@ -93,8 +97,11 @@ export function ResumeMigrationUI({ onResumeMigrated }: MigrationUIProps) {
   }
 
   // Expanded card — bottom-right corner
+  // M5G D1: z-30 keeps it above page content and the mobile overlays, but
+  // below the z-40 mobile mode bar — it overlaps the bar's bottom-right
+  // corner at short viewport heights and was swallowing the Preview tap.
   return (
-    <div className="fixed bottom-4 right-4 z-50 w-72 rounded-xl border border-white/[0.08] bg-[#0a1424]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
+    <div className="fixed right-4 bottom-24 md:bottom-14 xl:bottom-4 z-30 w-72 rounded-xl border border-white/[0.08] bg-[#0a1424]/95 backdrop-blur-xl shadow-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center justify-between px-3.5 py-2.5 border-b border-white/[0.06]">
         <div className="flex items-center gap-2">

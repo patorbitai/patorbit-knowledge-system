@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useRef } from "react";
 import { clsx } from "clsx";
 import {
   User,
@@ -37,9 +38,23 @@ export default function MobileSectionNav() {
   const activeSection = useResumeBuilder((s) => s.activeSection);
   const setActiveSection = useResumeBuilder((s) => s.setActiveSection);
   const sectionComplete = useResumeBuilder((s) => s.sectionComplete);
+  const navRef = useRef<HTMLElement>(null);
+
+  // M5G D7 — the strip scrolls horizontally, so the active chip can sit
+  // off-screen (e.g. switching to "Portfolio" left it at left=818 in a 768px
+  // nav). Center it in the strip whenever the active section changes.
+  useEffect(() => {
+    const nav = navRef.current;
+    if (!nav) return;
+    const active = nav.querySelector<HTMLElement>('[aria-current="step"]');
+    if (!active) return;
+    const delta = active.getBoundingClientRect().left - nav.getBoundingClientRect().left;
+    nav.scrollLeft = Math.max(0, nav.scrollLeft + delta - (nav.clientWidth - active.offsetWidth) / 2);
+  }, [activeSection]);
 
   return (
     <nav
+      ref={navRef}
       className="xl:hidden flex overflow-x-auto gap-1 border-t border-gray-200 dark:border-white/[0.06] bg-white dark:bg-[#070d18] px-2 py-1.5 scrollbar-none"
       aria-label="Resume sections"
       style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}

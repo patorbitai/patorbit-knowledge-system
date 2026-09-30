@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { PaginatedResumeSheet } from "@/components/resume/PaginatedResumeSheet";
@@ -11,8 +11,10 @@ import { EditHint } from "@/components/resume-builder/inline/EditHint";
 
 /**
  * MobilePreview — a lightweight, crash-safe resume preview for mobile viewports.
- * Unlike LiveStylePreview, it does NOT use useLayoutEffect, ResizeObserver,
- * or complex zoom/fit logic that can crash in a fixed overlay context.
+ * Unlike LiveStylePreview, it does NOT use useLayoutEffect or complex
+ * zoom/fit logic that can crash in a fixed overlay context. (M5G D2: one
+ * ResizeObserver re-reads the scroller's clientWidth so the fit re-clamps
+ * when the vertical scrollbar appears — a plain width read, no zoom loop.)
  */
 export function MobilePreview() {
   const resume = useResumeBuilder((s) => s.resume);
@@ -21,9 +23,33 @@ export function MobilePreview() {
   // Same plan as desktop so mobile preview never diverges (§27).
   const plan = useResumePlan();
 
-  // Scale to fit mobile viewport width
-  const viewportWidth = typeof window !== "undefined" ? Math.min(window.innerWidth, 500) : 380;
-  const scale = Math.max(0.35, Math.min(0.65, viewportWidth / A4.widthPx));
+  // Scale to fit the actual scroller width — not the window. The scroller
+  // can be narrower than the viewport (vertical scrollbar / padding), and a
+  // window-based scale made the sheet wider than its container, clipping the
+  // left edge and adding a horizontal scrollbar (M5G D2). The 0.35–0.65
+  // clamps still apply whenever they fit inside the container.
+  const scrollerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState<number | null>(null);
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const measure = () => setContainerWidth(el.clientWidth);
+    measure();
+    window.addEventListener("resize", measure);
+    // The vertical scrollbar only appears once the sheet paginates, which
+    // narrows the scroller after mount (390 → 374 in the M5G audit) —
+    // observe so the fit re-clamps when that happens.
+    const ro =
+      typeof ResizeObserver !== "undefined" ? new ResizeObserver(measure) : null;
+    ro?.observe(el);
+    return () => {
+      window.removeEventListener("resize", measure);
+      ro?.disconnect();
+    };
+  }, []);
+  const fallbackWidth = typeof window !== "undefined" ? Math.min(window.innerWidth, 500) : 380;
+  const fitWidth = containerWidth && containerWidth > 0 ? containerWidth : fallbackWidth;
+  const scale = Math.min(Math.max(0.35, Math.min(0.65, fitWidth / A4.widthPx)), fitWidth / A4.widthPx);
 
   return (
     <InlineEditLayer>
@@ -41,7 +67,7 @@ export function MobilePreview() {
       />
 
       {/* Preview container */}
-      <div className="flex-1 min-h-0 w-full overflow-auto flex justify-center pb-8">
+      <div ref={scrollerRef} className="flex-1 min-h-0 w-full overflow-auto flex justify-center pb-8">
         <div
           className="bg-white rounded shadow-lg origin-top"
           style={{

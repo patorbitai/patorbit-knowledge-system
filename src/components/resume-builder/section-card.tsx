@@ -39,7 +39,9 @@ export function SectionCard({
       <div className="flex items-center justify-between gap-2 py-3">
         <button
           onClick={() => setCollapsed(!collapsed)}
-          className="flex items-center gap-2 flex-1 min-w-0 text-left cursor-pointer group"
+          // M5G: py-1/-my-1 grows the hit area to ~26px without moving
+          // anything — the row's py-3 absorbs the negative margin.
+          className="flex items-center gap-2 flex-1 min-w-0 py-1 -my-1 text-left cursor-pointer group"
           aria-expanded={!collapsed}
           aria-label={`${collapsed ? "Expand" : "Collapse"} ${title}`}
         >
