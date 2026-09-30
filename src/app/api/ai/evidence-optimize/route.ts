@@ -20,6 +20,7 @@ import { buildCareerProfile } from "@/lib/career-profile";
 import { buildJobProfile } from "@/lib/job-profile";
 import { buildQualificationMatch } from "@/lib/qualification-match";
 import { entitlementService } from "@/services/entitlement.service";
+import { usageService } from "@/services/usage.service";
 import type { Resume } from "@/types/resume";
 
 export const runtime = "nodejs";
@@ -76,6 +77,18 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { success: false, error: "Job description is too short. Please provide a more detailed description." },
       { status: 400 },
+    );
+  }
+
+  // 3b. Usage metering (M6) — a dispatch costs exactly one ai_generations
+  // credit. Checked after validation so only requests that actually reach the
+  // LLM increment. Note: no separate rate limiter here — this route is
+  // Pro-gated above and quota-metered below.
+  const usageCheck = await usageService.checkAndIncrementUsage(session.user.id, "ai_generations");
+  if (!usageCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Monthly AI generation limit reached for Free tier. Upgrade to Professional for unlimited AI generations.", code: "USAGE_LIMIT_REACHED" },
+      { status: 429 },
     );
   }
 

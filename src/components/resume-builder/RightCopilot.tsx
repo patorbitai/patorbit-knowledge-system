@@ -12,6 +12,7 @@ import { isAnalysisComplete, isAnalysisInProgress, hasSufficientData } from "@/t
 import type { ResumeAnalysis } from "@/types/resume";
 import type { TrustScoreComponent } from "@/types/knowledge-graph";
 import { computeResumeScoreDetail, computeTrustScoreDetail } from "@/lib/ai/scoring";
+import { UsageHint } from "@/components/common/UsageHint";
 
 /* ── Trust Score Component Lookup ── */
 /** Derive a trust component's score by label from the analysis result. */
@@ -166,12 +167,18 @@ export function RightCopilot() {
         )}
 
         {sufficient && !completed && !inProgress && (
-          <button onClick={startAnalysis} className="w-full rounded-lg bg-cyan-600 hover:bg-cyan-700 px-4 py-2.5 text-white transition-colors cursor-pointer">
-            <p className="text-xs font-semibold flex items-center justify-center gap-2">
-              <Sparkles className="w-3.5 h-3.5" />
-              Run analysis
-            </p>
-          </button>
+          <div className="space-y-1.5">
+            <button onClick={startAnalysis} className="w-full rounded-lg bg-cyan-600 hover:bg-cyan-700 px-4 py-2.5 text-white transition-colors cursor-pointer">
+              <p className="text-xs font-semibold flex items-center justify-center gap-2">
+                <Sparkles className="w-3.5 h-3.5" />
+                Run analysis
+              </p>
+            </button>
+            {/* M6 — truthful quota visibility for this metered AI action */}
+            <div className="flex justify-center">
+              <UsageHint feature="ai_generations" />
+            </div>
+          </div>
         )}
 
         {analysis?.dataSufficiencyNote && (

@@ -40,6 +40,8 @@ import type {
   SuggestionDecisions,
   TailorSuggestion,
 } from "@/lib/tailor-review";
+import { classifyAiFailure, notifyAiUsageChanged } from "@/lib/ai/client";
+import { UsageHint } from "@/components/common/UsageHint";
 
 interface MatchAnalysis {
   matchScore: number;
@@ -348,7 +350,18 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to analyze job description.");
+      if (!res.ok) {
+        // M6 — one classification (telemetry + quota gate) per failed response.
+        classifyAiFailure({
+          route: "/api/ai/tailor",
+          status: res.status,
+          code: data?.code,
+          retryAfter: Number(res.headers.get("Retry-After")) || undefined,
+          detail: data?.error,
+        });
+        throw new Error(data.error || "Failed to analyze job description.");
+      }
+      notifyAiUsageChanged(); // metered dispatch consumed a credit
 
       setTailorResult(data);
       setDecisions({});
@@ -399,7 +412,18 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
         }),
       });
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Failed to regenerate.");
+      if (!res.ok) {
+        // M6 — one classification (telemetry + quota gate) per failed response.
+        classifyAiFailure({
+          route: "/api/ai/tailor",
+          status: res.status,
+          code: data?.code,
+          retryAfter: Number(res.headers.get("Retry-After")) || undefined,
+          detail: data?.error,
+        });
+        throw new Error(data.error || "Failed to regenerate.");
+      }
+      notifyAiUsageChanged(); // metered dispatch consumed a credit
       setTailorResult(data);
       setDecisions({});
     } catch (err: unknown) {
@@ -744,6 +768,10 @@ export function TailorResumeModal({ open, onClose, applicationId, initialJobDesc
                     <Sparkles className="h-4 w-4" />
                     Analyze Job Description
                   </button>
+                  {/* M6 — truthful quota visibility for this metered action */}
+                  <div className="flex justify-center">
+                    <UsageHint feature="ai_tailoring" />
+                  </div>
                 </div>
               )}
 

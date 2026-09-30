@@ -469,6 +469,12 @@ function ImportSummary({ resume, meta }: { resume: Resume; meta: ImportMeta }) {
         )}>
           {meta.path === "ai" ? "AI extraction" : "Regex fallback"}
         </span>
+        {meta.path === "ai" && (
+          /* M6 — truthful import quota: AI extraction consumed 1 AI credit. */
+          <span className="text-[10px] text-slate-400" title="This import used 1 AI generation credit">
+            1 AI credit used
+          </span>
+        )}
         {meta.truncated && (
           <span className="text-[10px] px-1.5 py-0.5 rounded border border-amber-500/30 bg-amber-500/10 text-amber-400">
             Truncated ({Math.round(meta.charCount / 1000)}k chars)

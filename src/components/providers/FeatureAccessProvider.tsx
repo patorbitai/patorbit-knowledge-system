@@ -6,6 +6,19 @@ import { entitlementService, type PlanFeatures, type SubscriptionTier, type Subs
 import type { RestrictionContext, RestrictionMessage } from "@/lib/feature-access";
 import { getRestrictionMessage, isFeatureAvailable } from "@/lib/feature-access";
 import { track } from "@/lib/analytics";
+import { onAiUsageChanged, setQuotaExhaustedHandler } from "@/lib/ai/client";
+
+/* ── Usage visibility (M6) ────────────────────────────────────────────────── */
+
+/** One counter from GET /api/account/usage. limit -1 = unlimited. */
+export interface UsageCounter {
+  current: number;
+  limit: number;
+}
+
+export type UsageCounters = Partial<
+  Record<"ai_generations" | "job_analysis" | "ai_tailoring", UsageCounter>
+>;
 
 /* ── Context ──────────────────────────────────────────────────────────────── */
 
@@ -18,6 +31,11 @@ interface FeatureAccessContextValue {
   features: PlanFeatures | null;
   /** Whether entitlement data is still loading. */
   loading: boolean;
+
+  /** Usage counters from GET /api/account/usage (null until loaded / unauthenticated). */
+  usage: UsageCounters | null;
+  /** Re-fetch usage counters (after a metered AI call). */
+  refreshUsage: () => void;
 
   /** Show an access restriction dialog for a specific restriction type. */
   showRestriction: (ctx: RestrictionContext) => void;
@@ -48,6 +66,8 @@ export function useFeatureAccess(): FeatureAccessContextValue {
       isActive: false,
       features: null,
       loading: false,
+      usage: null,
+      refreshUsage: () => {},
       showRestriction: () => {},
       hasFeature: () => true,
       activeRestriction: null,
@@ -67,6 +87,30 @@ export function FeatureAccessProvider({ children }: { children: React.ReactNode 
   const [features, setFeatures] = useState<PlanFeatures | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeRestriction, setActiveRestriction] = useState<RestrictionContext | null>(null);
+  const [usage, setUsage] = useState<UsageCounters | null>(null);
+
+  /** Keep the usage counters current; called on mount and after AI usage changes. */
+  const refreshUsage = useCallback(async () => {
+    try {
+      const res = await fetch("/api/account/usage");
+      if (!res.ok) return;
+      const data = await res.json();
+      const pick = (key: "ai_generations" | "job_analysis" | "ai_tailoring"): UsageCounter | undefined => {
+        const c = data[key];
+        if (c && typeof c.current === "number" && typeof c.limit === "number") {
+          return { current: c.current, limit: c.limit };
+        }
+        return undefined;
+      };
+      setUsage({
+        ai_generations: pick("ai_generations"),
+        job_analysis: pick("job_analysis"),
+        ai_tailoring: pick("ai_tailoring"),
+      });
+    } catch {
+      // usage visibility is best-effort — never blocks the app
+    }
+  }, []);
 
   // Fetch entitlements when session changes
   useEffect(() => {
@@ -76,6 +120,7 @@ export function FeatureAccessProvider({ children }: { children: React.ReactNode 
       // Unauthenticated users get Free tier
       setTier("Free");
       setIsActive(false);
+      setUsage(null); // no usage hints for unauthenticated users
       setFeatures({
         maxResumes: 2,
         allTemplates: false,
@@ -118,6 +163,20 @@ export function FeatureAccessProvider({ children }: { children: React.ReactNode 
           setTier(active && t !== "Free" ? t : "Free");
           setIsActive(active);
           setFeatures(data.entitlements?.features || null);
+          // M6 — keep the usage counters this fetch already returns (they were
+          // previously discarded): drives UsageHint + the quota-gate detail.
+          const pick = (key: "ai_generations" | "job_analysis" | "ai_tailoring"): UsageCounter | undefined => {
+            const c = data[key];
+            if (c && typeof c.current === "number" && typeof c.limit === "number") {
+              return { current: c.current, limit: c.limit };
+            }
+            return undefined;
+          };
+          setUsage({
+            ai_generations: pick("ai_generations"),
+            job_analysis: pick("job_analysis"),
+            ai_tailoring: pick("ai_tailoring"),
+          });
         }
       } catch {
         // Fallback to Free tier
@@ -130,6 +189,65 @@ export function FeatureAccessProvider({ children }: { children: React.ReactNode 
 
     fetchEntitlements();
   }, [session, status]);
+
+  // M6 — refresh usage after any metered AI call (debounced: bursts of section
+  // AI actions trigger one refetch, not five).
+  useEffect(() => {
+    if (status === "loading" || !session?.user?.id) return;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const unsubscribe = onAiUsageChanged(() => {
+      if (timer) return;
+      timer = setTimeout(() => {
+        timer = null;
+        void refreshUsage();
+      }, 500);
+    });
+    return () => {
+      unsubscribe();
+      if (timer) clearTimeout(timer);
+    };
+  }, [session, status, refreshUsage]);
+
+  // M6 — quota exhausted: reuse the existing restriction modal with truthful
+  // detail ("N of M … used this month") derived from the usage counters.
+  useEffect(() => {
+    if (status === "loading" || !session?.user?.id) {
+      setQuotaExhaustedHandler(null);
+      return;
+    }
+    const unsubscribe = setQuotaExhaustedHandler(({ route, detail }) => {
+      const featureKey: "ai_generations" | "job_analysis" | "ai_tailoring" =
+        route === "/api/ai/match"
+          ? "job_analysis"
+          : route === "/api/ai/tailor"
+            ? "ai_tailoring"
+            : "ai_generations";
+      const counter = usage?.[featureKey];
+      const featureName =
+        featureKey === "job_analysis"
+          ? "Job analysis"
+          : featureKey === "ai_tailoring"
+            ? "Resume tailoring"
+            : "AI generation actions";
+      const detailLabel =
+        featureKey === "job_analysis"
+          ? "job-analysis actions"
+          : featureKey === "ai_tailoring"
+            ? "tailoring actions"
+            : "AI generation actions";
+      const fallbackDetail =
+        counter && counter.limit !== -1
+          ? `${counter.current} of ${counter.limit} ${detailLabel} used this month`
+          : undefined;
+      setActiveRestriction({
+        type: "ai-feature",
+        featureName,
+        detail: fallbackDetail ?? detail,
+      });
+      track("upgrade_viewed", { type: "ai-feature" });
+    });
+    return unsubscribe;
+  }, [session, status, usage]);
 
   const showRestriction = useCallback((ctx: RestrictionContext) => {
     setActiveRestriction(ctx);
@@ -156,6 +274,8 @@ export function FeatureAccessProvider({ children }: { children: React.ReactNode 
     isActive,
     features,
     loading,
+    usage,
+    refreshUsage,
     showRestriction,
     hasFeature,
     activeRestriction,

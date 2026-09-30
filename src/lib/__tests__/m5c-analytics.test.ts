@@ -5,7 +5,13 @@
  * list automatically (server report iterates WORKFLOW_EVENTS).
  */
 import { describe, it, expect } from "vitest";
-import { WORKFLOW_EVENTS, WORKFLOW_SET } from "@/lib/analytics";
+import {
+  WORKFLOW_EVENTS,
+  WORKFLOW_SET,
+  ALL_EVENTS,
+  isTrackedEvent,
+  isWorkflowEvent,
+} from "@/lib/analytics";
 
 const M5C_EVENTS = [
   "builder_customize_opened",
@@ -28,6 +34,30 @@ describe("M5C — analytics registration", () => {
     expect(WORKFLOW_EVENTS.length).toBeGreaterThan(0);
     for (const name of M5C_EVENTS) {
       expect(WORKFLOW_EVENTS.filter((e) => e === name)).toHaveLength(1);
+    }
+  });
+});
+
+describe("M6 — AI quota/rate telemetry registration", () => {
+  const M6_EVENTS = ["ai_quota_exceeded", "ai_rate_limited"] as const;
+
+  it("registers both events in WORKFLOW_EVENTS (server normalizeBatch accepts them)", () => {
+    for (const name of M6_EVENTS) {
+      expect(WORKFLOW_EVENTS).toContain(name);
+      expect(WORKFLOW_SET.has(name)).toBe(true);
+      expect(ALL_EVENTS.has(name)).toBe(true);
+      expect(isTrackedEvent(name)).toBe(true);
+      expect(isWorkflowEvent(name)).toBe(true);
+      // exactly once — duplicates would double-count in the report
+      expect(WORKFLOW_EVENTS.filter((e) => e === name)).toHaveLength(1);
+    }
+  });
+
+  it("keeps the two events out of the activation funnel", () => {
+    // They measure quota/rate honesty, not signup conversion — buildFunnelReport
+    // must ignore them when counting funnel steps.
+    for (const name of M6_EVENTS) {
+      expect(isTrackedEvent(name)).toBe(true);
     }
   });
 });

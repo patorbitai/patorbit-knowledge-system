@@ -59,9 +59,13 @@ const MESSAGES: Record<RestrictionType, (ctx: RestrictionContext) => Restriction
 
   "ai-feature": (ctx) => ({
     title: ctx.featureName ? ctx.featureName : "Advanced AI",
-    description: ctx.featureName
-      ? `Upgrade to Pro to use “${ctx.featureName}” — deeper AI analysis that goes beyond what the Free plan includes.`
-      : "Upgrade to Pro for advanced AI analysis — deeper, job-specific insights beyond the Free plan.",
+    // M6 — quota/rate truthfulness: when the caller provides concrete usage
+    // detail ("9 of 10 AI generation actions used this month"), lead with it.
+    description: ctx.detail
+      ? `${ctx.detail}. You've reached the limit for this action on your current plan. Upgrade to Pro for unlimited AI use.`
+      : ctx.featureName
+        ? `Upgrade to Pro to use “${ctx.featureName}” — deeper AI analysis that goes beyond what the Free plan includes.`
+        : "Upgrade to Pro for advanced AI analysis — deeper, job-specific insights beyond the Free plan.",
     actionLabel: "Upgrade to Pro",
     actionHref: "/pricing",
   }),

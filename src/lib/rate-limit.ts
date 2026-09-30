@@ -12,6 +12,8 @@
  * private-beta where in-process state is shared across requests.
  */
 
+import { NextResponse } from "next/server";
+
 interface SlidingWindow {
   timestamps: number[];
 }
@@ -84,3 +86,29 @@ export const AI_RATE_LIMIT_MAX     = AI_MAX_REQUESTS;
 export const AI_RATE_LIMIT_WINDOW  = AI_WINDOW_MS;
 export const IMPORT_RATE_LIMIT_MAX    = IMPORT_MAX_REQUESTS;
 export const IMPORT_RATE_LIMIT_WINDOW = IMPORT_WINDOW_MS;
+
+// ── Shared 429 response (M6) ─────────────────────────────────────────────────
+
+/**
+ * Standard rate-limit response for AI routes.
+ *
+ * Every rate-limited AI endpoint answers with the same contract so clients
+ * can classify it in one place (see classifyAiFailure in lib/ai/client.ts):
+ *   status 429, body code "RATE_LIMITED", body retryAfter (seconds), and a
+ *   Retry-After header. Quota responses use code "USAGE_LIMIT_REACHED" —
+ *   never this — so "rate" and "quota" failures stay distinguishable.
+ */
+export function rateLimitResponse(retryAfter: number): NextResponse {
+  return NextResponse.json(
+    {
+      success: false,
+      error: "Too many requests. Please try again shortly.",
+      code: "RATE_LIMITED",
+      retryAfter,
+    },
+    {
+      status: 429,
+      headers: { "Retry-After": String(retryAfter) },
+    },
+  );
+}

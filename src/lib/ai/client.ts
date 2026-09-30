@@ -15,6 +15,7 @@ import type { EvidenceOptimizerResult } from "@/types/evidence-optimizer";
 import type { CareerProfile } from "@/types/career-profile";
 import type { JobProfile } from "@/types/job-profile";
 import type { QualificationMatch } from "@/types/qualification-match";
+import { track } from "@/lib/analytics";
 
 export interface AIResponse<T = unknown> {
   success: boolean;
@@ -32,6 +33,113 @@ export class AIClientError extends Error {
     this.name = "AIClientError";
     this.code = code;
     this.status = status;
+  }
+}
+
+/* ── M6 — centralized AI failure classification + telemetry ───────────────── */
+
+/**
+ * How an AI request failed, from the user's / product's point of view:
+ *   quota — monthly usage quota exhausted (429 + USAGE_LIMIT_REACHED)
+ *   rate  — rate limited (429 without the quota code), retryable after Retry-After
+ *   error — everything else (network, upstream, timeout, 5xx, …)
+ */
+export type AIFailureKind = "quota" | "rate" | "error";
+
+export interface AIFailureInfo {
+  /** API route that failed, e.g. "/api/ai" or "/api/ai/score". */
+  route: string;
+  /** Optional /api/ai action name (never contains resume data). */
+  action?: string;
+  status: number;
+  code?: string;
+  retryAfter?: number;
+  /** Optional server-provided error message (shown in the quota gate). */
+  detail?: string;
+}
+
+/**
+ * Classify one failed AI response and emit EXACTLY ONE telemetry event for it:
+ *   quota → "ai_quota_exceeded" (takes precedence over a generic 429),
+ *   rate  → "ai_rate_limited",
+ *   error → nothing (ordinary AI error handling, already covered elsewhere).
+ *
+ * Props carry only route/action/status-class facts — no resume data, no user
+ * ids, no PII (sanitizeProps strips anything suspicious on the way out too).
+ *
+ * This is the single classification point: callAI uses it, and direct-fetch
+ * callers (useOptimization, TailorResumeModal, AIWorkspaceClient) call it with
+ * their parsed failure so every failed response is classified exactly once.
+ */
+export function classifyAiFailure(info: AIFailureInfo): AIFailureKind {
+  // Quota first: a quota 429 carries code USAGE_LIMIT_REACHED and must not be
+  // reported as a transient rate limit.
+  if (info.code === "USAGE_LIMIT_REACHED") {
+    track("ai_quota_exceeded", {
+      route: info.route,
+      ...(info.action ? { action: info.action } : {}),
+    });
+    notifyAiUsageChanged();
+    notifyQuotaExhausted(info.detail, info.route);
+    return "quota";
+  }
+  if (info.status === 429) {
+    track("ai_rate_limited", {
+      route: info.route,
+      ...(info.action ? { action: info.action } : {}),
+      ...(typeof info.retryAfter === "number" ? { retryAfter: info.retryAfter } : {}),
+    });
+    return "rate";
+  }
+  return "error";
+}
+
+/* ── Usage-change notification ────────────────────────────────────────────── */
+
+/** Subscribers (FeatureAccessProvider) refetch /api/account/usage when this fires. */
+const usageChangedListeners = new Set<() => void>();
+
+/** Subscribe to "an AI credit was just consumed (or a quota block happened)". */
+export function onAiUsageChanged(listener: () => void): () => void {
+  usageChangedListeners.add(listener);
+  return () => usageChangedListeners.delete(listener);
+}
+
+/** Fire from client code after any successful metered AI call. */
+export function notifyAiUsageChanged(): void {
+  for (const listener of usageChangedListeners) {
+    try {
+      listener();
+    } catch {
+      /* listeners must never break the app */
+    }
+  }
+}
+
+/* ── Quota-exhausted handler ──────────────────────────────────────────────── */
+
+type QuotaExhaustedHandler = (info: { route?: string; detail?: string }) => void;
+let quotaExhaustedHandler: QuotaExhaustedHandler | null = null;
+
+/**
+ * Register the app-wide "quota exhausted" gate (FeatureAccessProvider wires
+ * this to the existing restriction modal). Returns an unsubscribe function.
+ */
+export function setQuotaExhaustedHandler(handler: QuotaExhaustedHandler | null): () => void {
+  quotaExhaustedHandler = handler;
+  return () => {
+    if (quotaExhaustedHandler === handler) quotaExhaustedHandler = null;
+  };
+}
+
+function notifyQuotaExhausted(detail?: string, route?: string): void {
+  try {
+    quotaExhaustedHandler?.({
+      ...(route ? { route } : {}),
+      ...(detail ? { detail } : {}),
+    });
+  } catch {
+    /* never break the request path */
   }
 }
 
@@ -60,9 +168,19 @@ async function callAI<T>(action: string, data: unknown, signal?: AbortSignal): P
   }
 
   if (!res.ok || !json.success) {
+    classifyAiFailure({
+      route: "/api/ai",
+      action,
+      status: res.status,
+      code: json.code,
+      retryAfter: Number(res.headers.get("Retry-After")) || undefined,
+      detail: json.error,
+    });
     throw new AIClientError(json.error || "AI request failed.", json.code || "UPSTREAM", res.status);
   }
 
+  // M6 — a successful metered dispatch consumed a credit; refresh usage hints.
+  notifyAiUsageChanged();
   return json.data as T;
 }
 

@@ -11,6 +11,8 @@ import { ImportReviewScreen } from "./ImportReviewScreen";
 import type { ImportMeta } from "./ImportReviewScreen";
 import type { Resume } from "@/types/resume";
 import { mergeImportedResume } from "@/utils/normalize-import";
+import { notifyAiUsageChanged } from "@/lib/ai/client";
+import { UsageHint } from "@/components/common/UsageHint";
 
 interface PendingImport {
   resume: Resume;
@@ -97,6 +99,10 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
 
       setCurrentStageIndex(3); // Preparing review
       const data = await res.json();
+
+      // M6 — AI extraction is metered (1 ai_generations credit). Refresh the
+      // usage counters when the AI path actually ran so the hint stays truthful.
+      if (data.meta?.path === "ai") notifyAiUsageChanged();
 
       setCurrentStageIndex(4); // Import complete
       await new Promise((r) => setTimeout(r, 200));
@@ -212,6 +218,16 @@ export function ImportButton({ variant = "sidebar", label, className }: ImportBu
             <span className="text-[11px] font-normal text-slate-400">
               Upload a PDF, DOCX, or JSON file to auto-fill your resume
             </span>
+          )}
+          {variant === "hero" && !importing && (
+            <>
+              {/* M6 — import quota visibility: deterministic imports cost 0,
+                  AI extraction costs 1 ai_generations credit. */}
+              <span className="text-[10px] text-slate-500">
+                AI extraction uses 1 AI credit — deterministic parsing is free
+              </span>
+              <UsageHint feature="ai_generations" />
+            </>
           )}
           <input
             ref={inputRef}

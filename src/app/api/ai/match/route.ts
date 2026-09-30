@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { checkAIRateLimit } from "@/lib/rate-limit";
+import { checkAIRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { usageService } from "@/services/usage.service";
 import { getAIProvider } from "@/lib/ai/provider";
 import { AIError } from "@/lib/ai/types";
@@ -101,15 +101,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 2. Rate limit
+  // 2. Rate limit (rate BEFORE quota — a rate-limited request consumes zero credits)
   const { allowed, retryAfter } = checkAIRateLimit(session.user.id);
   if (!allowed) {
-    const r429 = NextResponse.json(
-      { success: false, error: "Too many requests. Please try again shortly." },
-      { status: 429 },
-    );
-    r429.headers.set("Retry-After", String(retryAfter));
-    return r429;
+    return rateLimitResponse(retryAfter);
   }
 
   // 2b. Usage metering for job analysis

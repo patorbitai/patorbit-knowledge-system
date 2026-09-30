@@ -25,6 +25,8 @@ import { useResumeBuilder } from "@/store/resume-builder";
 import { useFeatureAccess } from "@/components/providers/FeatureAccessProvider";
 import { useOptimization } from "@/lib/ai/useOptimization";
 import { track } from "@/lib/analytics";
+import { classifyAiFailure, notifyAiUsageChanged } from "@/lib/ai/client";
+import { UsageHint } from "@/components/common/UsageHint";
 import { ScoreCard, ScoreCardSkeleton } from "@/components/resume-builder/optimization/ScoreCard";
 import { MatchReport } from "@/components/resume-builder/optimization/MatchReport";
 import { KeywordCloud } from "@/components/resume-builder/optimization/KeywordCloud";
@@ -465,8 +467,19 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ resume: selectedResume, jobDescription: effectiveJD }),
       });
-      const json = (await res.json()) as { success: boolean; data?: EvidenceOptimizerResult; error?: string };
-      if (!res.ok || !json.success) throw new Error(json.error ?? "Evidence optimization failed.");
+      const json = (await res.json()) as { success: boolean; data?: EvidenceOptimizerResult; error?: string; code?: string };
+      if (!res.ok || !json.success) {
+        // M6 — one classification (telemetry + quota gate) per failed response.
+        classifyAiFailure({
+          route: "/api/ai/evidence-optimize",
+          status: res.status,
+          code: json.code,
+          retryAfter: Number(res.headers.get("Retry-After")) || undefined,
+          detail: json.error,
+        });
+        throw new Error(json.error ?? "Evidence optimization failed.");
+      }
+      notifyAiUsageChanged(); // metered dispatch consumed a credit
       setEvidenceResult(json.data ?? null);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Something went wrong.";
@@ -634,6 +647,8 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
                   <Sparkles className="w-4 h-4" />
                   Score My Resume
                 </button>
+                {/* M6 — truthful quota visibility for this metered action */}
+                <UsageHint feature="ai_generations" className="text-[11px] text-slate-500" />
               </div>
             )}
             {opt.scoreLoading && <ScoreCardSkeleton />}
@@ -678,6 +693,8 @@ export default function AIWorkspaceClient({ userName }: AIWorkspaceClientProps) 
                   <Target className="w-4 h-4" />
                   Analyze Match
                 </button>
+                {/* M6 — truthful quota visibility for this metered action */}
+                <UsageHint feature="job_analysis" className="text-[11px] text-slate-500" />
               </div>
             )}
             {opt.matchLoading && (

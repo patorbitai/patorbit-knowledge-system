@@ -77,6 +77,11 @@ export const WORKFLOW_EVENTS = [
   "customization_changed",
   "builder_preview_opened",
   "builder_template_changed",
+  // M6 — AI quota/rate honesty: fired exactly once per failed response by
+  // classifyAiFailure (src/lib/ai/client.ts). Props are route/action/retryAfter
+  // only — no resume data, no user ids.
+  "ai_quota_exceeded",
+  "ai_rate_limited",
 ] as const;
 
 export type WorkflowEvent = (typeof WORKFLOW_EVENTS)[number];

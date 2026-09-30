@@ -4,6 +4,26 @@ import { useState, useCallback, useRef } from "react";
 import type { Resume } from "@/types/resume";
 import type { ResumeScore, BulletSuggestion, KeywordAnalysis, JdMatchResult } from "@/lib/ai/types";
 import { fingerprint, readCache, writeCache, AI_CACHE_KEYS } from "@/lib/ai/cache";
+import { classifyAiFailure, notifyAiUsageChanged } from "@/lib/ai/client";
+
+/**
+ * M6 — classify one failed non-streaming AI response: emits exactly one
+ * ai_quota_exceeded / ai_rate_limited event (or nothing for ordinary errors)
+ * and fires the quota gate when the response says USAGE_LIMIT_REACHED.
+ */
+function classifyFailed(
+  route: string,
+  res: Response,
+  json: { error?: string; code?: string },
+): void {
+  classifyAiFailure({
+    route,
+    status: res.status,
+    code: json.code,
+    retryAfter: Number(res.headers.get("Retry-After")) || undefined,
+    detail: json.error,
+  });
+}
 
 // ── Score state ───────────────────────────────────────────────────────────────
 
@@ -156,10 +176,14 @@ export function useOptimization(): UseOptimizationReturn {
         signal: controller.signal,
       });
 
-      const json = (await res.json()) as { success: boolean; data?: ResumeScore; error?: string };
-      if (!res.ok || !json.success) throw new Error(json.error ?? "Failed to score resume.");
+      const json = (await res.json()) as { success: boolean; data?: ResumeScore; error?: string; code?: string };
+      if (!res.ok || !json.success) {
+        classifyFailed("/api/ai/score", res, json);
+        throw new Error(json.error ?? "Failed to score resume.");
+      }
       const data = json.data ?? null;
       if (data) writeCache(AI_CACHE_KEYS.score, fp, data);
+      notifyAiUsageChanged(); // metered dispatch consumed a credit
       setScoreState({ score: data, loading: false, error: null });
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
@@ -206,11 +230,15 @@ export function useOptimization(): UseOptimizationReturn {
         signal: controller.signal,
       });
 
-      const json = (await res.json()) as { success: boolean; data?: BulletSuggestion[]; error?: string };
-      if (!res.ok || !json.success) throw new Error(json.error ?? "Failed to improve bullets.");
+      const json = (await res.json()) as { success: boolean; data?: BulletSuggestion[]; error?: string; code?: string };
+      if (!res.ok || !json.success) {
+        classifyFailed("/api/ai/bullets", res, json);
+        throw new Error(json.error ?? "Failed to improve bullets.");
+      }
 
       const data = json.data ?? [];
       writeCache(cacheKey, fp, data);
+      notifyAiUsageChanged(); // metered dispatch consumed a credit
       setBulletsState((prev) => ({
         ...prev,
         suggestions: { ...prev.suggestions, [entryId]: data },
@@ -276,10 +304,14 @@ export function useOptimization(): UseOptimizationReturn {
         signal: controller.signal,
       });
 
-      const json = (await res.json()) as { success: boolean; data?: KeywordAnalysis; error?: string };
-      if (!res.ok || !json.success) throw new Error(json.error ?? "Failed to analyse keywords.");
+      const json = (await res.json()) as { success: boolean; data?: KeywordAnalysis; error?: string; code?: string };
+      if (!res.ok || !json.success) {
+        classifyFailed("/api/ai/keywords", res, json);
+        throw new Error(json.error ?? "Failed to analyse keywords.");
+      }
       const data = json.data ?? null;
       if (data) writeCache(AI_CACHE_KEYS.keywords, fp, data);
+      notifyAiUsageChanged(); // metered dispatch consumed a credit
       setKeywordsState({ analysis: data, loading: false, error: null });
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") return;
@@ -317,10 +349,14 @@ export function useOptimization(): UseOptimizationReturn {
         signal: controller.signal,
       });
 
-      const json = (await res.json()) as { success: boolean; data?: JdMatchResult; error?: string };
-      if (!res.ok || !json.success) throw new Error(json.error ?? "Failed to analyse job match.");
+      const json = (await res.json()) as { success: boolean; data?: JdMatchResult; error?: string; code?: string };
+      if (!res.ok || !json.success) {
+        classifyFailed("/api/ai/match", res, json);
+        throw new Error(json.error ?? "Failed to analyse job match.");
+      }
       const data = json.data ?? null;
       if (data) writeCache(AI_CACHE_KEYS.match, fp, data);
+      notifyAiUsageChanged(); // metered dispatch consumed a credit
       setMatchState({ result: data, loading: false, error: null });
       return data;
     } catch (err: unknown) {
@@ -360,7 +396,8 @@ export function useOptimization(): UseOptimizationReturn {
 
       if (!res.ok || !res.body) {
         // Non-2xx before stream starts — parse as JSON error
-        const json = (await res.json().catch(() => ({}))) as { error?: string };
+        const json = (await res.json().catch(() => ({}))) as { error?: string; code?: string };
+        classifyFailed("/api/ai/summary", res, json);
         throw new Error(json.error ?? "Failed to generate summary.");
       }
 
@@ -399,6 +436,7 @@ export function useOptimization(): UseOptimizationReturn {
         }
       }
 
+      notifyAiUsageChanged(); // metered dispatch consumed a credit
       setSummaryState({ draft: summaryBufferRef.current, streaming: false, error: null });
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") {

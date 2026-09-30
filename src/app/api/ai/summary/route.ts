@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
-import { checkAIRateLimit } from "@/lib/rate-limit";
+import { checkAIRateLimit, rateLimitResponse } from "@/lib/rate-limit";
+import { usageService } from "@/services/usage.service";
 import { AIError } from "@/lib/ai/types";
 import { getAIProvider } from "@/lib/ai/provider";
 import { buildSummaryPrompt } from "@/lib/ai/prompts";
@@ -29,15 +30,10 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
     );
   }
 
-  // 2. Rate limit
+  // 2. Rate limit (before quota — a rate-limited request consumes zero credits)
   const { allowed, retryAfter } = checkAIRateLimit(session.user.id);
   if (!allowed) {
-    const r429 = NextResponse.json(
-      { success: false, error: "Too many requests. Please try again shortly." },
-      { status: 429 },
-    );
-    r429.headers.set("Retry-After", String(retryAfter));
-    return r429;
+    return rateLimitResponse(retryAfter);
   }
 
   // 3. Body size guard
@@ -98,10 +94,21 @@ export async function POST(req: NextRequest): Promise<NextResponse | Response> {
       ? payload.jobDescription.trim()
       : undefined;
 
-  // 6. Build prompt
+  // 6. Usage metering + dispatch — a dispatch costs exactly one
+  // ai_generations credit. Checked after validation so only requests that
+  // actually reach the LLM increment (rate-limited requests never reach here).
+  const usageCheck = await usageService.checkAndIncrementUsage(session.user.id, "ai_generations");
+  if (!usageCheck.allowed) {
+    return NextResponse.json(
+      { success: false, error: "Monthly AI generation limit reached for Free tier. Upgrade to Professional for unlimited AI generations.", code: "USAGE_LIMIT_REACHED" },
+      { status: 429 },
+    );
+  }
+
+  // 7. Build prompt
   const { system, user } = buildSummaryPrompt(payload.resume, tone, jobDescription);
 
-  // 7. Create SSE stream using the configured AI provider
+  // 8. Create SSE stream using the configured AI provider
   const encoder = new TextEncoder();
 
   const stream = new ReadableStream({

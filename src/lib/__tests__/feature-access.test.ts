@@ -73,6 +73,29 @@ describe("Feature Access", () => {
       expect(msg.description).toContain("Upgrade to Pro");
     });
 
+    it("M6: leads with truthful quota detail when provided", () => {
+      const msg = getRestrictionMessage({
+        type: "ai-feature",
+        featureName: "AI generation actions",
+        detail: "10 of 10 AI generation actions used this month",
+      });
+      expect(msg.title).toBe("AI generation actions");
+      // the concrete usage truth comes first, before the upgrade pitch
+      expect(msg.description).toContain("10 of 10 AI generation actions used this month");
+      expect(msg.description).toContain("Upgrade");
+    });
+
+    it("M6: detail replaces the generic featureName copy entirely", () => {
+      const withoutDetail = getRestrictionMessage({ type: "ai-feature", featureName: "Job analysis" });
+      const withDetail = getRestrictionMessage({
+        type: "ai-feature",
+        featureName: "Job analysis",
+        detail: "5 of 5 job-analysis actions used this month",
+      });
+      expect(withDetail.description).not.toBe(withoutDetail.description);
+      expect(withDetail.description).toContain("5 of 5");
+    });
+
     it("returns evidence message", () => {
       const msg = getRestrictionMessage({ type: "evidence" });
       expect(msg.title).toBe("Evidence Management");

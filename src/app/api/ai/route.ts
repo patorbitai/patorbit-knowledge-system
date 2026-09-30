@@ -4,6 +4,7 @@ import { authOptions } from "@/lib/auth";
 import { getAIService, type AIAction } from "@/lib/ai/service";
 import { AIError } from "@/lib/ai/types";
 import { usageService } from "@/services/usage.service";
+import { checkAIRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,38 +32,6 @@ const KNOWN_ACTIONS: readonly string[] = [
 /** Maximum request body size (100 KB). */
 const MAX_BODY_BYTES = 100 * 1024;
 
-/** In-memory rate limiting per IP. */
-const RATE_LIMIT_WINDOW_MS = 60_000;
-const RATE_LIMIT_MAX = 30;
-const rateLimitStore = new Map<string, { count: number; windowStart: number }>();
-
-function checkRateLimit(ip: string): { ok: boolean; retryAfter?: number } {
-  const now = Date.now();
-  let entry = rateLimitStore.get(ip);
-
-  if (!entry || now - entry.windowStart > RATE_LIMIT_WINDOW_MS) {
-    entry = { count: 1, windowStart: now };
-    rateLimitStore.set(ip, entry);
-    return { ok: true };
-  }
-
-  entry.count += 1;
-  if (entry.count > RATE_LIMIT_MAX) {
-    const retryAfter = Math.ceil((RATE_LIMIT_WINDOW_MS - (now - entry.windowStart)) / 1000);
-    return { ok: false, retryAfter };
-  }
-
-  return { ok: true };
-}
-
-function clientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ||
-    req.headers.get("x-real-ip") ||
-    "unknown"
-  );
-}
-
 export async function POST(req: NextRequest) {
   // 0. Authentication — required for all AI actions
   const session = await getServerSession(authOptions);
@@ -82,21 +51,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // 2. Rate limiting
-  const ip = clientIp(req);
-  const limit = checkRateLimit(ip);
-  if (!limit.ok) {
-    return NextResponse.json(
-      {
-        success: false,
-        error: "Rate limit exceeded. Please wait before trying again.",
-        retryAfter: limit.retryAfter,
-      },
-      {
-        status: 429,
-        headers: { "Retry-After": String(limit.retryAfter) },
-      },
-    );
+  // 2. Rate limiting — per-user bucket (M6): shared checkAIRateLimit used by
+  // every other AI route. Keyed on session.user.id, so x-forwarded-for cannot
+  // bypass or shift the bucket. Rate check runs BEFORE quota metering, so a
+  // rate-limited request always consumes zero quota.
+  const limit = checkAIRateLimit(session.user.id);
+  if (!limit.allowed) {
+    return rateLimitResponse(limit.retryAfter);
   }
 
   // 3. Parse + validate request

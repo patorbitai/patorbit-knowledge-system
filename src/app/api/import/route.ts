@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { checkImportRateLimit } from "@/lib/rate-limit";
+import { usageService } from "@/services/usage.service";
 import mammoth from "mammoth";
 import { parseResumeJson } from "@/utils/resume-schema";
 import { rawToResume, withIds } from "@/utils/resume-parser";
@@ -116,7 +117,7 @@ function buildDocumentEvidence(
  * optional last-resort gap-filler only when deterministic coverage is low and
  * the fallback is enabled. Never throws — always returns a usable resume.
  */
-async function resolveTextImport(rawText: string): Promise<{ data: Record<string, unknown>; usedAI: boolean }> {
+async function resolveTextImport(rawText: string, userId: string): Promise<{ data: Record<string, unknown>; usedAI: boolean }> {
   const deterministic = rawToResume(rawText);
   const signals = deterministicSignals(deterministic);
 
@@ -124,7 +125,7 @@ async function resolveTextImport(rawText: string): Promise<{ data: Record<string
     return { data: deterministic, usedAI: false };
   }
 
-  const aiResult = await extractWithAI(rawText);
+  const aiResult = await extractWithAI(rawText, userId);
   if (!aiResult) return { data: deterministic, usedAI: false };
 
   return { data: mergeResume(deterministic, aiResult), usedAI: true };
@@ -135,8 +136,23 @@ async function resolveTextImport(rawText: string): Promise<{ data: Record<string
  * key, timeout, bad JSON, rate limit), return null so the deterministic
  * result is used. AI output lacks `id` fields — `withIds` is applied here
  * before Zod sees it.
+ *
+ * M6 — extractResume is an explicit LLM operation and counts as exactly one
+ * `ai_generations` credit, charged only when the deterministic parser could
+ * not confidently classify the document (i.e., only when AI actually runs).
+ * A deterministic-only import therefore consumes zero credits. If the quota
+ * is exhausted the AI fallback is skipped and the deterministic result is
+ * used unchanged — import stays fully functional without AI.
  */
-async function extractWithAI(rawText: string): Promise<Record<string, unknown> | null> {
+async function extractWithAI(rawText: string, userId: string): Promise<Record<string, unknown> | null> {
+  // Quota check immediately before dispatch — rate-limited imports never get
+  // here (checkImportRateLimit runs first), and a blocked dispatch increments
+  // nothing further.
+  const usageCheck = await usageService.checkAndIncrementUsage(userId, "ai_generations");
+  if (!usageCheck.allowed) {
+    return null; // quota exhausted → keep the deterministic result
+  }
+
   try {
     const ai = getAIService();
     const raw = await ai.extractResume({ rawText });
@@ -250,7 +266,7 @@ export async function POST(request: NextRequest) {
       }
       charCount = fullText.length;
       rawTextForMeta = fullText.slice(0, 6000);
-      const pdfResolved = await resolveTextImport(fullText);
+      const pdfResolved = await resolveTextImport(fullText, session.user.id);
       usedAI = pdfResolved.usedAI;
       parsedData = pdfResolved.data;
       documentEvidence = buildDocumentEvidence(pageTexts, {
@@ -264,7 +280,7 @@ export async function POST(request: NextRequest) {
       const result = await mammoth.extractRawText({ buffer: arrayBuffer as unknown as Buffer });
       charCount = result.value.length;
       rawTextForMeta = result.value.slice(0, 6000);
-      const docxResolved = await resolveTextImport(result.value);
+      const docxResolved = await resolveTextImport(result.value, session.user.id);
       usedAI = docxResolved.usedAI;
       parsedData = docxResolved.data;
       documentEvidence = buildDocumentEvidence([result.value], {

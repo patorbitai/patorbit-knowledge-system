@@ -5,7 +5,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
 import { resumeService } from "@/services/resume.service";
-import { checkAIRateLimit } from "@/lib/rate-limit";
+import { checkAIRateLimit, rateLimitResponse } from "@/lib/rate-limit";
 import { usageService } from "@/services/usage.service";
 import { getAIService } from "@/lib/ai/service";
 import { AIError } from "@/lib/ai/types";
@@ -53,15 +53,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     );
   }
 
-  // 2. Rate limit
+  // 2. Rate limit (rate BEFORE quota — a rate-limited request consumes zero credits)
   const { allowed, retryAfter } = checkAIRateLimit(session.user.id);
   if (!allowed) {
-    const r429 = NextResponse.json(
-      { success: false, error: "Too many requests. Please try again shortly." },
-      { status: 429 },
-    );
-    r429.headers.set("Retry-After", String(retryAfter));
-    return r429;
+    return rateLimitResponse(retryAfter);
   }
 
   // 2b. Usage metering for AI tailoring

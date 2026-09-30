@@ -14,6 +14,8 @@ import { AnimatePresence, motion } from "framer-motion";
 import { AddEvidenceModal } from "@/components/identity/AddEvidenceModal";
 import type { Claim } from "@/types/resume";
 import { confidenceWord } from "@/lib/provenance";
+import { ai } from "@/lib/ai/client";
+import { UsageHint } from "@/components/common/UsageHint";
 
 export function ClaimsReview() {
   const suggestedClaims = useResumeBuilder((s) => s.suggestedClaims);
@@ -21,14 +23,79 @@ export function ClaimsReview() {
   const acceptClaim = useResumeBuilder((s) => s.acceptClaim);
   const rejectClaim = useResumeBuilder((s) => s.rejectClaim);
   const acceptEditedClaim = useResumeBuilder((s) => s.acceptEditedClaim);
+  const setSuggestedClaims = useResumeBuilder((s) => s.setSuggestedClaims);
 
   const [expanded, setExpanded] = useState(true);
   const [editingIndex, setEditingIndex] = useState<number | null>(null);
   const [editedText, setEditedText] = useState("");
   // The claim the user chose to strengthen → drives AddEvidenceModal.
   const [strengthenClaim, setStrengthenClaim] = useState<Claim | null>(null);
+  // M6 — claims generation is EXPLICIT ONLY (the passive debounced call was
+  // removed from useResumeAutosave). One activation = one request.
+  const [suggesting, setSuggesting] = useState(false);
+  const [suggestError, setSuggestError] = useState<string | null>(null);
 
-  if ((!suggestedClaims || suggestedClaims.length === 0) && (!acceptedClaims || acceptedClaims.length === 0)) return null;
+  const handleSuggest = async () => {
+    if (suggesting) return; // ignore double-clicks — one activation, one request
+    setSuggesting(true);
+    setSuggestError(null);
+    try {
+      const st = useResumeBuilder.getState();
+      const result = await ai.generateClaims(st.resume, st.resume.claims);
+      if (result?.claims?.length) {
+        setSuggestedClaims(result.claims);
+      } else {
+        // Truthful empty state — never dressed up as success.
+        setSuggestError("No new claim suggestions were found in your resume. You can edit your experience and try again.");
+      }
+    } catch (err: unknown) {
+      // Failed generation must never render suggestions or a success state.
+      setSuggestError(
+        err instanceof Error && err.message
+          ? err.message
+          : "We couldn't generate claim suggestions. Please try again.",
+      );
+    } finally {
+      setSuggesting(false);
+    }
+  };
+
+  const hasSuggestions = !!suggestedClaims && suggestedClaims.length > 0;
+  const hasAccepted = !!acceptedClaims && acceptedClaims.length > 0;
+
+  // Empty state → the explicit "Suggest claims" launcher (M6). Previously this
+  // returned null and claims could only arrive from the removed passive call.
+  if (!hasSuggestions && !hasAccepted) {
+    return (
+      <div className="fixed top-20 right-4 z-40 max-w-sm w-full">
+        <div className="rounded-2xl border border-blue-500/20 bg-slate-900/90 backdrop-blur-xl shadow-2xl shadow-blue-500/10 p-4 space-y-2">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="w-4 h-4 text-blue-400" />
+            <h3 className="text-xs font-semibold text-white">Claim Suggestions</h3>
+          </div>
+          <p className="text-xs text-slate-400">
+            Let AI scan your resume for statements that could be backed by evidence.
+          </p>
+          <div className="flex items-center justify-between gap-2">
+            <button
+              onClick={() => void handleSuggest()}
+              disabled={suggesting}
+              aria-busy={suggesting}
+              className="rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-wait text-white px-3 py-1.5 text-xs font-semibold transition-colors"
+            >
+              {suggesting ? "Suggesting…" : "Suggest claims"}
+            </button>
+            <UsageHint feature="ai_generations" />
+          </div>
+          {suggestError && (
+            <p role="alert" className="text-[11px] text-rose-400">
+              {suggestError}
+            </p>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed top-20 right-4 z-40 max-w-sm w-full">
@@ -63,6 +130,25 @@ export function ClaimsReview() {
 
             {/* Claims list */}
             <div className="p-2 space-y-1.5 max-h-[35vh] overflow-y-auto">
+              {/* M6 — explicit re-suggestion launcher when suggestions ran out */}
+              {!hasSuggestions && hasAccepted && (
+                <div className="flex items-center justify-between gap-2 rounded-xl bg-slate-800/50 p-2.5 border border-slate-700/60">
+                  <button
+                    onClick={() => void handleSuggest()}
+                    disabled={suggesting}
+                    aria-busy={suggesting}
+                    className="rounded-lg bg-blue-600 hover:bg-blue-500 disabled:opacity-60 disabled:cursor-wait text-white px-2.5 py-1.5 text-[11px] font-semibold transition-colors"
+                  >
+                    {suggesting ? "Suggesting…" : "Suggest claims"}
+                  </button>
+                  <UsageHint feature="ai_generations" />
+                </div>
+              )}
+              {suggestError && (
+                <p role="alert" className="text-[11px] text-rose-400 px-1">
+                  {suggestError}
+                </p>
+              )}
               {/* Suggested (review) claims */}
               {suggestedClaims.map((claim, i) => (
                 <div
