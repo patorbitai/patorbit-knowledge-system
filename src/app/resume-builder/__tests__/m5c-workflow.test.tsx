@@ -527,10 +527,23 @@ describe("G — accessibility", () => {
 
 /* ── H — analytics ────────────────────────────────────────────────────── */
 
+/* Preview-event counting by surface: payload now carries M5F `tailored`
+   context, so exact-args assertions alone can no longer prove absence. */
+function previewEvents(surface?: string) {
+  return trackMock.mock.calls.filter(
+    (c) =>
+      c[0] === "builder_preview_opened" &&
+      (!surface || (c[1] as { surface?: string } | undefined)?.surface === surface),
+  );
+}
+
 describe("H — analytics (only the four missing events)", () => {
   it("H1: standalone preview reports builder_preview_opened (page)", () => {
     const p = renderToContainer(<PreviewPage />);
-    expect(trackMock).toHaveBeenCalledWith("builder_preview_opened", { surface: "page" });
+    expect(trackMock).toHaveBeenCalledWith("builder_preview_opened", {
+      surface: "page",
+      tailored: false,
+    });
     p.unmount();
   });
 
@@ -538,15 +551,17 @@ describe("H — analytics (only the four missing events)", () => {
     const { unmount } = renderToContainer(<ResumeBuilderPage />);
     // already in preview mode → clicking the tab again must not re-report
     click(findButton("Preview") as HTMLButtonElement);
-    expect(trackMock).not.toHaveBeenCalledWith("builder_preview_opened", {
-      surface: "panel",
-    });
+    expect(previewEvents("panel")).toHaveLength(0);
 
     click(findButton("Match") as HTMLButtonElement); // switch away
     const previewBtns = exactButtons("Preview");
     click(previewBtns[0]); // right-panel tab (DOM order: panel before mobile)
     expect(trackMock).toHaveBeenCalledTimes(1);
-    expect(trackMock).toHaveBeenCalledWith("builder_preview_opened", { surface: "panel" });
+    expect(previewEvents("panel")).toHaveLength(1);
+    expect(trackMock).toHaveBeenCalledWith("builder_preview_opened", {
+      surface: "panel",
+      tailored: false,
+    });
     unmount();
   });
 
@@ -554,7 +569,12 @@ describe("H — analytics (only the four missing events)", () => {
     const { unmount } = renderToContainer(<ResumeBuilderPage />);
     const previewBtns = exactButtons("Preview");
     click(previewBtns[previewBtns.length - 1]);
-    expect(trackMock).toHaveBeenCalledWith("builder_preview_opened", { surface: "mobile" });
+    expect(trackMock).toHaveBeenCalledWith("builder_preview_opened", {
+      surface: "mobile",
+      tailored: false,
+    });
+    // One click on the mobile variant must not also fire the panel variant.
+    expect(previewEvents("panel")).toHaveLength(0);
     unmount();
   });
 
@@ -562,7 +582,9 @@ describe("H — analytics (only the four missing events)", () => {
     const { unmount } = renderToContainer(<ResumeBuilderPage />);
     click(findButton("Customize"));
     expect(trackMock).toHaveBeenCalledTimes(1);
-    expect(trackMock).toHaveBeenCalledWith("builder_customize_opened");
+    expect(trackMock).toHaveBeenCalledWith("builder_customize_opened", {
+      tailored: false,
+    });
     pressKey("Escape"); // closing must not re-report
     expect(trackMock).toHaveBeenCalledTimes(1);
     unmount();
@@ -573,12 +595,17 @@ describe("H — analytics (only the four missing events)", () => {
     trackMock.mockClear(); // mount already reported builder_customize_opened
 
     click(findButton("Playfair Display"));
-    expect(trackMock).toHaveBeenCalledWith("customization_changed");
+    expect(trackMock).toHaveBeenCalledWith("customization_changed", {
+      tailored: false,
+    });
     expect(trackMock).toHaveBeenCalledTimes(1);
 
     trackMock.mockClear();
     click(findButton("Reset to Template Defaults"));
-    expect(trackMock).toHaveBeenCalledWith("customization_changed", { reset: true });
+    expect(trackMock).toHaveBeenCalledWith("customization_changed", {
+      reset: true,
+      tailored: false,
+    });
     unmount();
   });
 
@@ -586,6 +613,7 @@ describe("H — analytics (only the four missing events)", () => {
     state().applyTemplate("tech-mono");
     expect(trackMock).toHaveBeenCalledWith("builder_template_changed", {
       templateId: "tech-mono",
+      tailored: false,
     });
   });
 });

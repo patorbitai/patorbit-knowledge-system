@@ -45,6 +45,28 @@ export function isTailoredResume(resume: Resume | null | undefined): boolean {
 }
 
 /**
+ * M5F — analytics context for the builder milestone events.
+ *
+ * True when the ACTIVE resume is a tailored/job version so analytics on a
+ * tailored resume never collapse into the master's context:
+ *   1. exact §2 lineage (recorded at tailor-approval time) wins, then
+ *   2. the legacy name heuristic (resumes pre-dating lineage records).
+ * The same ordering resume-safety.resolveSafetyBaseline documents.
+ *
+ * Pure derivation from existing state — no persistence, no product
+ * behavior change. Used only to stamp a `tailored` discriminator on
+ * analytics props (no raw ids — the analytics architecture stays
+ * session-scoped and PII-free).
+ */
+export function isTailoredResumeContext(
+  resume: Resume | null | undefined,
+  lineage: { sourceResumeId?: string } | null | undefined,
+): boolean {
+  if (lineage?.sourceResumeId) return true;
+  return isTailoredResume(resume);
+}
+
+/**
  * Derive the complete workflow state from existing data.
  *
  * All state is derived — no additional flags or persistence needed.

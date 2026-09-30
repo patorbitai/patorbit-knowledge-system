@@ -25,6 +25,7 @@ import { ExportModal } from "@/components/resume-builder/ExportModal";
 import { CustomizePanel } from "@/components/resume-builder/CustomizePanel";
 import { TemplateGallery } from "@/components/resume-builder/TemplateGallery";
 import { track } from "@/lib/analytics";
+import { isTailoredResumeContext } from "@/lib/workflow-state";
 
 /* ── Dynamic imports for heavy panels (SSR=false to avoid layout-effect crashes) ── */
 const LiveStylePreview = dynamic(
@@ -170,11 +171,24 @@ function ResumeSelector() {
 }
 
 /* ── Right Panel: Preview or Match ── */
+/* M5F §analytics — a preview surface was actually switched to. Context is
+   read at click time so desktop (panel) and mobile each report exactly one
+   event carrying the ACTIVE resume's master/tailored context — one user
+   action can only ever hit one of the two handlers (they are mutually
+   exclusive by responsive CSS). */
+function trackPreviewOpened(surface: "panel" | "mobile"): void {
+  const s = useResumeBuilder.getState();
+  track("builder_preview_opened", {
+    surface,
+    tailored: isTailoredResumeContext(s.resume, s.lineage[s.activeResumeId]),
+  });
+}
+
 function RightPanel({ mode, onModeChange }: { mode: "preview" | "copilot"; onModeChange: (m: "preview" | "copilot") => void }) {
   return (
     <div className="flex flex-col h-full">
       <div className="flex items-center gap-1 border-b border-gray-200 dark:border-white/[0.06] shrink-0 bg-white dark:bg-[#070d18] px-2">
-        <button onClick={() => { if (mode !== "preview") track("builder_preview_opened", { surface: "panel" }); onModeChange("preview"); }}
+        <button onClick={() => { if (mode !== "preview") trackPreviewOpened("panel"); onModeChange("preview"); }}
           aria-pressed={mode === "preview"}
           className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-colors cursor-pointer border-b-2 -mb-px ${mode === "preview" ? "text-gray-900 dark:text-white border-cyan-500" : "text-gray-400 dark:text-slate-500 border-transparent hover:text-gray-600 dark:hover:text-slate-300"}`}>
           <Eye className="w-3.5 h-3.5" /> Preview
@@ -236,7 +250,7 @@ function MobileModeToggle({ mode, onModeChange }: { mode: MobileMode; onModeChan
         <Target className="w-3.5 h-3.5" aria-hidden="true" /> Match
       </button>
       <div className="h-4 w-px bg-gray-200 dark:bg-white/[0.08]" />
-      <button onClick={() => { if (mode !== "preview") track("builder_preview_opened", { surface: "mobile" }); onModeChange("preview"); }} aria-pressed={mode === "preview"} className={`${base} ${mode === "preview" ? active : idle}`}>
+      <button onClick={() => { if (mode !== "preview") trackPreviewOpened("mobile"); onModeChange("preview"); }} aria-pressed={mode === "preview"} className={`${base} ${mode === "preview" ? active : idle}`}>
         <Eye className="w-3.5 h-3.5" aria-hidden="true" /> Preview
       </button>
     </div>

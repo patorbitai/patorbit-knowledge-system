@@ -23,6 +23,7 @@ import { ArrowLeft, Check, ChevronDown, RotateCcw } from "lucide-react";
 import { useMemo, useEffect, useRef, useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { track } from "@/lib/analytics";
+import { isTailoredResumeContext } from "@/lib/workflow-state";
 import { LiveStylePreview } from "./LiveStylePreview";
 import { TEMPLATES } from "@/app/resume-builder/templates";
 import {
@@ -93,11 +94,16 @@ const FOCUS_CLASS = "focus-visible:outline-none focus-visible:ring-1 focus-visib
 export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () => void }) {
   const resumeId = useResumeBuilder((s) => s.activeResumeId);
   const templateId = useResumeBuilder((s) => s.resume.templateId);
+  const resume = useResumeBuilder((s) => s.resume);
+  const lineageEntry = useResumeBuilder((s) => s.lineage[s.activeResumeId]);
   const stored = useResumeBuilder((s) => s.styleConfigs[s.activeResumeId]);
   const setStyleConfig = useResumeBuilder((s) => s.setStyleConfig);
   const resetStyleConfig = useResumeBuilder((s) => s.resetStyleConfig);
 
   const config: ResumeStyleConfig = stored ?? DEFAULT_STYLE_CONFIG;
+  // M5F §analytics — master vs tailored context stamped on every event this
+  // panel emits (lineage first, legacy name heuristic as fallback).
+  const tailored = isTailoredResumeContext(resume, lineageEntry);
   const supported = useMemo(() => getTemplateStyleSupport(templateId), [templateId]);
   const templateName = TEMPLATES.find((t) => t.id === templateId)?.name ?? "Template";
 
@@ -118,7 +124,13 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
     if (!open) return;
     restoreFocusRef.current =
       document.activeElement instanceof HTMLElement ? document.activeElement : null;
-    track("builder_customize_opened");
+    // M5F §analytics — context read at open time via getState(), so the
+    // effect keeps its [open] dependency and a resume switch elsewhere can
+    // never re-run this lifecycle (no duplicate opens).
+    const s = useResumeBuilder.getState();
+    track("builder_customize_opened", {
+      tailored: isTailoredResumeContext(s.resume, s.lineage[s.activeResumeId]),
+    });
     const t = setTimeout(() => closeButtonRef.current?.focus(), 0);
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") {
@@ -180,7 +192,14 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
   const patch = (partial: Partial<ResumeStyleConfig>) => {
     setStyleConfig(resumeId, partial);
     // M5C §H — one event per user-applied customization change.
-    track("customization_changed");
+    // M5F §analytics — and only for an OBSERVED change: re-picking the value
+    // a control already has writes the same config, so nothing changed and
+    // `customization_changed` would be false. The state write is untouched.
+    const unchanged = Object.entries(partial).every(
+      ([key, value]) => (config as unknown as Record<string, unknown>)[key] === value,
+    );
+    if (unchanged) return;
+    track("customization_changed", { tailored });
   };
 
   const applyDensity = (value: (typeof DENSITY_OPTIONS)[number]["value"]) => {
@@ -571,8 +590,13 @@ export function CustomizePanel({ open, onClose }: { open: boolean; onClose: () =
           >
             <button
               onClick={() => {
+                // M5F §analytics — with nothing stored there is nothing to
+                // reset; only a real reset reports a change.
+                const hadStored = !!stored;
                 resetStyleConfig(resumeId);
-                track("customization_changed", { reset: true });
+                if (hadStored) {
+                  track("customization_changed", { reset: true, tailored });
+                }
               }}
               className={`flex items-center gap-1.5 px-2 py-1.5 rounded-md text-[11px] font-medium text-slate-500 hover:text-slate-200 hover:bg-white/[0.04] transition-colors ${FOCUS_CLASS}`}
             >

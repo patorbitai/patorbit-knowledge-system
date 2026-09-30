@@ -22,6 +22,7 @@ import type { QualificationMatch } from "@/types/qualification-match";
 import { buildCareerProfile } from "@/lib/career-profile";
 import { buildJobProfile } from "@/lib/job-profile";
 import { buildQualificationMatch } from "@/lib/qualification-match";
+import { isTailoredResumeContext } from "@/lib/workflow-state";
 import { hasSufficientData } from "@/types/resume";
 import { track } from "@/lib/analytics";
 import { ai } from "@/lib/ai/client";
@@ -1353,9 +1354,22 @@ export const resumeStore: StateCreator<ResumeBuilderState> = (set, get) => {
           // Only the template changes — every other field of the user's resume
           // (name, contact, sections, font/color customization) stays intact.
           if (TEMPLATES.some((t) => t.id === templateId)) {
-            // M5C §H — single choke point for template-choice telemetry so every
-            // entry (in-builder gallery, /templates page) is counted once.
-            track("builder_template_changed", { templateId });
+            // M5F §analytics — the "single choke point" must report a REAL
+            // change: the hub gallery lets the already-active card be
+            // re-applied, and re-picking the current template is not a
+            // template change. Context: master vs tailored (exact lineage
+            // first, legacy name heuristic as fallback) so a tailored
+            // resume's choice never collapses into the master's context.
+            const prev = get();
+            if (prev.resume.templateId !== templateId) {
+              track("builder_template_changed", {
+                templateId,
+                tailored: isTailoredResumeContext(
+                  prev.resume,
+                  prev.lineage[prev.activeResumeId],
+                ),
+              });
+            }
             set((s) => {
               const updatedResume = {
                 ...s.resume,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useResumeBuilder } from "@/store/resume-builder";
 import { getActiveTemplate } from "@/components/resume/ResumePreview";
 import { Passport } from "@/components/identity/Passport";
@@ -12,6 +12,7 @@ import { TemplateGallery } from "@/components/resume-builder/TemplateGallery";
 import { LiveStylePreview } from "@/components/resume-builder/LiveStylePreview";
 import { ArrowLeft, FileText, CreditCard, Network, Clock, Palette, Download, SlidersHorizontal } from "lucide-react";
 import { track } from "@/lib/analytics";
+import { isTailoredResumeContext } from "@/lib/workflow-state";
 import Link from "next/link";
 import { clsx } from "clsx";
 
@@ -37,12 +38,28 @@ export default function PreviewPage() {
   const [showExport, setShowExport] = useState(false);
   const [showCustomize, setShowCustomize] = useState(false);
   const [showTemplates, setShowTemplates] = useState(false);
+  // M5F §analytics — exactly one builder_preview_opened per genuine
+  // navigation. React StrictMode (dev) runs mount effects twice and the dev
+  // server writes into the SAME analytics store as production, so the
+  // unguarded effect double-counted every standalone preview open (proven:
+  // 2 rows per navigation). The ref survives StrictMode's simulated
+  // remount but is fresh on a real mount, so back/forward navigations still
+  // report once each.
+  const reportedRef = useRef(false);
   const template = getActiveTemplate(resume);
   const status = SAVE_STATUS[saveStatus] ?? SAVE_STATUS.saved;
 
   // M5C §H — the standalone preview is a distinct workflow surface.
+  // M5F §analytics — context read at mount (lineage first, name heuristic
+  // as fallback) so master and tailored opens never collapse together.
   useEffect(() => {
-    track("builder_preview_opened", { surface: "page" });
+    if (reportedRef.current) return;
+    reportedRef.current = true;
+    const s = useResumeBuilder.getState();
+    track("builder_preview_opened", {
+      surface: "page",
+      tailored: isTailoredResumeContext(s.resume, s.lineage[s.activeResumeId]),
+    });
   }, []);
 
   return (
