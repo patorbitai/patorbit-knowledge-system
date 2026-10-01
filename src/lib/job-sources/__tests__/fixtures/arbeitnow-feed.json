@@ -1,0 +1,70 @@
+{
+  "_comment": "TEST FIXTURE ONLY — recorded-shape Arbeitnow free job board feed. Not real listings; do not display.",
+  "data": [
+    {
+      "slug": "senior-backend-engineer-acme",
+      "company_name": "Acme Test Labs",
+      "title": "Senior Backend Engineer",
+      "description": "<div>We are hiring a Senior Backend Engineer to build reliable APIs.<br/>Design and operate PostgreSQL services<br/>Own services in TypeScript and Node.js</div>",
+      "location": "London, UK",
+      "url": "https://www.arbeitnow.com/job/senior-backend-engineer-acme",
+      "posted_at": 1789430400,
+      "remote": false,
+      "job_type": "full_time",
+      "tags": ["backend", "typescript"]
+    },
+    {
+      "slug": "remote-qa-analyst",
+      "company_name": "Prüfwerk GmbH",
+      "title": "QA Analyst",
+      "description": "<p>Test web applications and file clear bug reports.</p>",
+      "location": "",
+      "url": "https://www.arbeitnow.com/job/remote-qa-analyst",
+      "posted_at": "2026-09-12T08:00:00Z",
+      "remote": true,
+      "job_type": "part-time"
+    },
+    {
+      "slug": "internship-no-date",
+      "company_name": "Dateless Ltd",
+      "title": "Software Intern",
+      "description": "Assist the team with small fixes and tests.",
+      "location": "Manchester, UK",
+      "url": "https://www.arbeitnow.com/job/internship-no-date",
+      "remote": false,
+      "job_type": "internship"
+    },
+    {
+      "slug": "hostile-listing",
+      "company_name": "Ignored script Co",
+      "title": "Support Specialist",
+      "description": "<script>alert('xss')</script><p>Help customers <strong>daily</strong> with their accounts. &amp; enjoy benefits.</p>",
+      "location": "Paris, France",
+      "url": "https://www.arbeitnow.com/job/hostile-listing",
+      "posted_at": 1789000000,
+      "remote": false,
+      "job_type": "full_time"
+    },
+    {
+      "slug": "missing-title-role",
+      "company_name": "No Title Inc",
+      "url": "https://www.arbeitnow.com/job/missing-title"
+    },
+    {
+      "title": "Missing Slug Role",
+      "company_name": "No Slug Inc",
+      "url": "https://www.arbeitnow.com/job/missing-slug"
+    },
+    {
+      "slug": "insecure-url-role",
+      "company_name": "Insecure Co",
+      "title": "Insecure Role",
+      "url": "http://www.arbeitnow.com/job/insecure"
+    },
+    {
+      "slug": "missing-company-role",
+      "title": "No Company Role",
+      "url": "https://www.arbeitnow.com/job/no-company"
+    }
+  ]
+}

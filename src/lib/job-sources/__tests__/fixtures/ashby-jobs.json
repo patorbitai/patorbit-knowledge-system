@@ -1,0 +1,45 @@
+{
+  "_comment": "TEST FIXTURE ONLY — recorded-shape Ashby public job board feed. Not real listings; do not display.",
+  "jobs": [
+    {
+      "id": "8f14e45f-ceea-467f-a1d6-1f8efb0b1c2d",
+      "title": "Machine Learning Engineer",
+      "location": "New York, NY",
+      "secondaryLocations": [
+        { "location": "Remote - US" },
+        "ignored-non-object-entry",
+        { "name": "Boston, MA" }
+      ],
+      "isRemote": false,
+      "department": "Engineering",
+      "team": "ML Platform",
+      "descriptionPlain": "Train and evaluate models for ranking systems. Strong Python required.",
+      "publishedAt": "2026-09-05T09:00:00.000Z",
+      "applyUrl": "https://jobs.ashbyhq.com/acme/8f14e45f-ceea-467f-a1d6-1f8efb0b1c2d",
+      "employmentType": "FullTime"
+    },
+    {
+      "id": "9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "title": "Technical Writer",
+      "location": "US-Remote",
+      "isRemote": true,
+      "descriptionHtml": "<p>Write clear documentation for developer-facing products.</p>",
+      "jobUrl": "https://jobs.ashbyhq.com/acme/9a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "employmentType": "PartTime"
+    },
+    {
+      "title": "No Identifier",
+      "applyUrl": "https://jobs.ashbyhq.com/acme/no-id"
+    },
+    {
+      "id": "d4e5f6a7-b8c9-4d0e-1f2a-3b4c5d6e7f8a",
+      "title": "No URLs"
+    },
+    {
+      "id": 42,
+      "title": "Numeric Id Posting",
+      "applyUrl": "https://jobs.ashbyhq.com/acme/42",
+      "location": "Toronto, Canada"
+    }
+  ]
+}

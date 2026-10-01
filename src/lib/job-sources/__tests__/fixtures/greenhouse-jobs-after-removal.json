@@ -1,0 +1,17 @@
+{
+  "_comment": "TEST FIXTURE ONLY — same Greenhouse feed after the source stopped listing job 900001 (closure is represented as feed absence).",
+  "jobs": [
+    {
+      "id": 900002,
+      "title": "Platform Reliability Engineer",
+      "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/900002",
+      "updated_at": "2026-08-20T12:30:00.000Z",
+      "location": { "name": "Remote - US" },
+      "content": "<div>Keep our services healthy. You will monitor systems and improve dashboards.</div>"
+    },
+    {
+      "title": "Missing Identifier Role",
+      "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/900003"
+    }
+  ]
+}

@@ -402,3 +402,68 @@ model AnalyticsEvent {
   @@index([sessionId])
   @@index([ts])
 }
+
+// ─── M7A: Job Source Foundation ───────────────────────────────────
+//
+// Global (NOT user-scoped) normalized job data sourced exclusively from
+// official APIs (Greenhouse, Lever, Ashby, Arbeitnow). No user, resume,
+// or application data lives in these tables.
+//
+//   Job         — one normalized job (dedup target across sources).
+//   JobPosting  — one raw record per source sighting; many postings may
+//                 link to one Job. Source records are never discarded.
+//
+// Freshness/status are string states interpreted by
+// src/lib/job-sources/freshness.ts:
+//   freshness: active | probably_stale | expired | unknown
+//   status:    open | closed
+
+model Job {
+  id              String   @id @default(cuid())
+  title           String
+  companyName     String
+  companyKey      String   // normalized dedup key (src/lib/job-sources/normalize.ts)
+  locationNorm    String?
+  remote          Boolean  @default(false)
+  employmentType  String?  // source-provided type, normalized to snake_case
+  descriptionText String   @db.Text
+  applyUrl        String   // source-provided destination, never rewritten
+  fingerprintHash String   // sha256 over normalized company/title/location/description
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now()) @updatedAt
+  lastConfirmedAt DateTime? // last source-confirmed presence (observation, not source date)
+  freshness       String   @default("unknown")
+  status          String   @default("open")
+
+  postings JobPosting[]
+
+  @@index([companyKey])
+  @@index([fingerprintHash])
+  @@index([freshness])
+  @@index([status])
+}
+
+model JobPosting {
+  id              String   @id @default(cuid())
+  sourceKind      String   // greenhouse | lever | ashby | arbeitnow
+  externalId      String   // source-provided identifier
+  sourceUrl       String   // source's own page for this posting (HTTPS only)
+  title           String
+  companyName     String
+  locationRaw     String?  // exactly as the source stated it
+  salaryRaw       String?  // exactly as the source stated it (never estimated)
+  descriptionText String   @db.Text // normalized plain text (HTML stripped)
+  postedAt        DateTime? // SOURCE-PROVIDED timestamp; null when absent
+  validThrough    DateTime? // SOURCE-PROVIDED expiration; null when absent
+  raw             Json     // original unmodified source payload (untrusted)
+  contentHash     String   // sha256 of the normalized description
+  firstSeenAt     DateTime @default(now())
+  lastSeenAt      DateTime @default(now()) @updatedAt
+
+  jobId String?
+  job   Job?   @relation(fields: [jobId], references: [id], onDelete: SetNull)
+
+  @@unique([sourceKind, externalId])
+  @@index([jobId])
+  @@index([contentHash])
+}

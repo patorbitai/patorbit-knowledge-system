@@ -1,0 +1,35 @@
+{
+  "_comment": "TEST FIXTURE ONLY — recorded-shape Greenhouse Job Board API response. Not a real listing; do not display.",
+  "jobs": [
+    {
+      "id": 900001,
+      "title": "Senior Backend Engineer",
+      "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/900001?utm_source=feed&utm_medium=api",
+      "updated_at": "2026-09-10T08:00:00.000Z",
+      "first_published": "2026-09-01T10:00:00.000Z",
+      "location": { "name": "London, UK" },
+      "content": "<p>We are hiring a <strong>Senior Backend Engineer</strong> to build reliable APIs.</p>\n<ul>\n  <li>Design and operate PostgreSQL services</li>\n  <li>Own services in TypeScript and Node.js</li>\n</ul>",
+      "departments": [{ "id": 1, "name": "Engineering" }],
+      "offices": [{ "id": 1, "name": "London" }]
+    },
+    {
+      "id": 900002,
+      "title": "Platform Reliability Engineer",
+      "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/900002",
+      "updated_at": "2026-08-20T12:30:00.000Z",
+      "location": { "name": "Remote - US" },
+      "content": "<div>Keep our services healthy. You will monitor systems and improve dashboards.</div>"
+    },
+    {
+      "title": "Missing Identifier Role",
+      "absolute_url": "https://job-boards.greenhouse.io/acme/jobs/900003"
+    },
+    {
+      "id": 900004,
+      "title": "Insecure Link Role",
+      "absolute_url": "http://job-boards.greenhouse.io/acme/jobs/900004",
+      "location": { "name": "Austin, TX" },
+      "content": "<p>Non-HTTPS source URLs must be rejected, not upgraded.</p>"
+    }
+  ]
+}
