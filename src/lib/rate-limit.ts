@@ -13,6 +13,7 @@
  */
 
 import { NextResponse } from "next/server";
+import { JOB_SOURCE_RATE_LIMIT } from "./job-sources/registry";
 
 interface SlidingWindow {
   timestamps: number[];
@@ -21,6 +22,11 @@ interface SlidingWindow {
 // Separate stores so import and AI limits are independent buckets.
 const aiStore   = new Map<string, SlidingWindow>();
 const importStore = new Map<string, SlidingWindow>();
+// M7B — job-source discovery bucket. Same sliding-window mechanics, fully
+// independent from the AI/import buckets. Limits come from
+// JOB_SOURCE_RATE_LIMIT (src/lib/job-sources/registry.ts) so the source
+// limit stays centralized in M7A's config — no second limit system.
+const jobSourceStore = new Map<string, SlidingWindow>();
 
 const AI_WINDOW_MS    = 60_000;
 const AI_MAX_REQUESTS = 20;
@@ -41,6 +47,7 @@ function pruneStore(store: Map<string, SlidingWindow>, windowMs: number): void {
 setInterval(() => {
   pruneStore(aiStore,     AI_WINDOW_MS);
   pruneStore(importStore, IMPORT_WINDOW_MS);
+  pruneStore(jobSourceStore, JOB_SOURCE_RATE_LIMIT.windowMs);
 }, 5 * 60_000);
 
 // ── Core check ────────────────────────────────────────────────────────────────
@@ -82,10 +89,33 @@ export function checkImportRateLimit(
   return check(importStore, userId, IMPORT_WINDOW_MS, IMPORT_MAX_REQUESTS);
 }
 
+/**
+ * M7B — job-source discovery rate limit (per authenticated user, sliding
+ * window). Called BEFORE every upstream source request so a rate-limited
+ * discovery never reaches the network. Shares the exact check() mechanics
+ * and the shared rateLimitResponse() 429 shape with the AI/import limits,
+ * but lives in its own bucket: exhausting source calls never affects AI or
+ * import limits (and vice versa). M6 AI quota/rate behavior is untouched.
+ */
+export function checkJobSourceRateLimit(
+  userId: string,
+): { allowed: boolean; retryAfter: number } {
+  return check(
+    jobSourceStore,
+    userId,
+    JOB_SOURCE_RATE_LIMIT.windowMs,
+    JOB_SOURCE_RATE_LIMIT.maxRequests,
+  );
+}
+
 export const AI_RATE_LIMIT_MAX     = AI_MAX_REQUESTS;
 export const AI_RATE_LIMIT_WINDOW  = AI_WINDOW_MS;
 export const IMPORT_RATE_LIMIT_MAX    = IMPORT_MAX_REQUESTS;
 export const IMPORT_RATE_LIMIT_WINDOW = IMPORT_WINDOW_MS;
+
+/** Job-source discovery limit (M7B) — derived from JOB_SOURCE_RATE_LIMIT. */
+export const JOB_SOURCE_RATE_LIMIT_MAX = JOB_SOURCE_RATE_LIMIT.maxRequests;
+export const JOB_SOURCE_RATE_LIMIT_WINDOW = JOB_SOURCE_RATE_LIMIT.windowMs;
 
 // ── Shared 429 response (M6) ─────────────────────────────────────────────────
 

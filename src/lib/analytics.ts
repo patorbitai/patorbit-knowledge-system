@@ -82,6 +82,12 @@ export const WORKFLOW_EVENTS = [
   // only — no resume data, no user ids.
   "ai_quota_exceeded",
   "ai_rate_limited",
+  // M7B — deterministic job discovery, fired from the discover UI only.
+  // Props are scalar allowlisted fields (source/page/counts/freshness) —
+  // never user ids, resume/profile data, query text, job descriptions,
+  // application answers, or arbitrary URLs.
+  "job_search_performed",
+  "job_viewed",
 ] as const;
 
 export type WorkflowEvent = (typeof WORKFLOW_EVENTS)[number];
