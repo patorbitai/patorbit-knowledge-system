@@ -1,16 +1,19 @@
 "use strict";
 
 /**
- * M7B — Job discovery service: deterministic, AI-free search across the four
- * M7A-approved sources (Greenhouse, Lever, Ashby, Arbeitnow).
+ * M7B/M7C — Job discovery service: deterministic, AI-free search across the
+ * four M7A-approved sources (Greenhouse, Lever, Ashby, Arbeitnow).
  *
  * Pipeline (in order):
  *   1. parseJobSearchQuery — strict, bounded query validation (pure).
  *   2. planProviders       — which OFFICIAL feeds to call; a client never
  *                            supplies a URL, only a plain board identifier.
  *   3. searchJobs          — rate-limit → fetch via the M7A boundary →
- *                            normalize → persist idempotently → assemble,
- *                            filter, order, paginate.
+ *                            normalize → persist idempotently WITH per-feed
+ *                            provenance → record source observations →
+ *                            feed-scoped absence (complete checks only) →
+ *                            freshness from evidence → assemble, filter,
+ *                            order, paginate.
  *
  * Guarantees encoded here:
  *   - Zero AI: no model calls, no usage-service calls. Discovery consumes
@@ -22,47 +25,61 @@
  *     default). A denial before the first call fails the whole search with
  *     JobSearchRateLimitedError; a denial mid-search marks the remaining
  *     providers "rate_limited" and returns partial (still usable) results.
+ *     A rate-limited or failed provider records NO observation and NEVER
+ *     counts as an absence (M7C §8).
  *   - One failing provider never fails the whole search: each provider is
  *     fetched inside its own try/catch and reported in `providers`.
- *   - Persistence is idempotent on (sourceKind, externalId) and preserves
- *     sourceUrl / applyUrl / attribution exactly as supplied.
- *   - Dedupe uses M7A's conservative ladder: merge only on source identity,
- *     canonical URL, or content fingerprint; soft-key hits stay separate
- *     jobs (under-merge); different companies NEVER merge (M7A hard guard).
- *   - Freshness is evidence-based (M7A state machine): a database row alone
- *     never yields "active"; unconfirmed rows stay "unknown".
+ *   - Persistence is idempotent on (sourceKind, sourceFeedKey, externalId)
+ *     and preserves sourceUrl / applyUrl / attribution exactly as supplied,
+ *     per source (M7C §2).
+ *   - Dedupe uses M7A's conservative ladder: merge only on feed-scoped
+ *     source identity, canonical URL, or content fingerprint; soft-key hits
+ *     stay separate jobs (under-merge); different companies NEVER merge
+ *     (M7A hard guard).
+ *   - Freshness is evidence-based (M7A state machine fed by M7C
+ *     observations): a database row alone never yields "active"; unconfirmed
+ *     rows stay "unknown"; absence is claimed only from a COMPLETE
+ *     observation of the EXACT feed the posting belongs to.
  *   - Deterministic: stable provider order, stable ingest order, stable
  *     result ordering (postedAt desc with nulls last, jobId ascending),
  *     stable pagination. No embeddings, no LLM ranking, no AI relevance.
  */
 
-import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { checkJobSourceRateLimit } from "@/lib/rate-limit";
 import {
   JOB_SOURCES,
   SOURCE_KINDS,
+  SOURCE_FEED_BOARD_PATTERN as BOARD_PATTERN,
+  BOARD_REQUIRED_SOURCES,
   SourceAdapterError,
   SourceFetchError,
-  canonicalUrlKey,
-  companyKey,
-  contentHash,
-  decideDedupe,
+  buildSourceFeedKey,
+  evaluateFeedObservation,
   evaluateFreshness,
   fetchSourceJson,
-  fingerprintPosting,
   isSourceKind,
-  locationKey,
-  normalizeDescriptionText,
+  jobFreshnessEvidence,
   normalizeEmploymentType,
-  titleKey,
-  type ExistingJob,
+  type FeedObservationAssessment,
   type FetchLike,
   type FreshnessEvaluation,
   type FreshnessState,
-  type NormalizedPosting,
   type SourceKind,
+  type StoredPosting,
 } from "@/lib/job-sources";
+import {
+  applyFeedAbsence,
+  applyObservationEffects,
+  canonicalDatesByJob,
+  compareStrings,
+  persistPostings,
+  postingDates,
+  recordFeedObservation,
+  type JobSnapshot,
+  type PersistedObservation,
+  type SourcedPosting,
+} from "@/services/job-source-revalidation.service";
 
 /* ── Limits & validation ─────────────────────────────────────────────────── */
 
@@ -80,35 +97,17 @@ export const JOB_SEARCH_LIMITS = Object.freeze({
 });
 
 /**
- * Board identifiers are PATH-SAFE slugs only: no slashes, no percent
- * encoding, no whitespace, no traversal. The adapter still runs it through
- * encodeURIComponent, and fetchSourceJson re-validates the final URL against
- * the M7A registry allowlist before any I/O — defense in depth, never instead
- * of it.
- */
-const BOARD_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
-
-/** Sources whose official API is per-company and requires a board id. */
-const BOARD_REQUIRED_SOURCES: readonly SourceKind[] = [
-  "greenhouse",
-  "lever",
-  "ashby",
-];
-
-/**
  * Fixed upstream page for the Arbeitnow global feed. Our own pagination is
  * applied over the assembled result set, so the upstream corpus must stay
  * identical across page 1/2/3 requests — otherwise results would shift
  * between pages (non-deterministic pagination).
+ *
+ * M7C: because search fetches only ONE page of a paginated feed, the search
+ * observation for arbeitnow is recorded as INCOMPLETE (partial_feed) —
+ * presence still counts, absence NEVER does. Complete enumeration for
+ * absence lives in revalidateJobSourceFeed (bounded pagination).
  */
 const ARBEITNOW_FEED_PAGE = 1;
-
-/** Stable, locale-independent string order (determinism across machines). */
-function compareStrings(a: string, b: string): number {
-  if (a < b) return -1;
-  if (a > b) return 1;
-  return 0;
-}
 
 /* ── Errors ──────────────────────────────────────────────────────────────── */
 
@@ -354,134 +353,46 @@ export function planProviders(input: JobSearchInput): ProviderPlanEntry[] {
   );
 }
 
-/* ── Persistence row shapes ──────────────────────────────────────────────── */
-
-interface PostingRow {
-  id: string;
-  sourceKind: string;
-  externalId: string;
-  sourceUrl: string;
-  jobId: string | null;
-}
-
-interface JobRow {
-  id: string;
-  title: string;
-  companyName: string;
-  companyKey: string;
-  locationNorm: string | null;
-  remote: boolean;
-  employmentType: string | null;
-  descriptionText: string;
-  applyUrl: string;
-  fingerprintHash: string;
-  lastConfirmedAt: Date | null;
-  status: string;
-}
-
-type JobCandidateRow = JobRow & {
-  postings: Array<{ sourceKind: string; externalId: string; sourceUrl: string }>;
-};
-
-/** The read-model fields a result needs from a Job. */
-interface JobSnapshot {
-  id: string;
-  title: string;
-  companyName: string;
-  locationNorm: string | null;
-  remote: boolean;
-  employmentType: string | null;
-  descriptionText: string;
-  applyUrl: string;
-  lastConfirmedAt: Date | null;
-}
-
-interface PersistedObservation {
-  posting: NormalizedPosting;
-  jobId: string;
-}
-
-function toSnapshot(row: JobRow): JobSnapshot {
-  return {
-    id: row.id,
-    title: row.title,
-    companyName: row.companyName,
-    locationNorm: row.locationNorm,
-    remote: row.remote,
-    employmentType: row.employmentType,
-    descriptionText: row.descriptionText,
-    applyUrl: row.applyUrl,
-    lastConfirmedAt: row.lastConfirmedAt,
-  };
-}
-
-function toExistingJob(row: JobCandidateRow): ExistingJob {
-  return {
-    jobId: row.id,
-    companyKey: row.companyKey,
-    titleKey: titleKey(row.title),
-    locationKey: row.locationNorm ? locationKey(row.locationNorm) : null,
-    fingerprintHash: row.fingerprintHash,
-    descriptionLength: normalizeDescriptionText(row.descriptionText).length,
-    postings: row.postings.map((posting) => ({
-      sourceKind: posting.sourceKind,
-      externalId: posting.externalId,
-      canonicalUrlKey: canonicalUrlKey(posting.sourceUrl),
-    })),
-  };
-}
-
-function isUniqueConstraintError(err: unknown): boolean {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    (err as { code?: unknown }).code === "P2002"
-  );
-}
-
-function comparePostings(a: NormalizedPosting, b: NormalizedPosting): number {
-  return (
-    compareStrings(a.sourceKind, b.sourceKind) ||
-    compareStrings(a.externalId, b.externalId)
-  );
-}
-
-function toDate(value: string | null): Date | null {
-  if (!value) return null;
-  const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
-}
-
-function postingDates(posting: NormalizedPosting): {
-  postedAt: Date | null;
-  validThrough: Date | null;
-} {
-  return {
-    postedAt: toDate(posting.postedAt),
-    validThrough: toDate(posting.validThrough),
-  };
-}
-
-/* ── Freshness (M7A primitives, evidence-only) ───────────────────────────── */
+/* ── Freshness (M7A state machine fed by M7C evidence) ──────────────────── */
 
 /**
  * Evaluate a stored Job's freshness from evidence — never from existence.
  *
- * Evidence rules:
- *  - `lastConfirmedAt === null` ⇒ we have never seen this job in an official
- *    feed response ⇒ "unknown" (a DB row alone is NOT evidence).
- *  - `lastConfirmedAt` set ⇒ presence was confirmed at that timestamp;
- *    the M7A SLA then decides active / probably_stale (72h confirmation,
- *    30d posting aging).
- *  - `absentConsecutiveChecks` is 0 because M7B never claims an absence:
- *    absence requires re-fetching the same corpus (M7C scope). Expiration
- *    here can only come from a source-provided `validThrough` in the past.
+ * With `postings` (M7C): evidence derives from the job's PER-FEED posting
+ * rows — presence/absence/confirmation counts all come from recorded
+ * observations, scoped to each posting's own feed:
+ *  - any feed still confirming → presentInSource true;
+ *  - all known feeds missing ≥1 complete check → presentInSource false with
+ *    the minimum miss count (expired only when every feed reached the
+ *    two-miss threshold);
+ *  - never confirmed anywhere → unknown (a DB row alone is NOT evidence).
+ *
+ * Without `postings` (legacy 3-arg form): presence is derived from the
+ * job's own confirmation stamp only and `absentConsecutiveChecks` stays 0 —
+ * a claim of absence REQUIRES a complete per-feed observation, so this
+ * fallback can never invent one.
  */
 export function freshnessForStoredJob(
   job: { lastConfirmedAt: Date | null },
   canonical: { postedAt: Date | null; validThrough: Date | null } | null,
   now: Date,
+  postings?: readonly StoredPosting[] | null,
 ): FreshnessEvaluation {
+  if (postings && postings.length > 0) {
+    const evidence = jobFreshnessEvidence({
+      jobLastConfirmedAt: job.lastConfirmedAt,
+      postings,
+    });
+    return evaluateFreshness(
+      {
+        ...evidence,
+        validThrough: canonical?.validThrough ?? null,
+        postedAt: canonical?.postedAt ?? null,
+      },
+      now,
+    );
+  }
+
   return evaluateFreshness(
     {
       explicitClosure: false,
@@ -493,205 +404,6 @@ export function freshnessForStoredJob(
     },
     now,
   );
-}
-
-/* ── Persistence ─────────────────────────────────────────────────────────── */
-
-/**
- * Resolve the Job a posting belongs to, using ONLY M7A's dedupe ladder:
- *  - "merge" (source identity / canonical URL / fingerprint) → link into the
- *    existing job;
- *  - "possible_duplicate" (soft key) and "new" → create a SEPARATE job.
- *    Soft-key hits are deliberately never merged: conservative under-merging
- *    beats a false merge, and M7A's company hard guard inside decideDedupe
- *    already forbids cross-company merges regardless of signal strength.
- */
-async function resolveJob(
-  posting: NormalizedPosting,
-): Promise<JobRow | JobCandidateRow> {
-  const candidateCompanyKey = companyKey(posting.companyName);
-  const candidateFingerprint = fingerprintPosting(posting);
-
-  const candidates: JobCandidateRow[] = await prisma.job.findMany({
-    where: {
-      OR: [
-        { companyKey: candidateCompanyKey },
-        { fingerprintHash: candidateFingerprint },
-      ],
-    },
-    include: {
-      postings: { select: { sourceKind: true, externalId: true, sourceUrl: true } },
-    },
-  });
-
-  const decision = decideDedupe(posting, candidates.map(toExistingJob));
-  if (decision.action === "merge") {
-    const hit = candidates.find((candidate) => candidate.id === decision.jobId);
-    if (hit) return hit;
-    const loaded = await prisma.job.findUnique({ where: { id: decision.jobId } });
-    if (loaded) return loaded;
-    // The job disappeared between queries — fall through and create anew.
-  }
-
-  return prisma.job.create({
-    data: {
-      title: posting.title,
-      companyName: posting.companyName,
-      companyKey: candidateCompanyKey,
-      locationNorm: posting.locationRaw,
-      remote: posting.remote,
-      employmentType: posting.employmentType,
-      descriptionText: posting.descriptionText,
-      // Original source-provided destination — never rewritten afterwards.
-      applyUrl: posting.applyUrl,
-      fingerprintHash: candidateFingerprint,
-      firstSeenAt: new Date(),
-      lastSeenAt: new Date(),
-      lastConfirmedAt: new Date(),
-      // Computed by the confirmation pass below once the canonical posting
-      // of this job is known.
-      freshness: "unknown",
-      status: "open",
-    },
-  });
-}
-
-function postingWriteFields(posting: NormalizedPosting, observedAt: Date) {
-  return {
-    sourceUrl: posting.sourceUrl,
-    title: posting.title,
-    companyName: posting.companyName,
-    locationRaw: posting.locationRaw,
-    salaryRaw: posting.salaryRaw,
-    descriptionText: posting.descriptionText,
-    postedAt: toDate(posting.postedAt),
-    validThrough: toDate(posting.validThrough),
-    // Original unmodified source payload (untrusted) — stored as-is.
-    raw: posting.raw as unknown as Prisma.InputJsonValue,
-    contentHash: contentHash(posting.descriptionText),
-    lastSeenAt: observedAt,
-  };
-}
-
-/**
- * Persist fetched postings idempotently:
- *  - (sourceKind, externalId) is the unique source identity: an existing row
- *    is updated deterministically in place (firstSeenAt preserved, jobId
- *    untouched); a new row is created exactly once even under races.
- *  - Every posting is associated with a Job through the M7A dedupe ladder.
- *  - A confirmation pass stamps each observed job (lastConfirmedAt, and a
- *    freshness value computed from M7A primitives with the job's canonical
- *    posting as source-provided evidence).
- */
-async function persistPostings(
-  postings: NormalizedPosting[],
-  observedAt: Date,
-): Promise<{
-  observations: PersistedObservation[];
-  jobs: Map<string, JobSnapshot>;
-}> {
-  // Deterministic ingest order so identical feeds produce identical state.
-  const sorted = [...postings].sort(comparePostings);
-  const observations: PersistedObservation[] = [];
-  const jobs = new Map<string, JobSnapshot>();
-  const observedJobIds: string[] = [];
-
-  const cacheJob = (row: JobRow) => {
-    if (!jobs.has(row.id)) jobs.set(row.id, toSnapshot(row));
-  };
-  const markObserved = (jobId: string) => {
-    if (!observedJobIds.includes(jobId)) observedJobIds.push(jobId);
-  };
-
-  for (const posting of sorted) {
-    const identity = {
-      sourceKind: posting.sourceKind,
-      externalId: posting.externalId,
-    };
-    const fields = postingWriteFields(posting, observedAt);
-
-    let row: PostingRow | null = await prisma.jobPosting.findUnique({
-      where: { sourceKind_externalId: identity },
-    });
-
-    if (row) {
-      // Existing source record → deterministic in-place update. `jobId` is
-      // NOT part of the update: an existing association is stable.
-      row = (await prisma.jobPosting.update({
-        where: { id: row.id },
-        data: fields,
-      })) as PostingRow;
-      if (!row.jobId) {
-        // Recovery: a previously unlinked row now gets its dedupe decision.
-        const job = await resolveJob(posting);
-        cacheJob(job);
-        row = (await prisma.jobPosting.update({
-          where: { id: row.id },
-          data: { jobId: job.id },
-        })) as PostingRow;
-      }
-    } else {
-      const job = await resolveJob(posting);
-      cacheJob(job);
-      try {
-        row = (await prisma.jobPosting.create({
-          data: { ...identity, ...fields, jobId: job.id },
-        })) as PostingRow;
-      } catch (err) {
-        if (!isUniqueConstraintError(err)) throw err;
-        // A concurrent search persisted the same source row first — stay
-        // idempotent: adopt that row instead of failing or duplicating.
-        const existing = await prisma.jobPosting.findUnique({
-          where: { sourceKind_externalId: identity },
-        });
-        if (!existing) throw err;
-        if (existing.jobId) {
-          row = existing;
-        } else {
-          row = (await prisma.jobPosting.update({
-            where: { id: existing.id },
-            data: { jobId: job.id },
-          })) as PostingRow;
-        }
-      }
-    }
-
-    const jobId = row.jobId;
-    if (!jobId) {
-      throw new Error("Persisted posting has no job association.");
-    }
-    if (!jobs.has(jobId)) {
-      const loaded = await prisma.job.findUnique({ where: { id: jobId } });
-      if (loaded) cacheJob(loaded);
-    }
-    markObserved(jobId);
-    observations.push({ posting, jobId });
-  }
-
-  // Confirmation pass — one update per observed job. Freshness is computed
-  // from evidence (just-confirmed presence + source-provided postedAt and
-  // validThrough of the job's canonical posting), never from existence.
-  for (const jobId of observedJobIds) {
-    const snapshot = jobs.get(jobId);
-    if (!snapshot) continue;
-    const canonical = observations.find((obs) => obs.jobId === jobId);
-    const evaluation = freshnessForStoredJob(
-      { lastConfirmedAt: observedAt },
-      canonical ? postingDates(canonical.posting) : null,
-      observedAt,
-    );
-    await prisma.job.update({
-      where: { id: jobId },
-      data: {
-        lastSeenAt: observedAt,
-        lastConfirmedAt: observedAt,
-        freshness: evaluation.state,
-      },
-    });
-    snapshot.lastConfirmedAt = observedAt;
-  }
-
-  return { observations, jobs };
 }
 
 /* ── Result assembly ─────────────────────────────────────────────────────── */
@@ -714,8 +426,16 @@ export interface JobResultItem {
     attributionText: string;
     attributionUrl: string;
   };
+  /** Exact feed the canonical posting was observed in (M7C provenance). */
+  feedKey: string;
   sourceUrl: string;
+  /** Canonical posting's OWN application destination (source-specific, verbatim). */
   applyUrl: string;
+  /**
+   * ISO-8601 of the last confirmed presence of this job in an official
+   * feed; null when never confirmed. Never derived from updatedAt/lastSeenAt.
+   */
+  lastConfirmedAt: string | null;
   /** Every source that contributed a row to this job in this search. */
   sources: SourceKind[];
 }
@@ -755,17 +475,59 @@ function matchesQuery(tokens: string[], job: JobSnapshot): boolean {
   return tokens.every((token) => haystack.includes(token));
 }
 
+/**
+ * Load the FULL posting evidence (every feed) for the jobs that will appear
+ * in this search's results — freshness must consider cross-feed absences,
+ * not just what this search observed.
+ */
+async function loadPostingsByJob(
+  jobIds: readonly string[],
+): Promise<Map<string, StoredPosting[]>> {
+  const map = new Map<string, StoredPosting[]>();
+  if (jobIds.length === 0) return map;
+  const rows = await prisma.jobPosting.findMany({
+    where: { jobId: { in: [...jobIds] } },
+    select: {
+      jobId: true,
+      sourceKind: true,
+      sourceFeedKey: true,
+      externalId: true,
+      lastConfirmedAt: true,
+      absentConsecutiveChecks: true,
+      postedAt: true,
+      validThrough: true,
+    },
+  });
+  for (const row of rows) {
+    if (!row.jobId) continue;
+    const stored: StoredPosting = {
+      sourceKind: row.sourceKind,
+      sourceFeedKey: row.sourceFeedKey,
+      externalId: row.externalId,
+      lastConfirmedAt: row.lastConfirmedAt,
+      absentConsecutiveChecks: row.absentConsecutiveChecks,
+      postedAt: row.postedAt,
+      validThrough: row.validThrough,
+    };
+    const list = map.get(row.jobId);
+    if (list) list.push(stored);
+    else map.set(row.jobId, [stored]);
+  }
+  return map;
+}
+
 function assembleEntries(
   observations: PersistedObservation[],
   jobs: Map<string, JobSnapshot>,
   input: JobSearchInput,
   now: Date,
+  postingsByJob: Map<string, StoredPosting[]>,
 ): Array<{ item: JobResultItem; postedAtMs: number | null }> {
-  const byJob = new Map<string, NormalizedPosting[]>();
-  for (const obs of observations) {
-    const list = byJob.get(obs.jobId);
-    if (list) list.push(obs.posting);
-    else byJob.set(obs.jobId, [obs.posting]);
+  const byJob = new Map<string, SourcedPosting[]>();
+  for (const observation of observations) {
+    const list = byJob.get(observation.jobId);
+    if (list) list.push(observation.posting);
+    else byJob.set(observation.jobId, [observation.posting]);
   }
 
   const tokens = input.q
@@ -796,7 +558,12 @@ function assembleEntries(
     }
     if (tokens.length > 0 && !matchesQuery(tokens, job)) continue;
 
-    const evaluation = freshnessForStoredJob(job, postingDates(canonical), now);
+    const evaluation = freshnessForStoredJob(
+      job,
+      postingDates(canonical),
+      now,
+      postingsByJob.get(jobId) ?? [],
+    );
     const definition = JOB_SOURCES[canonical.sourceKind];
     const kinds = [...new Set(jobPostings.map((p) => p.sourceKind))].sort(
       compareStrings,
@@ -818,8 +585,13 @@ function assembleEntries(
           attributionText: definition.attributionText,
           attributionUrl: definition.attributionUrl,
         },
+        feedKey: canonical.sourceFeedKey,
         sourceUrl: canonical.sourceUrl,
-        applyUrl: job.applyUrl,
+        // The canonical SOURCE's own destinations (never another source's).
+        applyUrl: canonical.applyUrl,
+        lastConfirmedAt: job.lastConfirmedAt
+          ? job.lastConfirmedAt.toISOString()
+          : null,
         sources: kinds,
       },
       postedAtMs: canonical.postedAt ? Date.parse(canonical.postedAt) : null,
@@ -850,17 +622,30 @@ function providerErrorCode(err: unknown): string {
 
 /* ── Search (the orchestration entry point) ──────────────────────────────── */
 
+interface ProviderOutcome {
+  kind: SourceKind;
+  feedKey: string;
+  fetched: number;
+  skipped: number;
+  postings: SourcedPosting[];
+  assessment: FeedObservationAssessment;
+  presentIds: string[];
+}
+
 /**
  * Run one discovery search for an authenticated user.
  *
  * Flow: plan providers → rate-limit → fetch each provider through the M7A
- * boundary → parse → persist idempotently → filter/order/paginate → return.
+ * boundary → parse → derive feed identity → persist idempotently → record
+ * observations → apply absence ONLY from complete observations → refresh
+ * freshness from evidence → filter/order/paginate → return.
  *
  * Throws:
  *  - JobSearchRateLimitedError when the source rate limit denies the very
  *    first upstream call (routes translate it to the shared 429 shape);
  *  - JobSearchValidationError for invalid hand-built input.
- * Provider-level failures never throw — they are reported in `providers`.
+ * Provider-level failures never throw — they are reported in `providers`,
+ * and a failed/rate-limited provider records no observation at all.
  */
 export async function searchJobs(
   userId: string,
@@ -873,7 +658,8 @@ export async function searchJobs(
   const plan = planProviders(input);
 
   const providers: ProviderStatus[] = [];
-  const fetched: NormalizedPosting[] = [];
+  const outcomes: ProviderOutcome[] = [];
+  const fetched: SourcedPosting[] = [];
   let attempted = 0;
   let blocked = false;
 
@@ -884,7 +670,7 @@ export async function searchJobs(
     }
 
     // Rate limit BEFORE every upstream source call — a denied request never
-    // reaches the network.
+    // reaches the network (and therefore can never record an absence).
     const gate = rateLimitCheck(userId);
     if (!gate.allowed) {
       if (attempted === 0) {
@@ -914,7 +700,40 @@ export async function searchJobs(
         payload,
         entry.companyName ? { companyName: entry.companyName } : undefined,
       );
-      fetched.push(...parsed.postings);
+      // M7C feed identity: derived from the registry AFTER a validated
+      // response — never fabricated, never inferred from company names.
+      // An invalid hand-built board fails the provider here (it still went
+      // through the M7A allowlist first — provenance is never guessed).
+      const feedKey = buildSourceFeedKey(entry.kind, entry.board);
+      const postings = parsed.postings.map((posting) => ({
+        ...posting,
+        sourceFeedKey: feedKey,
+      }));
+      fetched.push(...postings);
+
+      const assessment = evaluateFeedObservation({
+        feedPolicy: definition.feedPolicy,
+        skippedCount: parsed.skipped.length,
+        payloadLevelSkip: parsed.skipped.some((skip) => skip.index === -1),
+        // A single-response feed's one parse IS the whole board; for a
+        // paginated feed, one search page is exhaustive only when that page
+        // came back explicitly empty (end of feed). Otherwise: presence yes,
+        // absence never (M7C §12 — never treat a partial page as complete).
+        exhausted:
+          definition.feedPolicy === "single_response" ||
+          postings.length === 0,
+      });
+      outcomes.push({
+        kind: entry.kind,
+        feedKey,
+        fetched: parsed.postings.length,
+        skipped: parsed.skipped.length,
+        postings,
+        assessment,
+        presentIds: [
+          ...new Set(postings.map((posting) => posting.externalId)),
+        ].sort(compareStrings),
+      });
       providers.push({
         source: entry.kind,
         status: "ok",
@@ -922,7 +741,8 @@ export async function searchJobs(
         skipped: parsed.skipped.length,
       });
     } catch (err) {
-      // Isolation: one failing provider never fails the search.
+      // Isolation: one failing provider never fails the search — and a
+      // failure records NO observation (failures are not evidence, §8).
       providers.push({
         source: entry.kind,
         status: "failed",
@@ -931,8 +751,55 @@ export async function searchJobs(
     }
   }
 
+  // ── M7C persistence: provenance upsert → observation → absence → freshness
   const { observations, jobs } = await persistPostings(fetched, observedAt);
-  const entries = assembleEntries(observations, jobs, input, observedAt);
+  const observedJobIds = new Set(observations.map((obs) => obs.jobId));
+  const canonicalByJob = canonicalDatesByJob(observations);
+  const absentJobIds = new Set<string>();
+
+  for (const outcome of outcomes) {
+    await recordFeedObservation({
+      kind: outcome.kind,
+      feedKey: outcome.feedKey,
+      observedAt,
+      assessment: outcome.assessment,
+      presentIds: outcome.presentIds,
+      skippedCount: outcome.skipped,
+    });
+    if (outcome.assessment.complete) {
+      // Feed-scoped two-miss policy: only a COMPLETE observation of this
+      // exact feed may increment absentConsecutiveChecks (§9).
+      const absence = await applyFeedAbsence(
+        outcome.kind,
+        outcome.feedKey,
+        new Set(outcome.presentIds),
+      );
+      for (const jobId of absence.affectedJobIds) absentJobIds.add(jobId);
+    }
+  }
+
+  await applyObservationEffects({
+    observedJobIds,
+    absentJobIds,
+    canonicalByJob,
+    observedAt,
+  });
+  // Read model: observed jobs are confirmed present as of this check.
+  for (const jobId of observedJobIds) {
+    const snapshot = jobs.get(jobId);
+    if (snapshot) snapshot.lastConfirmedAt = observedAt;
+  }
+
+  const resultJobIds = [...observedJobIds];
+  const postingsByJob = await loadPostingsByJob(resultJobIds);
+
+  const entries = assembleEntries(
+    observations,
+    jobs,
+    input,
+    observedAt,
+    postingsByJob,
+  );
 
   const total = entries.length;
   const start = (input.page - 1) * input.pageSize;

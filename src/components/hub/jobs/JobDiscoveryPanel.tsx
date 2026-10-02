@@ -33,8 +33,12 @@ interface JobResultItem {
     attributionText: string;
     attributionUrl: string;
   };
+  /** Exact source feed the canonical posting came from (M7C provenance). */
+  feedKey?: string;
   sourceUrl: string;
   applyUrl: string;
+  /** ISO-8601 of the last confirmed source presence; null = never confirmed. */
+  lastConfirmedAt?: string | null;
   sources: string[];
 }
 
@@ -135,6 +139,18 @@ function formatDate(iso: string | null): string {
     day: "numeric",
     year: "numeric",
   });
+}
+
+/**
+ * Short feed-attribution suffix from a registry feed key
+ * ("greenhouse:acme" → " · acme"). The arbeitnow global corpus shows no
+ * suffix — a page number is not an employer feed.
+ */
+function feedLabel(feedKey?: string | null): string {
+  if (!feedKey) return "";
+  const separator = feedKey.indexOf(":");
+  const suffix = separator >= 0 ? feedKey.slice(separator + 1) : feedKey;
+  return suffix && suffix !== "global" ? ` · ${suffix}` : "";
 }
 
 /* ── Component ───────────────────────────────────────────────────────────── */
@@ -536,7 +552,11 @@ export function JobDiscoveryPanel() {
                           </p>
                         </div>
                         <span
-                          title={freshness.hint}
+                          title={`${freshness.hint}${
+                            job.freshness.reasons.length > 0
+                              ? ` Reasons: ${job.freshness.reasons.join(", ")}.`
+                              : ""
+                          }`}
                           className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-medium ${freshness.className}`}
                         >
                           {freshness.label}
@@ -565,7 +585,13 @@ export function JobDiscoveryPanel() {
                         </span>
                         <span className="inline-flex items-center gap-1">
                           via {job.source.displayName}
+                          {feedLabel(job.feedKey)}
                           {job.sources.length > 1 && ` (+${job.sources.length - 1} more)`}
+                        </span>
+                        <span className="inline-flex items-center gap-1">
+                          {job.lastConfirmedAt
+                            ? `Last confirmed ${formatDate(job.lastConfirmedAt)}`
+                            : "Not yet confirmed"}
                         </span>
                       </div>
 

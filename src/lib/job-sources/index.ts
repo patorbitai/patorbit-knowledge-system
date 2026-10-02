@@ -12,6 +12,9 @@ export {
   JOB_SOURCES,
   JOB_SOURCE_LIST,
   JOB_SOURCE_RATE_LIMIT,
+  BOARD_REQUIRED_SOURCES,
+  SOURCE_FEED_BOARD_PATTERN,
+  buildSourceFeedKey,
   getSourceDefinition,
   isPrivateOrLoopbackHostname,
   validateSourceUrl,
@@ -20,6 +23,7 @@ export {
 export * from "./normalize";
 export * from "./dedupe";
 export * from "./freshness";
+export * from "./observations";
 export {
   SOURCE_FETCH_LIMITS,
   SourceFetchError,

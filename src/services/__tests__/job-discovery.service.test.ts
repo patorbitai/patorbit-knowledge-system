@@ -5,9 +5,10 @@
  *
  * ZERO live external API calls: every test injects a deterministic fetch
  * fake. Persistence runs against an in-memory Prisma fake that enforces the
- * (sourceKind, externalId) unique constraint and the Job relations, so the
- * REAL service logic (dedupe ladder, freshness, idempotency) is exercised
- * end-to-end without a database.
+ * (sourceKind, sourceFeedKey, externalId) unique constraint and the Job
+ * relations, so the REAL service logic (dedupe ladder, freshness,
+ * idempotency, M7C observations/absence) is exercised end-to-end without a
+ * database.
  */
 
 import { describe, it, expect, vi, beforeEach } from "vitest";
@@ -21,7 +22,12 @@ import {
   type JobSearchInput,
   type JobSearchResult,
 } from "@/services/job-discovery.service";
-import { postingFingerprint, type FetchLike } from "@/lib/job-sources";
+import { revalidateJobSourceFeed } from "@/services/job-source-revalidation.service";
+import {
+  SourceAdapterError,
+  postingFingerprint,
+  type FetchLike,
+} from "@/lib/job-sources";
 
 /* ─── In-memory Prisma fake ──────────────────────────────────────────────── */
 
@@ -31,25 +37,51 @@ const h = vi.hoisted(() => {
   const state = {
     postings: [] as Row[],
     jobs: [] as Row[],
+    observations: [] as Row[],
     seq: 0,
   };
 
   const uid = (prefix: string) => `${prefix}_${String(++state.seq).padStart(4, "0")}`;
 
   const uniqueError = () => {
-    const err = new Error("Unique constraint failed on (sourceKind, externalId)") as Error & {
-      code: string;
-    };
+    const err = new Error(
+      "Unique constraint failed on (sourceKind, sourceFeedKey, externalId)",
+    ) as Error & { code: string };
     err.code = "P2002";
     return err;
   };
 
+  /** Object fields only; `{ increment: n }` applies an atomic increment. */
+  const isIncrement = (value: unknown): value is { increment: number } =>
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    !(value instanceof Date) &&
+    Object.keys(value as Row).length === 1 &&
+    "increment" in (value as Row);
+
+  const applyData = (row: Row, data: Row): Row => {
+    for (const [key, value] of Object.entries(data)) {
+      if (isIncrement(value)) {
+        row[key] = (row[key] ?? 0) + value.increment;
+      } else {
+        row[key] = value;
+      }
+    }
+    return row;
+  };
+
   const findByIdentity = (where: Row): Row | null => {
-    const key = where.sourceKind_externalId;
+    const key =
+      where.sourceKind_sourceFeedKey_externalId ?? where.sourceKind_externalId;
     if (!key) return null;
     return (
       state.postings.find(
-        (p) => p.sourceKind === key.sourceKind && p.externalId === key.externalId,
+        (p) =>
+          p.sourceKind === key.sourceKind &&
+          p.externalId === key.externalId &&
+          (key.sourceFeedKey === undefined ||
+            p.sourceFeedKey === key.sourceFeedKey),
       ) ?? null
     );
   };
@@ -57,22 +89,40 @@ const h = vi.hoisted(() => {
   const prisma = {
     jobPosting: {
       findUnique: async ({ where }: Row) =>
-        where.sourceKind_externalId
+        where.sourceKind_sourceFeedKey_externalId || where.sourceKind_externalId
           ? findByIdentity(where)
           : (state.postings.find((p) => p.id === where.id) ?? null),
+      findMany: async ({ where }: Row) =>
+        state.postings.filter((p) => {
+          if (where?.sourceKind !== undefined && p.sourceKind !== where.sourceKind)
+            return false;
+          if (
+            where?.sourceFeedKey !== undefined &&
+            p.sourceFeedKey !== where.sourceFeedKey
+          )
+            return false;
+          if (where?.jobId !== undefined) {
+            if (where.jobId?.in !== undefined) {
+              return where.jobId.in.includes(p.jobId);
+            }
+            return p.jobId === where.jobId;
+          }
+          return true;
+        }),
       update: async ({ where, data }: Row) => {
-        const row = where.sourceKind_externalId
-          ? findByIdentity(where)
-          : (state.postings.find((p) => p.id === where.id) ?? null);
+        const row =
+          where.sourceKind_sourceFeedKey_externalId || where.sourceKind_externalId
+            ? findByIdentity(where)
+            : (state.postings.find((p) => p.id === where.id) ?? null);
         if (!row) throw new Error("Record not found");
-        Object.assign(row, data);
-        return row;
+        return applyData(row, data);
       },
       create: async ({ data }: Row) => {
         if (
           findByIdentity({
-            sourceKind_externalId: {
+            sourceKind_sourceFeedKey_externalId: {
               sourceKind: data.sourceKind,
+              sourceFeedKey: data.sourceFeedKey,
               externalId: data.externalId,
             },
           })
@@ -84,9 +134,17 @@ const h = vi.hoisted(() => {
           jobId: null,
           firstSeenAt: new Date(),
           lastSeenAt: new Date(),
+          absentConsecutiveChecks: 0,
           ...data,
         };
         state.postings.push(row);
+        return row;
+      },
+    },
+    jobSourceObservation: {
+      create: async ({ data }: Row) => {
+        const row: Row = { id: uid("obs"), ...data };
+        state.observations.push(row);
         return row;
       },
     },
@@ -107,12 +165,19 @@ const h = vi.hoisted(() => {
       findUnique: async ({ where }: Row) =>
         state.jobs.find((j) => j.id === where.id) ?? null,
       findMany: async ({ where, include }: Row) => {
-        const or: Row[] = where?.OR ?? [];
-        const matched = state.jobs.filter((job) =>
-          or.some((cond) =>
-            Object.entries(cond).every(([key, value]) => job[key] === value),
-          ),
-        );
+        let matched: Row[];
+        if (where?.OR) {
+          const or: Row[] = where.OR;
+          matched = state.jobs.filter((job) =>
+            or.some((cond) =>
+              Object.entries(cond).every(([key, value]) => job[key] === value),
+            ),
+          );
+        } else if (where?.id?.in !== undefined) {
+          matched = state.jobs.filter((job) => where.id.in.includes(job.id));
+        } else {
+          matched = [...state.jobs];
+        }
         if (!include?.postings) return matched;
         return matched.map((job) => ({
           ...job,
@@ -122,8 +187,7 @@ const h = vi.hoisted(() => {
       update: async ({ where, data }: Row) => {
         const row = state.jobs.find((j) => j.id === where.id);
         if (!row) throw new Error("Record not found");
-        Object.assign(row, data);
-        return row;
+        return applyData(row, data);
       },
     },
   };
@@ -131,6 +195,7 @@ const h = vi.hoisted(() => {
   const reset = () => {
     state.postings = [];
     state.jobs = [];
+    state.observations = [];
     state.seq = 0;
   };
 
@@ -1092,5 +1157,494 @@ describe("security", () => {
         expect.objectContaining({ code: "INVALID_SOURCES" }),
       );
     }
+  });
+});
+
+/* ─── M7C: provenance, observations & feed-scoped absence (search path) ──── */
+
+describe("M7C search-path provenance & observation recording", () => {
+  const T2 = new Date("2026-10-02T12:00:00.000Z");
+
+  it("records ONE observation for the successful feed and NONE for a failed provider", async () => {
+    const { result } = await run(
+      { sources: "greenhouse,lever", board: "acme", company: "Acme Corp" },
+      {
+        "boards-api.greenhouse.io": () => jsonResponse({ jobs: [ghRow()] }),
+        "api.lever.co": () => {
+          throw new Error("boom");
+        },
+      },
+    );
+    expect(result.providers).toEqual([
+      { source: "greenhouse", status: "ok", fetched: 1, skipped: 0 },
+      { source: "lever", status: "failed", code: "network_error" },
+    ]);
+    expect(h.state.observations).toHaveLength(1);
+    expect(h.state.observations[0]).toMatchObject({
+      sourceKind: "greenhouse",
+      sourceFeedKey: "greenhouse:acme",
+      complete: true,
+      completeReason: null,
+      presentExternalIds: ["9001"],
+      skippedCount: 0,
+    });
+    expect(h.state.observations[0].observedAt).toEqual(NOW);
+  });
+
+  it("records no observation for a rate-limited provider", async () => {
+    let gate = 0;
+    const { result } = await run(
+      { sources: "greenhouse,arbeitnow", board: "acme" },
+      {
+        "boards-api.greenhouse.io": () => jsonResponse({ jobs: [ghRow()] }),
+        "www.arbeitnow.com": () => jsonResponse({ data: [arbeitnowRow()] }),
+      },
+      {
+        rateLimitCheck: () => {
+          gate += 1;
+          return gate === 1
+            ? { allowed: true, retryAfter: 0 }
+            : { allowed: false, retryAfter: 30 };
+        },
+      },
+    );
+    expect(result.providers[1]).toEqual({
+      source: "arbeitnow",
+      status: "rate_limited",
+      retryAfter: 30,
+    });
+    expect(h.state.observations).toHaveLength(1);
+    expect(h.state.observations[0].sourceKind).toBe("greenhouse");
+  });
+
+  it("an unenumerated search page is presence-only: incomplete, NEVER absence", async () => {
+    let call = 0;
+    const handlers: Handlers = {
+      "www.arbeitnow.com": () => {
+        call += 1;
+        return jsonResponse({
+          data:
+            call === 1
+              ? [
+                  arbeitnowRow({
+                    slug: "keep-1",
+                    url: "https://www.arbeitnow.com/jobs/keep-1",
+                  }),
+                ]
+              : [
+                  arbeitnowRow({
+                    slug: "other-1",
+                    url: "https://www.arbeitnow.com/jobs/other-1",
+                    title: "Reliability Engineer",
+                  }),
+                ],
+        });
+      },
+    };
+
+    const first = await run({ sources: "arbeitnow" }, handlers);
+    expect(h.state.observations[0]).toMatchObject({
+      sourceFeedKey: "arbeitnow:global",
+      complete: false,
+      completeReason: "partial_feed",
+      presentExternalIds: ["keep-1"],
+    });
+    expect(first.result.results[0].feedKey).toBe("arbeitnow:global");
+
+    await run({ sources: "arbeitnow" }, handlers, { now: () => T2 });
+    expect(h.state.observations).toHaveLength(2);
+    expect(h.state.observations[1]).toMatchObject({
+      complete: false,
+      completeReason: "partial_feed",
+      presentExternalIds: ["other-1"],
+    });
+    // keep-1 was missing from the second page — an incomplete observation
+    // can never record a confirmed miss against it.
+    const keep = h.state.postings.find((p) => p.externalId === "keep-1");
+    expect(keep).toBeTruthy();
+    expect(keep!.absentConsecutiveChecks).toBe(0);
+    expect(keep!.lastConfirmedAt).toEqual(NOW);
+    const keepJob = h.state.jobs.find((j) => j.id === keep!.jobId);
+    expect(keepJob!.freshness).toBe("active"); // presence evidence stands
+    expect(keepJob!.lastConfirmedAt).toEqual(NOW);
+  });
+
+  it("a complete board check records feed-scoped absence (1 miss → probably_stale, row preserved)", async () => {
+    const ghSecond = ghRow({
+      id: 9002,
+      absolute_url: "https://job-boards.greenhouse.io/acme/jobs/9002",
+      content:
+        "<p>Lead our payments platform migration to a new ledger architecture while mentoring engineers across the org.</p>",
+    });
+    await run(
+      { sources: "greenhouse", board: "acme" },
+      {
+        "boards-api.greenhouse.io": () =>
+          jsonResponse({ jobs: [ghRow(), ghSecond] }),
+      },
+    );
+    expect(h.state.observations[0]).toMatchObject({
+      complete: true,
+      presentExternalIds: ["9001", "9002"],
+    });
+    expect(h.state.postings).toHaveLength(2);
+    expect(
+      h.state.postings.every((p) => p.absentConsecutiveChecks === 0),
+    ).toBe(true);
+
+    const second = await run(
+      { sources: "greenhouse", board: "acme" },
+      { "boards-api.greenhouse.io": () => jsonResponse({ jobs: [ghRow()] }) },
+      { now: () => T2 },
+    );
+    expect(h.state.observations[1]).toMatchObject({
+      sourceFeedKey: "greenhouse:acme",
+      complete: true,
+      presentExternalIds: ["9001"],
+    });
+    const missing = h.state.postings.find((p) => p.externalId === "9002");
+    expect(missing).toBeTruthy();
+    expect(missing!.absentConsecutiveChecks).toBe(1);
+    expect(missing!.jobId).toBeTruthy(); // preserved — never deleted
+    const present = h.state.postings.find((p) => p.externalId === "9001");
+    expect(present!.absentConsecutiveChecks).toBe(0);
+    expect(present!.lastConfirmedAt).toEqual(T2);
+    const staleJob = h.state.jobs.find((j) => j.id === missing!.jobId);
+    expect(staleJob!.freshness).toBe("probably_stale");
+    expect(staleJob!.status).toBe("open");
+    // Only jobs confirmed by THIS fetch surface in the result set.
+    expect(second.result.results).toHaveLength(1);
+    expect(second.result.results[0].lastConfirmedAt).toBe(T2.toISOString());
+  });
+
+  it("keeps each source's applyUrl verbatim under a merged canonical Job", async () => {
+    await run(
+      { sources: "greenhouse,lever", board: "acme", company: "Acme Corp" },
+      {
+        "boards-api.greenhouse.io": () => jsonResponse({ jobs: [ghRow()] }),
+        "api.lever.co": () => jsonResponse([leverRow()]),
+      },
+    );
+    expect(h.state.jobs).toHaveLength(1);
+    // The Job keeps a convenient first-seen destination…
+    expect(h.state.jobs[0].applyUrl).toBe(
+      "https://job-boards.greenhouse.io/acme/jobs/9001",
+    );
+    const gh = h.state.postings.find((p) => p.sourceKind === "greenhouse");
+    const lev = h.state.postings.find((p) => p.sourceKind === "lever");
+    expect(gh!.applyUrl).toBe(
+      "https://job-boards.greenhouse.io/acme/jobs/9001",
+    );
+    // …while every posting keeps ITS OWN destination verbatim.
+    expect(lev!.applyUrl).toBe("https://jobs.lever.co/acme/lev-9001/apply");
+    expect(lev!.sourceUrl).toBe("https://jobs.lever.co/acme/lev-9001");
+    expect(lev!.sourceFeedKey).toBe("lever:acme");
+    expect(gh!.sourceFeedKey).toBe("greenhouse:acme");
+  });
+
+  it("exposes feed identity and confirmation time on every result item", async () => {
+    const { result } = await run(
+      { sources: "greenhouse", board: "acme" },
+      { "boards-api.greenhouse.io": () => jsonResponse({ jobs: [ghRow()] }) },
+    );
+    expect(result.results[0].feedKey).toBe("greenhouse:acme");
+    expect(result.results[0].lastConfirmedAt).toBe(NOW.toISOString());
+  });
+});
+
+/* ─── M7C: explicit feed revalidation workflow (§10–§13) ─────────────────── */
+
+describe("revalidateJobSourceFeed (M7C workflow)", () => {
+  const T1 = NOW;
+  const T2 = new Date("2026-10-02T12:00:00.000Z");
+  const T3 = new Date("2026-10-03T12:00:00.000Z");
+
+  const ghSecond = ghRow({
+    id: 9002,
+    absolute_url: "https://job-boards.greenhouse.io/acme/jobs/9002",
+    content:
+      "<p>Lead our payments platform migration to a new ledger architecture while mentoring engineers across the org.</p>",
+  });
+
+  function ghFetch(jobs: unknown[]): FetchLike {
+    return async () => jsonResponse({ jobs });
+  }
+
+  it("rejects an invalid feed identity BEFORE any I/O", async () => {
+    let fetches = 0;
+    let caught: unknown = null;
+    try {
+      await revalidateJobSourceFeed(
+        { kind: "greenhouse" }, // board-scoped source with no board
+        {
+          fetchImpl: async () => {
+            fetches += 1;
+            return jsonResponse({ jobs: [] });
+          },
+          now: fixedNow,
+        },
+      );
+    } catch (err) {
+      caught = err;
+    }
+    expect(caught).toBeInstanceOf(SourceAdapterError);
+    expect(fetches).toBe(0);
+    expect(h.state.observations).toHaveLength(0);
+    expect(h.state.postings).toHaveLength(0);
+  });
+
+  it("a first-page failure is 'failed': no observation, no absence, no writes", async () => {
+    const seed = await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "acme" },
+      { fetchImpl: ghFetch([ghRow(), ghSecond]), now: () => T1 },
+    );
+    expect(seed.status).toBe("ok");
+    expect(h.state.observations).toHaveLength(1);
+    expect(h.state.postings).toHaveLength(2);
+
+    const failed = await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "acme" },
+      {
+        fetchImpl: async () => {
+          throw new Error("boom");
+        },
+        now: () => T2,
+      },
+    );
+    expect(failed).toMatchObject({
+      sourceFeedKey: "greenhouse:acme",
+      status: "failed",
+      code: "network_error",
+      complete: false,
+      pagesFetched: 0,
+      fetched: 0,
+      present: 0,
+      absent: 0,
+      jobsRefreshed: 0,
+    });
+    // Failures are not evidence: the observation trail did not grow…
+    expect(h.state.observations).toHaveLength(1);
+    // …and no stored state changed.
+    for (const posting of h.state.postings) {
+      expect(posting.absentConsecutiveChecks).toBe(0);
+      expect(posting.lastConfirmedAt).toEqual(T1);
+    }
+    for (const job of h.state.jobs) {
+      expect(job.freshness).toBe("active");
+      expect(job.lastConfirmedAt).toEqual(T1);
+    }
+  });
+
+  it("a later-page failure is 'incomplete': presence kept, NO absence", async () => {
+    // Seed via a COMPLETE enumeration: page 1 + explicit empty end page.
+    const seedFetch: FetchLike = async (url) =>
+      jsonResponse({
+        data:
+          new URL(url).searchParams.get("page") === "1"
+            ? [
+                arbeitnowRow({
+                  slug: "old-1",
+                  url: "https://www.arbeitnow.com/jobs/old-1",
+                }),
+              ]
+            : [],
+      });
+    const seed = await revalidateJobSourceFeed(
+      { kind: "arbeitnow" },
+      { fetchImpl: seedFetch, now: () => T1 },
+    );
+    expect(seed).toMatchObject({
+      status: "ok",
+      complete: true,
+      pagesFetched: 2,
+      present: 1,
+      absent: 0,
+    });
+
+    // Page 2 now fails → partial corpus: presence only, absence forbidden.
+    const partialFetch: FetchLike = async (url) => {
+      if (new URL(url).searchParams.get("page") === "1") {
+        return jsonResponse({
+          data: [
+            arbeitnowRow({
+              slug: "new-1",
+              url: "https://www.arbeitnow.com/jobs/new-1",
+              title: "Reliability Engineer",
+            }),
+          ],
+        });
+      }
+      return new Response("nope", { status: 500 });
+    };
+    const partial = await revalidateJobSourceFeed(
+      { kind: "arbeitnow" },
+      { fetchImpl: partialFetch, now: () => T2 },
+    );
+    expect(partial).toMatchObject({
+      sourceFeedKey: "arbeitnow:global",
+      status: "incomplete",
+      complete: false,
+      code: "pagination_failed:http_error",
+      pagesFetched: 1,
+      fetched: 1,
+      present: 1,
+      absent: 0,
+    });
+    expect(h.state.observations).toHaveLength(2);
+    expect(h.state.observations[1]).toMatchObject({
+      sourceFeedKey: "arbeitnow:global",
+      complete: false,
+      completeReason: "pagination_failed",
+      presentExternalIds: ["new-1"],
+    });
+    // old-1 was missing this time — but a partial enumeration is never
+    // absence evidence, so its miss streak must not move.
+    const old = h.state.postings.find((p) => p.externalId === "old-1");
+    expect(old).toBeTruthy();
+    expect(old!.absentConsecutiveChecks).toBe(0);
+    expect(old!.lastConfirmedAt).toEqual(T1);
+    const oldJob = h.state.jobs.find((j) => j.id === old!.jobId);
+    expect(oldJob!.freshness).toBe("active");
+    // The valid page-1 row still counts as presence for ITSELF.
+    const fresh = h.state.postings.find((p) => p.externalId === "new-1");
+    expect(fresh).toBeTruthy();
+    expect(fresh!.absentConsecutiveChecks).toBe(0);
+    expect(fresh!.lastConfirmedAt).toEqual(T2);
+  });
+
+  it("two consecutive confirmed misses expire a posting — which is PRESERVED", async () => {
+    await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "acme" },
+      { fetchImpl: ghFetch([ghRow(), ghSecond]), now: () => T1 },
+    );
+    await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "acme" },
+      { fetchImpl: ghFetch([ghRow()]), now: () => T2 },
+    );
+    const missing = h.state.postings.find((p) => p.externalId === "9002");
+    expect(missing!.absentConsecutiveChecks).toBe(1);
+    const job = h.state.jobs.find((j) => j.id === missing!.jobId);
+    expect(job!.freshness).toBe("probably_stale");
+
+    const final = await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "acme" },
+      { fetchImpl: ghFetch([ghRow()]), now: () => T3 },
+    );
+    expect(final).toMatchObject({ status: "ok", absent: 1 });
+    expect(missing!.absentConsecutiveChecks).toBe(2);
+    expect(job!.freshness).toBe("expired");
+    expect(job!.status).toBe("open"); // preserved — never deleted or auto-closed
+    expect(h.state.postings.some((p) => p.id === missing!.id)).toBe(true);
+    expect(h.state.jobs.some((j) => j.id === job!.id)).toBe(true);
+    // The still-present posting keeps confirming — its streak stays reset.
+    const present = h.state.postings.find((p) => p.externalId === "9001");
+    expect(present!.absentConsecutiveChecks).toBe(0);
+    expect(present!.lastConfirmedAt).toEqual(T3);
+    expect(final.jobsRefreshed).toBe(2);
+  });
+
+  it("absence from one board NEVER touches a different feed (same externalId included)", async () => {
+    await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "board-a" },
+      {
+        fetchImpl: ghFetch([
+          ghRow({
+            absolute_url: "https://job-boards.greenhouse.io/board-a/jobs/9001",
+          }),
+        ]),
+        now: () => T1,
+      },
+    );
+    await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "board-b" },
+      {
+        fetchImpl: ghFetch([
+          ghRow({
+            title: "Site Reliability Engineer",
+            absolute_url: "https://job-boards.greenhouse.io/board-b/jobs/9001",
+            content:
+              "<p>Operate the edge fleet and own incident response across regions for the platform team.</p>",
+          }),
+        ]),
+        now: () => T2,
+      },
+    );
+
+    // Same externalId on two feeds: two rows (feed-scoped unique key),
+    // two jobs (signal 1 can never fire across different feeds).
+    expect(h.state.postings).toHaveLength(2);
+    expect(h.state.postings.map((p) => p.sourceFeedKey).sort()).toEqual([
+      "greenhouse:board-a",
+      "greenhouse:board-b",
+    ]);
+    expect(h.state.jobs).toHaveLength(2);
+    expect(h.state.observations.map((o) => o.sourceFeedKey)).toEqual([
+      "greenhouse:board-a",
+      "greenhouse:board-b",
+    ]);
+
+    const postingA = h.state.postings.find(
+      (p) => p.sourceFeedKey === "greenhouse:board-a",
+    );
+    const postingB = h.state.postings.find(
+      (p) => p.sourceFeedKey === "greenhouse:board-b",
+    );
+
+    // board-a now returns COMPLETE but empty → absence for board-a ONLY.
+    const third = await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "board-a" },
+      { fetchImpl: ghFetch([]), now: () => T3 },
+    );
+    expect(third).toMatchObject({ status: "ok", present: 0, absent: 1 });
+
+    expect(postingA!.absentConsecutiveChecks).toBe(1);
+    expect(postingA!.lastConfirmedAt).toEqual(T1); // never re-confirmed
+    expect(postingB!.absentConsecutiveChecks).toBe(0); // untouched
+    expect(postingB!.lastConfirmedAt).toEqual(T2); // still from ITS check
+    const jobB = h.state.jobs.find((j) => j.id === postingB!.jobId);
+    expect(jobB!.freshness).toBe("active");
+    expect(jobB!.lastConfirmedAt).toEqual(T2);
+    const jobA = h.state.jobs.find((j) => j.id === postingA!.jobId);
+    expect(jobA!.freshness).toBe("probably_stale");
+  });
+
+  it("re-ingesting the identical feed is idempotent (rows/jobs stable, one observation per check)", async () => {
+    const feed = ghFetch([ghRow()]);
+    const first = await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "acme" },
+      { fetchImpl: feed, now: () => T1 },
+    );
+    expect(first).toMatchObject({
+      status: "ok",
+      fetched: 1,
+      present: 1,
+      absent: 0,
+    });
+    const postingId = h.state.postings[0].id;
+    const jobId = h.state.jobs[0].id;
+    const jobFirstSeen = h.state.jobs[0].firstSeenAt;
+
+    const second = await revalidateJobSourceFeed(
+      { kind: "greenhouse", board: "acme" },
+      { fetchImpl: feed, now: () => T2 },
+    );
+    expect(second).toMatchObject({
+      status: "ok",
+      fetched: 1,
+      present: 1,
+      absent: 0,
+      jobsRefreshed: 1,
+    });
+    expect(h.state.postings).toHaveLength(1);
+    expect(h.state.jobs).toHaveLength(1);
+    expect(h.state.postings[0].id).toBe(postingId);
+    expect(h.state.jobs[0].id).toBe(jobId);
+    expect(h.state.jobs[0].firstSeenAt).toEqual(jobFirstSeen);
+    expect(h.state.postings[0].absentConsecutiveChecks).toBe(0);
+    expect(h.state.postings[0].lastConfirmedAt).toEqual(T2);
+    expect(h.state.jobs[0].lastConfirmedAt).toEqual(T2);
+    // Evidence trail: one observation row per check — never overwritten.
+    expect(h.state.observations).toHaveLength(2);
+    expect(h.state.observations.map((o) => o.observedAt)).toEqual([T1, T2]);
   });
 });

@@ -16,7 +16,7 @@
  */
 
 import type { SourceDefinition, SourceKind, SourceUrlDecision } from "./types";
-import { SOURCE_KINDS, isSourceKind } from "./types";
+import { SOURCE_KINDS, SourceAdapterError, isSourceKind } from "./types";
 import { greenhouseAdapter } from "./adapters/greenhouse";
 import { leverAdapter } from "./adapters/lever";
 import { ashbyAdapter } from "./adapters/ashby";
@@ -39,6 +39,10 @@ export const JOB_SOURCES: Readonly<Record<SourceKind, SourceDefinition>> =
         note: "Official Job Board API only (v1/boards/{board}/jobs).",
       }),
       adapter: greenhouseAdapter,
+      feedPolicy: "single_response" as const,
+      feedIdentityNote:
+        "Board token: one feed per Greenhouse board (greenhouse:{board}) — " +
+        "board A and board B are distinct feeds even if they share an external job ID.",
     }),
     lever: Object.freeze({
       kind: "lever" as const,
@@ -51,6 +55,10 @@ export const JOB_SOURCES: Readonly<Record<SourceKind, SourceDefinition>> =
         note: "Official public postings feed only (v0/postings/{org}).",
       }),
       adapter: leverAdapter,
+      feedPolicy: "single_response" as const,
+      feedIdentityNote:
+        "Organization: one feed per Lever organization (lever:{organization}) — " +
+        "org A and org B are distinct feeds.",
     }),
     ashby: Object.freeze({
       kind: "ashby" as const,
@@ -63,6 +71,10 @@ export const JOB_SOURCES: Readonly<Record<SourceKind, SourceDefinition>> =
         note: "Official public job board feed only (posting-api/job-board/{board}).",
       }),
       adapter: ashbyAdapter,
+      feedPolicy: "single_response" as const,
+      feedIdentityNote:
+        "Board slug: one feed per Ashby board (ashby:{board}) — board A and " +
+        "board B are distinct feeds.",
     }),
     arbeitnow: Object.freeze({
       kind: "arbeitnow" as const,
@@ -80,6 +92,11 @@ export const JOB_SOURCES: Readonly<Record<SourceKind, SourceDefinition>> =
         note: "Official free job board API only (api/job-board-api).",
       }),
       adapter: arbeitnowAdapter,
+      feedPolicy: "paginated" as const,
+      feedIdentityNote:
+        "Global corpus: ONE feed (arbeitnow:global) covering the whole " +
+        "Arbeitnow board — ?page=N is pagination of that corpus, never its " +
+        "own employer feed.",
     }),
   });
 
@@ -93,6 +110,63 @@ export function getSourceDefinition(
   kind: string,
 ): SourceDefinition | undefined {
   return isSourceKind(kind) ? JOB_SOURCES[kind] : undefined;
+}
+
+/* ── Feed identity (M7C provenance source of truth) ───────────────────── */
+
+/**
+ * Sources whose official API is per-company and requires a board id.
+ * Shared by query parsing (job-discovery) and feed identity so the two can
+ * never disagree about which sources are board-scoped.
+ */
+export const BOARD_REQUIRED_SOURCES: readonly SourceKind[] = Object.freeze([
+  "greenhouse",
+  "lever",
+  "ashby",
+]);
+
+/**
+ * Board identifiers are PATH-SAFE slugs only: no slashes, no percent
+ * encoding, no whitespace, no traversal (same grammar as query validation).
+ */
+export const SOURCE_FEED_BOARD_PATTERN = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+/**
+ * M7C — deterministic feed identity: names the EXACT corpus a request /
+ * response belongs to. This is the provenance key stored on every
+ * JobPosting and JobSourceObservation.
+ *
+ *   greenhouse → "greenhouse:{board}"    (board token; A ≠ B)
+ *   lever      → "lever:{organization}"  (org feed; A ≠ B)
+ *   ashby      → "ashby:{board}"         (board slug; A ≠ B)
+ *   arbeitnow  → "arbeitnow:global"      (the ONE global corpus; a page
+ *                                          number is pagination, not a feed)
+ *
+ * Rules (tested):
+ *  - Derived ONLY from source kind + validated board slug. Never from a
+ *    display company name, user free text, or a URL.
+ *  - Case is preserved verbatim: the key identifies the exact path fetched.
+ *  - Unknown sources and board-scoped sources without a valid board THROW
+ *    (SourceAdapterError) — identity is never fabricated or guessed.
+ */
+export function buildSourceFeedKey(
+  kind: string,
+  board?: string | null,
+): string {
+  if (!isSourceKind(kind)) {
+    throw new SourceAdapterError(`Unknown job source: ${kind}.`);
+  }
+  if (kind === "arbeitnow") {
+    // Global corpus: board/page are irrelevant to identity by definition.
+    return `${kind}:global`;
+  }
+  const slug = (board ?? "").trim();
+  if (!SOURCE_FEED_BOARD_PATTERN.test(slug)) {
+    throw new SourceAdapterError(
+      `${kind} feed identity requires a plain board identifier.`,
+    );
+  }
+  return `${kind}:${slug}`;
 }
 
 /* ── Private / loopback destination guard ────────────────────────────────── */

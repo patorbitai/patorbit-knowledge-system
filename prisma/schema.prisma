@@ -417,6 +417,16 @@ model AnalyticsEvent {
 // src/lib/job-sources/freshness.ts:
 //   freshness: active | probably_stale | expired | unknown
 //   status:    open | closed
+//
+// M7C provenance additions:
+//   JobPosting.sourceFeedKey — the EXACT feed a posting was observed in
+//     (e.g. "greenhouse:acme" vs "greenhouse:other"; never inferred from a
+//     display company name). Absence is scoped to this key.
+//   JobPosting.applyUrl      — this source's application destination
+//     (verbatim; a merged Job's applyUrl is only the first-seen convenience).
+//   JobSourceObservation     — one row per successful feed check: which feed
+//     was checked, when, which external IDs were present, and whether the
+//     response was complete enough to establish absence (never on failure).
 
 model Job {
   id              String   @id @default(cuid())
@@ -427,7 +437,7 @@ model Job {
   remote          Boolean  @default(false)
   employmentType  String?  // source-provided type, normalized to snake_case
   descriptionText String   @db.Text
-  applyUrl        String   // source-provided destination, never rewritten
+  applyUrl        String   // first-seen source destination, never rewritten (per-source truth: JobPosting.applyUrl)
   fingerprintHash String   // sha256 over normalized company/title/location/description
   firstSeenAt     DateTime @default(now())
   lastSeenAt      DateTime @default(now()) @updatedAt
@@ -446,8 +456,10 @@ model Job {
 model JobPosting {
   id              String   @id @default(cuid())
   sourceKind      String   // greenhouse | lever | ashby | arbeitnow
-  externalId      String   // source-provided identifier
+  sourceFeedKey   String   // deterministic feed identity (registry buildSourceFeedKey): "greenhouse:acme", "arbeitnow:global"
+  externalId      String   // source-provided identifier, unique WITHIN (sourceKind, sourceFeedKey)
   sourceUrl       String   // source's own page for this posting (HTTPS only)
+  applyUrl        String   // THIS source's application destination (verbatim, never overwritten by another source)
   title           String
   companyName     String
   locationRaw     String?  // exactly as the source stated it
@@ -459,11 +471,32 @@ model JobPosting {
   contentHash     String   // sha256 of the normalized description
   firstSeenAt     DateTime @default(now())
   lastSeenAt      DateTime @default(now()) @updatedAt
+  lastConfirmedAt DateTime? // last confirmed PRESENCE in a valid response of THIS feed (never inferred)
+  absentConsecutiveChecks Int @default(0) // confirmed misses scoped to THIS feed; only complete observations increment
 
   jobId String?
   job   Job?   @relation(fields: [jobId], references: [id], onDelete: SetNull)
 
-  @@unique([sourceKind, externalId])
+  @@unique([sourceKind, sourceFeedKey, externalId])
+  @@index([sourceKind, sourceFeedKey])
   @@index([jobId])
   @@index([contentHash])
+}
+
+// One row per SUCCESSFULLY fetched source-feed check. This is the evidence
+// trail behind freshness: `presentExternalIds` records exactly which feed
+// was checked and what it contained, so absence is never claimed for a
+// failed, timed-out, rate-limited, malformed, or partial response
+// (`complete` is false in those cases and absence logic must not run).
+model JobSourceObservation {
+  id                 String   @id @default(cuid())
+  sourceKind         String   // greenhouse | lever | ashby | arbeitnow
+  sourceFeedKey      String   // the EXACT feed checked (absence is scoped to this key)
+  observedAt         DateTime @default(now())
+  complete           Boolean  // true ONLY when structurally valid AND fully enumerable (safe for absence)
+  completeReason     String?  // null when complete; else invalid_structure | skipped_rows | partial_feed | pagination_failed
+  presentExternalIds String[] @default([]) // external IDs present in THIS check (evidence; never used for absence unless complete)
+  skippedCount       Int      @default(0) // rows the adapter could not parse during this check
+
+  @@index([sourceKind, sourceFeedKey, observedAt])
 }

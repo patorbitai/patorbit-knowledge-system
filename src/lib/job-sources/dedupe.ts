@@ -10,7 +10,9 @@
  * Signal ladder (first match wins), biased hard toward UNDER-MERGING —
  * a false merge (sending a user to the wrong job) is worse than a duplicate:
  *
- *   1. sourceKind + externalId  — exact source identity
+ *   1. sourceKind + sourceFeedKey + externalId — exact identity WITHIN the
+ *      exact feed (M7C: the same externalId on two different boards must
+ *      never collide, so feed identity participates in the match);
  *   2. canonical URL            — same destination (tracking params ignored)
  *   3. content fingerprint      — same company + title + location + description
  *   4. soft key                 — company + title + location, ALL equal;
@@ -96,6 +98,12 @@ export type DedupeSignal =
 /** One posting row attached to an existing normalized Job. */
 export interface ExistingPostingRef {
   sourceKind: SourceKind | string;
+  /**
+   * Feed the posting was observed in (M7C provenance). Optional for
+   * adapter-level views (undefined = provenance not attached); when BOTH
+   * sides carry a key it must match for signal 1 to fire.
+   */
+  sourceFeedKey?: string | null;
   externalId: string;
   /** Canonical URL key of the posting's source/apply URL (null when none). */
   canonicalUrlKey: string | null;
@@ -134,6 +142,7 @@ export function toExistingJobView(
     postings: [
       {
         sourceKind: posting.sourceKind,
+        sourceFeedKey: posting.sourceFeedKey ?? null,
         externalId: posting.externalId,
         canonicalUrlKey:
           canonicalUrlKey(posting.sourceUrl) ?? canonicalUrlKey(posting.applyUrl),
@@ -169,13 +178,17 @@ export function decideDedupe(
     (job) => !companiesConflict(candCompany, job.companyKey),
   );
 
-  // Signal 1 — exact source identity (same sourceKind + externalId).
+  // Signal 1 — exact source identity: same sourceKind + externalId within
+  // the SAME feed. A missing key on one side (adapter-level view without
+  // provenance) can still match when the other side has none too; provenance
+  // from different feeds never matches silently.
   for (const job of compatible) {
     const hit = job.postings.some(
       (posting) =>
         posting.sourceKind === candidate.sourceKind &&
         posting.externalId === candidate.externalId &&
-        posting.externalId.length > 0,
+        posting.externalId.length > 0 &&
+        (posting.sourceFeedKey ?? null) === (candidate.sourceFeedKey ?? null),
     );
     if (hit) return { action: "merge", jobId: job.jobId, signal: "source_external_id" };
   }

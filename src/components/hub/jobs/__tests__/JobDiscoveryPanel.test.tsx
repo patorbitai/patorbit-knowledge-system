@@ -264,3 +264,95 @@ describe("JobDiscoveryPanel", () => {
     expect(text()).toContain("Data Engineer"); // results still shown
   });
 });
+
+/* ─── M7C: provenance & honest confirmation display ────────────────────── */
+
+describe("M7C provenance display", () => {
+  it("shows the exact feed identity and the last confirmed observation", async () => {
+    fetchMock = respond(
+      200,
+      successPayload({
+        results: [
+          {
+            ...JOB_ITEM,
+            feedKey: "greenhouse:acme",
+            lastConfirmedAt: "2026-10-01T00:00:00.000Z",
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await render();
+    await submitSearch();
+
+    expect(text()).toContain("via Greenhouse · acme");
+    expect(text()).toContain("Last confirmed Oct 1, 2026");
+    expect(text()).not.toContain("Not yet confirmed");
+  });
+
+  it("says 'Not yet confirmed' instead of inventing a confirmation time", async () => {
+    fetchMock = respond(200, successPayload());
+    vi.stubGlobal("fetch", fetchMock);
+    await render();
+    await submitSearch();
+
+    expect(text()).toContain("Not yet confirmed");
+    expect(text()).not.toContain("Last confirmed");
+  });
+
+  it("shows no feed suffix for the global corpus (a page is not an employer feed)", async () => {
+    fetchMock = respond(
+      200,
+      successPayload({
+        results: [
+          {
+            ...JOB_ITEM,
+            source: {
+              kind: "arbeitnow",
+              displayName: "Arbeitnow",
+              attributionText: "Jobs via Arbeitnow",
+              attributionUrl: "https://www.arbeitnow.com/",
+            },
+            feedKey: "arbeitnow:global",
+            lastConfirmedAt: "2026-10-01T00:00:00.000Z",
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await render();
+    await submitSearch();
+
+    expect(text()).toContain("via Arbeitnow");
+    expect(text()).not.toContain("· global");
+  });
+
+  it("explains the freshness badge with the exact evidence reasons", async () => {
+    fetchMock = respond(
+      200,
+      successPayload({
+        results: [
+          {
+            ...JOB_ITEM,
+            freshness: {
+              state: "probably_stale",
+              reasons: ["not_present_in_latest_source_response"],
+            },
+          },
+        ],
+      }),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+    await render();
+    await submitSearch();
+
+    const badge = container.querySelector(
+      '[title*="Reasons"]',
+    ) as HTMLElement | null;
+    expect(badge).toBeTruthy();
+    expect(badge!.getAttribute("title")).toContain(
+      "Reasons: not_present_in_latest_source_response",
+    );
+    expect(text()).toContain("Possibly stale");
+  });
+});

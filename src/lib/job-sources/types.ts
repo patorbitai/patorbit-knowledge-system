@@ -44,6 +44,13 @@ export function isSourceKind(value: unknown): value is SourceKind {
 export interface NormalizedPosting {
   /** Stable source kind that produced this posting. */
   sourceKind: SourceKind;
+  /**
+   * Deterministic feed identity this posting was observed in (M7C), e.g.
+   * "greenhouse:acme". Attached by the ingest layer from the registry —
+   * adapters never fabricate it, and it is never inferred from a display
+   * company name. Optional at the adapter boundary; persistence REQUIRES it.
+   */
+  sourceFeedKey?: string;
   /** Source-provided identifier, stringified. Never synthesized. */
   externalId: string;
   /** HTTPS URL of the source's own page for this posting. */
@@ -156,6 +163,18 @@ export interface SourceUrlRules {
   readonly note: string;
 }
 
+/**
+ * Whether one official response enumerates the source's ENTIRE feed.
+ *
+ *  - "single_response": the official API returns the whole corpus in one
+ *    call (Greenhouse/Lever/Ashby board APIs are documented as full-board
+ *    responses) → one structurally-valid response can establish absence.
+ *  - "paginated": the feed is split across pages (Arbeitnow's global feed),
+ *    so a single non-final page is NEVER a complete corpus — absence
+ *    requires bounded pagination to an explicit end-of-feed terminator.
+ */
+export type SourceFeedPolicy = "single_response" | "paginated";
+
 export interface SourceDefinition {
   /** Stable source kind (DB persistence key). */
   kind: SourceKind;
@@ -172,6 +191,17 @@ export interface SourceDefinition {
    */
   allowedHosts: readonly string[];
   urlRules: SourceUrlRules;
+  /**
+   * Pagination semantics of this source's official feed (see SourceFeedPolicy).
+   * M7C refuses absence calculations unless enumeration is complete.
+   */
+  feedPolicy: SourceFeedPolicy;
+  /**
+   * Documentation of this source's FEED IDENTITY semantics (M7C §3): what
+   * the registry-derived sourceFeedKey means for this provider. Consumed by
+   * buildSourceFeedKey and asserted in tests.
+   */
+  feedIdentityNote: string;
   adapter: SourceAdapter;
 }
 
