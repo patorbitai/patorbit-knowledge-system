@@ -2,11 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { getAIService } from "@/lib/ai/service";
-import {
-  EXTRACTION_FIELDS,
-  MAX_EMAIL_CHARS,
-  type ExtractionField,
-} from "@/lib/interview/constants";
+import { EXTRACTION_FIELDS, MAX_EMAIL_CHARS } from "@/lib/interview/constants";
 import { sanitizeUntrustedText, wrapUntrusted } from "@/lib/interview/security";
 import type { ExtractedFieldValue, ExtractionResult } from "@/lib/interview/schemas";
 import { InterviewNotFoundError } from "./interview-profile.service";
