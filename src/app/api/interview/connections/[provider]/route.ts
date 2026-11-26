@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { interviewErrorResponse, requireInterviewCaller } from "@/lib/interview/api";
 import {
+  appOrigin,
   buildAuthUrl,
   disconnect,
   isProviderConfigured,
@@ -56,7 +57,7 @@ export async function POST(req: NextRequest, context: RouteContext) {
       maxAge: 600,
     });
 
-    const authUrl = buildAuthUrl(provider, req.nextUrl.origin, state);
+    const authUrl = buildAuthUrl(provider, appOrigin(req.nextUrl.origin), state);
     return NextResponse.json({ authUrl }, { status: 200 });
   } catch (err) {
     return interviewErrorResponse(err, "connections/[provider]:POST");

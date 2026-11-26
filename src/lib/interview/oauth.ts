@@ -71,6 +71,31 @@ export function newState(): string {
   return randomBytes(24).toString("base64url");
 }
 
+/**
+ * The origin used for OAuth redirects. Never trust the request Host header for
+ * this: behind a proxy it is attacker-controlled, which would let a crafted
+ * link bounce the callback (and its one-time code) to another domain.
+ */
+export function appOrigin(requestOrigin: string): string {
+  const configured = (process.env.NEXTAUTH_URL || process.env.APP_URL || "").trim();
+  if (configured) {
+    try {
+      return new URL(configured).origin;
+    } catch {
+      // Fall through to the request origin when the configured value is invalid.
+    }
+  }
+  return requestOrigin;
+}
+
+/** Thrown when the stored connection can no longer obtain a token. */
+export class MailboxReconnectRequiredError extends Error {
+  constructor() {
+    super("This mailbox connection has expired. Disconnect it and connect again.");
+    this.name = "MailboxReconnectRequiredError";
+  }
+}
+
 export function buildAuthUrl(provider: MailProvider, origin: string, state: string): string {
   const config = providerConfig(provider);
   const params = new URLSearchParams({
@@ -155,7 +180,7 @@ export async function accessTokenFor(
   }
 
   if (!connection.refreshTokenEncrypted) {
-    return null;
+    throw new MailboxReconnectRequiredError();
   }
   const refreshed = await refreshAccessToken(provider, decryptToken(connection.refreshTokenEncrypted));
   await prisma.interviewEmailConnection.update({
@@ -298,8 +323,46 @@ export async function fetchMessage(
   };
 }
 
-/** Disconnect: delete the stored tokens for this identity. */
+/**
+ * Best-effort provider-side revocation. Google exposes a revoke endpoint for
+ * both access and refresh tokens; Microsoft has no equivalent public endpoint
+ * for delegated Graph tokens (the user revokes from their account page), so we
+ * only remove the local copy there. Never throws and never logs the token.
+ */
+async function revokeAtProvider(provider: MailProvider, token: string): Promise<boolean> {
+  if (provider !== "google") return false;
+  try {
+    const response = await fetch("https://oauth2.googleapis.com/revoke", {
+      method: "POST",
+      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      body: new URLSearchParams({ token }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+/** Disconnect: revoke where supported, then delete the stored tokens. */
 export async function disconnect(professionalIdentityId: string, provider: MailProvider): Promise<void> {
+  const connection = await prisma.interviewEmailConnection.findUnique({
+    where: { professionalIdentityId_provider: { professionalIdentityId, provider } },
+  });
+
+  if (connection) {
+    const candidates = [connection.refreshTokenEncrypted, connection.accessTokenEncrypted];
+    for (const encrypted of candidates) {
+      if (!encrypted) continue;
+      try {
+        const revoked = await revokeAtProvider(provider, decryptToken(encrypted));
+        if (revoked) break;
+      } catch {
+        // A key rotation can make an old ciphertext unreadable; the local rows
+        // are still deleted below.
+      }
+    }
+  }
+
   await prisma.interviewEmailConnection.deleteMany({
     where: { professionalIdentityId, provider },
   });

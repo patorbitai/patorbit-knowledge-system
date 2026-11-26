@@ -5,6 +5,7 @@ import { authOptions } from "@/lib/auth";
 import { identityService } from "@/services/identity.service";
 import { usageService } from "@/services/usage.service";
 import { AIError } from "@/lib/ai/types";
+import { MailboxReconnectRequiredError } from "@/lib/interview/oauth";
 import {
   InterviewNotFoundError,
   InterviewValidationError,
@@ -80,6 +81,9 @@ export function interviewErrorResponse(err: unknown, context: string): NextRespo
   }
   if (err instanceof InterviewNotFoundError) {
     return NextResponse.json({ error: "NOT_FOUND", message: err.message }, { status: 404 });
+  }
+  if (err instanceof MailboxReconnectRequiredError) {
+    return NextResponse.json({ error: "RECONNECT_REQUIRED", message: err.message }, { status: 409 });
   }
   if (err instanceof AIError) {
     return NextResponse.json({ error: err.code, message: err.message }, { status: err.status });
