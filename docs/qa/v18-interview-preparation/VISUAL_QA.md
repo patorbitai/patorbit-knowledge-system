@@ -129,3 +129,26 @@ waiting for hydration and using a 30s URL wait; it does not change the existing
 helpers.
 
 Conclusion: **no regression introduced by V18.**
+
+### Final full-suite run (all specs, both projects)
+
+`npx playwright test` with the default 6 workers runs 118 tests in about four
+minutes on this machine and reports **19 passed / 30 failed / 69 did not run**.
+The 69 are the tail of `test.describe.serial` files whose first test failed, not
+separate defects. Of the 30 failures, 27 are the login-helper redirect timeout
+described above, including the V18 spec's `A` case; the other 3 are the flaky
+responsive-pricing assertions (`pricing.spec.ts:22` overflow at 320px and
+`pricing.spec.ts:97` reduced motion), both of which also fail on `main` in the
+table above.
+
+Run on its own, the V18 spec is green:
+
+```
+npx playwright test e2e/interview-preparation.spec.ts --workers=1
+  2 skipped
+  6 passed (1.1m)      # A, B, C on responsive and desktop-pagination; D gated on E2E_AI_ENABLED
+```
+
+The difference between the two runs is load, not code: 118 parallel tests on 6
+workers starve the shared login redirect, and the interview spec inherits that
+same helper.

@@ -194,7 +194,20 @@ the UI shows setup instructions instead of claiming the provider is connected.
 - `npx tsc --noEmit` — exit 0.
 - `npm run build` — exit 0.
 - `npm test` — 213 passed files / 2710 passed tests, 4 skipped files / 22
-  skipped tests; the only failures are the two `arvind-pdf-import` cases above.
+  skipped tests (407s); the only failures are the two `arvind-pdf-import` cases
+  above, which read a PDF outside the repository.
+- `npm run test:e2e` (full suite, 118 tests, 6 workers) — 19 passed, 30 failed,
+  69 did not run. The 69 skipped are the remainder of `test.describe.serial`
+  files whose first test failed. 27 of the 30 failures are the shared login
+  helper timing out on the post-sign-in redirect; they hit every pre-existing
+  spec and reproduce on `main` (see the baseline comparison in
+  `docs/qa/v18-interview-preparation/VISUAL_QA.md`). The remaining 3 are the
+  known flaky responsive-pricing assertions (`pricing.spec.ts:22` overflow,
+  `pricing.spec.ts:97` reduced motion), which V18 does not touch.
+- `npx playwright test e2e/interview-preparation.spec.ts --workers=1` — 6
+  passed, 2 skipped (both projects), exit 0. The interview spec is only red in
+  the full parallel run because it shares the same login helper and starves
+  alongside 118 tests on 6 workers.
 - Interview suites — 7 files / 87 tests, all passing.
 - Targeted eslint over every added or modified V18 file — 0 errors.
 - Migration chain — `prisma migrate deploy` succeeds on a fresh database (25/25
