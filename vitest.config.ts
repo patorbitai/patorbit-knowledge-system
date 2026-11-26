@@ -15,7 +15,9 @@ export default defineConfig({
     // Global setup: enforces production database safety before any test runs.
     // If TEST_DATABASE_URL is missing or points to production, tests ABORT.
     setupFiles: ["./src/test-setup.ts"],
-    exclude: ["node_modules/**", "e2e/**", "**/dist/**"],
+    // `.next` holds build output (and vendored packages in .next/node_modules
+    // that ship their own test files), so it must never be collected.
+    exclude: ["node_modules/**", ".next/**", "e2e/**", "**/dist/**"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
