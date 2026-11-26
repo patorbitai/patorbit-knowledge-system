@@ -24,6 +24,20 @@ import type {
 import { getAIProvider } from "./provider";
 import * as Prompts from "./prompts";
 import { buildEvidenceOptimizerPrompt } from "./evidence-optimizer-prompt";
+import * as InterviewPrompts from "./interview-prompts";
+import {
+  answerEvaluationSchema,
+  extractionResultSchema,
+  mockReportSchema,
+  preparationPlanSchema,
+  questionBankSchema,
+  type AnswerEvaluation,
+  type ExtractionResult,
+  type MockReportContent,
+  type PreparationPlanContent,
+} from "@/lib/interview/schemas";
+import type { ProfileContext } from "./interview-prompts";
+import { AIError } from "./types";
 import { validateOptimizerChanges } from "./evidence-validator";
 import {
   buildPhases,
@@ -51,7 +65,13 @@ export type AIAction =
   | "evidenceOptimize"
   | "generateClaims"
   | "extractResume"
-  | "tailorResume";
+  | "tailorResume"
+  | "interviewExtract"
+  | "interviewPlan"
+  | "interviewQuestions"
+  | "interviewEvaluate"
+  | "interviewReport"
+  | "interviewExplain";
 
 /** Known action → handler map. The API route dispatches on these keys. */
 type ActionHandlers = {
@@ -399,6 +419,78 @@ export class AIService {
     return JSON.parse(result) as Record<string, unknown>;
   }
 
+  // ── V18 Interview Preparation ──
+
+  /** Extract structured interview details from an email/document body. */
+  async interviewExtract(data: {
+    content: string;
+    subject?: string | null;
+    sender?: string | null;
+  }): Promise<ExtractionResult> {
+    const { system, user } = InterviewPrompts.interviewExtract(data);
+    const result = await this.complete(system, user, { maxTokens: 2048, jsonMode: true });
+    return parseWithSchema(extractionResultSchema, result);
+  }
+
+  /** Build a structured preparation plan for one interview profile/round. */
+  async interviewPlan(data: {
+    context: ProfileContext;
+    categories: string[];
+    existingPlan?: boolean;
+  }): Promise<PreparationPlanContent> {
+    const { system, user } = InterviewPrompts.interviewPlan(data);
+    const result = await this.complete(system, user, { maxTokens: 4096, jsonMode: true });
+    return parseWithSchema(preparationPlanSchema, result);
+  }
+
+  /** Generate practice questions for a role and skill set. */
+  async interviewQuestions(data: {
+    context: ProfileContext;
+    categories: string[];
+    count: number;
+    exclude?: string[];
+  }): Promise<{ questions: PreparationPlanContent["questions"]; generalRoleBased: boolean }> {
+    const { system, user } = InterviewPrompts.interviewQuestions(data);
+    const result = await this.complete(system, user, { maxTokens: 3072, jsonMode: true });
+    return parseWithSchema(questionBankSchema, result);
+  }
+
+  /** Evaluate a single answer with per-dimension evidence. */
+  async interviewEvaluate(data: {
+    context: ProfileContext;
+    question: string;
+    category: string;
+    answer: string;
+    isMock: boolean;
+  }): Promise<AnswerEvaluation> {
+    const { system, user } = InterviewPrompts.interviewEvaluate(data);
+    const result = await this.complete(system, user, { maxTokens: 2048, jsonMode: true });
+    return parseWithSchema(answerEvaluationSchema, result);
+  }
+
+  /** Write the final report for a completed mock interview. */
+  async interviewReport(data: {
+    context: ProfileContext;
+    turns: { question: string; answer: string; topic: string; scores: Record<string, number> }[];
+    averages: Record<string, number>;
+    overall: number;
+  }): Promise<MockReportContent> {
+    const { system, user } = InterviewPrompts.interviewReport(data);
+    const result = await this.complete(system, user, { maxTokens: 2048, jsonMode: true });
+    return parseWithSchema(mockReportSchema, result);
+  }
+
+  /** Explain how to approach one question (plain text). */
+  async interviewExplain(data: {
+    context: ProfileContext;
+    question: string;
+    category: string;
+  }): Promise<{ content: string }> {
+    const { system, user } = InterviewPrompts.interviewExplain(data);
+    const result = await this.complete(system, user, { maxTokens: 900 });
+    return { content: result };
+  }
+
   // ── Internal helper ──
 
   private async complete(system: string, user: string, options?: AIProviderOptions): Promise<string> {
@@ -427,7 +519,37 @@ export class AIService {
     generateClaims: this.generateClaims,
     extractResume: this.extractResume,
     tailorResume: this.tailorResume,
+    interviewExtract: this.interviewExtract,
+    interviewPlan: this.interviewPlan,
+    interviewQuestions: this.interviewQuestions,
+    interviewEvaluate: this.interviewEvaluate,
+    interviewReport: this.interviewReport,
+    interviewExplain: this.interviewExplain,
   };
+}
+
+/**
+ * Parse model output through a Zod contract. A malformed response is an
+ * upstream error — it is never persisted as if it were valid.
+ */
+function parseWithSchema<T>(schema: { safeParse: (value: unknown) => { success: boolean; data?: T; error?: unknown } }, raw: string): T {
+  let json: unknown;
+  try {
+    json = JSON.parse(raw);
+  } catch {
+    throw new AIError("The AI returned an unreadable response. Please try again.", "UPSTREAM", {
+      status: 502,
+      userFacing: true,
+    });
+  }
+  const parsed = schema.safeParse(json);
+  if (!parsed.success) {
+    throw new AIError("The AI returned an unexpected response shape. Please try again.", "UPSTREAM", {
+      status: 502,
+      userFacing: true,
+    });
+  }
+  return parsed.data as T;
 }
 
 /** Split provider text into trimmed, non-empty lines (for bullet output). */

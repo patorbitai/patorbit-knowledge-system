@@ -94,6 +94,9 @@ model ProfessionalIdentity {
   jobApplications   JobApplication[]
   claims            Claim[]
   conflicts         ConflictRecord[]
+  interviewProfiles         InterviewProfile[]
+  savedPracticeQuestions    SavedPracticeQuestion[]
+  interviewEmailConnections InterviewEmailConnection[]
 }
 
 // ─── Resume (Phase 0 — server persistence foundation) ───────────
@@ -162,6 +165,7 @@ model JobApplication {
 
   @@index([professionalIdentityId])
   @@index([professionalIdentityId, status])
+  interviewProfiles InterviewProfile[]
 }
 
 // ─── M5: Application Lifecycle Events ─────────────────────────
@@ -499,4 +503,171 @@ model JobSourceObservation {
   skippedCount       Int      @default(0) // rows the adapter could not parse during this check
 
   @@index([sourceKind, sourceFeedKey, observedAt])
+}
+
+// ─── V18: Interview Preparation ────────────────────────────────
+//
+// Every record is scoped to the owning ProfessionalIdentity. Services always
+// filter by that id — a client-supplied id alone never grants access.
+
+model InterviewProfile {
+  id                     String  @id @default(cuid())
+  professionalIdentityId String
+  // Optional link to an existing tracked application (no duplicated facts).
+  applicationId          String?
+
+  companyName     String
+  jobTitle        String
+  experienceYears Float?
+  jobDescription  String?   @db.Text
+  requiredSkills  String[]  @default([])
+  preferredSkills String[]  @default([])
+  seniority       String?
+  interviewDate   DateTime?
+  timezone        String    @default("UTC")
+  durationMinutes Int?
+  interviewRound  String?
+  interviewFormat String? // video | phone | onsite | take_home | unknown
+  interviewType   String // technical_interview | hr_interview | ...
+  notes           String?   @db.Text
+  status          String    @default("active") // active | completed | archived
+  source          String    @default("manual") // manual | email_paste | email_upload | gmail | outlook | application
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  professionalIdentity ProfessionalIdentity @relation(fields: [professionalIdentityId], references: [id], onDelete: Cascade)
+  application          JobApplication?      @relation(fields: [applicationId], references: [applicationId], onDelete: SetNull)
+
+  rounds         InterviewRound[]
+  emails         InterviewEmail[]
+  plans          PreparationPlan[]
+  sessions       PracticeSession[]
+  savedQuestions SavedPracticeQuestion[]
+
+  @@index([professionalIdentityId])
+  @@index([professionalIdentityId, status])
+  @@index([professionalIdentityId, interviewDate])
+  @@index([applicationId])
+}
+
+model InterviewEmail {
+  id                 String    @id @default(cuid())
+  interviewProfileId String
+  sourceType         String // paste | upload | gmail | outlook
+  subject            String?
+  sender             String?
+  receivedAt         DateTime?
+  originalContent    String    @db.Text
+  // Field-level extraction result: value + evidence + confidence + origin.
+  extractedFields    Json?
+  createdAt          DateTime  @default(now())
+
+  interviewProfile InterviewProfile @relation(fields: [interviewProfileId], references: [id], onDelete: Cascade)
+
+  @@index([interviewProfileId])
+}
+
+model InterviewRound {
+  id                 String    @id @default(cuid())
+  interviewProfileId String
+  order              Int       @default(1)
+  roundName          String
+  roundType          String // one of INTERVIEW_TYPES
+  interviewDate      DateTime?
+  timezone           String    @default("UTC")
+  durationMinutes    Int?
+  status             String    @default("scheduled") // scheduled | completed | cancelled
+  notes              String?   @db.Text
+  // ApplicationEvent row created for this round, when the profile is linked.
+  applicationEventId String?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  interviewProfile InterviewProfile @relation(fields: [interviewProfileId], references: [id], onDelete: Cascade)
+
+  plans    PreparationPlan[]
+  sessions PracticeSession[]
+
+  @@index([interviewProfileId])
+  @@index([interviewProfileId, order])
+}
+
+model PreparationPlan {
+  id                 String   @id @default(cuid())
+  interviewProfileId String
+  roundId            String?
+  // Structured plan (roadmap, topics, recommended sequence) — validated JSON.
+  generatedContent   Json
+  topics             Json
+  questions          Json
+  progress           Int      @default(0) // 0–100, derived from completed practice
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  interviewProfile InterviewProfile @relation(fields: [interviewProfileId], references: [id], onDelete: Cascade)
+  round            InterviewRound?  @relation(fields: [roundId], references: [id], onDelete: SetNull)
+
+  @@index([interviewProfileId])
+  @@index([roundId])
+}
+
+model PracticeSession {
+  id                 String    @id @default(cuid())
+  interviewProfileId String
+  roundId            String?
+  sessionType        String // practice | mock
+  status             String    @default("in_progress") // in_progress | paused | completed | abandoned
+  questions          Json      @default("[]")
+  answers            Json      @default("[]")
+  evaluation         Json?
+  overallScore       Int?
+  startedAt          DateTime  @default(now())
+  completedAt        DateTime?
+
+  interviewProfile InterviewProfile        @relation(fields: [interviewProfileId], references: [id], onDelete: Cascade)
+  round            InterviewRound?         @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  savedQuestions   SavedPracticeQuestion[]
+
+  @@index([interviewProfileId])
+  @@index([interviewProfileId, status])
+  @@index([roundId])
+}
+
+model SavedPracticeQuestion {
+  id                     String   @id @default(cuid())
+  professionalIdentityId String
+  interviewProfileId     String?
+  sessionId              String?
+  category               String
+  difficulty             String?
+  text                   String   @db.Text
+  suggestedAnswer        String?  @db.Text
+  createdAt              DateTime @default(now())
+
+  professionalIdentity ProfessionalIdentity @relation(fields: [professionalIdentityId], references: [id], onDelete: Cascade)
+  interviewProfile     InterviewProfile?    @relation(fields: [interviewProfileId], references: [id], onDelete: SetNull)
+  session              PracticeSession?     @relation(fields: [sessionId], references: [id], onDelete: SetNull)
+
+  @@index([professionalIdentityId])
+  @@index([professionalIdentityId, category])
+}
+
+// Read-only mailbox connections. Tokens are encrypted at rest with a key
+// derived from AUTH_SECRET; only the owning identity can revoke them.
+model InterviewEmailConnection {
+  id                     String    @id @default(cuid())
+  professionalIdentityId String
+  provider               String // google | microsoft
+  accountEmail           String?
+  accessTokenEncrypted   String    @db.Text
+  refreshTokenEncrypted  String?   @db.Text
+  tokenExpiresAt         DateTime?
+  scope                  String?
+  connectedAt            DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  professionalIdentity ProfessionalIdentity @relation(fields: [professionalIdentityId], references: [id], onDelete: Cascade)
+
+  @@unique([professionalIdentityId, provider])
 }

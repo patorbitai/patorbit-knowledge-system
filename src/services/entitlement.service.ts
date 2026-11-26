@@ -44,6 +44,11 @@ export interface PlanFeatures {
   trustScore: boolean;
   careerTimeline: boolean;
 
+  // Interview Preparation (V18)
+  interviewPrep: boolean;
+  interviewAdvancedQuestions: boolean;
+  interviewDetailedReports: boolean;
+
   // ATS
   atsBasic: boolean;
   atsAdvanced: boolean;
@@ -79,6 +84,9 @@ export const PLAN_FEATURES: Record<SubscriptionTier, PlanFeatures> = {
     knowledgeGraph: false,
     trustScore: false,
     careerTimeline: false,
+    interviewPrep: true,
+    interviewAdvancedQuestions: false,
+    interviewDetailedReports: false,
     atsBasic: true,
     atsAdvanced: false,
     pdfExport: true,
@@ -106,6 +114,9 @@ export const PLAN_FEATURES: Record<SubscriptionTier, PlanFeatures> = {
     knowledgeGraph: true,
     trustScore: true,
     careerTimeline: true,
+    interviewPrep: true,
+    interviewAdvancedQuestions: true,
+    interviewDetailedReports: true,
     atsBasic: true,
     atsAdvanced: true,
     pdfExport: true,
@@ -133,6 +144,9 @@ export const PLAN_FEATURES: Record<SubscriptionTier, PlanFeatures> = {
     knowledgeGraph: true,
     trustScore: true,
     careerTimeline: true,
+    interviewPrep: true,
+    interviewAdvancedQuestions: true,
+    interviewDetailedReports: true,
     atsBasic: true,
     atsAdvanced: true,
     pdfExport: true,
