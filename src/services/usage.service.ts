@@ -31,6 +31,23 @@ export const USAGE_LIMITS: Record<
     Professional: -1,
     Enterprise: -1,
   },
+  // V18 — Interview Preparation. Preparation plans and sessions are metered
+  // separately so a user can still practise after using their plan quota.
+  interview_preparation: {
+    Free: 3,
+    Professional: -1,
+    Enterprise: -1,
+  },
+  interview_practice_session: {
+    Free: 5,
+    Professional: -1,
+    Enterprise: -1,
+  },
+  interview_mock_session: {
+    Free: 2,
+    Professional: -1,
+    Enterprise: -1,
+  },
 };
 
 // ─── Feature keys that map to entitlement booleans ──────────────────────────
@@ -139,6 +156,45 @@ export const usageService = {
       limit,
       remaining,
     };
+  },
+
+  /**
+   * Read the current quota state WITHOUT consuming it.
+   *
+   * Used by interview endpoints so a failed AI call never burns quota: the
+   * route peeks first, does the work, and only then consumes.
+   */
+  async peekUsage(
+    userId: string,
+    feature: string,
+    period?: string,
+  ): Promise<{ allowed: boolean; current: number; limit: number; remaining: number }> {
+    const p = period || usageService.getCurrentPeriodKey();
+    const entitlements = await entitlementService.getUserEntitlements(userId);
+    const limits = USAGE_LIMITS[feature] || { Free: 10, Professional: -1, Enterprise: -1 };
+    const limit = limits[entitlements.tier] ?? limits.Free;
+    const current = await usageService.getUsage(userId, feature, p);
+
+    if (limit !== -1 && current >= limit) {
+      return { allowed: false, current, limit, remaining: 0 };
+    }
+    return {
+      allowed: true,
+      current,
+      limit,
+      remaining: limit === -1 ? -1 : Math.max(0, limit - current),
+    };
+  },
+
+  /** Consume one unit AFTER the metered work succeeded. */
+  async consumeUsage(userId: string, feature: string, period?: string): Promise<number> {
+    const p = period || usageService.getCurrentPeriodKey();
+    const updated = await prisma.usageRecord.upsert({
+      where: { userId_feature_period: { userId, feature, period: p } },
+      update: { count: { increment: 1 } },
+      create: { userId, feature, period: p, count: 1 },
+    });
+    return updated.count;
   },
 
   /**

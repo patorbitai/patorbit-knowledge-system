@@ -54,3 +54,9 @@ next-env.d.ts
 
 # Funnel analytics event log (internal)
 .analytics/
+
+# Local PostgreSQL cluster used for V18 development
+/.pgdata/
+
+# Local audit scratch (not product code)
+/.audit/

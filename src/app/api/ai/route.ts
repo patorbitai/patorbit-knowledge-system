@@ -27,6 +27,12 @@ const KNOWN_ACTIONS: readonly string[] = [
   "evidenceOptimize",
   "generateClaims",
   "tailorResume",
+  "interviewExtract",
+  "interviewPlan",
+  "interviewQuestions",
+  "interviewEvaluate",
+  "interviewReport",
+  "interviewExplain",
 ];
 
 /** Maximum request body size (100 KB). */

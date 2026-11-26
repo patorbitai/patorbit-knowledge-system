@@ -12,6 +12,7 @@ import {
   Palette,
   Settings,
   HelpCircle,
+  MessagesSquare,
 } from "lucide-react";
 
 type NavItem = {
@@ -31,6 +32,7 @@ const PRIMARY_ITEMS: NavItem[] = [
 ];
 
 const WORKSPACE_ITEMS: NavItem[] = [
+  { label: "Interview Prep", href: "/interview-preparation", icon: MessagesSquare },
   { label: "AI Workspace", href: "/ai", icon: Sparkles },
   { label: "Templates", href: "/templates", icon: Palette },
 ];
