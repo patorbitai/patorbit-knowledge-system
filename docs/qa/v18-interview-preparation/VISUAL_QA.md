@@ -91,3 +91,41 @@ built from the shared components — `Card`, `Badge`, labelled inputs, `<ol>`/`<
 timelines — but were not audited), and success paths of AI-backed buttons
 (no provider key in this environment, so those buttons were only verified to
 surface an error rather than fabricate a result).
+
+## E2E baseline comparison (main vs this branch)
+
+The pre-existing resume/pricing specs were run on both branches with the same
+browser (Playwright 1.62 Chromium), the same PostgreSQL database, the same
+`.env`, the same `next dev` command and the same warmed server, sequentially in
+one worktree so no other variable differs.
+
+| Branch | Passed | Failed | Did not run |
+| --- | --- | --- | --- |
+| `main` (1bb0127) | 4 | 16 | 64 |
+| `feature/v18-interview-preparation` | 6 | 14 | 64 |
+
+All 14 failures on the branch also fail on `main`. Two failures are present only
+on `main` (`pricing.spec.ts:61` focus ring and the reduced-motion FAQ case at
+`responsive`), i.e. flaky, not branch-dependent. Per-test comparison:
+
+| Spec / test | main | branch |
+| --- | --- | --- |
+| `create-lifecycle` A (both projects) | fail | fail |
+| `delete-lifecycle` A (both projects) | fail | fail |
+| `duplicate-lifecycle` A (both projects) | fail | fail |
+| `share-lifecycle` A (both projects) | fail | fail |
+| `tailor-lifecycle` A (both projects) | fail | fail |
+| `pricing` comparison table at 320px (both projects) | fail | fail |
+| `pricing` FAQ clipping (desktop) | fail | fail |
+| `pricing` reduced motion (desktop) | fail | fail |
+| `pricing` focus ring (desktop) | fail | pass |
+| `pricing` reduced motion (responsive) | fail | pass |
+
+Root cause of the shared failures: each spec's `login()` helper clicks "Sign In"
+and then waits 15s for the URL to leave `/login`. In `next dev` the credentials
+POST returns 200 (confirmed in the server log), but the client-side navigation
+does not complete inside 15s on this machine. The V18 spec avoids this by
+waiting for hydration and using a 30s URL wait; it does not change the existing
+helpers.
+
+Conclusion: **no regression introduced by V18.**

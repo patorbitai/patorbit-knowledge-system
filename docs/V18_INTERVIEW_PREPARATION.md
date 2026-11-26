@@ -10,8 +10,8 @@ product code.
 
 ## Data model
 
-All five new tables are scoped to `ProfessionalIdentity` and every service
-filters by that id, so a client-supplied id alone never grants access.
+Seven new models, all scoped to `ProfessionalIdentity`; every service filters by
+that id, so a client-supplied id alone never grants access.
 
 | Model | Purpose |
 | --- | --- |
@@ -25,39 +25,95 @@ filters by that id, so a client-supplied id alone never grants access.
 
 `JobApplication` and `ApplicationEvent` are untouched; linking a profile to an
 application reuses its company/role and records an `interview_scheduled` event
-for new rounds.
+for new rounds. Deleting a `User` cascades to `ProfessionalIdentity` and from
+there to all seven tables, so account deletion removes interview data.
 
-## Migrations — read this before deploying
+## Migration history — what was broken and how it is repaired
 
-`prisma/migrations` upstream is already broken independently of V18: the
-migration `20260907010000_add_claim_model_and_evidence_fk` references an
-`EvidenceRecord` table that no migration creates, and `UsageRecord` /
-`Subscription` are likewise missing from the migration chain. A fresh
-`prisma migrate deploy` fails on that migration.
+`prisma/migrations` could not be deployed on **any** database before this
+branch. The gaps were:
 
-Consequences for this branch:
+| Gap | Referenced by |
+| --- | --- |
+| `EvidenceRecord` table never created | `20260907010000` (ALTER + FK + index), `20260907020000` (FK from `VerificationEvent`) |
+| `Subscription` table never created | `20260908000000` (ALTER, trial columns) |
+| `UsageRecord` table never created | nothing (used by the app) |
+| `User.razorpayCustomerId`, `User.razorpayContactId`, `User.subscriptionTier`, `User.subscriptionStatus`, `User.currentPeriodEnd`, `User.cancelAtPeriodEnd` never added | schema only |
+| `ProfessionalIdentity.trustShareToken`, `.trustShareEnabled`, `.trustReportCache`, `.passportShareEnabled`, `.passportDataCache` never added | schema only |
 
-- The V18 migration (`prisma/migrations/20261126000000_add_interview_preparation/migration.sql`)
-  was generated with `prisma migrate diff --from-schema-datamodel … --script`
-  and is a pure `CREATE TABLE` addition — it is correct, but it cannot be
-  applied on top of a broken chain.
-- Locally the schema was applied with `prisma db push --accept-data-loss` so
-  the app could run and be screenshotted.
+`20260907010000_add_claim_model_and_evidence_fk` was therefore the first hard
+failure (`relation "EvidenceRecord" does not exist`). Production databases were
+created with `prisma db push`, so they contain all of these objects while their
+migration history is incomplete — that is why a naive fresh baseline is unsafe.
 
-Recommended fix before a real deployment: repair the upstream chain (add a
-migration creating `EvidenceRecord`, `UsageRecord` and `Subscription` before
-`20260907010000_…`), or baseline the existing production database with
-`prisma migrate resolve --applied` and then apply this migration.
+The fix is `prisma/migrations/20260907005000_repair_missing_core_tables`, which
+sits immediately before the first broken migration and:
+
+- creates `EvidenceRecord` as it existed at that point (claimId `NOT NULL`, no
+  FK — the next migration drops the NOT NULL and adds the FK), `Subscription`
+  without trial columns (added by `20260908000000`) and `UsageRecord`;
+- adds the nine columns and the unique indexes above;
+- is **idempotent**: `CREATE TABLE IF NOT EXISTS`, `ADD COLUMN IF NOT EXISTS`,
+  `CREATE INDEX IF NOT EXISTS` and constraint creation guarded by
+  `pg_constraint` lookups. Running it against a database that already has these
+  objects (a `db push` production database) is a no-op instead of an error.
+
+After it, the whole chain applies cleanly and reproduces `schema.prisma`
+exactly — verified with
+`prisma migrate diff --from-url … --to-schema-datamodel prisma/schema.prisma --exit-code`
+returning "empty migration" (exit 0) on a freshly deployed database and on the
+production-like database described below.
+
+### Scenario 1 — fresh database (new environment / CI)
+
+```bash
+createdb patorbit
+DATABASE_URL="postgresql://…/patorbit?schema=public" npx prisma migrate deploy
+```
+
+All 25 migrations apply, including the repair and V18. No manual steps.
+
+### Scenario 2 — existing production database (created with `db push`)
+
+Production already contains every table and column, so the historical
+migrations must be **recorded**, not executed. Baseline everything before V18,
+then deploy:
+
+```bash
+# 1. Snapshot first (always): pg_dump -Fc "$DATABASE_URL" > pre-v18.dump
+# 2. Mark every migration that predates V18 as already applied.
+for name in $(ls prisma/migrations | grep -v '^migration_lock.toml$' | grep -v '^20261126000000_'); do
+  npx prisma migrate resolve --applied "$name"
+done
+# 3. Apply only the new migration.
+npx prisma migrate deploy
+```
+
+`migrate resolve --applied` writes history rows only; it does not touch data.
+Do **not** run the repair migration against such a database by hand — baselining
+covers it, and it is idempotent if it does run.
+
+### Scenario 3 — applying the V18 migration itself
+
+`20261126000000_add_interview_preparation` is pure additive DDL: seven
+`CREATE TABLE` statements, their indexes and foreign keys. It creates no
+defaults on existing tables, drops nothing and backfills nothing. Verified
+against a production-like database with rows in `User`, `ProfessionalIdentity`,
+`Claim`, `EvidenceRecord`, `UsageRecord`, `Subscription` and `Resume`: row
+counts were identical before and after, the seven V18 tables appeared empty, and
+the schema had no drift.
+
+Never use `prisma db push --accept-data-loss` as a deployment strategy.
 
 ## Environment variables
 
-Required (already used by the rest of the app):
+Required:
 
 | Variable | Purpose |
 | --- | --- |
 | `DATABASE_URL` | PostgreSQL connection string. |
 | `AUTH_SECRET` / `NEXTAUTH_SECRET` | Session encryption. Also the secret the mailbox token key is derived from. |
-| `NEXTAUTH_URL` | Canonical app URL (OAuth redirect base). |
+| `NEXTAUTH_URL` | Canonical app URL. Used for OAuth redirect URIs and to derive callback redirects (never the request Host). |
 
 Optional — AI features (plan, questions, evaluation, report, explain):
 
@@ -94,19 +150,21 @@ Optional — mailbox import (read-only):
 5. Set `MICROSOFT_CLIENT_ID`, `MICROSOFT_CLIENT_SECRET`, `MICROSOFT_TENANT_ID`.
 
 Mailbox import is read-only, user-initiated, fetches only the single message the
-user selects, and stores tokens encrypted. When credentials are absent the UI
-shows setup instructions instead of claiming the provider is connected.
+user selects, and stores tokens encrypted (AES-256-GCM). Disconnect revokes the
+token at Google and always deletes the local copy; Microsoft has no public
+revocation endpoint for delegated Graph tokens, so disconnect removes the local
+tokens and the user revokes from their account page. When credentials are absent
+the UI shows setup instructions instead of claiming the provider is connected.
 
 ## Deployment steps
 
 1. `npm ci`
-2. Apply migrations (see the migration note above) — or `prisma db push` for a
-   throwaway environment.
+2. Pick the database scenario above (fresh deploy, or baseline + deploy).
 3. `npm run build`
-4. `npm start` behind the existing reverse proxy; set the four app env vars plus
-   whichever optional providers you want live.
-5. Configure the OAuth redirect URIs listed above for the deployed origin.
-6. Smoke test: sign in → create a profile → import an email → generate a plan →
+4. `npm start` behind the existing reverse proxy.
+5. Set the required env vars, plus the optional AI/mailbox ones you want live.
+6. Configure the OAuth redirect URIs listed above for the deployed origin.
+7. Smoke test: sign in → create a profile → import an email → generate a plan →
    start a practice set → finish it → open the report.
 
 ## Known limitations
@@ -115,8 +173,8 @@ shows setup instructions instead of claiming the provider is connected.
   in this environment (no API key was available). Deterministic extraction and
   all non-AI flows were exercised.
 - Gmail/Outlook import was **not exercised against live providers** (no OAuth
-  credentials). The connect/search/fetch/revoke paths and their state, scope and
-  encryption handling are covered by unit tests only.
+  credentials). Connect/search/fetch/revoke paths, state validation and token
+  encryption are covered by unit tests only.
 - Voice interviews are intentionally out of scope; the mock interview is text
   only and says so.
 - No arbitrary code execution: the app never runs user or model code.
@@ -124,24 +182,22 @@ shows setup instructions instead of claiming the provider is connected.
   unrelated files (for example `src/store/resume-builder.ts`); the V18 files
   lint clean.
 - `src/utils/__tests__/arvind-pdf-import.test.ts` fails on this machine because
-  it reads `D:\Resume\ARVIND ABHAY NARAYAN CHAUHAN.pdf`, which does not exist
-  here. That test is unrelated to V18 and predates this branch.
-- `npm run test:e2e` (the pre-existing resume/pricing specs, none of which touch
-  Interview Preparation) reported 30 passed, 16 failed, 64 did not run. The
-  failures come from the suite's shared login helper: the credential POST
-  returns 200, but the helper's 15s `waitForURL` expires before the client
-  navigation completes in `next dev`. One further failure is the 320px pricing
-  comparison-table scroll assertion. Both were observed only on this machine and
-  were not compared against a clean baseline checkout.
+  it reads a PDF path that only exists on another machine. That test predates
+  this branch.
+- The pre-existing resume/pricing E2E specs fail identically on `main` (see the
+  E2E baseline comparison in `docs/qa/v18-interview-preparation/VISUAL_QA.md`);
+  their shared login helper waits for a client navigation that does not finish
+  within 15s in `next dev`.
 
 ## Verification results for this branch
 
 - `npx tsc --noEmit` — exit 0.
-- `npm run build` — exit 0 (route table includes all `/interview-preparation`
-  and `/api/interview/**` routes).
-- `npm test` — 213 passed files / 2710 passed tests, with only the two
-  `arvind-pdf-import` path failures described above and 4 skipped files.
-- Interview-specific suites: 7 files / 87 tests, all passing.
-- Targeted eslint over every added or modified V18 file: 0 errors.
-- Visual QA: 64 screenshots across 8 screens × 4 viewports × 2 themes, see
+- `npm run build` — exit 0.
+- `npm test` — 213 passed files / 2710 passed tests, 4 skipped files / 22
+  skipped tests; the only failures are the two `arvind-pdf-import` cases above.
+- Interview suites — 7 files / 87 tests, all passing.
+- Targeted eslint over every added or modified V18 file — 0 errors.
+- Migration chain — `prisma migrate deploy` succeeds on a fresh database (25/25
+  migrations) and on a baselined production-like database, with no schema drift.
+- Visual QA — 64 screenshots across 8 screens × 4 viewports × 2 themes, see
   `docs/qa/v18-interview-preparation/VISUAL_QA.md`.
