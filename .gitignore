@@ -57,3 +57,6 @@ next-env.d.ts
 
 # Local PostgreSQL cluster used for V18 development
 /.pgdata/
+
+# Local audit scratch (not product code)
+/.audit/
